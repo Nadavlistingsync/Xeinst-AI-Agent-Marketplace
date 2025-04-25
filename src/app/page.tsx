@@ -348,7 +348,7 @@ export default function Home() {
               Ready to Build with AI?
             </h2>
             <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-              We build your AI tool for free. You only pay when you're ready to use it.
+              We build your AI tool for free. You only pay when you&apos;re ready to use it.
             </p>
             <Link
               href="#contact"
