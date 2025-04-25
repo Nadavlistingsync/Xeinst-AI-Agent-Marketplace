@@ -4,15 +4,12 @@
 import { motion } from 'framer-motion';
 import { 
   ArrowRight, 
-  Sparkles, 
+  MessageSquare, 
+  Target, 
   CheckCircle2,
-  Bot,
-  Building2,
   Clock,
   Star,
-  MessageSquare,
-  Target,
-  ChevronRight
+  Building2
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -271,7 +268,7 @@ export default function Home() {
               Start Your Project
             </h2>
             <p className="text-xl text-white/80 max-w-2xl mx-auto">
-              Let's build something amazing together
+              Let&apos;s build something amazing together
             </p>
           </motion.div>
 
