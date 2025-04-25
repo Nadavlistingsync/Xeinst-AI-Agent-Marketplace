@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   Target,
   MessageSquare,
-  Building2,
   Bot,
   MessageCircle,
   ZapIcon,
@@ -422,7 +421,7 @@ export default function Home() {
                   ))}
                 </div>
                 <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
-                  "{testimonial.quote}"
+                  &ldquo;{testimonial.quote}&rdquo;
                 </p>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">{testimonial.author}</p>
@@ -447,7 +446,7 @@ export default function Home() {
               Ready to Get Your Free AI Tool?
             </h2>
             <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              Describe your problem. We'll build the tool. You decide if it's worth paying for.
+              Describe your problem. We&apos;ll build the tool. You decide if it&apos;s worth paying for.
             </p>
             <Link
               href="#contact"
