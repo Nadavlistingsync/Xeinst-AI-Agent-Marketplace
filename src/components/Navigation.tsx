@@ -47,7 +47,7 @@ export default function Navigation() {
                 Pricing
               </Link>
               <Link
-                href="#contact"
+                href="#pricing-form"
                 className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
               >
                 Contact

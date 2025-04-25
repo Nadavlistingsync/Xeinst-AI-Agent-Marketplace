@@ -12,6 +12,7 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRef } from 'react';
+import ContactForm from '@/components/ContactForm';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -262,7 +263,7 @@ export default function Home() {
                     ))}
                   </ul>
                   <Link
-                    href="#contact"
+                    href="#pricing-form"
                     className={`w-full inline-flex items-center justify-center px-6 py-3 font-medium rounded-lg transition-all duration-200 ${
                       plan.popular
                         ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
@@ -330,31 +331,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section id="contact" className="py-24 bg-blue-50 dark:bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">
-              Ready to Build with AI?
-            </h2>
-            <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-              We build your AI tool for free. You only pay when you&apos;re ready to use it.
-            </p>
-            <Link
-              href="#contact"
-              className="inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 text-lg shadow-lg hover:shadow-xl"
-            >
-              Start Now
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </motion.div>
-        </div>
-      </section>
+      {/* Contact Form Section */}
+      <ContactForm />
     </main>
   );
 }
