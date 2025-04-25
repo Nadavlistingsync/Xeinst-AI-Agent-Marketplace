@@ -5,6 +5,36 @@ import { motion } from 'framer-motion';
 
 export default function ContactForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError('');
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch('https://formspree.io/f/mvgagzee', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setIsSubmitted(true);
+        form.reset();
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Something went wrong. Please try again.');
+      }
+    } catch (err) {
+      setError('Failed to send message. Please try again later.');
+      console.error('Form submission error:', err);
+    }
+  };
 
   return (
     <section id="pricing-form" className="py-24 bg-gray-50 dark:bg-gray-800">
@@ -40,11 +70,15 @@ export default function ContactForm() {
             </motion.div>
           ) : (
             <form
-              action="https://formspree.io/f/mvgagzee"
-              method="POST"
-              onSubmit={() => setIsSubmitted(true)}
+              onSubmit={handleSubmit}
               className="space-y-6 bg-white dark:bg-gray-900 p-8 rounded-xl shadow-lg"
             >
+              {error && (
+                <div className="p-4 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+                  {error}
+                </div>
+              )}
+
               <div>
                 <label
                   htmlFor="name"
