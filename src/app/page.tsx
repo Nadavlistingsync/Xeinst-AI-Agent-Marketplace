@@ -135,7 +135,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              We build your custom AI tool for free. You only pay when you're ready to use it.
+              We build your custom AI tool for free. You only pay when you&apos;re ready to use it.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
