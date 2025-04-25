@@ -11,10 +11,6 @@ import {
   Star,
   Building2
 } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useRef } from 'react';
-import ContactForm from '@/components/ContactForm';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -31,79 +27,7 @@ const staggerContainer = {
   }
 };
 
-const features = [
-  {
-    icon: <Sparkles className="h-8 w-8 text-blue-600" />,
-    title: "Free Builds",
-    description: "We build your custom AI tool at no cost. You only pay if you love it."
-  },
-  {
-    icon: <Bot className="h-8 w-8 text-blue-600" />,
-    title: "Custom AI Solutions",
-    description: "Tailored AI tools designed specifically for your business needs."
-  },
-  {
-    icon: <Building2 className="h-8 w-8 text-blue-600" />,
-    title: "Real Estate Ready",
-    description: "Specialized AI solutions for real estate professionals and agencies."
-  }
-];
-
-const pricingPlans = [
-  {
-    name: "Free Build",
-    description: "Perfect for trying out our AI solutions",
-    features: [
-      "Custom AI tool development",
-      "No upfront costs",
-      "30-day trial period",
-      "Basic support"
-    ],
-    cta: "Start Free Build"
-  },
-  {
-    name: "Standard",
-    description: "For growing businesses",
-    features: [
-      "Full access to your AI tool",
-      "Priority support",
-      "Monthly updates",
-      "Custom integrations"
-    ],
-    cta: "Contact for Pricing",
-    popular: true
-  },
-  {
-    name: "Enterprise",
-    description: "For large-scale operations",
-    features: [
-      "Full access to your AI tool",
-      "Dedicated support team",
-      "Custom development",
-      "API access"
-    ],
-    cta: "Contact for Pricing"
-  }
-];
-
-const testimonials = [
-  {
-    quote: "Xeinst built us a custom AI tool that transformed our lead generation. The results were incredible.",
-    author: "Sarah Johnson",
-    role: "Real Estate Broker",
-    image: "/testimonials/sarah.jpg"
-  },
-  {
-    quote: "The AI solution they created saved us 20+ hours per week. Worth every penny.",
-    author: "Michael Chen",
-    role: "Property Manager",
-    image: "/testimonials/michael.jpg"
-  }
-];
-
 export default function Home() {
-  const ref = useRef(null);
-
   return (
     <main className="min-h-screen bg-black">
       {/* Hero Section */}
