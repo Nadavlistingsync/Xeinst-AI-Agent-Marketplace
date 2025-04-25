@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -44,7 +44,9 @@ html {
   }
   
   .glow-text {
-    @apply text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)];
+    text-shadow: 
+      0 0 10px rgba(255,255,255,0.8),
+      0 0 20px rgba(255,255,255,0.3);
   }
   
   .glow-text-lg {
@@ -65,7 +67,10 @@ html {
   }
   
   .glow-border {
-    @apply border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)];
+    box-shadow: 
+      0 0 15px rgba(255,255,255,0.1),
+      inset 0 0 15px rgba(255,255,255,0.1);
+    @apply border border-white/10;
   }
   
   .glow-border-hover {
@@ -97,10 +102,10 @@ html {
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-white bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(0,100,255,0.2)] hover:from-blue-500/30 hover:to-purple-500/30 hover:shadow-[0_0_25px_rgba(0,100,255,0.3)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300;
+    @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white bg-black/30 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:bg-black/50 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-300;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-white/80 bg-black/50 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:text-white hover:bg-black/70 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/20 transition-all duration-300;
+    @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white/80 bg-black/50 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:text-white hover:bg-black/70 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/20 transition-all duration-300;
   }
 }

@@ -24,12 +24,12 @@ export default function Header() {
 
   const headerVariants = {
     top: {
-      backgroundColor: 'rgba(0, 0, 0, 0)',
-      backdropFilter: 'blur(0px)',
-      borderColor: 'rgba(255, 255, 255, 0)'
+      backgroundColor: 'rgba(0, 0, 0, 0.2)',
+      backdropFilter: 'blur(8px)',
+      borderColor: 'rgba(255, 255, 255, 0.1)'
     },
     scrolled: {
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      backgroundColor: 'rgba(0, 0, 0, 0.95)',
       backdropFilter: 'blur(12px)',
       borderColor: 'rgba(255, 255, 255, 0.1)'
     }
@@ -51,9 +51,7 @@ export default function Header() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className={`text-2xl font-light tracking-wider transition-all duration-300 ${
-              scrolled ? 'glow-text' : 'logo-glow'
-            }`}
+            className="text-2xl font-light tracking-[0.2em] logo-glow"
           >
             Xeinst
           </motion.a>
@@ -64,9 +62,7 @@ export default function Header() {
               <motion.a
                 key={item.label}
                 href={item.href}
-                className={`transition-colors duration-200 text-sm tracking-wide ${
-                  scrolled ? 'text-white/90 hover:text-white' : 'text-white/80 hover:text-white'
-                }`}
+                className="text-white/90 hover:text-white transition-colors duration-200 text-sm tracking-wider font-light"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -75,9 +71,7 @@ export default function Header() {
             ))}
             <motion.a
               href="#contact"
-              className={`btn-primary text-sm px-6 py-2 transition-all duration-300 ${
-                scrolled ? 'bg-black/40' : ''
-              }`}
+              className="btn-primary text-sm px-6 py-2 tracking-wider"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -87,7 +81,7 @@ export default function Header() {
 
           {/* Mobile Menu Button */}
           <motion.button
-            className="md:hidden text-white/80 hover:text-white"
+            className="md:hidden text-white hover:text-white/90"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -107,7 +101,7 @@ export default function Header() {
         <motion.div
           className="px-4 pt-2 pb-4 space-y-2"
           animate={scrolled ? {
-            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
             backdropFilter: 'blur(12px)'
           } : {
             backgroundColor: 'rgba(0, 0, 0, 0.2)',
@@ -119,9 +113,7 @@ export default function Header() {
             <motion.a
               key={item.label}
               href={item.href}
-              className={`block py-2 text-sm tracking-wide ${
-                scrolled ? 'text-white/90 hover:text-white' : 'text-white/80 hover:text-white'
-              }`}
+              className="block py-2 text-sm tracking-wider font-light text-white/90 hover:text-white"
               whileHover={{ scale: 1.02 }}
               onClick={() => setIsMenuOpen(false)}
             >
@@ -130,9 +122,7 @@ export default function Header() {
           ))}
           <motion.a
             href="#contact"
-            className={`block btn-primary text-sm text-center py-2 mt-4 ${
-              scrolled ? 'bg-black/40' : ''
-            }`}
+            className="block btn-primary text-sm text-center py-2 mt-4 tracking-wider"
             whileHover={{ scale: 1.02 }}
             onClick={() => setIsMenuOpen(false)}
           >
