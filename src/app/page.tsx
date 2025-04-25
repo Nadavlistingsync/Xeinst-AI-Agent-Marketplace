@@ -111,18 +111,22 @@ export default function Home() {
     <main className="min-h-screen bg-black">
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,100,255,0.1)_0%,transparent_70%)]" />
+        <div className="absolute inset-0 bg-black" />
         
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 1.2 }}
           className="container text-center relative z-10"
         >
-          <h1 className="text-6xl md:text-8xl font-bold mb-6 glow-text-lg tracking-tight">
-            XEINST
-          </h1>
+          <motion.h1 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="text-7xl md:text-9xl font-light mb-6 logo-glow tracking-widest"
+          >
+            Xeinst
+          </motion.h1>
           <p className="text-xl md:text-2xl text-white/80 mb-8 max-w-2xl mx-auto">
             Building the future of AI, one innovation at a time
           </p>

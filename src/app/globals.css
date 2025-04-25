@@ -21,12 +21,7 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background: rgb(var(--background-start-rgb));
 }
 
 html {
@@ -53,7 +48,20 @@ html {
   }
   
   .glow-text-lg {
-    @apply text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.7)];
+    text-shadow: 
+      0 0 20px rgba(255,255,255,0.7),
+      0 0 40px rgba(255,255,255,0.3),
+      0 0 60px rgba(255,255,255,0.2);
+    @apply text-white;
+  }
+  
+  .logo-glow {
+    text-shadow: 
+      0 0 25px rgba(255,255,255,0.8),
+      0 0 45px rgba(255,255,255,0.4),
+      0 0 65px rgba(255,255,255,0.3),
+      0 0 85px rgba(255,255,255,0.2);
+    @apply text-white font-light tracking-wider;
   }
   
   .glow-border {
