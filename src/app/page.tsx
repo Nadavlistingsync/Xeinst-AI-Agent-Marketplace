@@ -48,7 +48,6 @@ const features = [
 const pricingPlans = [
   {
     name: "Free Build",
-    price: "$0",
     description: "Perfect for trying out our AI solutions",
     features: [
       "Custom AI tool development",
@@ -59,9 +58,7 @@ const pricingPlans = [
     cta: "Start Free Build"
   },
   {
-    name: "Standard Plan",
-    price: "$299",
-    period: "/month",
+    name: "Standard",
     description: "For growing businesses",
     features: [
       "Full access to your AI tool",
@@ -69,12 +66,11 @@ const pricingPlans = [
       "Monthly updates",
       "Custom integrations"
     ],
-    cta: "Get Started",
+    cta: "Contact for Pricing",
     popular: true
   },
   {
     name: "Enterprise",
-    price: "Custom",
     description: "For large-scale operations",
     features: [
       "Full access to your AI tool",
@@ -82,7 +78,7 @@ const pricingPlans = [
       "Custom development",
       "API access"
     ],
-    cta: "Contact Sales"
+    cta: "Contact for Pricing"
   }
 ];
 
@@ -214,10 +210,10 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Simple, Transparent Pricing
+              Flexible Pricing
             </h2>
             <p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
-              Choose the plan that works best for you
+              Contact us for a custom quote based on your needs
             </p>
           </motion.div>
 
@@ -245,16 +241,6 @@ export default function Home() {
                   <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                     {plan.name}
                   </h3>
-                  <div className="flex items-baseline mb-4">
-                    <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                      {plan.price}
-                    </span>
-                    {plan.period && (
-                      <span className="text-gray-600 dark:text-gray-400 ml-1">
-                        {plan.period}
-                      </span>
-                    )}
-                  </div>
                   <p className="text-gray-700 dark:text-gray-300 mb-6">
                     {plan.description}
                   </p>
