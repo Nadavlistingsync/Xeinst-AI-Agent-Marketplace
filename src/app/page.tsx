@@ -109,7 +109,7 @@ export default function Home() {
               </span>
             </motion.h1>
             <motion.p 
-              className="mt-6 text-2xl md:text-3xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
+              className="mt-6 text-2xl md:text-3xl text-gray-800 dark:text-gray-200 max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
@@ -124,7 +124,7 @@ export default function Home() {
             >
               <Link 
                 href="#contact"
-                className="group relative inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 text-lg"
+                className="group relative inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 text-lg shadow-lg hover:shadow-xl"
               >
                 Start My Build
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -147,7 +147,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
               How It Works
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
+            <p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
               Simple, transparent, and risk-free
             </p>
           </motion.div>
@@ -179,9 +179,8 @@ export default function Home() {
               <motion.div
                 key={index}
                 variants={fadeInUp}
-                className="group relative bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
+                className="group relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="relative">
                   <div className="mb-6">
                     {item.icon}
@@ -189,7 +188,7 @@ export default function Home() {
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
                     {item.title}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-300">
+                  <p className="text-gray-700 dark:text-gray-300">
                     {item.description}
                   </p>
                 </div>
@@ -228,7 +227,7 @@ export default function Home() {
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white">No Upfront Cost</h3>
-                    <p className="mt-2 text-gray-600 dark:text-gray-300">We build your AI tool completely free. You only pay if you love it.</p>
+                    <p className="mt-2 text-gray-700 dark:text-gray-300">We build your AI tool completely free. You only pay if you love it.</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
@@ -237,7 +236,7 @@ export default function Home() {
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white">AI-Powered Everything</h3>
-                    <p className="mt-2 text-gray-600 dark:text-gray-300">Leverage cutting-edge AI to automate and enhance your business.</p>
+                    <p className="mt-2 text-gray-700 dark:text-gray-300">Leverage cutting-edge AI to automate and enhance your business.</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-4">
@@ -246,7 +245,7 @@ export default function Home() {
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Tailored To You</h3>
-                    <p className="mt-2 text-gray-600 dark:text-gray-300">Custom solutions designed specifically for your business needs.</p>
+                    <p className="mt-2 text-gray-700 dark:text-gray-300">Custom solutions designed specifically for your business needs.</p>
                   </div>
                 </div>
               </div>
@@ -256,10 +255,9 @@ export default function Home() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg"
+              className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg"
             >
               <div className="aspect-w-16 aspect-h-9">
-                {/* Placeholder for comparison image or illustration */}
                 <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-800 dark:to-gray-900 rounded-lg" />
               </div>
             </motion.div>
@@ -280,7 +278,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
               Example Use Cases
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300">
+            <p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
               Just a few examples of what we can build for you
             </p>
           </motion.div>
@@ -296,9 +294,8 @@ export default function Home() {
               <motion.div
                 key={index}
                 variants={fadeInUp}
-                className="group relative bg-gray-50 dark:bg-gray-800 p-8 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300"
+                className="group relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="relative">
                   <div className="mb-6 text-blue-600">
                     {useCase.icon}
@@ -306,7 +303,7 @@ export default function Home() {
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
                     {useCase.title}
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-300">
+                  <p className="text-gray-700 dark:text-gray-300">
                     {useCase.description}
                   </p>
                 </div>
@@ -329,7 +326,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
               Pay When It Works
             </h2>
-            <p className="mt-4 text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            <p className="mt-4 text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
               Most tools cost $0 upfront. If you love it, pricing starts from $200/mo — depending on complexity.
             </p>
           </motion.div>
@@ -340,21 +337,21 @@ export default function Home() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg"
+              className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg"
             >
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Traditional Agencies</h3>
               <ul className="space-y-4">
                 <li className="flex items-start">
                   <span className="text-red-500 mr-2">✕</span>
-                  <span className="text-gray-600 dark:text-gray-300">High upfront costs</span>
+                  <span className="text-gray-700 dark:text-gray-300">High upfront costs</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-red-500 mr-2">✕</span>
-                  <span className="text-gray-600 dark:text-gray-300">Long development times</span>
+                  <span className="text-gray-700 dark:text-gray-300">Long development times</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-red-500 mr-2">✕</span>
-                  <span className="text-gray-600 dark:text-gray-300">Rigid solutions</span>
+                  <span className="text-gray-700 dark:text-gray-300">Rigid solutions</span>
                 </li>
               </ul>
             </motion.div>
@@ -363,21 +360,21 @@ export default function Home() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="bg-white dark:bg-gray-900 p-8 rounded-2xl shadow-lg border-2 border-blue-500"
+              className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border-2 border-blue-500"
             >
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Our Approach</h3>
               <ul className="space-y-4">
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2">✓</span>
-                  <span className="text-gray-600 dark:text-gray-300">No upfront costs</span>
+                  <span className="text-gray-700 dark:text-gray-300">No upfront costs</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2">✓</span>
-                  <span className="text-gray-600 dark:text-gray-300">Fast development</span>
+                  <span className="text-gray-700 dark:text-gray-300">Fast development</span>
                 </li>
                 <li className="flex items-start">
                   <span className="text-green-500 mr-2">✓</span>
-                  <span className="text-gray-600 dark:text-gray-300">Custom solutions</span>
+                  <span className="text-gray-700 dark:text-gray-300">Custom solutions</span>
                 </li>
               </ul>
             </motion.div>
@@ -411,19 +408,19 @@ export default function Home() {
               <motion.div
                 key={index}
                 variants={fadeInUp}
-                className="bg-gray-50 dark:bg-gray-800 p-8 rounded-2xl"
+                className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg"
               >
                 <div className="flex items-center mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <Star key={i} className="h-5 w-5 text-yellow-400" />
                   ))}
                 </div>
-                <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
+                <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
                   &ldquo;{testimonial.quote}&rdquo;
                 </p>
                 <div>
                   <p className="font-semibold text-gray-900 dark:text-white">{testimonial.author}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">{testimonial.role}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{testimonial.role}</p>
                 </div>
               </motion.div>
             ))}
@@ -440,15 +437,15 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">
               Ready to Get Your Free AI Tool?
             </h2>
-            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
               Describe your problem. We&apos;ll build the tool. You decide if it&apos;s worth paying for.
             </p>
             <Link
               href="#contact"
-              className="inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-blue-600 bg-white rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-all duration-200 text-lg"
+              className="inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 text-lg shadow-lg hover:shadow-xl"
             >
               Get Started Free
               <ArrowRight className="ml-2 h-5 w-5" />
