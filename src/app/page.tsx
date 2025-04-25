@@ -103,7 +103,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden" ref={ref}>
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center">
+      <section id="hero" className="relative h-screen flex items-center justify-center">
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -152,7 +152,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24">
+      <section id="features" className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -196,11 +196,20 @@ export default function Home() {
               </motion.div>
             ))}
           </motion.div>
+          <div className="mt-8 text-center">
+            <Link
+              href="#pricing"
+              className="inline-flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Learn More About Pricing
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section className="py-24">
+      <section id="pricing" className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -270,7 +279,7 @@ export default function Home() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-24">
+      <section id="testimonials" className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -321,8 +330,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Final CTA Section */}
-      <section className="py-24 bg-blue-50 dark:bg-gray-800">
+      {/* Contact Section */}
+      <section id="contact" className="py-24 bg-blue-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

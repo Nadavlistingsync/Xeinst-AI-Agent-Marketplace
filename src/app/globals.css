@@ -28,10 +28,13 @@ body {
     rgb(var(--background-start-rgb));
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 @layer base {
   html {
     font-family: 'Inter', system-ui, sans-serif;
-    scroll-behavior: smooth;
   }
   
   body {
