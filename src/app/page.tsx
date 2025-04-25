@@ -1,21 +1,12 @@
 'use client';
 
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll } from 'framer-motion';
 import { 
   ArrowRight, 
   Sparkles, 
-  Zap, 
   CheckCircle2,
-  Target,
-  MessageSquare,
   Bot,
-  MessageCircle,
-  ZapIcon,
-  Layout,
-  Star,
-  Shield,
-  Building2,
-  Users
+  Building2
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -115,8 +106,6 @@ export default function Home() {
     target: ref,
     offset: ["start start", "end start"]
   });
-
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden" ref={ref}>
