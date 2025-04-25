@@ -7,21 +7,27 @@ import {
   Sparkles, 
   CheckCircle2,
   Bot,
-  Building2
+  Building2,
+  Clock,
+  Star,
+  MessageSquare,
+  Target,
+  ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRef } from 'react';
 import ContactForm from '@/components/ContactForm';
 
-const fadeInUp = {
+const fadeIn = {
   initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
   transition: { duration: 0.6 }
 };
 
 const staggerContainer = {
-  animate: {
+  whileInView: {
     transition: {
       staggerChildren: 0.1
     }
@@ -102,59 +108,40 @@ export default function Home() {
   const ref = useRef(null);
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden" ref={ref}>
+    <main className="min-h-screen bg-black">
       {/* Hero Section */}
-      <section id="hero" className="relative h-screen flex items-center justify-center">
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,100,255,0.1)_0%,transparent_70%)]" />
+        
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="container text-center relative z-10"
+        >
+          <h1 className="text-6xl md:text-8xl font-bold mb-6 glow-text-lg tracking-tight">
+            XEINST
+          </h1>
+          <p className="text-xl md:text-2xl text-white/80 mb-8 max-w-2xl mx-auto">
+            Building the future of AI, one innovation at a time
+          </p>
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="inline-block"
           >
-            <motion.h1 
-              className="text-5xl md:text-7xl font-bold tracking-tight text-gray-900 dark:text-white"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-            >
-              Custom AI Tools,{' '}
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                Built for You
-              </span>
-              <br />
-              <span className="text-gray-900 dark:text-white">
-                Only Pay If You Love It
-              </span>
-            </motion.h1>
-            <motion.p 
-              className="mt-6 text-2xl md:text-3xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-            >
-              We build your custom AI tool for free. You only pay when you&apos;re ready to use it.
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="mt-10"
-            >
-              <Link 
-                href="#contact"
-                className="group relative inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 text-lg shadow-lg hover:shadow-xl"
-              >
-                Start My Free AI Build
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </motion.div>
+            <a href="#contact" className="btn-primary">
+              Start Your Project
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </a>
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* How It Works */}
+      <section className="section-padding bg-black/50">
+        <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -162,177 +149,177 @@ export default function Home() {
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 glow-text">
+              How It Works
+            </h2>
+            <p className="text-xl text-white/80 max-w-2xl mx-auto">
+              Our process is designed to deliver exceptional results with minimal friction
+            </p>
+          </motion.div>
+
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="whileInView"
+            viewport={{ once: true }}
+            className="grid md:grid-cols-3 gap-8"
+          >
+            {[
+              {
+                icon: <MessageSquare className="h-12 w-12 text-blue-400" />,
+                title: "Discovery",
+                description: "We start by understanding your vision and requirements"
+              },
+              {
+                icon: <Target className="h-12 w-12 text-blue-400" />,
+                title: "Development",
+                description: "Our team builds your AI solution with cutting-edge technology"
+              },
+              {
+                icon: <CheckCircle2 className="h-12 w-12 text-blue-400" />,
+                title: "Delivery",
+                description: "We deliver a polished product that exceeds expectations"
+              }
+            ].map((step, index) => (
+              <motion.div
+                key={index}
+                variants={fadeIn}
+                className="p-8 rounded-xl bg-black/50 glow-border card-hover"
+              >
+                <div className="mb-6">{step.icon}</div>
+                <h3 className="text-2xl font-semibold mb-4 glow-text">{step.title}</h3>
+                <p className="text-white/80">{step.description}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Benefits */}
+      <section className="section-padding bg-black/30">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 glow-text">
               Why Choose Xeinst
             </h2>
-            <p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
-              We make AI accessible and affordable for every business
+            <p className="text-xl text-white/80 max-w-2xl mx-auto">
+              We combine cutting-edge technology with exceptional service
             </p>
           </motion.div>
 
           <motion.div
             variants={staggerContainer}
             initial="initial"
-            whileInView="animate"
+            whileInView="whileInView"
             viewport={{ once: true }}
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8"
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
-            {features.map((feature, index) => (
+            {[
+              {
+                icon: <Star className="h-8 w-8 text-blue-400" />,
+                title: "Expert Team",
+                description: "Our team consists of AI specialists with years of experience"
+              },
+              {
+                icon: <Clock className="h-8 w-8 text-blue-400" />,
+                title: "Fast Delivery",
+                description: "We deliver results quickly without compromising quality"
+              },
+              {
+                icon: <Building2 className="h-8 w-8 text-blue-400" />,
+                title: "Enterprise Ready",
+                description: "Solutions built to scale with your business"
+              }
+            ].map((benefit, index) => (
               <motion.div
                 key={index}
-                variants={fadeInUp}
-                className="group relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <div className="relative">
-                  <div className="mb-6">
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-700 dark:text-gray-300">
-                    {feature.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-          <div className="mt-8 text-center">
-            <Link
-              href="#pricing"
-              className="inline-flex items-center text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
-            >
-              Learn More About Pricing
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Flexible Pricing
-            </h2>
-            <p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
-              Contact us for a custom quote based on your needs
-            </p>
-          </motion.div>
-
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          >
-            {pricingPlans.map((plan, index) => (
-              <motion.div
-                key={index}
-                variants={fadeInUp}
-                className={`group relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 ${
-                  plan.popular ? 'ring-2 ring-blue-500' : ''
-                }`}
-              >
-                <div className="relative">
-                  {plan.popular && (
-                    <span className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-sm">
-                      Most Popular
-                    </span>
-                  )}
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                    {plan.name}
-                  </h3>
-                  <p className="text-gray-700 dark:text-gray-300 mb-6">
-                    {plan.description}
-                  </p>
-                  <ul className="space-y-4 mb-8">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start">
-                        <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                        <span className="text-gray-700 dark:text-gray-300">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    href="#pricing-form"
-                    className={`w-full inline-flex items-center justify-center px-6 py-3 font-medium rounded-lg transition-all duration-200 ${
-                      plan.popular
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    {plan.cta}
-                  </Link>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section id="testimonials" className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              What Our Clients Say
-            </h2>
-          </motion.div>
-
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
-          >
-            {testimonials.map((testimonial, index) => (
-              <motion.div
-                key={index}
-                variants={fadeInUp}
-                className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg"
+                variants={fadeIn}
+                className="p-6 rounded-xl bg-black/50 glow-border card-hover"
               >
                 <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 mr-4 overflow-hidden">
-                    <Image
-                      src={testimonial.image}
-                      alt={testimonial.author}
-                      width={48}
-                      height={48}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 dark:text-white">{testimonial.author}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{testimonial.role}</p>
-                  </div>
+                  <div className="mr-4">{benefit.icon}</div>
+                  <h3 className="text-xl font-semibold glow-text">{benefit.title}</h3>
                 </div>
-                <p className="text-lg text-gray-700 dark:text-gray-300">
-                  &ldquo;{testimonial.quote}&rdquo;
-                </p>
+                <p className="text-white/80">{benefit.description}</p>
               </motion.div>
             ))}
           </motion.div>
         </div>
       </section>
 
-      {/* Contact Form Section */}
-      <ContactForm />
+      {/* Contact Form */}
+      <section id="contact" className="section-padding bg-black/50">
+        <div className="container">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 glow-text">
+              Start Your Project
+            </h2>
+            <p className="text-xl text-white/80 max-w-2xl mx-auto">
+              Let's build something amazing together
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="max-w-2xl mx-auto"
+          >
+            <form className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 rounded-lg bg-black/50 border border-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  className="w-full px-4 py-3 rounded-lg bg-black/50 border border-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="your@email.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-white/80 mb-2">
+                  Message
+                </label>
+                <textarea
+                  className="w-full px-4 py-3 rounded-lg bg-black/50 border border-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={4}
+                  placeholder="Tell us about your project..."
+                />
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="btn-primary w-full"
+              >
+                Send Message
+              </motion.button>
+            </form>
+          </motion.div>
+        </div>
+      </section>
     </main>
   );
 }

@@ -5,9 +5,10 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+  --accent-rgb: 0, 100, 255;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -38,7 +39,7 @@ html {
   }
   
   body {
-    @apply antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-white;
+    @apply bg-black text-white antialiased;
   }
 }
 
@@ -47,16 +48,36 @@ html {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
   }
   
+  .glow-text {
+    @apply text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)];
+  }
+  
+  .glow-text-lg {
+    @apply text-white drop-shadow-[0_0_25px_rgba(255,255,255,0.7)];
+  }
+  
+  .glow-border {
+    @apply border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)];
+  }
+  
+  .glow-border-hover {
+    @apply hover:border-white/20 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] transition-all duration-300;
+  }
+  
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-white/80;
+  }
+  
+  .gradient-text-accent {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600;
   }
   
   .gradient-bg {
-    @apply bg-gradient-to-r from-blue-600 to-purple-600;
+    @apply bg-gradient-to-r from-blue-500/10 to-purple-500/10;
   }
   
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+    @apply transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,100,255,0.2)] hover:-translate-y-1;
   }
 
   .section-padding {
@@ -65,5 +86,13 @@ html {
 
   .container-padding {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-white bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(0,100,255,0.2)] hover:from-blue-500/30 hover:to-purple-500/30 hover:shadow-[0_0_25px_rgba(0,100,255,0.3)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-white/80 bg-black/50 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:text-white hover:bg-black/70 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/20 transition-all duration-300;
   }
 }
