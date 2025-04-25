@@ -7,12 +7,9 @@ import {
   Zap, 
   Shield, 
   CheckCircle2,
-  Clock,
   Target,
   MessageSquare,
-  Building2,
-  Star,
-  ChevronRight
+  Building2
 } from 'lucide-react';
 import Link from 'next/link';
 
