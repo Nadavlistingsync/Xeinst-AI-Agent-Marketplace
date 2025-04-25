@@ -12,7 +12,10 @@ import {
   MessageCircle,
   ZapIcon,
   Layout,
-  Star
+  Star,
+  Shield,
+  Building2,
+  Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRef } from 'react';
@@ -31,46 +34,77 @@ const staggerContainer = {
   }
 };
 
-const useCases = [
+const features = [
   {
-    icon: <Bot className="h-6 w-6" />,
-    title: "Real Estate Bots",
-    description: "AI-powered chatbots for property inquiries and lead qualification"
+    icon: <Sparkles className="h-8 w-8 text-blue-600" />,
+    title: "Free Builds",
+    description: "We build your custom AI tool at no cost. You only pay if you love it."
   },
   {
-    icon: <MessageCircle className="h-6 w-6" />,
-    title: "Lease Automation",
-    description: "Automated lease processing and tenant communication"
+    icon: <Bot className="h-8 w-8 text-blue-600" />,
+    title: "Custom AI Solutions",
+    description: "Tailored AI tools designed specifically for your business needs."
   },
   {
-    icon: <MessageSquare className="h-6 w-6" />,
-    title: "SMS Follow-ups",
-    description: "Intelligent follow-up sequences for leads and clients"
+    icon: <Building2 className="h-8 w-8 text-blue-600" />,
+    title: "Real Estate Ready",
+    description: "Specialized AI solutions for real estate professionals and agencies."
+  }
+];
+
+const pricingPlans = [
+  {
+    name: "Free Build",
+    price: "$0",
+    description: "Perfect for trying out our AI solutions",
+    features: [
+      "Custom AI tool development",
+      "No upfront costs",
+      "30-day trial period",
+      "Basic support"
+    ],
+    cta: "Start Free Build"
   },
   {
-    icon: <ZapIcon className="h-6 w-6" />,
-    title: "Zapier Workflows",
-    description: "Custom automation between your favorite tools"
+    name: "Standard Plan",
+    price: "$299",
+    period: "/month",
+    description: "For growing businesses",
+    features: [
+      "Everything in Free Build",
+      "Priority support",
+      "Monthly updates",
+      "Custom integrations"
+    ],
+    cta: "Get Started",
+    popular: true
   },
   {
-    icon: <Layout className="h-6 w-6" />,
-    title: "AI Landing Pages",
-    description: "Smart, converting landing pages built with AI"
+    name: "Enterprise",
+    price: "Custom",
+    description: "For large-scale operations",
+    features: [
+      "Everything in Standard",
+      "Dedicated support team",
+      "Custom development",
+      "API access"
+    ],
+    cta: "Contact Sales"
   }
 ];
 
 const testimonials = [
   {
-    quote: "They built exactly what we needed in days, not months. The AI tool has transformed our lead generation.",
+    quote: "Xeinst built us a custom AI tool that transformed our lead generation. The results were incredible.",
     author: "Sarah Johnson",
     role: "Real Estate Broker",
-    rating: 5
+    image: "/testimonials/sarah.jpg"
   },
   {
-    quote: "The automation they created saved us 20+ hours per week. Worth every penny.",
+    quote: "The AI solution they created saved us 20+ hours per week. Worth every penny.",
     author: "Michael Chen",
     role: "Property Manager",
-    rating: 5
+    image: "/testimonials/michael.jpg"
   }
 ];
 
@@ -87,10 +121,6 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden" ref={ref}>
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center">
-        <motion.div 
-          className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-gray-800/50 dark:to-gray-900/50"
-          style={{ y }}
-        />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -103,18 +133,22 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              We Build Custom{' '}
+              Custom AI Tools,{' '}
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                AI Tools For Free
+                Built for You
+              </span>
+              <br />
+              <span className="text-gray-900 dark:text-white">
+                Only Pay If You Love It
               </span>
             </motion.h1>
             <motion.p 
-              className="mt-6 text-2xl md:text-3xl text-gray-800 dark:text-gray-200 max-w-3xl mx-auto"
+              className="mt-6 text-2xl md:text-3xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              You pay only if it works. No risk. Built fast.
+              We build custom AI solutions for your business at no upfront cost. You only pay if you love the results.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -126,7 +160,7 @@ export default function Home() {
                 href="#contact"
                 className="group relative inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 text-lg shadow-lg hover:shadow-xl"
               >
-                Start My Build
+                Start My Free AI Build
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </motion.div>
@@ -134,7 +168,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works Section */}
+      {/* Features Section */}
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -145,10 +179,10 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              How It Works
+              Why Choose Xeinst
             </h2>
             <p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
-              Simple, transparent, and risk-free
+              We make AI accessible and affordable for every business
             </p>
           </motion.div>
 
@@ -157,25 +191,9 @@ export default function Home() {
             initial="initial"
             whileInView="animate"
             viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8"
           >
-            {[
-              {
-                icon: <MessageSquare className="h-8 w-8 text-blue-600" />,
-                title: "Tell Us Your Problem",
-                description: "Share your business challenge and what you'd like to solve with AI."
-              },
-              {
-                icon: <Sparkles className="h-8 w-8 text-purple-600" />,
-                title: "We Build It Free",
-                description: "Our team develops a custom AI solution tailored to your needs at no cost."
-              },
-              {
-                icon: <CheckCircle2 className="h-8 w-8 text-indigo-600" />,
-                title: "You Choose",
-                description: "Try it out and only pay if you love the solution and want to keep using it."
-              }
-            ].map((item, index) => (
+            {features.map((feature, index) => (
               <motion.div
                 key={index}
                 variants={fadeInUp}
@@ -183,128 +201,13 @@ export default function Home() {
               >
                 <div className="relative">
                   <div className="mb-6">
-                    {item.icon}
+                    {feature.icon}
                   </div>
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                    {item.title}
+                    {feature.title}
                   </h3>
                   <p className="text-gray-700 dark:text-gray-300">
-                    {item.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Why We're Different Section */}
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Why We&apos;re Different
-            </h2>
-          </motion.div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <div className="space-y-6">
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0">
-                    <CheckCircle2 className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">No Upfront Cost</h3>
-                    <p className="mt-2 text-gray-700 dark:text-gray-300">We build your AI tool completely free. You only pay if you love it.</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0">
-                    <Zap className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">AI-Powered Everything</h3>
-                    <p className="mt-2 text-gray-700 dark:text-gray-300">Leverage cutting-edge AI to automate and enhance your business.</p>
-                  </div>
-                </div>
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0">
-                    <Target className="h-6 w-6 text-indigo-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Tailored To You</h3>
-                    <p className="mt-2 text-gray-700 dark:text-gray-300">Custom solutions designed specifically for your business needs.</p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg"
-            >
-              <div className="aspect-w-16 aspect-h-9">
-                <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 dark:from-gray-800 dark:to-gray-900 rounded-lg" />
-              </div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Example Use Cases */}
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Example Use Cases
-            </h2>
-            <p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
-              Just a few examples of what we can build for you
-            </p>
-          </motion.div>
-
-          <motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-          >
-            {useCases.map((useCase, index) => (
-              <motion.div
-                key={index}
-                variants={fadeInUp}
-                className="group relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                <div className="relative">
-                  <div className="mb-6 text-blue-600">
-                    {useCase.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                    {useCase.title}
-                  </h3>
-                  <p className="text-gray-700 dark:text-gray-300">
-                    {useCase.description}
+                    {feature.description}
                   </p>
                 </div>
               </motion.div>
@@ -324,61 +227,72 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Pay When It Works
+              Simple, Transparent Pricing
             </h2>
-            <p className="mt-4 text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto">
-              Most tools cost $0 upfront. If you love it, pricing starts from $200/mo — depending on complexity.
+            <p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
+              Choose the plan that works best for you
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg"
-            >
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Traditional Agencies</h3>
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <span className="text-red-500 mr-2">✕</span>
-                  <span className="text-gray-700 dark:text-gray-300">High upfront costs</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-red-500 mr-2">✕</span>
-                  <span className="text-gray-700 dark:text-gray-300">Long development times</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-red-500 mr-2">✕</span>
-                  <span className="text-gray-700 dark:text-gray-300">Rigid solutions</span>
-                </li>
-              </ul>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg border-2 border-blue-500"
-            >
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Our Approach</h3>
-              <ul className="space-y-4">
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span className="text-gray-700 dark:text-gray-300">No upfront costs</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span className="text-gray-700 dark:text-gray-300">Fast development</span>
-                </li>
-                <li className="flex items-start">
-                  <span className="text-green-500 mr-2">✓</span>
-                  <span className="text-gray-700 dark:text-gray-300">Custom solutions</span>
-                </li>
-              </ul>
-            </motion.div>
-          </div>
+          <motion.div
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
+            {pricingPlans.map((plan, index) => (
+              <motion.div
+                key={index}
+                variants={fadeInUp}
+                className={`group relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 ${
+                  plan.popular ? 'ring-2 ring-blue-500' : ''
+                }`}
+              >
+                <div className="relative">
+                  {plan.popular && (
+                    <span className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-1 rounded-full text-sm">
+                      Most Popular
+                    </span>
+                  )}
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                    {plan.name}
+                  </h3>
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                      {plan.price}
+                    </span>
+                    {plan.period && (
+                      <span className="text-gray-600 dark:text-gray-400 ml-1">
+                        {plan.period}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-gray-700 dark:text-gray-300 mb-6">
+                    {plan.description}
+                  </p>
+                  <ul className="space-y-4 mb-8">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start">
+                        <CheckCircle2 className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
+                        <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="#contact"
+                    className={`w-full inline-flex items-center justify-center px-6 py-3 font-medium rounded-lg transition-all duration-200 ${
+                      plan.popular
+                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {plan.cta}
+                  </Link>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       </section>
 
@@ -411,17 +325,21 @@ export default function Home() {
                 className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm p-8 rounded-2xl shadow-lg"
               >
                 <div className="flex items-center mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-5 w-5 text-yellow-400" />
-                  ))}
+                  <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 mr-4 overflow-hidden">
+                    <img
+                      src={testimonial.image}
+                      alt={testimonial.author}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 dark:text-white">{testimonial.author}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{testimonial.role}</p>
+                  </div>
                 </div>
-                <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
+                <p className="text-lg text-gray-700 dark:text-gray-300">
                   &ldquo;{testimonial.quote}&rdquo;
                 </p>
-                <div>
-                  <p className="font-semibold text-gray-900 dark:text-white">{testimonial.author}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{testimonial.role}</p>
-                </div>
               </motion.div>
             ))}
           </motion.div>
@@ -429,7 +347,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-24">
+      <section className="py-24 bg-blue-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -438,16 +356,16 @@ export default function Home() {
             transition={{ duration: 0.6 }}
           >
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-6">
-              Ready to Get Your Free AI Tool?
+              Ready to Build with AI?
             </h2>
             <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-              Describe your problem. We&apos;ll build the tool. You decide if it&apos;s worth paying for.
+              Start your free AI build today. No upfront costs, no risk.
             </p>
             <Link
               href="#contact"
               className="inline-flex items-center justify-center px-8 py-4 font-medium tracking-wide text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 text-lg shadow-lg hover:shadow-xl"
             >
-              Get Started Free
+              Start Now
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </motion.div>
