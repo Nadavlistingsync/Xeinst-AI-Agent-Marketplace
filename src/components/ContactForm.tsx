@@ -21,7 +21,7 @@ export default function ContactForm() {
               Get Started with Your AI Solution
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Fill out the form below and we'll get back to you within 24 hours.
+              Fill out the form below and we&apos;ll get back to you within 24 hours.
             </p>
           </div>
 
@@ -35,7 +35,7 @@ export default function ContactForm() {
                 Thank You!
               </h3>
               <p className="text-gray-600 dark:text-gray-300">
-                We've received your message and will get back to you soon.
+                We&apos;ve received your message and will get back to you soon.
               </p>
             </motion.div>
           ) : (
