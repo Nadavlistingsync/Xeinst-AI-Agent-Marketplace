@@ -38,7 +38,7 @@ export default function Hero() {
             Get Started
           </a>
           <a
-            href="#services"
+            href="#features"
             className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-blue-100 hover:bg-blue-200 md:py-4 md:text-lg md:px-10 transition-colors duration-200"
           >
             Learn More
