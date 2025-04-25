@@ -63,7 +63,7 @@ const pricingPlans = [
     period: "/month",
     description: "For growing businesses",
     features: [
-      "Everything in Free Build",
+      "Full access to your AI tool",
       "Priority support",
       "Monthly updates",
       "Custom integrations"
@@ -76,7 +76,7 @@ const pricingPlans = [
     price: "Custom",
     description: "For large-scale operations",
     features: [
-      "Everything in Standard",
+      "Full access to your AI tool",
       "Dedicated support team",
       "Custom development",
       "API access"
@@ -134,7 +134,7 @@ export default function Home() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
             >
-              We build custom AI solutions for your business at no upfront cost. You only pay if you love the results.
+              We build your custom AI tool for free. You only pay when you're ready to use it.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -347,7 +347,7 @@ export default function Home() {
               Ready to Build with AI?
             </h2>
             <p className="text-xl text-gray-700 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
-              Start your free AI build today. No upfront costs, no risk.
+              We build your AI tool for free. You only pay when you're ready to use it.
             </p>
             <Link
               href="#contact"
