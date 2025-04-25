@@ -210,7 +210,7 @@ export default function Home() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
-              Why We're Different
+              Why We&apos;re Different
             </h2>
           </motion.div>
 
