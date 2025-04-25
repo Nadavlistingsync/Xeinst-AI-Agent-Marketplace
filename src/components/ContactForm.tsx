@@ -1,5 +1,6 @@
 'use client';
 
+// Formspree endpoint: https://formspree.io/f/mvgagzee
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 
