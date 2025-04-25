@@ -5,7 +5,6 @@ import {
   ArrowRight, 
   Sparkles, 
   Zap, 
-  Shield, 
   CheckCircle2,
   Target,
   MessageSquare,
@@ -13,7 +12,6 @@ import {
   MessageCircle,
   ZapIcon,
   Layout,
-  Users,
   Star
 } from 'lucide-react';
 import Link from 'next/link';
