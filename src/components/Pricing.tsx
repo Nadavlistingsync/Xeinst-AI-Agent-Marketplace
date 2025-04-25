@@ -1,3 +1,5 @@
+'use client';
+
 import { motion } from 'framer-motion';
 import { CheckIcon } from '@heroicons/react/24/outline';
 
