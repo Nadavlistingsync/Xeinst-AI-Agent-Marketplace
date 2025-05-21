@@ -22,7 +22,9 @@ export default function UploadAgent() {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Upload Your AI Agent</h1>
+          <h1 className="text-4xl font-extrabold mb-8 text-gray-900 tracking-tight border-b-4 border-blue-500 inline-block pb-2">
+            Upload Your AI Agent
+          </h1>
           
           <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-8">
             <div className="space-y-6">
