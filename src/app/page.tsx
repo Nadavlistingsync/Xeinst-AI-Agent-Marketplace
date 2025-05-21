@@ -9,7 +9,9 @@ import {
   CheckCircle2,
   Clock,
   Star,
-  Building2
+  Building2,
+  Bot,
+  Store
 } from 'lucide-react';
 import Header from '@/components/Header';
 
@@ -67,6 +69,69 @@ export default function Home() {
           </motion.div>
         </section>
 
+        {/* Products Section */}
+        <section className="section-padding bg-black/50">
+          <div className="container">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 glow-text">
+                Our Products
+              </h2>
+              <p className="text-xl text-white/80 max-w-2xl mx-auto">
+                Choose the perfect AI solution for your needs
+              </p>
+            </motion.div>
+
+            <motion.div
+              variants={staggerContainer}
+              initial="initial"
+              whileInView="whileInView"
+              viewport={{ once: true }}
+              className="grid md:grid-cols-2 gap-8"
+            >
+              {[
+                {
+                  icon: <Bot className="h-12 w-12 text-blue-400" />,
+                  title: "Custom AI Agents",
+                  description: "Tailored AI solutions built specifically for your business needs",
+                  cta: "Get Started",
+                  link: "#contact"
+                },
+                {
+                  icon: <Store className="h-12 w-12 text-blue-400" />,
+                  title: "AI Agents Marketplace",
+                  description: "Browse and deploy ready-made AI agents for instant automation",
+                  cta: "Explore Marketplace",
+                  link: "/marketplace"
+                }
+              ].map((product, index) => (
+                <motion.div
+                  key={index}
+                  variants={fadeIn}
+                  className="p-8 rounded-xl bg-black/50 glow-border card-hover"
+                >
+                  <div className="mb-6">{product.icon}</div>
+                  <h3 className="text-2xl font-semibold mb-4 glow-text">{product.title}</h3>
+                  <p className="text-white/80 mb-6">{product.description}</p>
+                  <motion.a
+                    href={product.link}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="inline-block bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                  >
+                    {product.cta}
+                  </motion.a>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
         {/* How It Works */}
         <section className="section-padding bg-black/50">
           <div className="container">
@@ -119,96 +184,6 @@ export default function Home() {
                   <p className="text-white/80">{step.description}</p>
                 </motion.div>
               ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Marketplace Section */}
-        <section className="section-padding bg-black/30">
-          <div className="container">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 glow-text">
-                AI Agents Marketplace
-              </h2>
-              <p className="text-xl text-white/80 max-w-2xl mx-auto">
-                Browse ready-made AI agents built from real client requests — automate your workflow in seconds.
-              </p>
-            </motion.div>
-
-            <motion.div
-              variants={staggerContainer}
-              initial="initial"
-              whileInView="whileInView"
-              viewport={{ once: true }}
-              className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-            >
-              {[
-                {
-                  name: "Real Estate Assistant",
-                  description: "Automate property research and client communication",
-                  tag: "Real Estate",
-                  rating: 4.8
-                },
-                {
-                  name: "Fitness Coach",
-                  description: "Personalized workout plans and nutrition tracking",
-                  tag: "Gym",
-                  rating: 4.9
-                },
-                {
-                  name: "E-commerce Optimizer",
-                  description: "Product recommendations and inventory management",
-                  tag: "Ecommerce",
-                  rating: 4.7
-                }
-              ].map((agent, index) => (
-                <motion.div
-                  key={index}
-                  variants={fadeIn}
-                  className="p-6 rounded-xl bg-black/50 glow-border card-hover"
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="px-3 py-1 bg-blue-900/50 text-blue-400 rounded-full text-sm">
-                      {agent.tag}
-                    </span>
-                    <div className="flex items-center">
-                      <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                      <span className="ml-1 text-white/80">{agent.rating}</span>
-                    </div>
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2 glow-text">{agent.name}</h3>
-                  <p className="text-white/80 mb-4">{agent.description}</p>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300"
-                  >
-                    View Agent
-                  </motion.button>
-                </motion.div>
-              ))}
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-              className="text-center mt-12"
-            >
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="bg-transparent text-blue-400 border-2 border-blue-400 py-3 px-8 rounded-lg hover:bg-blue-400/10 transition-colors duration-300"
-              >
-                Explore All Agents
-              </motion.button>
             </motion.div>
           </div>
         </section>

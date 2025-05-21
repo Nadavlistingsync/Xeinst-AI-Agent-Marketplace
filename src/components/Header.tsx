@@ -3,6 +3,7 @@
 import { motion, useScroll } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,6 +18,7 @@ export default function Header() {
 
   const menuItems = [
     { label: 'Home', href: '/' },
+    { label: 'Marketplace', href: '/marketplace' },
     { label: 'How It Works', href: '#how-it-works' },
     { label: 'Benefits', href: '#benefits' },
     { label: 'Contact', href: '#contact' }
