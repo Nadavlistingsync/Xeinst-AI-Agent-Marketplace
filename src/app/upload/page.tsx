@@ -11,11 +11,31 @@ export default function UploadAgent() {
     price: '',
     documentation: '',
   });
+  const [status, setStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement form submission
-    console.log('Form submitted:', formData);
+    setLoading(true);
+    setStatus(null);
+    try {
+      const res = await fetch('/api/upload-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStatus('success');
+        setFormData({ name: '', description: '', tag: '', price: '', documentation: '' });
+      } else {
+        setStatus('error');
+      }
+    } catch (err) {
+      setStatus('error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -105,12 +125,19 @@ export default function UploadAgent() {
               </div>
 
               <div className="pt-4">
+                {status === 'success' && (
+                  <div className="mt-4 text-green-600 font-semibold">Agent uploaded successfully!</div>
+                )}
+                {status === 'error' && (
+                  <div className="mt-4 text-red-600 font-semibold">Failed to upload agent. Please try again.</div>
+                )}
                 <button
                   type="submit"
                   className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center"
+                  disabled={loading}
                 >
                   <Upload className="w-5 h-5 mr-2" />
-                  Upload Agent
+                  {loading ? 'Uploading...' : 'Upload Agent'}
                 </button>
               </div>
             </div>
