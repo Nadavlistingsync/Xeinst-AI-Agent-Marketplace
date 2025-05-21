@@ -31,7 +31,7 @@ export default function UploadAgent() {
       } else {
         setStatus('error');
       }
-    } catch (err) {
+    } catch {
       setStatus('error');
     } finally {
       setLoading(false);
