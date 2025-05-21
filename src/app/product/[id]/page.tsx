@@ -2,11 +2,20 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  price: number;
+  documentation: string;
+  file_url: string;
+}
+
 export default function ProductPage() {
   const { id } = useParams();
-  const [product, setProduct] = useState<any>(null);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState("");
 
@@ -14,7 +23,7 @@ export default function ProductPage() {
     fetch("/api/list-products")
       .then(res => res.json())
       .then(data => {
-        const found = (data.products || []).find((p: any) => p.id === id);
+        const found = (data.products || []).find((p: Product) => p.id === id);
         setProduct(found);
         setLoading(false);
       });

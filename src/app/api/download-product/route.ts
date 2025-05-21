@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
 export async function POST(req: NextRequest) {
-  const { productId, userId } = await req.json();
+  const { productId } = await req.json();
 
   // TODO: Check if user has purchased the product (implement purchase check logic)
 
