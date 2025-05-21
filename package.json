@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@supabase/supabase-js": "^2.39.7",
     "framer-motion": "^12.9.2",
     "lucide-react": "^0.503.0",
     "next": "15.3.1",
