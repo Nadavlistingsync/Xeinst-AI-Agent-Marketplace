@@ -1,6 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
+import { Star } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface Product {
   id: string;
@@ -10,43 +19,114 @@ interface Product {
   price: number;
   documentation: string;
   file_url: string;
+  average_rating: number;
+  total_ratings: number;
+  download_count: number;
 }
 
 export default function ProductPage() {
   const { id } = useParams();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState("");
+  const [hasPurchased, setHasPurchased] = useState(false);
 
   useEffect(() => {
-    fetch("/api/list-products")
-      .then(res => res.json())
-      .then(data => {
-        const found = (data.products || []).find((p: Product) => p.id === id);
-        setProduct(found);
-        setLoading(false);
-      });
+    fetchProduct();
+    checkPurchaseStatus();
   }, [id]);
+
+  const fetchProduct = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+      setProduct(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch product");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkPurchaseStatus = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("purchases")
+        .select("*")
+        .eq("product_id", id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (!error && data) {
+        setHasPurchased(true);
+      }
+    } catch (err) {
+      console.error("Error checking purchase status:", err);
+    }
+  };
+
+  const handlePurchase = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        // Redirect to login if not authenticated
+        window.location.href = "/login";
+        return;
+      }
+
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productId: id,
+          price: product?.price,
+          name: product?.name,
+        }),
+      });
+
+      const { sessionId } = await response.json();
+      const stripe = await stripePromise;
+      const { error } = await stripe!.redirectToCheckout({ sessionId });
+
+      if (error) {
+        throw error;
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to initiate purchase");
+    }
+  };
 
   const handleDownload = async () => {
     setDownloading(true);
     setDownloadError("");
     try {
-      // TODO: Add payment check here
-      const res = await fetch("/api/download-product", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: id, userId: "demo-user" }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.open(data.url, "_blank");
-      } else {
-        setDownloadError(data.error || "Download failed");
-      }
-    } catch {
-      setDownloadError("Download failed");
+      const { data, error } = await supabase.storage
+        .from("products")
+        .createSignedUrl(product!.file_url, 60 * 10); // 10 minutes
+
+      if (error) throw error;
+
+      // Increment download count
+      await supabase
+        .from("products")
+        .update({ download_count: product!.download_count + 1 })
+        .eq("id", product!.id);
+
+      window.open(data.signedUrl, "_blank");
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : "Download failed");
     } finally {
       setDownloading(false);
     }
@@ -56,20 +136,54 @@ export default function ProductPage() {
   if (!product) return <div className="text-center mt-20 text-red-600">Product not found.</div>;
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded shadow">
+    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded shadow">
       <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
       <div className="mb-2 text-gray-600">Category: {product.category}</div>
+      
+      <div className="flex items-center mb-4">
+        <Star className="w-5 h-5 text-yellow-400" />
+        <span className="ml-1 text-gray-600">
+          {product.average_rating?.toFixed(1) || "New"}
+        </span>
+        {product.total_ratings > 0 && (
+          <span className="ml-1 text-gray-500">
+            ({product.total_ratings} reviews)
+          </span>
+        )}
+      </div>
+
       <div className="mb-4">{product.description}</div>
-      <div className="mb-4 font-bold">${product.price}</div>
-      <div className="mb-4 text-gray-700 whitespace-pre-line">{product.documentation}</div>
-      <button
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-60"
-        onClick={handleDownload}
-        disabled={downloading}
-      >
-        {downloading ? "Processing..." : "Buy & Download"}
-      </button>
-      {downloadError && <div className="mt-4 text-red-600">{downloadError}</div>}
+      <div className="mb-4 font-bold text-2xl">${product.price.toFixed(2)}</div>
+      
+      <div className="mb-8 prose max-w-none">
+        <h2 className="text-xl font-semibold mb-4">Documentation</h2>
+        <div className="whitespace-pre-line">{product.documentation}</div>
+      </div>
+
+      {hasPurchased ? (
+        <button
+          className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 disabled:opacity-60"
+          onClick={handleDownload}
+          disabled={downloading}
+        >
+          {downloading ? "Processing..." : "Download"}
+        </button>
+      ) : (
+        <button
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+          onClick={handlePurchase}
+        >
+          Purchase
+        </button>
+      )}
+
+      {downloadError && (
+        <div className="mt-4 text-red-600">{downloadError}</div>
+      )}
+
+      <div className="mt-4 text-sm text-gray-500">
+        {product.download_count} downloads
+      </div>
     </div>
   );
 } 

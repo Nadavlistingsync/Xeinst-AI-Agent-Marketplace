@@ -1,123 +1,149 @@
-'use client';
+"use client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
+import { Star } from "lucide-react";
 
-import { useState, useEffect } from 'react';
-import { Search, Star } from 'lucide-react';
-import { motion } from 'framer-motion';
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface Product {
   id: string;
   name: string;
-  description: string;
   category: string;
+  description: string;
   price: number;
+  average_rating: number;
+  total_ratings: number;
+  download_count: number;
 }
 
-export default function Marketplace() {
+export default function MarketplacePage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch('/api/list-products')
-      .then(res => res.json())
-      .then(data => setProducts(data.products || []));
+    fetchProducts();
   }, []);
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === '' || product.category === selectedCategory;
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("products")
+        .select("*")
+        .eq("is_public", true)
+        .eq("status", "approved");
+
+      if (error) throw error;
+
+      setProducts(data || []);
+      
+      // Extract unique categories
+      const uniqueCategories = Array.from(
+        new Set(data?.map((p) => p.category) || [])
+      );
+      setCategories(uniqueCategories);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch products");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      !selectedCategory || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const categories = Array.from(new Set(products.map(product => product.category)));
+  if (loading) return <div className="text-center mt-20">Loading...</div>;
+  if (error) return <div className="text-center mt-20 text-red-600">{error}</div>;
 
   return (
-    <div className="min-h-screen bg-black">
-      <div className="container mx-auto px-4 py-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">AI Agents Marketplace</h1>
+        <Link
+          href="/upload"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-6 glow-text">
-            Software Marketplace
-          </h1>
-          <p className="text-xl text-white/80 max-w-2xl mx-auto">
-            Browse ready-made software uploaded by the community — automate your workflow in seconds.
-          </p>
-        </motion.div>
-        {/* Search and Filter Section */}
-        <div className="max-w-4xl mx-auto mb-12">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-grow">
-              <input
-                type="text"
-                placeholder="Search for software..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-3 pl-12 rounded-lg bg-black/50 border border-white/10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/50" />
-            </div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-3 rounded-lg bg-black/50 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Categories</option>
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredProducts.map((product, index) => (
-            <motion.div
-              key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="p-6 rounded-xl bg-black/50 glow-border card-hover"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <span className="px-3 py-1 bg-blue-900/50 text-blue-400 rounded-full text-sm">
-                  {product.category}
-                </span>
+          Upload Your Agent
+        </Link>
+      </div>
+
+      <div className="mb-8 flex flex-col sm:flex-row gap-4">
+        <input
+          type="text"
+          placeholder="Search agents..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        />
+        <select
+          value={selectedCategory}
+          onChange={(e) => setSelectedCategory(e.target.value)}
+          className="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        >
+          <option value="">All Categories</option>
+          {categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredProducts.map((product) => (
+          <Link
+            key={product.id}
+            href={`/product/${product.id}`}
+            className="block bg-white rounded-lg shadow hover:shadow-lg transition-shadow"
+          >
+            <div className="p-6">
+              <h2 className="text-xl font-semibold mb-2">{product.name}</h2>
+              <p className="text-gray-600 mb-4 line-clamp-2">
+                {product.description}
+              </p>
+              <div className="flex items-center justify-between">
                 <div className="flex items-center">
-                  <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                  <span className="ml-1 text-white/80">-</span>
+                  <Star className="w-5 h-5 text-yellow-400" />
+                  <span className="ml-1 text-gray-600">
+                    {product.average_rating?.toFixed(1) || "New"}
+                  </span>
+                  {product.total_ratings > 0 && (
+                    <span className="ml-1 text-gray-500">
+                      ({product.total_ratings})
+                    </span>
+                  )}
+                </div>
+                <div className="text-blue-600 font-semibold">
+                  ${product.price.toFixed(2)}
                 </div>
               </div>
-              <h3 className="text-xl font-semibold mb-2 glow-text">{product.name}</h3>
-              <p className="text-white/80 mb-4">{product.description}</p>
-              <div className="mb-2 font-bold text-white">${product.price}</div>
-              <motion.a
-                href={`/product/${product.id}`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full block bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300 text-center"
-              >
-                View Product
-              </motion.a>
-            </motion.div>
-          ))}
-        </div>
-        {/* Upload Product Button */}
-        <div className="text-center mt-12">
-          <motion.a
-            href="/upload"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-block bg-transparent text-blue-400 border-2 border-blue-400 py-3 px-8 rounded-lg hover:bg-blue-400/10 transition-colors duration-300"
-          >
-            Upload Your Software
-          </motion.a>
-        </div>
+              <div className="mt-2 text-sm text-gray-500">
+                {product.download_count} downloads
+              </div>
+            </div>
+          </Link>
+        ))}
       </div>
+
+      {filteredProducts.length === 0 && (
+        <div className="text-center mt-20 text-gray-500">
+          No products found matching your criteria.
+        </div>
+      )}
     </div>
   );
 } 
