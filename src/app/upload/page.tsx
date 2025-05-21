@@ -37,7 +37,7 @@ export default function UploadAgent() {
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   required
                 />
               </div>
@@ -51,7 +51,7 @@ export default function UploadAgent() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={4}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   required
                 />
               </div>
@@ -64,7 +64,7 @@ export default function UploadAgent() {
                   id="tag"
                   value={formData.tag}
                   onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   required
                 >
                   <option value="">Select a category</option>
@@ -84,7 +84,7 @@ export default function UploadAgent() {
                   id="price"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   required
                 />
               </div>
@@ -98,7 +98,7 @@ export default function UploadAgent() {
                   value={formData.documentation}
                   onChange={(e) => setFormData({ ...formData, documentation: e.target.value })}
                   rows={6}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                   placeholder="Provide detailed documentation about your agent..."
                   required
                 />
