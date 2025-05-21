@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { Star } from "lucide-react";
@@ -28,17 +28,11 @@ export default function ProductPage() {
   const { id } = useParams();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState("");
   const [hasPurchased, setHasPurchased] = useState(false);
 
-  useEffect(() => {
-    fetchProduct();
-    checkPurchaseStatus();
-  }, [id]);
-
-  const fetchProduct = async () => {
+  const fetchProduct = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("products")
@@ -49,13 +43,13 @@ export default function ProductPage() {
       if (error) throw error;
       setProduct(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch product");
+      console.error("Error fetching product:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const checkPurchaseStatus = async () => {
+  const checkPurchaseStatus = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -73,7 +67,15 @@ export default function ProductPage() {
     } catch (err) {
       console.error("Error checking purchase status:", err);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await fetchProduct();
+      await checkPurchaseStatus();
+    };
+    fetchData();
+  }, [fetchProduct, checkPurchaseStatus]);
 
   const handlePurchase = async () => {
     try {
@@ -104,7 +106,7 @@ export default function ProductPage() {
         throw error;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to initiate purchase");
+      console.error("Error initiating purchase:", err);
     }
   };
 
