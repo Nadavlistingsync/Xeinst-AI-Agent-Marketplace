@@ -123,6 +123,96 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Marketplace Section */}
+        <section className="section-padding bg-black/30">
+          <div className="container">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 glow-text">
+                AI Agents Marketplace
+              </h2>
+              <p className="text-xl text-white/80 max-w-2xl mx-auto">
+                Browse ready-made AI agents built from real client requests — automate your workflow in seconds.
+              </p>
+            </motion.div>
+
+            <motion.div
+              variants={staggerContainer}
+              initial="initial"
+              whileInView="whileInView"
+              viewport={{ once: true }}
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              {[
+                {
+                  name: "Real Estate Assistant",
+                  description: "Automate property research and client communication",
+                  tag: "Real Estate",
+                  rating: 4.8
+                },
+                {
+                  name: "Fitness Coach",
+                  description: "Personalized workout plans and nutrition tracking",
+                  tag: "Gym",
+                  rating: 4.9
+                },
+                {
+                  name: "E-commerce Optimizer",
+                  description: "Product recommendations and inventory management",
+                  tag: "Ecommerce",
+                  rating: 4.7
+                }
+              ].map((agent, index) => (
+                <motion.div
+                  key={index}
+                  variants={fadeIn}
+                  className="p-6 rounded-xl bg-black/50 glow-border card-hover"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="px-3 py-1 bg-blue-900/50 text-blue-400 rounded-full text-sm">
+                      {agent.tag}
+                    </span>
+                    <div className="flex items-center">
+                      <Star className="w-5 h-5 text-yellow-400 fill-current" />
+                      <span className="ml-1 text-white/80">{agent.rating}</span>
+                    </div>
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2 glow-text">{agent.name}</h3>
+                  <p className="text-white/80 mb-4">{agent.description}</p>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                  >
+                    View Agent
+                  </motion.button>
+                </motion.div>
+              ))}
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mt-12"
+            >
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="bg-transparent text-blue-400 border-2 border-blue-400 py-3 px-8 rounded-lg hover:bg-blue-400/10 transition-colors duration-300"
+              >
+                Explore All Agents
+              </motion.button>
+            </motion.div>
+          </div>
+        </section>
+
         {/* Benefits */}
         <section className="section-padding bg-black/30">
           <div className="container">
