@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import JSZip from "jszip";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,6 +21,8 @@ export default function UploadPage() {
     documentation: "",
   });
   const [file, setFile] = useState<File | null>(null);
+  const [uploadType, setUploadType] = useState<'file' | 'github'>("file");
+  const [githubUrl, setGithubUrl] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -32,28 +35,46 @@ export default function UploadPage() {
     }
   };
 
+  const handleGithubUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setGithubUrl(e.target.value);
+  };
+
+  const fetchGithubRepoAsZip = async (repoUrl: string): Promise<File> => {
+    // Parse the repo URL
+    const match = repoUrl.match(/github.com\/(.+?)\/(.+?)(?:\.git)?(?:\/|$)/);
+    if (!match) throw new Error("Invalid GitHub URL");
+    const owner = match[1];
+    const repo = match[2];
+    // Default branch is main
+    const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/main.zip`;
+    const response = await fetch(zipUrl);
+    if (!response.ok) throw new Error("Failed to fetch GitHub repo ZIP");
+    const blob = await response.blob();
+    return new File([blob], `${repo}-main.zip`, { type: "application/zip" });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+    let uploadFile: File | null = null;
+    let fileName = "";
     try {
-      // 1. Upload file to Supabase Storage
-      if (!file) {
-        throw new Error("Please select a file to upload");
+      if (uploadType === "file") {
+        if (!file) throw new Error("Please select a file to upload");
+        uploadFile = file;
+        const fileExt = file.name.split(".").pop();
+        fileName = `${Math.random()}.${fileExt}`;
+      } else {
+        if (!githubUrl) throw new Error("Please enter a GitHub repository URL");
+        uploadFile = await fetchGithubRepoAsZip(githubUrl);
+        fileName = `${Math.random()}.zip`;
       }
-
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Math.random()}.${fileExt}`;
       const filePath = `products/${fileName}`;
-
       const { error: uploadError } = await supabase.storage
         .from("products")
-        .upload(filePath, file);
-
+        .upload(filePath, uploadFile);
       if (uploadError) throw uploadError;
-
-      // 2. Create product in database
       const { data: product, error: dbError } = await supabase
         .from("products")
         .insert([
@@ -67,14 +88,12 @@ export default function UploadPage() {
             uploaded_by: (await supabase.auth.getUser()).data.user?.id,
             is_public: true,
             status: "pending",
+            source: uploadType === "github" ? githubUrl : "upload",
           },
         ])
         .select()
         .single();
-
       if (dbError) throw dbError;
-
-      // 3. Redirect to product page
       router.push(`/product/${product.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -92,6 +111,23 @@ export default function UploadPage() {
           {error}
         </div>
       )}
+
+      <div className="flex mb-4">
+        <button
+          type="button"
+          className={`mr-2 px-4 py-2 rounded ${uploadType === "file" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          onClick={() => setUploadType("file")}
+        >
+          Upload File
+        </button>
+        <button
+          type="button"
+          className={`px-4 py-2 rounded ${uploadType === "github" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
+          onClick={() => setUploadType("github")}
+        >
+          Import from GitHub
+        </button>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -156,22 +192,36 @@ export default function UploadPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700">File</label>
-          <input
-            type="file"
-            onChange={handleFileChange}
-            required
-            className="mt-1 block w-full"
-          />
-        </div>
+        {uploadType === "file" ? (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">File</label>
+            <input
+              type="file"
+              onChange={handleFileChange}
+              required={uploadType === "file"}
+              className="mt-1 block w-full"
+            />
+          </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">GitHub Repository URL</label>
+            <input
+              type="text"
+              value={githubUrl}
+              onChange={handleGithubUrlChange}
+              required={uploadType === "github"}
+              placeholder="https://github.com/owner/repo"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+        )}
 
         <button
           type="submit"
           disabled={loading}
           className="w-full bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-60"
         >
-          {loading ? "Uploading..." : "Upload Product"}
+          {loading ? (uploadType === "file" ? "Uploading..." : "Importing from GitHub...") : (uploadType === "file" ? "Upload Product" : "Import Product")}
         </button>
       </form>
     </div>
