@@ -4,7 +4,6 @@ import { createClient } from '@supabase/supabase-js';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,12 +27,15 @@ interface Product {
   usage_instructions: string;
 }
 
-export default function ProductPage(props) {
+interface ProductPageProps {
+  params: { slug: string };
+}
+
+export default function ProductPage(props: ProductPageProps) {
   const { params } = props;
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const { data: session } = useSession();
-  const router = useRouter();
 
   useEffect(() => {
     const fetchProduct = async () => {

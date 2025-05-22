@@ -1,14 +1,19 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Providers } from "./providers";
 import Navigation from "@/components/Navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Xeinst - AI Solutions for Your Business",
-  description: "We build custom AI tools for free. You only pay if you love the product.",
-  viewport: "width=device-width, initial-scale=1",
+  title: "AI Agency",
+  description: "Your AI Agency Platform",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: "#000000",
 };
 
@@ -37,10 +42,12 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <Navigation />
-        <main id="main-content" tabIndex={-1}>
-          {children}
-        </main>
+        <Providers>
+          <Navigation />
+          <main id="main-content" tabIndex={-1}>
+            {children}
+          </main>
+        </Providers>
       </body>
     </html>
   );

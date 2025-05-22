@@ -1,86 +1,50 @@
-import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request) {
+if (!process.env.SUPABASE_URL) {
+  throw new Error('SUPABASE_URL environment variable is not set');
+}
+
+if (!process.env.SUPABASE_ANON_KEY) {
+  throw new Error('SUPABASE_ANON_KEY environment variable is not set');
+}
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+
+export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Agent ID is required' }, { status: 400 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const productId = searchParams.get('productId');
-
-    if (!productId) {
-      return NextResponse.json(
-        { error: 'Product ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Verify purchase
-    const { data: purchase, error: purchaseError } = await supabase
-      .from('purchases')
-      .select('id, status')
-      .eq('product_id', productId)
-      .eq('user_id', session.user.email)
-      .single();
-
-    if (purchaseError || !purchase || purchase.status !== 'completed') {
-      return NextResponse.json(
-        { error: 'Purchase not found or incomplete' },
-        { status: 403 }
-      );
-    }
-
-    // Get product details
-    const { data: product, error: productError } = await supabase
+    const { data, error } = await supabase
       .from('products')
-      .select('file_url, name')
-      .eq('id', productId)
+      .select('*')
+      .eq('id', id)
       .single();
 
-    if (productError || !product) {
-      return NextResponse.json(
-        { error: 'Product not found' },
-        { status: 404 }
-      );
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Generate signed URL
-    const { data: signedUrl, error: signedUrlError } = await supabase.storage
-      .from('deployments')
-      .createSignedUrl(product.file_url, 60); // URL expires in 60 seconds
-
-    if (signedUrlError || !signedUrl) {
-      return NextResponse.json(
-        { error: 'Failed to generate download URL' },
-        { status: 500 }
-      );
+    if (!data) {
+      return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
     }
 
-    // Increment download counter
-    const { error: counterError } = await supabase.rpc('increment_download_count', {
-      product_id: productId,
-    });
+    // Add your download logic here
+    // For example, you might want to:
+    // 1. Generate a signed URL for the file
+    // 2. Stream the file directly
+    // 3. Create a zip file with multiple files
 
-    if (counterError) {
-      console.error('Failed to increment download counter:', counterError);
-    }
-
-    return NextResponse.json({
-      downloadUrl: signedUrl.signedUrl,
-      fileName: product.name,
-    });
+    return NextResponse.json({ downloadUrl: data.download_url });
   } catch (error) {
-    console.error('Server error:', error);
+    console.error('Error downloading agent:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

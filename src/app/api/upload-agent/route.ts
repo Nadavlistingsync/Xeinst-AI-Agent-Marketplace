@@ -87,7 +87,7 @@ export async function POST(req: Request) {
           price: parseFloat(price),
           file_url: filePath,
           status: 'active',
-          created_by: session.user.id,
+          created_by: session.user.email,
           source,
         },
       ])

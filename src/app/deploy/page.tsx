@@ -138,12 +138,7 @@ export default function DeployPage() {
       
       const { error: uploadError } = await supabase.storage
         .from("deployments")
-        .upload(filePath, fileToUpload, {
-          onUploadProgress: (progress) => {
-            const percent = (progress.loaded / progress.total) * 100;
-            setUploadProgress(percent);
-          },
-        });
+        .upload(filePath, fileToUpload);
       
       if (uploadError) throw uploadError;
 
