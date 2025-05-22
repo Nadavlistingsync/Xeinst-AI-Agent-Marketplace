@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
+import JSZip from "jszip";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,6 +25,7 @@ export default function DeployPage() {
     version: "1.0.0",
   });
   const [file, setFile] = useState<File | null>(null);
+  const [folderFiles, setFolderFiles] = useState<FileList | null>(null);
   const [uploadType, setUploadType] = useState<'file' | 'github'>("file");
   const [githubUrl, setGithubUrl] = useState("");
 
@@ -35,8 +37,14 @@ export default function DeployPage() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      if (e.target.webkitdirectory) {
+        setFolderFiles(e.target.files);
+        setFile(null);
+      } else {
+        setFile(e.target.files[0]);
+        setFolderFiles(null);
+      }
     }
   };
 
@@ -54,6 +62,16 @@ export default function DeployPage() {
     if (!response.ok) throw new Error("Failed to fetch GitHub repo ZIP");
     const blob = await response.blob();
     return new File([blob], `${repo}-main.zip`, { type: "application/zip" });
+  };
+
+  const zipFolderFiles = async (files: FileList): Promise<File> => {
+    const zip = new JSZip();
+    Array.from(files).forEach((file) => {
+      // file.webkitRelativePath preserves folder structure
+      zip.file(file.webkitRelativePath, file);
+    });
+    const blob = await zip.generateAsync({ type: "blob" });
+    return new File([blob], `folder-upload-${Date.now()}.zip`, { type: "application/zip" });
   };
 
   const validateDeployment = async () => {
@@ -74,9 +92,15 @@ export default function DeployPage() {
       let fileToUpload: File;
 
       if (uploadType === "file") {
-        if (!file) throw new Error("Please select a file to upload");
-        fileToUpload = file;
-        fileName = `${Math.random()}-${file.name}`;
+        if (folderFiles) {
+          fileToUpload = await zipFolderFiles(folderFiles);
+          fileName = `${Math.random()}-${fileToUpload.name}`;
+        } else if (file) {
+          fileToUpload = file;
+          fileName = `${Math.random()}-${file.name}`;
+        } else {
+          throw new Error("Please select a file or folder to upload");
+        }
       } else {
         if (!githubUrl) throw new Error("Please enter a GitHub repository URL");
         fileToUpload = await fetchGithubRepoAsZip(githubUrl);
@@ -268,14 +292,18 @@ export default function DeployPage() {
           </div>
           {uploadType === "file" ? (
             <div>
-              <label htmlFor="file" className="block text-base font-semibold text-white mb-2">Deployment Package</label>
+              <label htmlFor="file" className="block text-base font-semibold text-white mb-2">Deployment Package (File or Folder)</label>
               <input
                 type="file"
                 id="file"
                 onChange={handleFileChange}
-                required
+                required={!folderFiles && !file}
                 className="mt-1 block w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+                webkitdirectory="true"
+                directory="true"
+                multiple
               />
+              <p className="text-xs text-gray-300 mt-2">You can select a single file or an entire folder for upload.</p>
             </div>
           ) : (
             <div>
