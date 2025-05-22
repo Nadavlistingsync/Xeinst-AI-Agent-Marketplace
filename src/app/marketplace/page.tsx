@@ -5,7 +5,8 @@ import Marketplace from '@/components/Marketplace';
 import MarketplaceNav from '@/components/MarketplaceNav';
 
 export default function MarketplacePage() {
-  const { data: session, status } = useSession();
+  // Remove destructuring if session and status are not used
+  // const { data: session, status } = useSession();
 
   return (
     <div>
