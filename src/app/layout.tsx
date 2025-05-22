@@ -25,6 +25,10 @@ export default function RootLayout({
         <meta name="author" content="Xeinst" />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://xeinst.com" />
+        <meta property="og:url" content="https://xeinst.com" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content="Xeinst - AI Solutions for Your Business" />
+        <meta property="og:description" content="We build custom AI tools for free. You only pay if you love the product." />
       </head>
       <body className="min-h-screen bg-black text-white antialiased">
         <a
