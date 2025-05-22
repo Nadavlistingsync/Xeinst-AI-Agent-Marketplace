@@ -28,7 +28,7 @@ interface Product {
   usage_instructions: string;
 }
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
+export default function ProductPage({ params }: any) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const { data: session } = useSession();
