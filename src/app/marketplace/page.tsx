@@ -5,7 +5,7 @@ import Marketplace from '@/components/Marketplace';
 import MarketplaceNav from '@/components/MarketplaceNav';
 
 export default function MarketplacePage() {
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
 
   return (
     <div>

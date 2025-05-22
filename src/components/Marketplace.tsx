@@ -27,8 +27,12 @@ export default function Marketplace({ session }: MarketplaceProps) {
   const router = useRouter();
 
   useEffect(() => {
-    fetchAgents();
-  }, []);
+    if (session) {
+      fetchAgents();
+    } else {
+      setLoading(false);
+    }
+  }, [session]);
 
   const fetchAgents = async () => {
     try {
