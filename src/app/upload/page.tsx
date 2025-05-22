@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
-import JSZip from "jszip";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
