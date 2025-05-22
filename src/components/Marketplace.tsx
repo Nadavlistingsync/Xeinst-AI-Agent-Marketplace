@@ -3,6 +3,7 @@ import { Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { Session } from 'next-auth';
 
 interface Agent {
   id: number;
@@ -14,7 +15,11 @@ interface Agent {
   image_url?: string;
 }
 
-export default function Marketplace() {
+interface MarketplaceProps {
+  session: Session | null;
+}
+
+export default function Marketplace({ session }: MarketplaceProps) {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
