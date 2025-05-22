@@ -28,13 +28,7 @@ interface Product {
   usage_instructions: string;
 }
 
-interface PageProps {
-  params: {
-    slug: string;
-  };
-}
-
-export default function ProductPage({ params }: PageProps) {
+export default function ProductPage({ params }: { params: { slug: string } }) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const { data: session } = useSession();
