@@ -28,7 +28,8 @@ interface Product {
   usage_instructions: string;
 }
 
-export default function ProductPage({ params }: any) {
+export default function ProductPage(props) {
+  const { params } = props;
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const { data: session } = useSession();
