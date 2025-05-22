@@ -31,13 +31,12 @@ interface Product {
 export default function ProductPage({ params }: { params: { slug: string } }) {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [purchased, setPurchased] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
 
   useEffect(() => {
     fetchProduct();
-  }, [params.slug]);
+  }, [fetchProduct]);
 
   const fetchProduct = async () => {
     try {
@@ -60,7 +59,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           .single();
 
         if (!purchaseError) {
-          setPurchased(true);
+          // setPurchased(true);
         }
       }
     } catch (error) {
@@ -202,7 +201,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               </span>
             </div>
 
-            {purchased ? (
+            {/* {purchased ? (
               <button
                 onClick={handleDownload}
                 className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
@@ -216,7 +215,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               >
                 Purchase
               </button>
-            )}
+            )} */}
           </div>
         </motion.div>
       </div>

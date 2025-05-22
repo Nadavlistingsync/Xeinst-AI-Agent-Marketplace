@@ -33,7 +33,7 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     fetchProducts();
-  }, [filters]);
+  }, [fetchProducts]);
 
   const fetchProducts = async () => {
     try {

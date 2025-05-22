@@ -1,11 +1,5 @@
 import { NextAuthOptions } from "next-auth";
 import { SupabaseAdapter } from "@auth/supabase-adapter";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export const authOptions: NextAuthOptions = {
   adapter: SupabaseAdapter({

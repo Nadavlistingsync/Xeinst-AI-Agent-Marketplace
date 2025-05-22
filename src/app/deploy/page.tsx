@@ -12,6 +12,16 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+type FileWithPreview = {
+  file: File;
+  preview: string;
+};
+
+type UploadError = {
+  message: string;
+  code?: string;
+};
+
 export default function DeployPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
