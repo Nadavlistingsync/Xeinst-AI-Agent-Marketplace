@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import Header from '@/components/Header';
 
-const inter = Inter({ subsets: ["latin"] });
+const montserrat = Montserrat({ 
+  subsets: ["latin"],
+  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+  variable: '--font-montserrat',
+});
 
 export const metadata: Metadata = {
   title: "AI Agency",
@@ -12,9 +16,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  width: "device-width",
+  width: 'device-width',
   initialScale: 1,
-  themeColor: "#000000",
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -23,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={`${montserrat.variable}`}>
       <head>
         <meta name="description" content="We build custom AI tools for free. You only pay if you love the product." />
         <meta name="keywords" content="AI, artificial intelligence, machine learning, custom AI solutions" />
@@ -45,7 +50,7 @@ export default function RootLayout({
             Skip to main content
           </a>
           <Header />
-          <main id="main-content" className="pt-20" role="main">
+          <main id="main-content" className="pt-24" role="main">
             {children}
           </main>
           <footer className="bg-black/80 border-t border-white/10 mt-12">

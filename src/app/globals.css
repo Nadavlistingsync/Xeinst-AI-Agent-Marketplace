@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -24,6 +24,7 @@
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-start-rgb));
+  font-family: 'Montserrat', sans-serif;
 }
 
 html {
@@ -32,11 +33,15 @@ html {
 
 @layer base {
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Montserrat', system-ui, sans-serif;
   }
   
   body {
     @apply bg-black text-white antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-light tracking-wider;
   }
 }
 
@@ -105,22 +110,21 @@ html {
     @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(0,100,255,0.2)] hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700 hover:shadow-[0_0_40px_rgba(0,100,255,0.4)] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-300 scale-100 hover:scale-105;
   }
 
-  .btn-secondary {
-    @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white/80 bg-black/50 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:text-white hover:bg-black/70 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition-all duration-300 scale-100 hover:scale-105;
+  /* Remove default focus styles and add custom ones */
+  *:focus {
+    @apply outline-none ring-2 ring-blue-400 ring-offset-2 ring-offset-black;
   }
 
-  .glass-card {
-    @apply bg-white/10 backdrop-blur-lg border border-white/10 shadow-xl rounded-2xl;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-    border: 1px solid var(--glass-border);
+  /* Add spacing between sections */
+  section + section {
+    @apply mt-12;
   }
 
-  .glass-section {
-    @apply bg-gradient-to-br from-blue-900/60 via-black/80 to-purple-900/60 backdrop-blur-lg;
-  }
-
-  .section-divider {
-    @apply border-t border-white/10 my-16;
+  /* Ensure proper spacing for mobile */
+  @media (max-width: 768px) {
+    .section-padding {
+      @apply py-16;
+    }
   }
 }
 
