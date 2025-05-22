@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       .from('purchases')
       .select('id')
       .eq('product_id', productId)
-      .eq('user_id', session.user.id)
+      .eq('user_id', session.user.email)
       .single();
 
     if (existingPurchase) {
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
       cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/marketplace/${product.slug}`,
       metadata: {
         productId: product.id,
-        userId: session.user.id,
+        userEmail: session.user.email,
       },
     });
 
