@@ -67,38 +67,6 @@ export default function ProductPage(props) {
     fetchProduct();
   }, [params.slug, session?.user?.email]);
 
-  const handlePurchase = async () => {
-    if (!session) {
-      toast.error('Please sign in to purchase');
-      router.push('/auth/signin');
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/purchase-product', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          productId: product?.id,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to initiate purchase');
-      }
-
-      // Redirect to Stripe Checkout
-      window.location.href = data.url;
-    } catch (error) {
-      console.error('Error initiating purchase:', error);
-      toast.error('Failed to initiate purchase');
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800 flex items-center justify-center">
@@ -180,12 +148,11 @@ export default function ProductPage(props) {
                 {product.download_count} downloads
               </span>
             </div>
-
             <button
-              onClick={handlePurchase}
-              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-6 py-3 bg-gray-600 text-white rounded-lg cursor-not-allowed"
+              disabled
             >
-              Purchase
+              Payment System Coming Soon
             </button>
           </div>
         </motion.div>
