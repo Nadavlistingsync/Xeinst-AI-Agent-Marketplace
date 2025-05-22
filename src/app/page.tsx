@@ -34,8 +34,9 @@ export default function Home() {
     <>
       <main className="min-h-screen bg-black">
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16 glass-section">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 via-black/80 to-purple-900/60 animate-gradient-move" />
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-black to-purple-900/20 animate-gradient-move" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,100,255,0.1)_0%,transparent_100%)]" />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -50,7 +51,7 @@ export default function Home() {
             >
               Xeinst
             </motion.h1>
-            <p className="text-2xl md:text-3xl text-white/90 mb-10 max-w-2xl mx-auto font-light">
+            <p className="text-2xl md:text-3xl text-white/90 mb-10 max-w-2xl mx-auto font-light leading-relaxed">
               Building the future of AI, one innovation at a time
             </p>
             <motion.div
@@ -58,17 +59,18 @@ export default function Home() {
               whileTap={{ scale: 0.95 }}
               className="inline-block"
             >
-              <a href="#contact" className="btn-primary text-lg px-10 py-5">
+              <a href="#contact" className="btn-primary text-lg px-10 py-5 rounded-xl hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300">
                 Start Your Project
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-5 w-5 inline-block" />
               </a>
             </motion.div>
           </motion.div>
         </section>
 
         {/* Products Section */}
-        <section id="products" className="section-padding glass-section mt-12 mb-12">
-          <div className="container">
+        <section id="products" className="py-24 relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-black via-blue-900/5 to-black" />
+          <div className="container relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -79,7 +81,7 @@ export default function Home() {
               <h2 className="text-5xl md:text-6xl font-bold mb-6 glow-text gradient-text-accent drop-shadow">
                 Our Products
               </h2>
-              <p className="text-2xl text-white/80 max-w-2xl mx-auto">
+              <p className="text-2xl text-white/80 max-w-2xl mx-auto leading-relaxed">
                 Choose the perfect AI solution for your needs
               </p>
             </motion.div>
@@ -110,16 +112,16 @@ export default function Home() {
                 <motion.div
                   key={index}
                   variants={fadeIn}
-                  className="p-8 rounded-xl glass-card glow-border card-hover"
+                  className="p-8 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:border-blue-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1"
                 >
-                  <div className="mb-6">{product.icon}</div>
+                  <div className="mb-6 p-4 rounded-xl bg-blue-500/10 w-fit">{product.icon}</div>
                   <h3 className="text-2xl font-semibold mb-4 glow-text">{product.title}</h3>
-                  <p className="text-white/80 mb-6">{product.description}</p>
+                  <p className="text-white/80 mb-6 leading-relaxed">{product.description}</p>
                   <motion.a
                     href={product.link}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="inline-block bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                    className="inline-block bg-blue-600 text-white py-2.5 px-6 rounded-lg hover:bg-blue-700 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20"
                   >
                     {product.cta}
                   </motion.a>
@@ -132,8 +134,9 @@ export default function Home() {
         <div className="section-divider" />
 
         {/* How It Works */}
-        <section id="how-it-works" className="section-padding glass-section mt-12 mb-12">
-          <div className="container">
+        <section id="how-it-works" className="py-24 relative">
+          <div className="absolute inset-0 bg-gradient-to-b from-black via-purple-900/5 to-black" />
+          <div className="container relative z-10">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -144,7 +147,7 @@ export default function Home() {
               <h2 className="text-4xl md:text-5xl font-bold mb-6 glow-text">
                 How It Works
               </h2>
-              <p className="text-xl text-white/80 max-w-2xl mx-auto">
+              <p className="text-xl text-white/80 max-w-2xl mx-auto leading-relaxed">
                 Our process is designed to deliver exceptional results with minimal friction
               </p>
             </motion.div>
@@ -176,11 +179,11 @@ export default function Home() {
                 <motion.div
                   key={index}
                   variants={fadeIn}
-                  className="p-8 rounded-xl glass-card glow-border card-hover"
+                  className="p-8 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:border-blue-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1"
                 >
-                  <div className="mb-6">{step.icon}</div>
+                  <div className="mb-6 p-4 rounded-xl bg-blue-500/10 w-fit">{step.icon}</div>
                   <h3 className="text-2xl font-semibold mb-4 glow-text">{step.title}</h3>
-                  <p className="text-white/80">{step.description}</p>
+                  <p className="text-white/80 leading-relaxed">{step.description}</p>
                 </motion.div>
               ))}
             </motion.div>
