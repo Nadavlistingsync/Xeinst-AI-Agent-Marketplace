@@ -30,7 +30,7 @@ export async function GET(req: Request) {
       .from('purchases')
       .select('id, status')
       .eq('product_id', productId)
-      .eq('user_id', session.user.id)
+      .eq('user_id', session.user.email)
       .single();
 
     if (purchaseError || !purchase || purchase.status !== 'completed') {
