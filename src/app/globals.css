@@ -67,9 +67,7 @@ html {
   }
   
   .glow-border {
-    box-shadow: 
-      0 0 15px rgba(255,255,255,0.1),
-      inset 0 0 15px rgba(255,255,255,0.1);
+    box-shadow: 0 0 15px rgba(0,100,255,0.08), inset 0 0 15px rgba(0,100,255,0.08);
     @apply border border-white/10;
   }
   
@@ -90,11 +88,11 @@ html {
   }
   
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,100,255,0.2)] hover:-translate-y-1;
+    @apply transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,100,255,0.3)] hover:-translate-y-2 hover:border-blue-500/30;
   }
 
   .section-padding {
-    @apply py-24;
+    @apply py-24 border-b border-white/10;
   }
 
   .container-padding {
@@ -102,10 +100,23 @@ html {
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white bg-black/30 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:bg-black/50 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] focus:outline-none focus:ring-2 focus:ring-white/20 transition-all duration-300;
+    @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(0,100,255,0.2)] hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700 hover:shadow-[0_0_25px_rgba(0,100,255,0.3)] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-300;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white/80 bg-black/50 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:text-white hover:bg-black/70 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/20 transition-all duration-300;
+    @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white/80 bg-black/50 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:text-white hover:bg-black/70 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition-all duration-300;
   }
+}
+
+@keyframes gradient-move {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+.animate-gradient-move {
+  background-size: 200% 200%;
+  animation: gradient-move 12s ease-in-out infinite;
 }

@@ -37,8 +37,7 @@ export default function Home() {
       <main className="min-h-screen bg-black">
         {/* Hero Section */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-          <div className="absolute inset-0 bg-black" />
-          
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 via-black/80 to-purple-900/60 animate-gradient-move" />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -48,12 +47,12 @@ export default function Home() {
             <motion.h1 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 1.5, ease: "easeOut" }}
-              className="text-7xl md:text-9xl font-light mb-6 logo-glow tracking-widest"
+              transition={{ duration: 1.5, ease: 'easeOut' }}
+              className="text-7xl md:text-9xl font-extrabold mb-6 logo-glow tracking-widest gradient-text-accent drop-shadow-lg"
             >
               Xeinst
             </motion.h1>
-            <p className="text-xl md:text-2xl text-white/80 mb-8 max-w-2xl mx-auto">
+            <p className="text-2xl md:text-3xl text-white/90 mb-10 max-w-2xl mx-auto font-light">
               Building the future of AI, one innovation at a time
             </p>
             <motion.div
@@ -61,7 +60,7 @@ export default function Home() {
               whileTap={{ scale: 0.95 }}
               className="inline-block"
             >
-              <a href="#contact" className="btn-primary">
+              <a href="#contact" className="btn-primary text-lg px-10 py-5">
                 Start Your Project
                 <ArrowRight className="ml-2 h-5 w-5" />
               </a>
@@ -70,7 +69,7 @@ export default function Home() {
         </section>
 
         {/* Products Section */}
-        <section className="section-padding bg-black/50">
+        <section id="products" className="section-padding bg-black/50">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -79,10 +78,10 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="text-center mb-16"
             >
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 glow-text">
+              <h2 className="text-5xl md:text-6xl font-bold mb-6 glow-text gradient-text-accent drop-shadow">
                 Our Products
               </h2>
-              <p className="text-xl text-white/80 max-w-2xl mx-auto">
+              <p className="text-2xl text-white/80 max-w-2xl mx-auto">
                 Choose the perfect AI solution for your needs
               </p>
             </motion.div>
@@ -133,7 +132,7 @@ export default function Home() {
         </section>
 
         {/* How It Works */}
-        <section className="section-padding bg-black/50">
+        <section id="how-it-works" className="section-padding bg-black/50">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -189,7 +188,7 @@ export default function Home() {
         </section>
 
         {/* Benefits */}
-        <section className="section-padding bg-black/30">
+        <section id="benefits" className="section-padding bg-black/30">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -247,7 +246,7 @@ export default function Home() {
         </section>
 
         {/* Contact Form */}
-        <section id="contact" className="section-padding bg-black/50">
+        <section id="contact" className="section-padding bg-black/60">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
