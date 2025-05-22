@@ -13,7 +13,6 @@ import {
   Bot,
   Store
 } from 'lucide-react';
-import Header from '@/components/Header';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -33,7 +32,6 @@ const staggerContainer = {
 export default function Home() {
   return (
     <>
-      <Header />
       <main className="min-h-screen bg-black">
         {/* Hero Section */}
         <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 glass-section">
