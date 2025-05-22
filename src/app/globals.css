@@ -34,10 +34,11 @@ html {
 @layer base {
   html {
     font-family: 'Montserrat', system-ui, sans-serif;
+    scroll-behavior: smooth;
   }
   
   body {
-    @apply bg-black text-white antialiased;
+    @apply bg-black text-white antialiased min-h-screen;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -78,7 +79,7 @@ html {
   }
   
   .glass-card {
-    @apply bg-white/5 backdrop-blur-sm border border-white/10;
+    @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl;
   }
   
   .btn-primary {

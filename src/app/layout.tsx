@@ -12,15 +12,15 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "AI Agency",
-  description: "Your AI Agency Platform",
+  title: "Xeinst - AI Solutions for Your Business",
+  description: "We build custom AI tools for free. You only pay if you love the product.",
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 export default function RootLayout({
@@ -44,16 +44,18 @@ export default function RootLayout({
       <body className="min-h-screen bg-black text-white antialiased">
         <Providers>
           <Header />
-          <div className="pt-20">
+          <main className="flex-grow">
             {children}
-          </div>
+          </main>
           <footer className="bg-black border-t border-white/10 mt-16">
-            <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
-              <div>© 2024 Xeinst. All rights reserved.</div>
-              <div className="flex space-x-6 mt-4 md:mt-0">
-                <a href="/terms" className="text-white hover:text-blue-400 transition">Terms</a>
-                <a href="/privacy" className="text-white hover:text-blue-400 transition">Privacy</a>
-                <a href="#contact" className="text-white hover:text-blue-400 transition">Contact</a>
+            <div className="container mx-auto px-4 py-8">
+              <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                <div className="text-gray-400 text-sm">© 2024 Xeinst. All rights reserved.</div>
+                <div className="flex space-x-6">
+                  <a href="/terms" className="text-white/80 hover:text-blue-400 transition-all duration-300">Terms</a>
+                  <a href="/privacy" className="text-white/80 hover:text-blue-400 transition-all duration-300">Privacy</a>
+                  <a href="#contact" className="text-white/80 hover:text-blue-400 transition-all duration-300">Contact</a>
+                </div>
               </div>
             </div>
           </footer>
