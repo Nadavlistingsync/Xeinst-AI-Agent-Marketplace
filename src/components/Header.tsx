@@ -67,7 +67,7 @@ export default function Header() {
               <motion.a
                 key={item.label}
                 href={item.href}
-                className="text-white/90 hover:text-white transition-colors duration-200 text-sm tracking-wider font-light"
+                className="text-white/90 hover:text-white transition-colors duration-200 text-sm tracking-wider font-light px-2 py-1"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 aria-label={`Navigate to ${item.label}`}
@@ -77,7 +77,7 @@ export default function Header() {
             ))}
             <motion.a
               href="#contact"
-              className="btn-primary text-sm px-6 py-2 tracking-wider"
+              className="btn-primary text-sm px-6 py-2 tracking-wider ml-2"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Start a new project"
@@ -88,7 +88,7 @@ export default function Header() {
 
           {/* Mobile Menu Button */}
           <motion.button
-            className="md:hidden text-white hover:text-white/90"
+            className="md:hidden text-white hover:text-white/90 p-2"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -102,37 +102,37 @@ export default function Header() {
       </div>
 
       {/* Mobile Navigation */}
-      <motion.nav
+      <nav
         id="mobile-menu"
-        className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'}`}
-        initial={false}
-        animate={{ height: isMenuOpen ? 'auto' : 0 }}
-        transition={{ duration: 0.3 }}
-        role="navigation"
+        className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'} bg-black/95 backdrop-blur-lg border-b border-white/10`}
         aria-label="Mobile navigation"
+        role="navigation"
       >
-        <div className="px-2 pt-2 pb-3 space-y-1">
+        <ul className="px-4 pt-4 pb-6 space-y-2">
           {menuItems.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className="block px-3 py-2 text-white/90 hover:text-white transition-colors duration-200"
-              onClick={() => setIsMenuOpen(false)}
-              aria-label={`Navigate to ${item.label}`}
-            >
-              {item.label}
-            </a>
+            <li key={item.label}>
+              <a
+                href={item.href}
+                className="block text-white/90 hover:text-white transition-colors duration-200 text-base font-light py-3 px-2 rounded"
+                onClick={() => setIsMenuOpen(false)}
+                aria-label={`Navigate to ${item.label}`}
+              >
+                {item.label}
+              </a>
+            </li>
           ))}
-          <a
-            href="#contact"
-            className="block px-3 py-2 text-white/90 hover:text-white transition-colors duration-200"
-            onClick={() => setIsMenuOpen(false)}
-            aria-label="Start a new project"
-          >
-            Start Project
-          </a>
-        </div>
-      </motion.nav>
+          <li>
+            <a
+              href="#contact"
+              className="btn-primary w-full block text-center mt-2"
+              onClick={() => setIsMenuOpen(false)}
+              aria-label="Start a new project"
+            >
+              Start Project
+            </a>
+          </li>
+        </ul>
+      </nav>
     </motion.header>
   );
 } 

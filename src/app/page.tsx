@@ -34,7 +34,7 @@ export default function Home() {
     <>
       <main className="min-h-screen bg-black">
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 glass-section">
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16 glass-section">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 via-black/80 to-purple-900/60 animate-gradient-move" />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -67,7 +67,7 @@ export default function Home() {
         </section>
 
         {/* Products Section */}
-        <section id="products" className="section-padding glass-section">
+        <section id="products" className="section-padding glass-section mt-12 mb-12">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -132,7 +132,7 @@ export default function Home() {
         <div className="section-divider" />
 
         {/* How It Works */}
-        <section id="how-it-works" className="section-padding glass-section">
+        <section id="how-it-works" className="section-padding glass-section mt-12 mb-12">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -190,7 +190,7 @@ export default function Home() {
         <div className="section-divider" />
 
         {/* Benefits */}
-        <section id="benefits" className="section-padding glass-section">
+        <section id="benefits" className="section-padding glass-section mt-12 mb-12">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -248,7 +248,7 @@ export default function Home() {
         </section>
 
         {/* Contact Form */}
-        <section id="contact" className="section-padding glass-section">
+        <section id="contact" className="section-padding glass-section mt-12 mb-12">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}

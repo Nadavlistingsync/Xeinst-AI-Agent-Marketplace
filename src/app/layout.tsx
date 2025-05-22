@@ -40,11 +40,12 @@ export default function RootLayout({
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-50 focus:p-4 focus:bg-white focus:text-black rounded shadow-lg transition-all duration-300"
+            tabIndex={0}
           >
             Skip to main content
           </a>
           <Header />
-          <main id="main-content" className="pt-20">
+          <main id="main-content" className="pt-20" role="main">
             {children}
           </main>
           <footer className="bg-black/80 border-t border-white/10 mt-12">
