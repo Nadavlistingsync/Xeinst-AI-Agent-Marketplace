@@ -54,7 +54,7 @@ export default function DeployPage() {
     return new File([blob], `${repo}-main.zip`, { type: "application/zip" });
   };
 
-  const validateDeployment = async (file: File) => {
+  const validateDeployment = async (uploadFile: File) => {
     // Add validation logic here
     // For example, check if the file contains necessary configuration files
     // or if the model meets certain requirements
@@ -68,28 +68,28 @@ export default function DeployPage() {
     setDeploymentStatus("Starting deployment...");
     
     try {
-      let uploadFile: File | null = null;
       let fileName = "";
+      let fileToUpload: File;
 
       if (uploadType === "file") {
         if (!file) throw new Error("Please select a file to upload");
-        uploadFile = file;
+        fileToUpload = file;
         fileName = `${Math.random()}-${file.name}`;
       } else {
         if (!githubUrl) throw new Error("Please enter a GitHub repository URL");
-        uploadFile = await fetchGithubRepoAsZip(githubUrl);
+        fileToUpload = await fetchGithubRepoAsZip(githubUrl);
         fileName = `${Math.random()}.zip`;
       }
 
       setDeploymentStatus("Validating deployment package...");
-      const isValid = await validateDeployment(uploadFile);
+      const isValid = await validateDeployment(fileToUpload);
       if (!isValid) throw new Error("Invalid deployment package");
 
       setDeploymentStatus("Uploading files...");
       const filePath = `deployments/${fileName}`;
       const { error: uploadError } = await supabase.storage
         .from("deployments")
-        .upload(filePath, uploadFile);
+        .upload(filePath, fileToUpload);
       
       if (uploadError) throw uploadError;
 
