@@ -43,6 +43,7 @@ export default function Header() {
       animate={scrolled ? "scrolled" : "top"}
       variants={headerVariants}
       transition={{ duration: 0.4 }}
+      role="banner"
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -53,12 +54,13 @@ export default function Header() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
             className="text-2xl font-light tracking-[0.2em] logo-glow"
+            aria-label="Xeinst Home"
           >
             Xeinst
           </motion.a>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center space-x-8" role="navigation" aria-label="Main navigation">
             {menuItems.map((item) => (
               <motion.a
                 key={item.label}
@@ -66,6 +68,7 @@ export default function Header() {
                 className="text-white/90 hover:text-white transition-colors duration-200 text-sm tracking-wider font-light"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                aria-label={`Navigate to ${item.label}`}
               >
                 {item.label}
               </motion.a>
@@ -75,6 +78,7 @@ export default function Header() {
               className="btn-primary text-sm px-6 py-2 tracking-wider"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              aria-label="Start a new project"
             >
               Start Project
             </motion.a>
@@ -86,50 +90,46 @@ export default function Header() {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-menu"
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
           >
-            {isMenuOpen ? <X /> : <Menu />}
+            {isMenuOpen ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
           </motion.button>
         </div>
       </div>
 
       {/* Mobile Navigation */}
       <motion.nav
+        id="mobile-menu"
         className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'}`}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: isMenuOpen ? 1 : 0, y: isMenuOpen ? 0 : -20 }}
-        transition={{ duration: 0.2 }}
+        initial={false}
+        animate={{ height: isMenuOpen ? 'auto' : 0 }}
+        transition={{ duration: 0.3 }}
+        role="navigation"
+        aria-label="Mobile navigation"
       >
-        <motion.div
-          className="px-4 pt-2 pb-4 space-y-2"
-          animate={scrolled ? {
-            backgroundColor: 'rgba(0, 0, 0, 0.95)',
-            backdropFilter: 'blur(12px)'
-          } : {
-            backgroundColor: 'rgba(0, 0, 0, 0.2)',
-            backdropFilter: 'blur(8px)'
-          }}
-          transition={{ duration: 0.4 }}
-        >
+        <div className="px-2 pt-2 pb-3 space-y-1">
           {menuItems.map((item) => (
-            <motion.a
+            <a
               key={item.label}
               href={item.href}
-              className="block py-2 text-sm tracking-wider font-light text-white/90 hover:text-white"
-              whileHover={{ scale: 1.02 }}
+              className="block px-3 py-2 text-white/90 hover:text-white transition-colors duration-200"
               onClick={() => setIsMenuOpen(false)}
+              aria-label={`Navigate to ${item.label}`}
             >
               {item.label}
-            </motion.a>
+            </a>
           ))}
-          <motion.a
+          <a
             href="#contact"
-            className="block btn-primary text-sm text-center py-2 mt-4 tracking-wider"
-            whileHover={{ scale: 1.02 }}
+            className="block px-3 py-2 text-white/90 hover:text-white transition-colors duration-200"
             onClick={() => setIsMenuOpen(false)}
+            aria-label="Start a new project"
           >
             Start Project
-          </motion.a>
-        </motion.div>
+          </a>
+        </div>
       </motion.nav>
     </motion.header>
   );
