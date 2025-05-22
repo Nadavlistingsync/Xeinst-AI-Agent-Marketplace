@@ -77,39 +77,6 @@ export default function ProductPage() {
     fetchData();
   }, [fetchProduct, checkPurchaseStatus]);
 
-  const handlePurchase = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        // Redirect to login if not authenticated
-        window.location.href = "/login";
-        return;
-      }
-
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          productId: id,
-          price: product?.price,
-          name: product?.name,
-        }),
-      });
-
-      const { sessionId } = await response.json();
-      const stripe = await stripePromise;
-      const { error } = await stripe!.redirectToCheckout({ sessionId });
-
-      if (error) {
-        throw error;
-      }
-    } catch (err) {
-      console.error("Error initiating purchase:", err);
-    }
-  };
-
   const handleDownload = async () => {
     setDownloading(true);
     setDownloadError("");
