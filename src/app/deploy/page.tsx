@@ -12,16 +12,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-type FileWithPreview = {
-  file: File;
-  preview: string;
-};
-
-type UploadError = {
-  message: string;
-  code?: string;
-};
-
 export default function DeployPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -56,8 +46,8 @@ export default function DeployPage() {
 
   useEffect(() => {
     if (fileInputRef.current) {
-      (fileInputRef.current as any).webkitdirectory = true;
-      (fileInputRef.current as any).directory = true;
+      (fileInputRef.current as HTMLInputElement).webkitdirectory = true;
+      (fileInputRef.current as HTMLInputElement).directory = true;
     }
   }, [uploadType]);
 
@@ -125,7 +115,7 @@ export default function DeployPage() {
       try {
         const match = url.match(/github.com\/(.+?)\/(.+?)(?:\.git)?(?:\/|$)/);
         if (match) {
-          const [_, owner, repo] = match;
+          const [, owner, repo] = match;
           const readmeUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/README.md`;
           const response = await fetch(readmeUrl);
           if (response.ok) {

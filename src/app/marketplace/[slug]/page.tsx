@@ -34,10 +34,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const { data: session } = useSession();
   const router = useRouter();
 
-  useEffect(() => {
-    fetchProduct();
-  }, [fetchProduct]);
-
   const fetchProduct = async () => {
     try {
       const { data: product, error: productError } = await supabase
@@ -50,17 +46,13 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       setProduct(product);
 
       if (session?.user?.email) {
-        const { data: purchase, error: purchaseError } = await supabase
+        await supabase
           .from('purchases')
           .select('*')
           .eq('product_id', product.id)
           .eq('user_id', session.user.email)
           .eq('status', 'completed')
           .single();
-
-        if (!purchaseError) {
-          // setPurchased(true);
-        }
       }
     } catch (error) {
       console.error('Error fetching product:', error);
@@ -69,6 +61,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchProduct();
+  }, [params.slug, session?.user?.email]);
 
   const handlePurchase = async () => {
     if (!session) {
@@ -201,21 +197,12 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               </span>
             </div>
 
-            {/* {purchased ? (
-              <button
-                onClick={handleDownload}
-                className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-              >
-                Download
-              </button>
-            ) : (
-              <button
-                onClick={handlePurchase}
-                className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                Purchase
-              </button>
-            )} */}
+            <button
+              onClick={handlePurchase}
+              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Purchase
+            </button>
           </div>
         </motion.div>
       </div>

@@ -32,53 +32,53 @@ export default function MarketplacePage() {
   });
 
   useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        let query = supabase
+          .from('products')
+          .select('*')
+          .eq('status', 'active');
+
+        if (filters.modelType) {
+          query = query.eq('model_type', filters.modelType);
+        }
+        if (filters.framework) {
+          query = query.eq('framework', filters.framework);
+        }
+
+        // Apply sorting
+        switch (filters.sortBy) {
+          case 'newest':
+            query = query.order('created_at', { ascending: false });
+            break;
+          case 'oldest':
+            query = query.order('created_at', { ascending: true });
+            break;
+          case 'price_low':
+            query = query.order('price', { ascending: true });
+            break;
+          case 'price_high':
+            query = query.order('price', { ascending: false });
+            break;
+          case 'popular':
+            query = query.order('download_count', { ascending: false });
+            break;
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+        setProducts(data || []);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        toast.error('Failed to load products');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchProducts();
-  }, [fetchProducts]);
-
-  const fetchProducts = async () => {
-    try {
-      let query = supabase
-        .from('products')
-        .select('*')
-        .eq('status', 'active');
-
-      if (filters.modelType) {
-        query = query.eq('model_type', filters.modelType);
-      }
-      if (filters.framework) {
-        query = query.eq('framework', filters.framework);
-      }
-
-      // Apply sorting
-      switch (filters.sortBy) {
-        case 'newest':
-          query = query.order('created_at', { ascending: false });
-          break;
-        case 'oldest':
-          query = query.order('created_at', { ascending: true });
-          break;
-        case 'price_low':
-          query = query.order('price', { ascending: true });
-          break;
-        case 'price_high':
-          query = query.order('price', { ascending: false });
-          break;
-        case 'popular':
-          query = query.order('download_count', { ascending: false });
-          break;
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (error) {
-      console.error('Error fetching products:', error);
-      toast.error('Failed to load products');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [filters.modelType, filters.framework, filters.sortBy]);
 
   const container = {
     hidden: { opacity: 0 },
