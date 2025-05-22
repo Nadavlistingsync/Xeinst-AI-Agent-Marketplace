@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { useParams } from "next/navigation";
 import Link from "next/link";
@@ -33,16 +33,7 @@ export default function DeploymentDetailsPage() {
   const [error, setError] = useState("");
   const [logs, setLogs] = useState<string[]>([]);
 
-  useEffect(() => {
-    if (params.id) {
-      fetchDeployment();
-      // Simulate real-time logs (replace with actual log fetching)
-      const interval = setInterval(fetchLogs, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [params.id]);
-
-  const fetchDeployment = async () => {
+  const fetchDeployment = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from("deployments")
@@ -57,9 +48,9 @@ export default function DeploymentDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.id]);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     // Replace with actual log fetching logic
     const mockLogs = [
       `[${new Date().toISOString()}] Deployment in progress...`,
@@ -67,7 +58,16 @@ export default function DeploymentDetailsPage() {
       `[${new Date().toISOString()}] Installing dependencies...`,
     ];
     setLogs((prev) => [...prev, ...mockLogs]);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (params.id) {
+      fetchDeployment();
+      // Simulate real-time logs (replace with actual log fetching)
+      const interval = setInterval(fetchLogs, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [params.id, fetchDeployment, fetchLogs]);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -96,7 +96,7 @@ export default function DeploymentDetailsPage() {
         <div className="text-center">
           <h3 className="text-lg font-medium text-gray-900">Deployment not found</h3>
           <p className="mt-2 text-gray-500">
-            The deployment you're looking for doesn't exist or you don't have access to it.
+            The deployment you&apos;re looking for doesn&apos;t exist or you don&apos;t have access to it.
           </p>
           <div className="mt-6">
             <Link

@@ -27,7 +27,9 @@ export default function DeployPage() {
   const [uploadType, setUploadType] = useState<'file' | 'github'>("file");
   const [githubUrl, setGithubUrl] = useState("");
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -54,7 +56,7 @@ export default function DeployPage() {
     return new File([blob], `${repo}-main.zip`, { type: "application/zip" });
   };
 
-  const validateDeployment = async (uploadFile: File) => {
+  const validateDeployment = async () => {
     // Add validation logic here
     // For example, check if the file contains necessary configuration files
     // or if the model meets certain requirements
@@ -82,7 +84,7 @@ export default function DeployPage() {
       }
 
       setDeploymentStatus("Validating deployment package...");
-      const isValid = await validateDeployment(fileToUpload);
+      const isValid = await validateDeployment();
       if (!isValid) throw new Error("Invalid deployment package");
 
       setDeploymentStatus("Uploading files...");
