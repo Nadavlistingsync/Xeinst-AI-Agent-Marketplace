@@ -15,7 +15,7 @@
     "@auth/supabase-adapter": "^1.9.1",
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.39.7",
-    "framer-motion": "^12.9.2",
+    "framer-motion": "^12.12.1",
     "jszip": "^3.10.1",
     "lucide-react": "^0.503.0",
     "next": "14.1.0",
