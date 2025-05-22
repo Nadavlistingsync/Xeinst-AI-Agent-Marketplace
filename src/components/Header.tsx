@@ -25,14 +25,16 @@ export default function Header() {
 
   const headerVariants = {
     top: {
-      backgroundColor: 'rgba(0, 0, 0, 0.2)',
-      backdropFilter: 'blur(8px)',
-      borderColor: 'rgba(255, 255, 255, 0.1)'
+      backgroundColor: 'rgba(20, 24, 40, 0.55)',
+      backdropFilter: 'blur(16px)',
+      borderColor: 'rgba(255, 255, 255, 0.12)',
+      boxShadow: '0 4px 32px 0 rgba(31, 38, 135, 0.10)',
     },
     scrolled: {
-      backgroundColor: 'rgba(0, 0, 0, 0.95)',
-      backdropFilter: 'blur(12px)',
-      borderColor: 'rgba(255, 255, 255, 0.1)'
+      backgroundColor: 'rgba(18, 20, 38, 0.92)',
+      backdropFilter: 'blur(20px)',
+      borderColor: 'rgba(255, 255, 255, 0.18)',
+      boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.18)',
     }
   };
 
@@ -53,7 +55,7 @@ export default function Header() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="text-2xl font-light tracking-[0.2em] logo-glow"
+            className="text-2xl font-extrabold tracking-[0.2em] logo-glow drop-shadow-xl"
             aria-label="Xeinst Home"
           >
             Xeinst

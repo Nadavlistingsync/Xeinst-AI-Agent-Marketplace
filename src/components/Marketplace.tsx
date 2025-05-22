@@ -85,7 +85,7 @@ export default function Marketplace({ session }: MarketplaceProps) {
   }
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 glass-section">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold mb-4">AI Agents Marketplace</h2>
@@ -113,7 +113,7 @@ export default function Marketplace({ session }: MarketplaceProps) {
           {filteredAgents.map((agent) => (
             <div
               key={agent.id}
-              className="bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 p-6"
+              className="glass-card card-hover p-6"
             >
               {agent.image_url && (
                 <div className="mb-4 relative w-full h-48">
@@ -145,7 +145,7 @@ export default function Marketplace({ session }: MarketplaceProps) {
                 )}
                 <button
                   onClick={() => handleViewAgent(agent.id)}
-                  className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                  className="btn-primary py-2 px-4 text-sm"
                 >
                   View Agent
                 </button>
@@ -164,7 +164,7 @@ export default function Marketplace({ session }: MarketplaceProps) {
         <div className="text-center mt-12">
           <button
             onClick={() => setSearchQuery('')}
-            className="bg-white text-blue-600 border-2 border-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 transition-colors duration-300"
+            className="btn-secondary border-2 border-blue-600 py-3 px-8"
           >
             Show All Agents
           </button>

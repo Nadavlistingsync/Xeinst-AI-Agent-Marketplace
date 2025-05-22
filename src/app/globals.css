@@ -6,9 +6,11 @@
 
 :root {
   --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 0, 0, 0;
-  --background-end-rgb: 0, 0, 0;
+  --background-start-rgb: 10, 12, 24;
+  --background-end-rgb: 18, 20, 38;
   --accent-rgb: 0, 100, 255;
+  --glass-bg: rgba(30, 34, 54, 0.7);
+  --glass-border: rgba(255,255,255,0.12);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -88,7 +90,7 @@ html {
   }
   
   .card-hover {
-    @apply transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,100,255,0.3)] hover:-translate-y-2 hover:border-blue-500/30;
+    @apply transition-all duration-300 hover:shadow-[0_0_60px_rgba(0,100,255,0.5)] hover:-translate-y-3 hover:border-blue-500/40;
   }
 
   .section-padding {
@@ -100,11 +102,25 @@ html {
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(0,100,255,0.2)] hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700 hover:shadow-[0_0_25px_rgba(0,100,255,0.3)] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-300;
+    @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(0,100,255,0.2)] hover:bg-gradient-to-r hover:from-blue-700 hover:to-purple-700 hover:shadow-[0_0_40px_rgba(0,100,255,0.4)] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all duration-300 scale-100 hover:scale-105;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white/80 bg-black/50 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:text-white hover:bg-black/70 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition-all duration-300;
+    @apply inline-flex items-center justify-center px-8 py-4 font-light tracking-wider text-white/80 bg-black/50 rounded-lg border border-white/10 shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:text-white hover:bg-black/70 hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 transition-all duration-300 scale-100 hover:scale-105;
+  }
+
+  .glass-card {
+    @apply bg-white/10 backdrop-blur-lg border border-white/10 shadow-xl rounded-2xl;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    border: 1px solid var(--glass-border);
+  }
+
+  .glass-section {
+    @apply bg-gradient-to-br from-blue-900/60 via-black/80 to-purple-900/60 backdrop-blur-lg;
+  }
+
+  .section-divider {
+    @apply border-t border-white/10 my-16;
   }
 }
 

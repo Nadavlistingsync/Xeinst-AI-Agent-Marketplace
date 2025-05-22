@@ -36,7 +36,7 @@ export default function Home() {
       <Header />
       <main className="min-h-screen bg-black">
         {/* Hero Section */}
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 glass-section">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-900/60 via-black/80 to-purple-900/60 animate-gradient-move" />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -69,7 +69,7 @@ export default function Home() {
         </section>
 
         {/* Products Section */}
-        <section id="products" className="section-padding bg-black/50">
+        <section id="products" className="section-padding glass-section">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -112,7 +112,7 @@ export default function Home() {
                 <motion.div
                   key={index}
                   variants={fadeIn}
-                  className="p-8 rounded-xl bg-black/50 glow-border card-hover"
+                  className="p-8 rounded-xl glass-card glow-border card-hover"
                 >
                   <div className="mb-6">{product.icon}</div>
                   <h3 className="text-2xl font-semibold mb-4 glow-text">{product.title}</h3>
@@ -131,8 +131,10 @@ export default function Home() {
           </div>
         </section>
 
+        <div className="section-divider" />
+
         {/* How It Works */}
-        <section id="how-it-works" className="section-padding bg-black/50">
+        <section id="how-it-works" className="section-padding glass-section">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -176,7 +178,7 @@ export default function Home() {
                 <motion.div
                   key={index}
                   variants={fadeIn}
-                  className="p-8 rounded-xl bg-black/50 glow-border card-hover"
+                  className="p-8 rounded-xl glass-card glow-border card-hover"
                 >
                   <div className="mb-6">{step.icon}</div>
                   <h3 className="text-2xl font-semibold mb-4 glow-text">{step.title}</h3>
@@ -187,8 +189,10 @@ export default function Home() {
           </div>
         </section>
 
+        <div className="section-divider" />
+
         {/* Benefits */}
-        <section id="benefits" className="section-padding bg-black/30">
+        <section id="benefits" className="section-padding glass-section">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -232,7 +236,7 @@ export default function Home() {
                 <motion.div
                   key={index}
                   variants={fadeIn}
-                  className="p-6 rounded-xl bg-black/50 glow-border card-hover"
+                  className="p-6 rounded-xl glass-card glow-border card-hover"
                 >
                   <div className="flex items-center mb-4">
                     <div className="mr-4">{benefit.icon}</div>
@@ -246,7 +250,7 @@ export default function Home() {
         </section>
 
         {/* Contact Form */}
-        <section id="contact" className="section-padding bg-black/60">
+        <section id="contact" className="section-padding glass-section">
           <div className="container">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
