@@ -18,14 +18,6 @@ export default function DeployPage() {
   const [error, setError] = useState("");
   const [deploymentStatus, setDeploymentStatus] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [preview, setPreview] = useState<{
-    name: string;
-    description: string;
-    modelType: string;
-    framework: string;
-    readme?: string;
-  } | null>(null);
-  
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -84,7 +76,6 @@ export default function DeployPage() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    updatePreview();
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,39 +94,12 @@ export default function DeployPage() {
         setFile(e.target.files[0]);
         setFolderFiles(null);
       }
-      updatePreview();
     }
   };
 
   const handleGithubUrlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     setGithubUrl(url);
-    
-    if (url) {
-      try {
-        const match = url.match(/github.com\/(.+?)\/(.+?)(?:\.git)?(?:\/|$)/);
-        if (match) {
-          const [, owner, repo] = match;
-          const readmeUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/README.md`;
-          const response = await fetch(readmeUrl);
-          if (response.ok) {
-            const readme = await response.text();
-            setPreview(prev => ({ ...prev!, readme }));
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch README:", error);
-      }
-    }
-  };
-
-  const updatePreview = () => {
-    setPreview({
-      name: formData.name,
-      description: formData.description,
-      modelType: formData.modelType,
-      framework: formData.framework,
-    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -34,35 +34,35 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const { data: session } = useSession();
   const router = useRouter();
 
-  const fetchProduct = async () => {
-    try {
-      const { data: product, error: productError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('slug', params.slug)
-        .single();
-
-      if (productError) throw productError;
-      setProduct(product);
-
-      if (session?.user?.email) {
-        await supabase
-          .from('purchases')
-          .select('*')
-          .eq('product_id', product.id)
-          .eq('user_id', session.user.email)
-          .eq('status', 'completed')
-          .single();
-      }
-    } catch (error) {
-      console.error('Error fetching product:', error);
-      toast.error('Failed to load product details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const { data: product, error: productError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('slug', params.slug)
+          .single();
+
+        if (productError) throw productError;
+        setProduct(product);
+
+        if (session?.user?.email) {
+          await supabase
+            .from('purchases')
+            .select('*')
+            .eq('product_id', product.id)
+            .eq('user_id', session.user.email)
+            .eq('status', 'completed')
+            .single();
+        }
+      } catch (error) {
+        console.error('Error fetching product:', error);
+        toast.error('Failed to load product details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchProduct();
   }, [params.slug, session?.user?.email]);
 
@@ -95,23 +95,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     } catch (error) {
       console.error('Error initiating purchase:', error);
       toast.error('Failed to initiate purchase');
-    }
-  };
-
-  const handleDownload = async () => {
-    try {
-      const response = await fetch(`/api/download-agent?productId=${product?.id}`);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to download');
-      }
-
-      // Trigger file download
-      window.location.href = data.downloadUrl;
-    } catch (error) {
-      console.error('Error downloading:', error);
-      toast.error('Failed to download file');
     }
   };
 
