@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${montserrat.variable}`}>
+    <html lang="en" className={`${montserrat.variable} font-sans`}>
       <head>
         <meta name="description" content="We build custom AI tools for free. You only pay if you love the product." />
         <meta name="keywords" content="AI, artificial intelligence, machine learning, custom AI solutions" />
@@ -43,24 +43,17 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-black text-white antialiased">
         <Providers>
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-50 focus:p-4 focus:bg-white focus:text-black rounded shadow-lg transition-all duration-300"
-            tabIndex={0}
-          >
-            Skip to main content
-          </a>
           <Header />
-          <main id="main-content" className="pt-24" role="main">
+          <div className="pt-20">
             {children}
-          </main>
-          <footer className="bg-black/80 border-t border-white/10 mt-12">
-            <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
+          </div>
+          <footer className="bg-black border-t border-white/10 mt-16">
+            <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm">
               <div>© 2024 Xeinst. All rights reserved.</div>
               <div className="flex space-x-6 mt-4 md:mt-0">
-                <a href="/terms" className="hover:text-white transition-colors">Terms</a>
-                <a href="/privacy" className="hover:text-white transition-colors">Privacy</a>
-                <a href="#contact" className="hover:text-white transition-colors">Contact</a>
+                <a href="/terms" className="text-white hover:text-blue-400 transition">Terms</a>
+                <a href="/privacy" className="text-white hover:text-blue-400 transition">Privacy</a>
+                <a href="#contact" className="text-white hover:text-blue-400 transition">Contact</a>
               </div>
             </div>
           </footer>
