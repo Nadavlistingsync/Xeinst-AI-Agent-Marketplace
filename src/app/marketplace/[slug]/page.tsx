@@ -25,18 +25,19 @@ interface Product {
   usage_instructions: string;
 }
 
-type Props = {
-  params: { slug: string };
-  searchParams: { [key: string]: string | string[] | undefined };
-};
+interface PageProps {
+  params?: Promise<{ slug: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}
 
-export default async function ProductPage({ params }: Props) {
+export default async function ProductPage({ params, searchParams }: PageProps) {
+  const resolvedParams = params ? await params : { slug: '' };
   const session = await getServerSession(authOptions);
   
   const { data: product, error: productError } = await supabase
     .from('products')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', resolvedParams.slug)
     .single();
 
   if (productError) {
