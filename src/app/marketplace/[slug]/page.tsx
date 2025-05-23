@@ -1,9 +1,7 @@
-"use client";
-import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { useSession } from 'next-auth/react';
-import { motion } from 'framer-motion';
-import { toast } from 'react-hot-toast';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import ProductDetails from './ProductDetails';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,138 +25,35 @@ interface Product {
   usage_instructions: string;
 }
 
-interface ProductPageProps {
+export default async function ProductPage({
+  params,
+}: {
   params: { slug: string };
-}
+}) {
+  const session = await getServerSession(authOptions);
+  
+  const { data: product, error: productError } = await supabase
+    .from('products')
+    .select('*')
+    .eq('slug', params.slug)
+    .single();
 
-export default function ProductPage(props: ProductPageProps) {
-  const { params } = props;
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { data: session } = useSession();
-
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const { data: product, error: productError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('slug', params.slug)
-          .single();
-
-        if (productError) throw productError;
-        setProduct(product);
-
-        if (session?.user?.email) {
-          await supabase
-            .from('purchases')
-            .select('*')
-            .eq('product_id', product.id)
-            .eq('user_id', session.user.email)
-            .eq('status', 'completed')
-            .single();
-        }
-      } catch (error) {
-        console.error('Error fetching product:', error);
-        toast.error('Failed to load product details');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [params.slug, session?.user?.email]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+  if (productError) {
+    throw new Error('Failed to load product details');
   }
 
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800 flex items-center justify-center">
-        <div className="text-white text-xl">Product not found</div>
-      </div>
-    );
+  let isPurchased = false;
+  if (session?.user?.email) {
+    const { data: purchase } = await supabase
+      .from('purchases')
+      .select('*')
+      .eq('product_id', product.id)
+      .eq('user_id', session.user.email)
+      .eq('status', 'completed')
+      .single();
+    
+    isPurchased = !!purchase;
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20"
-        >
-          <h1 className="text-4xl font-bold text-white mb-4">{product.name}</h1>
-          
-          <div className="flex flex-wrap gap-2 mb-6">
-            <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full text-sm">
-              {product.model_type}
-            </span>
-            <span className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full text-sm">
-              {product.framework}
-            </span>
-          </div>
-
-          <p className="text-gray-300 mb-8">{product.description}</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-            <div>
-              <h2 className="text-xl font-semibold text-white mb-4">Features</h2>
-              <ul className="space-y-2">
-                {product.features.map((feature, index) => (
-                  <li key={index} className="text-gray-300 flex items-center">
-                    <span className="mr-2">•</span>
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-semibold text-white mb-4">Requirements</h2>
-              <ul className="space-y-2">
-                {product.requirements.map((requirement, index) => (
-                  <li key={index} className="text-gray-300 flex items-center">
-                    <span className="mr-2">•</span>
-                    {requirement}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold text-white mb-4">Usage Instructions</h2>
-            <div className="bg-black/30 rounded-lg p-4">
-              <pre className="text-gray-300 whitespace-pre-wrap">
-                {product.usage_instructions}
-              </pre>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <div>
-              <span className="text-3xl font-bold text-white">
-                ${product.price.toFixed(2)}
-              </span>
-              <span className="text-sm text-gray-400 ml-2">
-                {product.download_count} downloads
-              </span>
-            </div>
-            <button
-              className="px-6 py-3 bg-gray-600 text-white rounded-lg cursor-not-allowed"
-              disabled
-            >
-              Payment System Coming Soon
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
+  return <ProductDetails product={product} isPurchased={isPurchased} />;
 } 
