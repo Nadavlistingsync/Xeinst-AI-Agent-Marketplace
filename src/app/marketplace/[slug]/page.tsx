@@ -25,14 +25,12 @@ interface Product {
   usage_instructions: string;
 }
 
-interface PageProps {
-  params: {
-    slug: string;
-  };
+type Props = {
+  params: { slug: string };
   searchParams: { [key: string]: string | string[] | undefined };
-}
+};
 
-export default async function ProductPage({ params }: PageProps) {
+export default async function ProductPage({ params }: Props) {
   const session = await getServerSession(authOptions);
   
   const { data: product, error: productError } = await supabase
