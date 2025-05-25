@@ -8,7 +8,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// @ts-expect-error
 export async function PUT(
   request: NextRequest,
   { params }
@@ -68,7 +67,6 @@ export async function PUT(
   }
 }
 
-// @ts-expect-error
 export async function DELETE(
   request: NextRequest,
   { params }
