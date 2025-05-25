@@ -1,5 +1,6 @@
 import { NextAuthOptions } from "next-auth";
 import { SupabaseAdapter } from "@auth/supabase-adapter";
+import { getServerSession as getNextAuthServerSession } from "next-auth";
 
 export const authOptions: NextAuthOptions = {
   adapter: SupabaseAdapter({
@@ -21,6 +22,10 @@ export const authOptions: NextAuthOptions = {
 };
 
 export async function getServerSession() {
-  const { getServerSession } = await import("next-auth");
-  return getServerSession(authOptions);
+  try {
+    return await getNextAuthServerSession(authOptions);
+  } catch (error) {
+    console.error('Error getting server session:', error);
+    return null;
+  }
 } 
