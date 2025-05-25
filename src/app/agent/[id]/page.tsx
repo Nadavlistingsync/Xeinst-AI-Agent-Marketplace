@@ -198,7 +198,7 @@ export default function AgentPage() {
         <div className="mt-8 bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-semibold mb-6">Reviews & Ratings</h2>
           <AgentReviews
-            agentId={agent.id}
+            agentId={String(agent.id)}
             averageRating={agent.average_rating || 0}
             totalRatings={agent.total_ratings || 0}
           />
