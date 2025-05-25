@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Star } from 'lucide-react';
 import Image from 'next/image';
+import AgentReviews from '@/components/AgentReviews';
+import { useSession } from 'next-auth/react';
+import { toast } from 'react-hot-toast';
 
 interface Agent {
   id: number;
@@ -16,13 +19,19 @@ interface Agent {
   long_description?: string;
   features?: string[];
   requirements?: string[];
+  average_rating?: number;
+  total_ratings?: number;
+  created_by: string;
 }
 
 export default function AgentPage() {
   const params = useParams();
+  const router = useRouter();
+  const { data: session } = useSession();
   const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const fetchAgent = async () => {
@@ -42,6 +51,29 @@ export default function AgentPage() {
 
     fetchAgent();
   }, [params.id]);
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this agent? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/agents/${params.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      toast.success('Agent deleted successfully');
+      router.push('/dashboard');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to delete agent');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -132,14 +164,44 @@ export default function AgentPage() {
             )}
 
             <div className="flex justify-end space-x-4">
-              <button className="bg-white text-blue-600 border-2 border-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 transition-colors duration-300">
-                Contact Seller
-              </button>
-              <button className="bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors duration-300">
-                Purchase Agent
-              </button>
+              {session?.user?.email === agent.created_by ? (
+                <>
+                  <button
+                    onClick={() => router.push(`/agent/${agent.id}/edit`)}
+                    className="bg-white text-blue-600 border-2 border-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 transition-colors duration-300"
+                  >
+                    Edit Agent
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="bg-red-600 text-white py-3 px-8 rounded-lg hover:bg-red-700 transition-colors duration-300 disabled:opacity-50"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete Agent'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="bg-white text-blue-600 border-2 border-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 transition-colors duration-300">
+                    Contact Seller
+                  </button>
+                  <button className="bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors duration-300">
+                    Purchase Agent
+                  </button>
+                </>
+              )}
             </div>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="mt-8 bg-white rounded-xl shadow-lg p-8">
+          <h2 className="text-2xl font-semibold mb-6">Reviews & Ratings</h2>
+          <AgentReviews
+            agentId={agent.id}
+            averageRating={agent.average_rating || 0}
+            totalRatings={agent.total_ratings || 0}
+          />
         </div>
       </div>
     </div>
