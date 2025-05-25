@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 
 interface Product {
   id: string;
@@ -25,6 +26,51 @@ interface ProductDetailsProps {
 }
 
 export default function ProductDetails({ product, isPurchased }: ProductDetailsProps) {
+  const [purchased, setPurchased] = useState(isPurchased);
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handlePurchase = async () => {
+    setError(null);
+    try {
+      const res = await fetch('/api/purchase-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: product.id }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPurchased(true);
+      } else {
+        setError(data.error || 'Failed to purchase');
+      }
+    } catch (err) {
+      setError('Failed to purchase');
+    }
+  };
+
+  const handleDownload = async () => {
+    setDownloading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/download-product`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.open(data.url, '_blank');
+      } else {
+        setError(data.error || 'Failed to get download link');
+      }
+    } catch (err) {
+      setError('Failed to download');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800 py-12 px-4">
       <div className="max-w-4xl mx-auto">
@@ -90,17 +136,26 @@ export default function ProductDetails({ product, isPurchased }: ProductDetailsP
                 {product.download_count} downloads
               </span>
             </div>
-            <button
-              className={`px-6 py-3 rounded-lg ${
-                isPurchased
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-600 text-white cursor-not-allowed'
-              }`}
-              disabled={!isPurchased}
-            >
-              {isPurchased ? 'Download' : 'Payment System Coming Soon'}
-            </button>
+            {purchased ? (
+              <button
+                className={`px-6 py-3 rounded-lg bg-green-600 text-white`}
+                onClick={handleDownload}
+                disabled={downloading}
+              >
+                {downloading ? 'Downloading...' : 'Download'}
+              </button>
+            ) : (
+              <button
+                className={`px-6 py-3 rounded-lg bg-blue-600 text-white`}
+                onClick={handlePurchase}
+              >
+                Purchase Agent
+              </button>
+            )}
           </div>
+          {error && (
+            <div className="mt-4 text-red-400 text-center">{error}</div>
+          )}
         </motion.div>
       </div>
     </div>
