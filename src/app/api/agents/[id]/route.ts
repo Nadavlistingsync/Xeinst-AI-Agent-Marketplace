@@ -8,15 +8,9 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-type Props = {
-  params: {
-    id: string;
-  };
-};
-
 export async function PUT(
   request: NextRequest,
-  props: Props
+  { params }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -24,7 +18,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = props.params;
+    const { id } = params;
     const updates = await request.json();
 
     // Check if user owns the agent
@@ -75,7 +69,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  props: Props
+  { params }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -83,7 +77,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = props.params;
+    const { id } = params;
 
     // Check if user owns the agent
     const { data: agent } = await supabase
