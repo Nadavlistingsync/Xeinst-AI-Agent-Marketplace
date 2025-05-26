@@ -1,15 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-if (!process.env.SUPABASE_URL) {
-  throw new Error('SUPABASE_URL environment variable is not set');
-}
-
-if (!process.env.SUPABASE_ANON_KEY) {
-  throw new Error('SUPABASE_ANON_KEY environment variable is not set');
-}
-
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+import { db } from '@/lib/db';
+import { products } from '@/lib/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -18,33 +10,25 @@ export async function GET(request: NextRequest) {
   try {
     if (id) {
       // Fetch single product
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const product = await db
+        .select()
+        .from(products)
+        .where(eq(products.id, id))
+        .limit(1);
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-
-      if (!data) {
+      if (!product.length) {
         return NextResponse.json({ error: 'Product not found' }, { status: 404 });
       }
 
-      return NextResponse.json({ products: [data] });
+      return NextResponse.json({ products: [product[0]] });
     } else {
       // Fetch all products
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const allProducts = await db
+        .select()
+        .from(products)
+        .orderBy(products.created_at);
 
-      if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-
-      return NextResponse.json({ products: data });
+      return NextResponse.json({ products: allProducts });
     }
   } catch (error) {
     console.error('Error fetching products:', error);

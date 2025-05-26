@@ -1,48 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { createClient } from '@supabase/supabase-js';
+import { getProduct } from '@/lib/db-helpers';
+import { db } from '@/lib/db';
+import { purchases } from '@/lib/schema';
+import { eq } from 'drizzle-orm';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+export async function POST(request: Request) {
+  const session = await getServerSession();
+  
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
 
-export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { productId } = await request.json();
+
+    if (!productId) {
+      return NextResponse.json(
+        { error: 'Product ID is required' },
+        { status: 400 }
+      );
     }
-    const { product_id } = await req.json();
-    if (!product_id) {
-      return NextResponse.json({ error: 'Missing product_id' }, { status: 400 });
+
+    // Check if product exists
+    const product = await getProduct(productId);
+    if (!product) {
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      );
     }
-    // Check if already purchased
-    const { data: existing } = await supabase
-      .from('purchases')
-      .select('*')
-      .eq('product_id', product_id)
-      .eq('user_id', session.user.email)
-      .single();
+
+    // Check if user has already purchased this product
+    const [existing] = await db.select()
+      .from(purchases)
+      .where(eq(purchases.product_id, productId))
+      .where(eq(purchases.user_id, session.user.id));
+
     if (existing) {
-      return NextResponse.json({ success: true, alreadyPurchased: true });
+      return NextResponse.json(
+        { error: 'You have already purchased this product' },
+        { status: 400 }
+      );
     }
-    // Insert purchase
-    const { error } = await supabase
-      .from('purchases')
-      .insert([
-        {
-          product_id,
-          user_id: session.user.email,
-          status: 'completed',
-        },
-      ]);
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    return NextResponse.json({ success: true });
+
+    // Create purchase record
+    const [purchase] = await db.insert(purchases)
+      .values({
+        product_id: productId,
+        user_id: session.user.id,
+        amount: product.price,
+        status: 'completed',
+      })
+      .returning();
+
+    return NextResponse.json(purchase);
   } catch (error) {
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error processing purchase:', error);
+    return NextResponse.json(
+      { error: 'Failed to process purchase' },
+      { status: 500 }
+    );
   }
 } 

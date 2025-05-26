@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
+import { db } from '@/lib/db';
+import { products } from '@/lib/schema';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -14,29 +15,33 @@ export async function POST(req: NextRequest) {
 
   if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
 
-  // Upload file to Supabase Storage
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from('products')
-    .upload(`${Date.now()}_${file.name}`, file, { contentType: file.type });
+  try {
+    // Save file to local storage
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    const fileName = `${Date.now()}_${file.name}`;
+    const filePath = join(process.cwd(), 'public', 'uploads', fileName);
+    await writeFile(filePath, buffer);
 
-  if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
-
-  // Insert product metadata into DB
-  const { data, error } = await supabase
-    .from('products')
-    .insert([
-      {
+    // Insert product metadata into DB
+    const [product] = await db
+      .insert(products)
+      .values({
         name,
         description,
         price: parseFloat(price),
         category,
-        uploader_id,
-        file_url: uploadData.path,
-      },
-    ])
-    .select();
+        uploaded_by: uploader_id,
+        file_url: `/uploads/${fileName}`,
+      })
+      .returning();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({ product: data[0] });
+    return NextResponse.json({ product });
+  } catch (error) {
+    console.error('Error uploading product:', error);
+    return NextResponse.json(
+      { error: 'Failed to upload product' },
+      { status: 500 }
+    );
+  }
 } 

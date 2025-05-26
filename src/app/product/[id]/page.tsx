@@ -1,155 +1,131 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
-import { Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { getProduct, getProductReviews, createReview } from "@/lib/db-helpers";
+import { toast } from "react-hot-toast";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  price: number;
-  documentation: string;
-  file_url: string;
-  average_rating: number;
-  total_ratings: number;
-  download_count: number;
-}
-
-export default function ProductPage() {
-  const { id } = useParams();
-  const [product, setProduct] = useState<Product | null>(null);
+export default function ProductPage({ params }: { params: { id: string } }) {
+  const { data: session } = useSession();
+  const [product, setProduct] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [downloading, setDownloading] = useState(false);
-  const [downloadError, setDownloadError] = useState("");
-  const [hasPurchased, setHasPurchased] = useState(false);
-
-  const fetchProduct = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from("products")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      setProduct(data);
-    } catch (err) {
-      console.error("Error fetching product:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  const checkPurchaseStatus = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from("purchases")
-        .select("*")
-        .eq("product_id", id)
-        .eq("user_id", user.id)
-        .single();
-
-      if (!error && data) {
-        setHasPurchased(true);
-      }
-    } catch (err) {
-      console.error("Error checking purchase status:", err);
-    }
-  }, [id]);
+  const [error, setError] = useState("");
+  const [reviewText, setReviewText] = useState("");
+  const [rating, setRating] = useState(5);
 
   useEffect(() => {
     const fetchData = async () => {
-      await fetchProduct();
-      await checkPurchaseStatus();
+      try {
+        const [productData, reviewsData] = await Promise.all([
+          getProduct(params.id),
+          getProductReviews(params.id)
+        ]);
+        setProduct(productData);
+        setReviews(reviewsData);
+      } catch (err) {
+        setError("Failed to load product data");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchData();
-  }, [fetchProduct, checkPurchaseStatus]);
+  }, [params.id]);
 
-  const handleDownload = async () => {
-    setDownloading(true);
-    setDownloadError("");
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!session?.user?.id) {
+      toast.error("You must be logged in to leave a review");
+      return;
+    }
+
     try {
-      const { data, error } = await supabase.storage
-        .from("products")
-        .createSignedUrl(product!.file_url, 60 * 10); // 10 minutes
-
-      if (error) throw error;
-
-      // Increment download count
-      await supabase
-        .from("products")
-        .update({ download_count: product!.download_count + 1 })
-        .eq("id", product!.id);
-
-      window.open(data.signedUrl, "_blank");
+      const review = await createReview({
+        product_id: params.id,
+        user_id: session.user.id,
+        rating,
+        comment: reviewText,
+      });
+      setReviews([...reviews, review]);
+      setReviewText("");
+      setRating(5);
+      toast.success("Review submitted successfully");
     } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : "Download failed");
-    } finally {
-      setDownloading(false);
+      toast.error("Failed to submit review");
+      console.error(err);
     }
   };
 
-  if (loading) return <div className="text-center mt-20">Loading...</div>;
-  if (!product) return <div className="text-center mt-20 text-red-600">Product not found.</div>;
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
+  if (!product) return <div>Product not found</div>;
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white rounded shadow">
-      <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-      <div className="mb-2 text-gray-600">Category: {product.category}</div>
-      
-      <div className="flex items-center mb-4">
-        <Star className="w-5 h-5 text-yellow-400" />
-        <span className="ml-1 text-gray-600">
-          {product.average_rating?.toFixed(1) || "New"}
-        </span>
-        {product.total_ratings > 0 && (
-          <span className="ml-1 text-gray-500">
-            ({product.total_ratings} reviews)
-          </span>
-        )}
-      </div>
-
-      <div className="mb-4">{product.description}</div>
-      <div className="mb-4 font-bold text-2xl">${product.price.toFixed(2)}</div>
-      
-      <div className="mb-8 prose max-w-none">
-        <h2 className="text-xl font-semibold mb-4">Documentation</h2>
-        <div className="whitespace-pre-line">{product.documentation}</div>
-      </div>
-
-      {hasPurchased ? (
-        <button
-          className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 disabled:opacity-60"
-          onClick={handleDownload}
-          disabled={downloading}
-        >
-          {downloading ? "Processing..." : "Download"}
-        </button>
-      ) : (
-        <button
-          className="bg-gray-600 text-white px-6 py-3 rounded-lg cursor-not-allowed"
-          disabled
-        >
-          Payment System Coming Soon
-        </button>
-      )}
-
-      {downloadError && (
-        <div className="mt-4 text-red-600">{downloadError}</div>
-      )}
-
-      <div className="mt-4 text-sm text-gray-500">
-        {product.download_count} downloads
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div>
+          <p className="text-gray-600 mb-4">{product.description}</p>
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold mb-2">Details</h2>
+            <p><strong>Category:</strong> {product.category}</p>
+            <p><strong>Price:</strong> ${product.price}</p>
+            <p><strong>Uploaded by:</strong> {product.uploaded_by}</p>
+          </div>
+          {product.documentation && (
+            <div className="mb-4">
+              <h2 className="text-xl font-semibold mb-2">Documentation</h2>
+              <p className="whitespace-pre-wrap">{product.documentation}</p>
+            </div>
+          )}
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold mb-4">Reviews</h2>
+          {reviews.map((review) => (
+            <div key={review.id} className="border-b py-4">
+              <div className="flex items-center mb-2">
+                <span className="font-semibold">{review.user_id}</span>
+                <span className="ml-2">★ {review.rating}</span>
+              </div>
+              <p>{review.comment}</p>
+            </div>
+          ))}
+          {session?.user && (
+            <form onSubmit={handleReviewSubmit} className="mt-6">
+              <div className="mb-4">
+                <label className="block mb-2">Rating</label>
+                <select
+                  value={rating}
+                  onChange={(e) => setRating(Number(e.target.value))}
+                  className="w-full border p-2 rounded"
+                >
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <option key={num} value={num}>
+                      {num} {num === 1 ? "star" : "stars"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-4">
+                <label className="block mb-2">Review</label>
+                <textarea
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  className="w-full border p-2 rounded"
+                  rows={4}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              >
+                Submit Review
+              </button>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

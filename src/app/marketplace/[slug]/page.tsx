@@ -1,12 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import ProductDetails from './ProductDetails';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { getProductBySlug } from '@/lib/db-helpers';
 
 interface Product {
   id: string;
@@ -25,37 +20,18 @@ interface Product {
   usage_instructions: string;
 }
 
-interface PageProps {
-  params?: Promise<{ slug: string }>;
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
-}
-
-export default async function ProductPage({ params, searchParams }: PageProps) {
-  const resolvedParams = params ? await params : { slug: '' };
+export default async function ProductPage({ params }: { params: { slug: string } }) {
   const session = await getServerSession(authOptions);
-  
-  const { data: product, error: productError } = await supabase
-    .from('products')
-    .select('*')
-    .eq('slug', resolvedParams.slug)
-    .single();
+  const product = await getProductBySlug(params.slug);
 
-  if (productError) {
-    throw new Error('Failed to load product details');
+  if (!product) {
+    return <div>Product not found</div>;
   }
 
-  let isPurchased = false;
-  if (session?.user?.email) {
-    const { data: purchase } = await supabase
-      .from('purchases')
-      .select('*')
-      .eq('product_id', product.id)
-      .eq('user_id', session.user.email)
-      .eq('status', 'completed')
-      .single();
-    
-    isPurchased = !!purchase;
-  }
-
-  return <ProductDetails product={product} isPurchased={isPurchased} />;
+  return (
+    <ProductDetails 
+      product={product as Product} 
+      user={session?.user} 
+    />
+  );
 } 

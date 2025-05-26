@@ -1,66 +1,74 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { useSession } from "next-auth/react";
+import { getUserProducts } from "@/lib/db-helpers";
+import Link from "next/link";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-export default function UploadsDashboard() {
+export default function UploadsPage() {
   const { data: session } = useSession();
-  const [uploads, setUploads] = useState<any[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!session?.user?.email) return;
-    const fetchUploads = async () => {
-      setLoading(true);
-      setError(null);
+    const fetchProducts = async () => {
+      if (!session?.user?.id) return;
+
       try {
-        const { data, error } = await supabase
-          .from("products")
-          .select("*")
-          .eq("uploaded_by", session.user.email)
-          .order("created_at", { ascending: false });
-        if (error) throw error;
-        setUploads(data || []);
+        const data = await getUserProducts(session.user.id);
+        setProducts(data);
       } catch (err) {
-        setError("Failed to fetch uploads");
+        setError("Failed to load products");
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchUploads();
-  }, [session?.user?.email]);
 
-  if (!session) return <div className="text-center mt-20">Sign in to view your uploads.</div>;
-  if (loading) return <div className="text-center mt-20">Loading...</div>;
-  if (error) return <div className="text-center mt-20 text-red-600">{error}</div>;
+    fetchProducts();
+  }, [session?.user?.id]);
+
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white/10 rounded shadow">
-      <h1 className="text-3xl font-bold mb-6 text-white">My Uploaded Agents</h1>
-      {uploads.length === 0 ? (
-        <div className="text-gray-300">You haven't uploaded any agents yet.</div>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Your Uploads</h1>
+        <Link
+          href="/upload"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Upload New
+        </Link>
+      </div>
+
+      {products.length === 0 ? (
+        <p>You haven't uploaded any products yet.</p>
       ) : (
-        <ul className="space-y-6">
-          {uploads.map((agent) => (
-            <li key={agent.id} className="bg-black/30 rounded-lg p-4 flex justify-between items-center">
-              <div>
-                <div className="text-xl font-semibold text-white">{agent.name}</div>
-                <div className="text-gray-300">{agent.description}</div>
-                <div className="text-gray-400 text-sm mt-2">{agent.download_count} downloads</div>
+        <div className="grid gap-6">
+          {products.map((product) => (
+            <div key={product.id} className="border rounded-lg p-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">{product.name}</h2>
+                  <p className="text-gray-600 mb-2">{product.description}</p>
+                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <span>Category: {product.category}</span>
+                    <span>Price: ${product.price}</span>
+                    <span>Status: {product.status}</span>
+                  </div>
+                </div>
+                <Link
+                  href={`/product/${product.id}`}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  View Details
+                </Link>
               </div>
-              <div className="flex space-x-2">
-                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Edit</button>
-                <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Delete</button>
-              </div>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

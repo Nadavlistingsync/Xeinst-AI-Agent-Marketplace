@@ -1,15 +1,14 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { useSession } from "next-auth/react";
+import { db } from "@/lib/db";
+import { products } from "@/lib/schema";
+import { eq } from "drizzle-orm";
 
 export default function UploadPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
@@ -50,13 +49,38 @@ export default function UploadPage() {
     return new File([blob], `${repo}-main.zip`, { type: "application/zip" });
   };
 
+  const uploadToS3 = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to upload file');
+    }
+    
+    const data = await response.json();
+    return data.url;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    let uploadFile: File | null = null;
-    let fileName = "";
+    
+    if (!session?.user?.id) {
+      setError("You must be logged in to upload a product");
+      setLoading(false);
+      return;
+    }
+
     try {
+      let uploadFile: File | null = null;
+      let fileName = "";
+
       if (uploadType === "file") {
         if (!file) throw new Error("Please select a file to upload");
         uploadFile = file;
@@ -67,30 +91,24 @@ export default function UploadPage() {
         uploadFile = await fetchGithubRepoAsZip(githubUrl);
         fileName = `${Math.random()}.zip`;
       }
-      const filePath = `products/${fileName}`;
-      const { error: uploadError } = await supabase.storage
-        .from("products")
-        .upload(filePath, uploadFile);
-      if (uploadError) throw uploadError;
-      const { data: product, error: dbError } = await supabase
-        .from("products")
-        .insert([
-          {
-            name: formData.name,
-            category: formData.category,
-            description: formData.description,
-            price: parseFloat(formData.price),
-            documentation: formData.documentation,
-            file_url: filePath,
-            uploaded_by: (await supabase.auth.getUser()).data.user?.id,
-            is_public: true,
-            status: "pending",
-            source: uploadType === "github" ? githubUrl : "upload",
-          },
-        ])
-        .select()
-        .single();
-      if (dbError) throw dbError;
+
+      // Upload file to S3
+      const fileUrl = await uploadToS3(uploadFile);
+
+      // Insert product into database
+      const [product] = await db.insert(products).values({
+        name: formData.name,
+        category: formData.category,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        documentation: formData.documentation,
+        file_url: fileUrl,
+        uploaded_by: session.user.id,
+        is_public: true,
+        status: "pending",
+        source: uploadType === "github" ? githubUrl : "upload",
+      }).returning();
+
       router.push(`/product/${product.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");

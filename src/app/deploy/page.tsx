@@ -1,16 +1,13 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@supabase/supabase-js";
 import JSZip from "jszip";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
+import { uploadToS3 } from "@/lib/s3-helpers";
+import { createDeployment } from "@/lib/db-helpers";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export default function DeployPage() {
   const router = useRouter();
@@ -136,47 +133,41 @@ export default function DeployPage() {
       setDeploymentStatus("Uploading files...");
       const filePath = `deployments/${fileName}`;
       
-      const { error: uploadError } = await supabase.storage
-        .from("deployments")
-        .upload(filePath, fileToUpload);
-      
-      if (uploadError) throw uploadError;
+      const uploadResult = await uploadToS3(fileToUpload, filePath, (progress) => {
+        setUploadProgress(progress);
+      });
+
+      if (!uploadResult.success) {
+        throw new Error(uploadResult.error || "Failed to upload file");
+      }
 
       setDeploymentStatus("Creating deployment record...");
       const slug = formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       
-      const { data: deployment, error: dbError } = await supabase
-        .from("products")
-        .insert([
-          {
-            name: formData.name,
-            slug,
-            description: formData.description,
-            model_type: formData.modelType,
-            framework: formData.framework,
-            requirements: formData.requirements,
-            api_endpoint: formData.apiEndpoint,
-            environment: formData.environment,
-            version: formData.version,
-            price: parseFloat(formData.price),
-            file_url: filePath,
-            status: "active",
-            created_by: (await supabase.auth.getUser()).data.user?.id,
-            source: uploadType === "github" ? githubUrl : "upload",
-          },
-        ])
-        .select()
-        .single();
+      const deployment = await createDeployment({
+        name: formData.name,
+        description: formData.description,
+        model_type: formData.modelType,
+        framework: formData.framework,
+        requirements: formData.requirements,
+        api_endpoint: formData.apiEndpoint,
+        environment: formData.environment,
+        version: formData.version,
+        file_path: filePath,
+        status: 'pending',
+        slug
+      });
 
-      if (dbError) throw dbError;
+      if (!deployment) {
+        throw new Error("Failed to create deployment record");
+      }
 
-      toast.success("Agent deployed successfully!");
-      router.push(`/marketplace/${deployment.slug}`);
+      toast.success("Deployment created successfully!");
+      router.push(`/deployments/${deployment.id}`);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "An error occurred";
-      setError(errorMessage);
-      toast.error(errorMessage);
-      setDeploymentStatus("Deployment failed");
+      console.error("Deployment error:", err);
+      setError(err instanceof Error ? err.message : "An error occurred during deployment");
+      toast.error("Deployment failed");
     } finally {
       setLoading(false);
     }

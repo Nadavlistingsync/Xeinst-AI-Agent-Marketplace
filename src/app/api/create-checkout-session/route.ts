@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { getProduct } from '@/lib/db-helpers';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,13 +16,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get product details
-    const { data: product, error: productError } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', productId)
-      .single();
-
-    if (productError || !product) {
+    const product = await getProduct(productId);
+    if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }

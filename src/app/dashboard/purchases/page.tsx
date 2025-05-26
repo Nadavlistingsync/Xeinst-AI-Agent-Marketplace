@@ -1,85 +1,66 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
 import { useSession } from "next-auth/react";
+import { getUserPurchases } from "@/lib/db-helpers";
+import Link from "next/link";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-export default function PurchasesDashboard() {
+export default function PurchasesPage() {
   const { data: session } = useSession();
   const [purchases, setPurchases] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!session?.user?.email) return;
     const fetchPurchases = async () => {
-      setLoading(true);
-      setError(null);
+      if (!session?.user?.id) return;
+
       try {
-        const { data, error } = await supabase
-          .from("purchases")
-          .select("*, product:products(*)")
-          .eq("user_id", session.user.email)
-          .order("purchased_at", { ascending: false });
-        if (error) throw error;
-        setPurchases(data || []);
+        const data = await getUserPurchases(session.user.id);
+        setPurchases(data);
       } catch (err) {
-        setError("Failed to fetch purchases");
+        setError("Failed to load purchases");
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchPurchases();
-  }, [session?.user?.email]);
+  }, [session?.user?.id]);
 
-  const handleDownload = async (product: any) => {
-    try {
-      const res = await fetch(`/api/download-product`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.open(data.url, '_blank');
-      } else {
-        alert(data.error || 'Failed to get download link');
-      }
-    } catch (err) {
-      alert('Failed to download');
-    }
-  };
-
-  if (!session) return <div className="text-center mt-20">Sign in to view your purchases.</div>;
-  if (loading) return <div className="text-center mt-20">Loading...</div>;
-  if (error) return <div className="text-center mt-20 text-red-600">{error}</div>;
+  if (loading) return <div>Loading...</div>;
+  if (error) return <div className="text-red-500">{error}</div>;
 
   return (
-    <div className="max-w-4xl mx-auto mt-10 p-6 bg-white/10 rounded shadow">
-      <h1 className="text-3xl font-bold mb-6 text-white">My Purchases</h1>
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-3xl font-bold mb-6">Your Purchases</h1>
+
       {purchases.length === 0 ? (
-        <div className="text-gray-300">You haven't purchased any agents yet.</div>
+        <p>You haven't purchased any products yet.</p>
       ) : (
-        <ul className="space-y-6">
+        <div className="grid gap-6">
           {purchases.map((purchase) => (
-            <li key={purchase.id} className="bg-black/30 rounded-lg p-4 flex justify-between items-center">
-              <div>
-                <div className="text-xl font-semibold text-white">{purchase.product?.name}</div>
-                <div className="text-gray-300">{purchase.product?.description}</div>
+            <div key={purchase.id} className="border rounded-lg p-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl font-semibold mb-2">{purchase.name}</h2>
+                  <p className="text-gray-600 mb-2">{purchase.description}</p>
+                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                    <span>Category: {purchase.category}</span>
+                    <span>Price: ${purchase.price}</span>
+                    <span>Purchased: {new Date(purchase.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                <Link
+                  href={`/product/${purchase.id}`}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  View Details
+                </Link>
               </div>
-              <button
-                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
-                onClick={() => handleDownload(purchase.product)}
-              >
-                Download
-              </button>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

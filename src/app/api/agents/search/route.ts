@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { db } from '@/lib/db';
+import { products } from '@/lib/schema';
+import { eq, and, gte, lte, ilike, or } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,59 +13,59 @@ export async function GET(request: NextRequest) {
     const minRating = searchParams.get('minRating');
     const sortBy = searchParams.get('sortBy') || 'newest';
 
-    let supabaseQuery = supabase
-      .from('products')
-      .select('*')
-      .eq('is_public', true);
+    let dbQuery = db
+      .select()
+      .from(products)
+      .where(eq(products.is_public, true));
 
     // Apply text search
     if (query) {
-      supabaseQuery = supabaseQuery.or(
-        `name.ilike.%${query}%,description.ilike.%${query}%,tag.ilike.%${query}%`
+      dbQuery = dbQuery.where(
+        or(
+          ilike(products.name, `%${query}%`),
+          ilike(products.description, `%${query}%`),
+          ilike(products.category, `%${query}%`)
+        )
       );
     }
 
     // Apply category filter
     if (category && category !== 'All') {
-      supabaseQuery = supabaseQuery.eq('tag', category);
+      dbQuery = dbQuery.where(eq(products.category, category));
     }
 
     // Apply price filters
     if (minPrice) {
-      supabaseQuery = supabaseQuery.gte('price', parseFloat(minPrice));
+      dbQuery = dbQuery.where(gte(products.price, parseFloat(minPrice)));
     }
     if (maxPrice) {
-      supabaseQuery = supabaseQuery.lte('price', parseFloat(maxPrice));
+      dbQuery = dbQuery.where(lte(products.price, parseFloat(maxPrice)));
     }
 
     // Apply rating filter
     if (minRating) {
-      supabaseQuery = supabaseQuery.gte('average_rating', parseFloat(minRating));
+      dbQuery = dbQuery.where(gte(products.average_rating, parseFloat(minRating)));
     }
 
     // Apply sorting
     switch (sortBy) {
       case 'oldest':
-        supabaseQuery = supabaseQuery.order('created_at', { ascending: true });
+        dbQuery = dbQuery.orderBy(products.created_at);
         break;
       case 'price_asc':
-        supabaseQuery = supabaseQuery.order('price', { ascending: true });
+        dbQuery = dbQuery.orderBy(products.price);
         break;
       case 'price_desc':
-        supabaseQuery = supabaseQuery.order('price', { ascending: false });
+        dbQuery = dbQuery.orderBy(products.price, 'desc');
         break;
       case 'rating':
-        supabaseQuery = supabaseQuery.order('average_rating', { ascending: false });
+        dbQuery = dbQuery.orderBy(products.average_rating, 'desc');
         break;
       default: // newest
-        supabaseQuery = supabaseQuery.order('created_at', { ascending: false });
+        dbQuery = dbQuery.orderBy(products.created_at, 'desc');
     }
 
-    const { data: agents, error } = await supabaseQuery;
-
-    if (error) {
-      throw error;
-    }
+    const agents = await dbQuery;
 
     return NextResponse.json({ agents });
   } catch (error) {
