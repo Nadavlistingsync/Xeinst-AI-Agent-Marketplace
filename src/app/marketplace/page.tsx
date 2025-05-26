@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Star } from 'lucide-react';
@@ -35,11 +35,7 @@ export default function MarketplacePage() {
     sortBy: 'newest',
   });
 
-  useEffect(() => {
-    fetchAgents();
-  }, [filters]);
-
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
     try {
       const queryParams = new URLSearchParams();
       if (filters.query) queryParams.append('query', filters.query);
@@ -59,7 +55,11 @@ export default function MarketplacePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    fetchAgents();
+  }, [fetchAgents]);
 
   const handleSearch = (newFilters: SearchFiltersType) => {
     setFilters(newFilters);

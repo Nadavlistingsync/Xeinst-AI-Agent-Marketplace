@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Update download count
     await db
       .update(products)
-      .set({ download_count: product.download_count + 1 })
+      .set({ download_count: (product.download_count ?? 0) + 1 })
       .where(eq(products.id, id));
 
     // Return the file

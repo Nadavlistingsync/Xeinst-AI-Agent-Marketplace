@@ -22,6 +22,20 @@
       "when": 1748284940586,
       "tag": "0002_hot_sentinels",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1748287550740,
+      "tag": "0003_quick_iceman",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1748287761826,
+      "tag": "0004_striped_jack_flag",
+      "breakpoints": true
     }
   ]
 }

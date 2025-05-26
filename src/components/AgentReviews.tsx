@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Star } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
@@ -28,11 +28,7 @@ export default function AgentReviews({ agentId, averageRating, totalRatings }: A
   const [loading, setLoading] = useState(false);
   const [hoveredRating, setHoveredRating] = useState(0);
 
-  useEffect(() => {
-    fetchReviews();
-  }, [agentId]);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       const response = await fetch(`/api/reviews?agentId=${agentId}`);
       const data = await response.json();
@@ -41,7 +37,11 @@ export default function AgentReviews({ agentId, averageRating, totalRatings }: A
     } catch (error) {
       toast.error('Failed to load reviews');
     }
-  };
+  }, [agentId]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -25,6 +25,8 @@ export const products = pgTable('products', {
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   email: text('email').notNull().unique(),
+  password: text('password').notNull(),
+  role: text('role').notNull().default('user'),
   full_name: text('full_name'),
   stripe_customer_id: text('stripe_customer_id'),
   stripe_account_id: text('stripe_account_id'),

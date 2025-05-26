@@ -22,13 +22,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user has purchased the product
+    if (!session.user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const hasPurchased = await checkProductPurchase(session.user.id, productId);
     if (!hasPurchased) {
       return NextResponse.json({ error: 'Product not purchased' }, { status: 403 });
     }
 
     // Generate signed URL
-    const signedUrl = await getS3SignedUrl(product.file_path, 600); // 10 minutes
+    const signedUrl = await getS3SignedUrl(product.file_url, 600); // 10 minutes
 
     if (!signedUrl) {
       return NextResponse.json({ error: 'Failed to generate download URL' }, { status: 500 });
@@ -75,7 +78,7 @@ export async function GET(request: Request) {
     }
 
     // Generate signed URL for S3 object
-    const signedUrl = await getS3SignedUrl(product.file_path, 3600); // 1 hour
+    const signedUrl = await getS3SignedUrl(product.file_url, 3600); // 1 hour
 
     if (!signedUrl) {
       return NextResponse.json(

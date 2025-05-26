@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
               name: product.name,
               description: product.description,
             },
-            unit_amount: Math.round(product.price * 100), // Convert to cents
+            unit_amount: Math.round(Number(product.price) * 100), // Convert to cents
           },
           quantity: 1,
         },

@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { getProduct } from '@/lib/db-helpers';
 import { db } from '@/lib/db';
 import { purchases } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 export async function POST(request: Request) {
   const session = await getServerSession();
@@ -37,8 +37,7 @@ export async function POST(request: Request) {
     // Check if user has already purchased this product
     const [existing] = await db.select()
       .from(purchases)
-      .where(eq(purchases.product_id, productId))
-      .where(eq(purchases.user_id, session.user.id));
+      .where(and(eq(purchases.product_id, productId), eq(purchases.user_id, session.user.id)));
 
     if (existing) {
       return NextResponse.json(
