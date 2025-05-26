@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { products } from '@/lib/schema';
-import { eq, gte, lte, ilike, or } from 'drizzle-orm';
+import { eq, and, gte, lte, ilike, or } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,14 +13,11 @@ export async function GET(request: NextRequest) {
     const minRating = searchParams.get('minRating');
     const sortBy = searchParams.get('sortBy') || 'newest';
 
-    let dbQuery = db
-      .select()
-      .from(products)
-      .where(eq(products.is_public, true));
+    const conditions = [eq(products.is_public, true)];
 
     // Apply text search
     if (query) {
-      dbQuery = dbQuery.where(
+      conditions.push(
         or(
           ilike(products.name, `%${query}%`),
           ilike(products.description, `%${query}%`),
@@ -31,21 +28,26 @@ export async function GET(request: NextRequest) {
 
     // Apply category filter
     if (category && category !== 'All') {
-      dbQuery = dbQuery.where(eq(products.category, category));
+      conditions.push(eq(products.category, category));
     }
 
     // Apply price filters
     if (minPrice) {
-      dbQuery = dbQuery.where(gte(products.price, parseFloat(minPrice)));
+      conditions.push(gte(products.price, parseFloat(minPrice)));
     }
     if (maxPrice) {
-      dbQuery = dbQuery.where(lte(products.price, parseFloat(maxPrice)));
+      conditions.push(lte(products.price, parseFloat(maxPrice)));
     }
 
     // Apply rating filter
     if (minRating) {
-      dbQuery = dbQuery.where(gte(products.average_rating, parseFloat(minRating)));
+      conditions.push(gte(products.average_rating, parseFloat(minRating)));
     }
+
+    let dbQuery = db
+      .select()
+      .from(products)
+      .where(and(...conditions));
 
     // Apply sorting
     switch (sortBy) {
