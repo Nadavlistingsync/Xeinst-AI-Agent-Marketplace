@@ -9,5 +9,4 @@ export default {
   },
   verbose: true,
   strict: true,
-  target: 'es2017',
 } satisfies Config; 
