@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
     const filteredConditions = conditions.filter(Boolean);
 
     // Determine order column and direction
-    let orderByColumn = products.created_at;
+    let orderByColumn: any = products.created_at;
     let orderByDirection: 'asc' | 'desc' = 'desc';
     switch (sortBy) {
       case 'oldest':
