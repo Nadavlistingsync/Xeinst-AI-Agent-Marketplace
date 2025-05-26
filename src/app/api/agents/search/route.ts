@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { products } from '@/lib/schema';
-import { eq, and, gte, lte, ilike, or } from 'drizzle-orm';
+import { eq, and, gte, lte, ilike, or, desc } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,32 +48,41 @@ export async function GET(request: NextRequest) {
     // Filter out any undefined conditions
     const filteredConditions = conditions.filter(Boolean);
 
-    let dbQuery = db
+    // Determine order column and direction
+    let orderByColumn = products.created_at;
+    let orderByDirection: 'asc' | 'desc' = 'desc';
+    switch (sortBy) {
+      case 'oldest':
+        orderByColumn = products.created_at;
+        orderByDirection = 'asc';
+        break;
+      case 'price_asc':
+        orderByColumn = products.price;
+        orderByDirection = 'asc';
+        break;
+      case 'price_desc':
+        orderByColumn = products.price;
+        orderByDirection = 'desc';
+        break;
+      case 'rating':
+        orderByColumn = products.average_rating;
+        orderByDirection = 'desc';
+        break;
+      default: // newest
+        orderByColumn = products.created_at;
+        orderByDirection = 'desc';
+    }
+
+    // Build query with .orderBy and .where
+    const dbQuery = db
       .select()
       .from(products)
       .where(
         filteredConditions.length > 1
           ? and(...filteredConditions)
           : filteredConditions[0]
-      );
-
-    // Apply sorting
-    switch (sortBy) {
-      case 'oldest':
-        dbQuery = dbQuery.orderBy(products.created_at);
-        break;
-      case 'price_asc':
-        dbQuery = dbQuery.orderBy(products.price);
-        break;
-      case 'price_desc':
-        dbQuery = dbQuery.orderBy(products.price, 'desc');
-        break;
-      case 'rating':
-        dbQuery = dbQuery.orderBy(products.average_rating, 'desc');
-        break;
-      default: // newest
-        dbQuery = dbQuery.orderBy(products.created_at, 'desc');
-    }
+      )
+      .orderBy(orderByDirection === 'desc' ? desc(orderByColumn) : orderByColumn);
 
     const agents = await dbQuery;
 
