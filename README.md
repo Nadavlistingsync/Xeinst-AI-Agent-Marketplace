@@ -25,7 +25,7 @@ Copy `.env.example` to `.env.local` and fill in your values:
 
 ```bash
 # Database
-NEON_DATABASE_URL=postgres://user:password@host:port/database
+DATABASE_URL=postgres://user:password@host:port/database
 
 # Authentication
 NEXTAUTH_URL=http://localhost:3000

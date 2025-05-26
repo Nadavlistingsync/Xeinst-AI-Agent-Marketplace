@@ -21,7 +21,7 @@ interface Agent {
 export default function EditAgentPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
 

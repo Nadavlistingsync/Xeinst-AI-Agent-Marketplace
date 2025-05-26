@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const s3Client = new S3Client({
@@ -57,7 +57,7 @@ export async function uploadToS3(
   }
 }
 
-export async function getSignedUrl(key: string, expiresIn = 3600): Promise<string | null> {
+export async function getS3SignedUrl(key: string, expiresIn = 3600): Promise<string | null> {
   try {
     const command = new GetObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET!,
@@ -69,5 +69,19 @@ export async function getSignedUrl(key: string, expiresIn = 3600): Promise<strin
   } catch (error) {
     console.error('Error generating signed URL:', error);
     return null;
+  }
+}
+
+export async function deleteFileFromS3(key: string): Promise<void> {
+  try {
+    const command = new DeleteObjectCommand({
+      Bucket: process.env.AWS_S3_BUCKET!,
+      Key: key,
+    });
+
+    await s3Client.send(command);
+  } catch (error) {
+    console.error('Error deleting file from S3:', error);
+    throw error;
   }
 } 

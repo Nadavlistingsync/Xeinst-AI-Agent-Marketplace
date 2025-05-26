@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { getProductById, updateProduct, deleteProduct } from '@/lib/db-helpers';
+import { deleteFileFromS3 } from '@/lib/s3-helpers';
 
 export async function PUT(
   request: NextRequest,
@@ -22,13 +18,8 @@ export async function PUT(
     const updates = await request.json();
 
     // Check if user owns the agent
-    const { data: agent } = await supabase
-      .from('products')
-      .select('created_by')
-      .eq('id', id)
-      .single();
-
-    if (!agent || agent.created_by !== session.user.email) {
+    const agent = await getProductById(id);
+    if (!agent || agent.uploaded_by !== session.user.id) {
       return NextResponse.json(
         { error: 'You do not have permission to edit this agent' },
         { status: 403 }
@@ -36,28 +27,17 @@ export async function PUT(
     }
 
     // Update the agent
-    const { data, error } = await supabase
-      .from('products')
-      .update({
-        name: updates.name,
-        description: updates.description,
-        tag: updates.tag,
-        price: updates.price,
-        long_description: updates.long_description,
-        features: updates.features,
-        requirements: updates.requirements,
-        is_public: updates.is_public,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', id)
-      .select()
-      .single();
+    const updatedAgent = await updateProduct(id, {
+      name: updates.name,
+      description: updates.description,
+      price: updates.price,
+      features: updates.features,
+      requirements: updates.requirements,
+      is_public: updates.is_public,
+      updated_at: new Date(),
+    });
 
-    if (error) {
-      throw error;
-    }
-
-    return NextResponse.json({ agent: data });
+    return NextResponse.json({ agent: updatedAgent });
   } catch (error) {
     console.error('Error updating agent:', error);
     return NextResponse.json(
@@ -80,39 +60,25 @@ export async function DELETE(
     const { id } = context.params;
 
     // Check if user owns the agent
-    const { data: agent } = await supabase
-      .from('products')
-      .select('created_by, file_url')
-      .eq('id', id)
-      .single();
-
-    if (!agent || agent.created_by !== session.user.email) {
+    const agent = await getProductById(id);
+    if (!agent || agent.uploaded_by !== session.user.id) {
       return NextResponse.json(
         { error: 'You do not have permission to delete this agent' },
         { status: 403 }
       );
     }
 
-    // Delete the file from storage if it exists
+    // Delete the file from S3 if it exists
     if (agent.file_url) {
-      const { error: storageError } = await supabase.storage
-        .from('deployments')
-        .remove([agent.file_url]);
-
-      if (storageError) {
-        console.error('Error deleting file from storage:', storageError);
+      try {
+        await deleteFileFromS3(agent.file_url);
+      } catch (error) {
+        console.error('Error deleting file from S3:', error);
       }
     }
 
     // Delete the agent from the database
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      throw error;
-    }
+    await deleteProduct(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

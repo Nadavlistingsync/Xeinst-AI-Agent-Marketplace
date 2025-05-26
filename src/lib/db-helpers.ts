@@ -26,6 +26,23 @@ export async function createProduct(data: typeof products.$inferInsert) {
   return product;
 }
 
+export async function getProductById(id: string) {
+  const [product] = await db.select().from(products).where(eq(products.id, id));
+  return product;
+}
+
+export async function updateProduct(id: string, data: Partial<typeof products.$inferInsert>) {
+  const [product] = await db.update(products)
+    .set({ ...data, updated_at: new Date() })
+    .where(eq(products.id, id))
+    .returning();
+  return product;
+}
+
+export async function deleteProduct(id: string) {
+  await db.delete(products).where(eq(products.id, id));
+}
+
 // Purchase operations
 export async function checkProductPurchase(userId: string, productId: string) {
   const [purchase] = await db.select()

@@ -32,8 +32,8 @@ export const users = pgTable('users', {
 
 export const reviews = pgTable('reviews', {
   id: uuid('id').defaultRandom().primaryKey(),
-  product_id: uuid('product_id').references(() => products.id).onDelete('cascade'),
-  user_id: uuid('user_id').references(() => users.id).onDelete('cascade'),
+  product_id: uuid('product_id').references(() => products.id, { onDelete: 'cascade' }),
+  user_id: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }),
   rating: integer('rating').notNull(),
   comment: text('comment'),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -64,6 +64,17 @@ export const deployments = pgTable('deployments', {
   status: text('status').notNull().default('pending'),
   deployed_by: uuid('deployed_by').references(() => users.id),
   source: text('source').notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const purchases = pgTable('purchases', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  user_id: uuid('user_id').references(() => users.id),
+  product_id: uuid('product_id').references(() => products.id),
+  amount: decimal('amount', { precision: 10, scale: 2 }).notNull(),
+  status: text('status').default('pending'),
+  stripe_payment_intent_id: text('stripe_payment_intent_id'),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }); 

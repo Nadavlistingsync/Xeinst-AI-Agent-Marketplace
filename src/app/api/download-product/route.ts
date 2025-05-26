@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { getProduct } from '@/lib/db-helpers';
-import { getSignedUrl } from '@/lib/s3-helpers';
+import { getProduct, checkProductPurchase } from '@/lib/db-helpers';
+import { getS3SignedUrl } from '@/lib/s3-helpers';
+import { GetObjectCommand } from '@aws-sdk/client-s3';
+import { s3Client } from '@/lib/s3-client';
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate signed URL
-    const signedUrl = await getSignedUrl(product.file_path, 600); // 10 minutes
+    const signedUrl = await getS3SignedUrl(product.file_path, 600); // 10 minutes
 
     if (!signedUrl) {
       return NextResponse.json({ error: 'Failed to generate download URL' }, { status: 500 });
@@ -84,7 +86,7 @@ export async function GET(request: Request) {
       Key: key,
     });
 
-    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    const signedUrl = await getS3SignedUrl(s3Client, command, { expiresIn: 3600 });
 
     return NextResponse.json({ url: signedUrl });
   } catch (error) {

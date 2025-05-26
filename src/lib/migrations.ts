@@ -4,11 +4,11 @@ import { migrate } from 'drizzle-orm/neon-http/migrator';
 import * as schema from './schema';
 
 async function main() {
-  if (!process.env.NEON_DATABASE_URL) {
-    throw new Error('NEON_DATABASE_URL environment variable is not set');
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is not set');
   }
 
-  const sql = neon(process.env.NEON_DATABASE_URL);
+  const sql = neon(process.env.DATABASE_URL);
   const db = drizzle(sql, { schema });
 
   console.log('Running migrations...');

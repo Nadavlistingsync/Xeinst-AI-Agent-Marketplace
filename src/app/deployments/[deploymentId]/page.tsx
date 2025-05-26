@@ -1,34 +1,22 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { getDeployment } from "@/lib/db-helpers";
-import Link from "next/link";
+import { notFound } from "next/navigation";
+import type { Metadata } from 'next';
 
-export default function DeploymentPage({ params }: { params: { id: string } }) {
-  const { data: session } = useSession();
-  const [deployment, setDeployment] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export async function generateMetadata({ params }: { params: { deploymentId: string } }): Promise<Metadata> {
+  const deployment = await getDeployment(params.deploymentId);
+  
+  return {
+    title: deployment ? `${deployment.name} - Deployment Details` : 'Deployment Not Found',
+    description: deployment?.description || 'View deployment details and configuration',
+  };
+}
 
-  useEffect(() => {
-    const fetchDeployment = async () => {
-      try {
-        const data = await getDeployment(params.id);
-        setDeployment(data);
-      } catch (err) {
-        setError("Failed to load deployment");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+export default async function Page({ params }: { params: { deploymentId: string } }) {
+  const deployment = await getDeployment(params.deploymentId);
 
-    fetchDeployment();
-  }, [params.id]);
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
-  if (!deployment) return <div>Deployment not found</div>;
+  if (!deployment) {
+    notFound();
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">
