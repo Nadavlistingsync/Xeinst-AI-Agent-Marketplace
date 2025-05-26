@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getTrendingProducts } from '@/lib/db-helpers';
 
 export async function GET() {
