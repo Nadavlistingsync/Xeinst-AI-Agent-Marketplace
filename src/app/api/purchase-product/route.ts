@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate earnings
-    const earningsAmount = product.price * Number(product.earnings_split);
+    const earningsAmount = Number(product.price) * Number(product.earnings_split);
 
     // Create earnings record
     await db.insert(earnings).values({
