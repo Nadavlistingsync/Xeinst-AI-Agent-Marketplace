@@ -27,6 +27,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
+    if (!product.uploaded_by) {
+      return NextResponse.json({ error: 'Product creator not found' }, { status: 404 });
+    }
+
     // Get creator details
     const [creator] = await db
       .select()
