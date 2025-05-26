@@ -16,6 +16,7 @@ export const products = pgTable('products', {
   download_count: integer('download_count').default(0),
   average_rating: decimal('average_rating', { precision: 3, scale: 2 }),
   total_ratings: integer('total_ratings').default(0),
+  features: text('features').array(),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
