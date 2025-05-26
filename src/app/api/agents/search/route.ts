@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     // Apply rating filter
     if (minRating) {
-      conditions.push(gte(products.average_rating, parseFloat(minRating)));
+      conditions.push(gte(products.average_rating, minRating));
     }
 
     // Filter out any undefined conditions
