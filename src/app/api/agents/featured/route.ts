@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { products } from '@/lib/schema';
 import { eq, and } from 'drizzle-orm';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const featuredAgents = await db
       .select()

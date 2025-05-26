@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTrendingProducts } from '@/lib/db-helpers';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const products = await getTrendingProducts(10);
     return NextResponse.json(products);
