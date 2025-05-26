@@ -17,13 +17,14 @@ export async function GET(request: NextRequest) {
 
     // Apply text search
     if (query) {
-      conditions.push(
-        or(
-          ilike(products.name, `%${query}%`),
-          ilike(products.description, `%${query}%`),
-          ilike(products.category, `%${query}%`)
-        )
+      const orCondition = or(
+        ilike(products.name, `%${query}%`),
+        ilike(products.description, `%${query}%`),
+        ilike(products.category, `%${query}%`)
       );
+      if (orCondition) {
+        conditions.push(orCondition);
+      }
     }
 
     // Apply category filter
