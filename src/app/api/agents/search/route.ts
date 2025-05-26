@@ -34,10 +34,10 @@ export async function GET(request: NextRequest) {
 
     // Apply price filters
     if (minPrice) {
-      conditions.push(gte(products.price, parseFloat(minPrice)));
+      conditions.push(gte(products.price, minPrice));
     }
     if (maxPrice) {
-      conditions.push(lte(products.price, parseFloat(maxPrice)));
+      conditions.push(lte(products.price, maxPrice));
     }
 
     // Apply rating filter
