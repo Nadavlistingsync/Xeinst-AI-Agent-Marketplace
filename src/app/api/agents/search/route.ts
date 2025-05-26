@@ -44,10 +44,17 @@ export async function GET(request: NextRequest) {
       conditions.push(gte(products.average_rating, parseFloat(minRating)));
     }
 
+    // Filter out any undefined conditions
+    const filteredConditions = conditions.filter(Boolean);
+
     let dbQuery = db
       .select()
       .from(products)
-      .where(and(...conditions));
+      .where(
+        filteredConditions.length > 1
+          ? and(...filteredConditions)
+          : filteredConditions[0]
+      );
 
     // Apply sorting
     switch (sortBy) {
