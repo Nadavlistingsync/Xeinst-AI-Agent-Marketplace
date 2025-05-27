@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     // Update product download count
     await db
       .update(products)
-      .set({ download_count: product.download_count + 1 })
+      .set({ download_count: (product.download_count ?? 0) + 1 })
       .where(eq(products.id, product.id));
 
     return NextResponse.json({
