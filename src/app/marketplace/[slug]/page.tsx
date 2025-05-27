@@ -1,18 +1,84 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { getProduct } from '@/lib/db-helpers';
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { Star } from 'lucide-react';
 import Image from 'next/image';
 import AgentReviews from '@/components/AgentReviews';
+import { toast } from 'react-hot-toast';
 
-export default async function ProductPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
-  const session = await getServerSession(authOptions);
-  const product = await getProduct(slug);
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  long_description?: string;
+  category: string;
+  price?: number;
+  image_url?: string;
+  rating?: number;
+  features?: string[];
+  requirements?: string[];
+  created_by: string;
+  average_rating: number;
+  total_ratings: number;
+}
+
+export default function ProductPage({ params }: { params: { slug: string } }) {
+  const { data: session } = useSession();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`/api/products/${params.slug}`);
+        if (!response.ok) throw new Error('Failed to fetch product');
+        const data = await response.json();
+        setProduct(data);
+      } catch (error) {
+        toast.error('Failed to load product');
+        console.error('Error fetching product:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [params.slug]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   if (!product) {
-    return <div>Product not found</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-2xl text-gray-600">Product not found</div>
+      </div>
+    );
   }
+
+  const handleDelete = async () => {
+    if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+      try {
+        const response = await fetch(`/api/products/${product.id}`, {
+          method: 'DELETE',
+        });
+        
+        if (!response.ok) throw new Error('Failed to delete product');
+        
+        toast.success('Product deleted successfully');
+        window.location.href = '/marketplace';
+      } catch (error) {
+        toast.error('Failed to delete product');
+        console.error('Error deleting product:', error);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -93,11 +159,7 @@ export default async function ProductPage({ params }: { params: { slug: string }
                     Edit Product
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-                        // Handle delete
-                      }
-                    }}
+                    onClick={handleDelete}
                     className="bg-red-600 text-white py-3 px-8 rounded-lg hover:bg-red-700 transition-colors duration-300"
                   >
                     Delete Product
@@ -121,9 +183,9 @@ export default async function ProductPage({ params }: { params: { slug: string }
         <div className="mt-8 bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-semibold mb-6">Reviews & Ratings</h2>
           <AgentReviews
-            agentId={String(product.id)}
-            averageRating={product.average_rating || 0}
-            totalRatings={product.total_ratings || 0}
+            agentId={product.id}
+            averageRating={product.average_rating}
+            totalRatings={product.total_ratings}
           />
         </div>
       </div>
