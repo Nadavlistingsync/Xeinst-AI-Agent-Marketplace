@@ -8,7 +8,7 @@ type Props = {
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export default async function AgentPage({ params }: Props) {
+export default async function AgentPage({ params, searchParams }: Props) {
   const product = await getProduct(params.id);
   const session = await getServerSession(authOptions);
 
