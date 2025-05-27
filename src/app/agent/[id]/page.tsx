@@ -4,12 +4,13 @@ import { getProduct } from '@/lib/db-helpers';
 import { AgentPageClient } from './AgentPageClient';
 
 type Props = {
-  params: { id: string }
+  params: Promise<{ id: string }>
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
 export default async function AgentPage({ params, searchParams }: Props) {
-  const product = await getProduct(params.id);
+  const resolvedParams = await params;
+  const product = await getProduct(resolvedParams.id);
   const session = await getServerSession(authOptions);
 
   if (!product) {
