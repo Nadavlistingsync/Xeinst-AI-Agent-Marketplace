@@ -5,11 +5,11 @@ import { AgentPageClient } from './AgentPageClient';
 
 type Props = {
   params: Promise<{ id: string }>
-  searchParams: { [key: string]: string | string[] | undefined }
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export default async function AgentPage({ params, searchParams }: Props) {
-  const resolvedParams = await params;
+  const [resolvedParams, resolvedSearchParams] = await Promise.all([params, searchParams]);
   const product = await getProduct(resolvedParams.id);
   const session = await getServerSession(authOptions);
 
