@@ -88,4 +88,13 @@ export const purchases = pgTable('purchases', {
   stripe_payment_intent_id: text('stripe_payment_intent_id'),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-}); 
+});
+
+export const schema = {
+  products,
+  users,
+  reviews,
+  earnings,
+  deployments,
+  purchases,
+}; 

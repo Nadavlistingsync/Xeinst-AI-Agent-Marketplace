@@ -33,6 +33,15 @@ export async function getSignedDownloadUrl(key: string): Promise<string> {
   return getSignedUrl(s3Client, command, { expiresIn: 3600 });
 }
 
+export async function getS3SignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
+  const command = new GetObjectCommand({
+    Bucket: process.env.AWS_BUCKET_NAME!,
+    Key: key,
+  });
+
+  return getSignedUrl(s3Client, command, { expiresIn });
+}
+
 export async function deleteFileFromS3(key: string): Promise<void> {
   const command = new DeleteObjectCommand({
     Bucket: process.env.AWS_BUCKET_NAME!,
