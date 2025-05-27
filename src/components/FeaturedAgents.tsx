@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, TrendingUp, Award } from 'lucide-react';
+import { Star, TrendingUp, Award, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'react-hot-toast';
 
@@ -16,35 +16,76 @@ interface Agent {
   download_count: number;
 }
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
+
 export default function FeaturedAgents() {
   const router = useRouter();
   const [featuredAgents, setFeaturedAgents] = useState<Agent[]>([]);
   const [trendingAgents, setTrendingAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const fetchWithRetry = async (url: string, retries = MAX_RETRIES): Promise<any> => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      return data;
+    } catch (error) {
+      if (retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return fetchWithRetry(url, retries - 1);
+      }
+      throw error;
+    }
+  };
+
+  const fetchAgents = async () => {
+    try {
+      setError(null);
+      setLoading(true);
+
+      const [featuredData, trendingData] = await Promise.all([
+        fetchWithRetry('/api/agents/featured'),
+        fetchWithRetry('/api/agents/trending')
+      ]);
+
+      setFeaturedAgents(featuredData.agents);
+      setTrendingAgents(trendingData.agents);
+      setRetryCount(0);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load agents';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchAgents();
   }, []);
 
-  const fetchAgents = async () => {
-    try {
-      // Fetch featured agents (highest rated)
-      const featuredResponse = await fetch('/api/agents/featured');
-      const featuredData = await featuredResponse.json();
-      if (featuredData.error) throw new Error(featuredData.error);
-      setFeaturedAgents(featuredData.agents);
-
-      // Fetch trending agents (most downloaded)
-      const trendingResponse = await fetch('/api/agents/trending');
-      const trendingData = await trendingResponse.json();
-      if (trendingData.error) throw new Error(trendingData.error);
-      setTrendingAgents(trendingData.agents);
-    } catch (error) {
-      toast.error('Failed to load featured agents');
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={() => {
+            setRetryCount(prev => prev + 1);
+            fetchAgents();
+          }}
+          className="flex items-center gap-2 mx-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

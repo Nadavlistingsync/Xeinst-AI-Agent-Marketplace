@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 
@@ -202,9 +202,11 @@ export default function EditAgentForm({ agent, onSuccess }: EditAgentFormProps) 
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className={`px-6 py-2 rounded-lg text-white font-medium ${
+            loading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-          {loading ? 'Saving...' : 'Save Changes'}
+          {loading ? "Saving..." : "Save Changes"}
         </button>
       </div>
     </form>

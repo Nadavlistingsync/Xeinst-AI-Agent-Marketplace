@@ -1,34 +1,25 @@
 'use client';
 
-// Triggering new deployment
-import { motion } from 'framer-motion';
-import { 
-  ArrowRight, 
-  MessageSquare, 
-  Target, 
-  CheckCircle2,
-  Clock,
-  Star,
-  Building2,
-  Bot,
-  Store
-} from 'lucide-react';
 import FeaturedAgents from '@/components/FeaturedAgents';
+import { Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 
-const fadeIn = {
-  initial: { opacity: 0, y: 20 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true },
-  transition: { duration: 0.6 }
-};
+function ErrorFallback({ error }: { error: Error }) {
+  return (
+    <div className="text-center py-12">
+      <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
+      <p className="text-gray-600">{error.message}</p>
+    </div>
+  );
+}
 
-const staggerContainer = {
-  whileInView: {
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
+function LoadingFallback() {
+  return (
+    <div className="flex justify-center py-12">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
@@ -42,24 +33,28 @@ export default function Home() {
         </p>
       </section>
 
-      <FeaturedAgents />
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <Suspense fallback={<LoadingFallback />}>
+          <FeaturedAgents />
+        </Suspense>
+      </ErrorBoundary>
 
       <section className="mt-16 text-center">
         <h2 className="text-3xl font-bold mb-4">Why Choose Our Platform?</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
-          <div className="p-6 bg-white rounded-xl shadow-lg">
+          <div className="p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
             <h3 className="text-xl font-semibold mb-2">Verified Agents</h3>
             <p className="text-gray-600">
               All agents are thoroughly tested and verified for quality and performance.
             </p>
           </div>
-          <div className="p-6 bg-white rounded-xl shadow-lg">
+          <div className="p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
             <h3 className="text-xl font-semibold mb-2">Easy Integration</h3>
             <p className="text-gray-600">
               Simple deployment process with comprehensive documentation and support.
             </p>
           </div>
-          <div className="p-6 bg-white rounded-xl shadow-lg">
+          <div className="p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300">
             <h3 className="text-xl font-semibold mb-2">Community Driven</h3>
             <p className="text-gray-600">
               Join a growing community of developers and users sharing their experiences.

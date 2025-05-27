@@ -15,142 +15,133 @@ interface Review {
 }
 
 interface AgentReviewsProps {
-  agentId: string;
+  productId: string;
   averageRating: number;
   totalRatings: number;
 }
 
-export default function AgentReviews({ agentId, averageRating, totalRatings }: AgentReviewsProps) {
+export default function AgentReviews({ productId, averageRating, totalRatings }: AgentReviewsProps) {
   const { data: session } = useSession();
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [userRating, setUserRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [hoveredRating, setHoveredRating] = useState(0);
+  const [rating, setRating] = useState(0);
+  const [review, setReview] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchReviews = useCallback(async () => {
     try {
-      const response = await fetch(`/api/reviews?agentId=${agentId}`);
+      const response = await fetch(`/api/reviews?productId=${productId}`);
       const data = await response.json();
       if (data.error) throw new Error(data.error);
       setReviews(data.reviews);
     } catch (error) {
       toast.error('Failed to load reviews');
     }
-  }, [agentId]);
+  }, [productId]);
 
   useEffect(() => {
     fetchReviews();
   }, [fetchReviews]);
 
-  const handleSubmitReview = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!session) {
       toast.error('Please sign in to submit a review');
       return;
     }
-    if (userRating === 0) {
+    if (!rating) {
       toast.error('Please select a rating');
       return;
     }
 
-    setLoading(true);
+    setIsSubmitting(true);
     try {
       const response = await fetch('/api/reviews', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          agentId,
-          rating: userRating,
-          comment,
+          productId,
+          rating,
+          review,
         }),
       });
 
-      const data = await response.json();
-      if (data.error) throw new Error(data.error);
+      if (!response.ok) {
+        throw new Error('Failed to submit review');
+      }
 
       toast.success('Review submitted successfully');
-      setUserRating(0);
-      setComment('');
+      setRating(0);
+      setReview('');
       fetchReviews();
     } catch (error) {
       toast.error('Failed to submit review');
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="mt-8">
-      <div className="flex items-center mb-6">
+    <div className="bg-white rounded-lg shadow-lg p-6">
+      <h2 className="text-2xl font-semibold mb-6">Reviews & Ratings</h2>
+      
+      <div className="flex items-center mb-8">
         <div className="flex items-center">
-          {[1, 2, 3, 4, 5].map((rating) => (
-            <Star
-              key={rating}
-              className={`w-6 h-6 ${
-                rating <= (hoveredRating || averageRating)
-                  ? 'text-yellow-400 fill-current'
-                  : 'text-gray-300'
-              }`}
-            />
-          ))}
+          <Star className="w-8 h-8 text-yellow-400 fill-current" />
+          <span className="text-3xl font-bold ml-2">{averageRating.toFixed(1)}</span>
         </div>
-        <span className="ml-2 text-gray-600">
-          {averageRating.toFixed(1)} ({totalRatings} reviews)
-        </span>
+        <span className="text-gray-500 ml-2">({totalRatings} reviews)</span>
       </div>
 
-      {session && (
-        <form onSubmit={handleSubmitReview} className="mb-8">
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Your Rating
-            </label>
-            <div className="flex items-center">
-              {[1, 2, 3, 4, 5].map((rating) => (
-                <button
-                  key={rating}
-                  type="button"
-                  onMouseEnter={() => setHoveredRating(rating)}
-                  onMouseLeave={() => setHoveredRating(0)}
-                  onClick={() => setUserRating(rating)}
-                  className="focus:outline-none"
-                >
-                  <Star
-                    className={`w-8 h-8 ${
-                      rating <= (hoveredRating || userRating)
-                        ? 'text-yellow-400 fill-current'
-                        : 'text-gray-300'
-                    }`}
-                  />
-                </button>
-              ))}
-            </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Your Rating
+          </label>
+          <div className="flex space-x-2">
+            {[1, 2, 3, 4, 5].map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRating(value)}
+                className={`p-2 rounded-full ${
+                  rating >= value
+                    ? 'text-yellow-400'
+                    : 'text-gray-300'
+                }`}
+              >
+                <Star className="w-6 h-6 fill-current" />
+              </button>
+            ))}
           </div>
+        </div>
 
-          <div className="mb-4">
-            <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-2">
-              Your Review
-            </label>
-            <textarea
-              id="comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={4}
-              className="w-full rounded-lg border border-gray-300 p-3 focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Share your experience with this agent..."
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        <div>
+          <label
+            htmlFor="review"
+            className="block text-sm font-medium text-gray-700 mb-2"
           >
-            {loading ? 'Submitting...' : 'Submit Review'}
-          </button>
-        </form>
-      )}
+            Your Review
+          </label>
+          <textarea
+            id="review"
+            value={review}
+            onChange={(e) => setReview(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={4}
+            placeholder="Write your review here..."
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+        >
+          {isSubmitting ? 'Submitting...' : 'Submit Review'}
+        </button>
+      </form>
 
       <div className="space-y-6">
         {reviews.map((review) => (

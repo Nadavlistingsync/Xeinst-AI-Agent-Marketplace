@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import JSZip from "jszip";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
@@ -11,10 +12,12 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 export default function DeployPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deploymentStatus, setDeploymentStatus] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -75,22 +78,9 @@ export default function DeployPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const totalSize = Array.from(e.target.files).reduce((acc, file) => acc + file.size, 0);
-      
-      if (totalSize > MAX_FILE_SIZE) {
-        toast.error(`Total size exceeds 50MB limit`);
-        return;
-      }
-
-      if (e.target.webkitdirectory) {
-        setFolderFiles(e.target.files);
-        setFile(null);
-      } else {
-        setFile(e.target.files[0]);
-        setFolderFiles(null);
-      }
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
     }
   };
 
@@ -107,6 +97,7 @@ export default function DeployPage() {
     setError("");
     setDeploymentStatus("Starting deployment...");
     setUploadProgress(0);
+    setIsUploading(true);
     
     try {
       let fileName = "";
@@ -131,7 +122,7 @@ export default function DeployPage() {
       }
 
       setDeploymentStatus("Uploading files...");
-      const filePath = `deployments/${fileName}`;
+      const filePath = `uploads/${session?.user?.id}/${Date.now()}-${fileName}`;
       
       const uploadResult = await uploadToS3(fileToUpload, filePath, (progress) => {
         setUploadProgress(progress);
@@ -142,8 +133,8 @@ export default function DeployPage() {
       }
 
       setDeploymentStatus("Creating deployment record...");
-      const slug = formData.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       
+      const source = uploadType === "github" ? "github" : "upload";
       const deployment = await createDeployment({
         name: formData.name,
         description: formData.description,
@@ -153,9 +144,9 @@ export default function DeployPage() {
         api_endpoint: formData.apiEndpoint,
         environment: formData.environment,
         version: formData.version,
-        file_path: filePath,
+        file_url: filePath,
         status: 'pending',
-        slug
+        source
       });
 
       if (!deployment) {
@@ -170,6 +161,7 @@ export default function DeployPage() {
       toast.error("Deployment failed");
     } finally {
       setLoading(false);
+      setIsUploading(false);
     }
   };
 
@@ -376,10 +368,10 @@ export default function DeployPage() {
           <div className="flex justify-end mt-8">
             <button
               type="submit"
-              disabled={loading}
-              className={`px-8 py-3 rounded-xl text-lg font-bold shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/50 ${loading ? "bg-gray-500 text-gray-300" : "bg-gradient-to-r from-blue-600 to-blue-400 text-white hover:from-blue-700 hover:to-blue-500"}`}
+              disabled={!file || isUploading}
+              className={`px-8 py-3 rounded-xl text-lg font-bold shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/50 ${isUploading ? "bg-gray-500 text-gray-300" : "bg-gradient-to-r from-blue-600 to-blue-400 text-white hover:from-blue-700 hover:to-blue-500"}`}
             >
-              {loading ? "Deploying..." : "Deploy Agent"}
+              {isUploading ? "Deploying..." : "Deploy Agent"}
             </button>
           </div>
         </form>

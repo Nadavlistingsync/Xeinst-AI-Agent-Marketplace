@@ -2,8 +2,11 @@ import { getDeployment } from "@/lib/db-helpers";
 import { notFound } from "next/navigation";
 import type { Metadata } from 'next';
 
-export async function generateMetadata({ params }: { params: { deploymentId: string } }): Promise<Metadata> {
-  const deployment = await getDeployment(params.deploymentId);
+type DeploymentParams = Promise<{ deploymentId: string }>;
+
+export async function generateMetadata({ params }: { params: DeploymentParams }): Promise<Metadata> {
+  const { deploymentId } = await params;
+  const deployment = await getDeployment(deploymentId);
   
   return {
     title: deployment ? `${deployment.name} - Deployment Details` : 'Deployment Not Found',
@@ -11,8 +14,9 @@ export async function generateMetadata({ params }: { params: { deploymentId: str
   };
 }
 
-export default async function Page({ params }: { params: { deploymentId: string } }) {
-  const deployment = await getDeployment(params.deploymentId);
+export default async function Page({ params }: { params: DeploymentParams }) {
+  const { deploymentId } = await params;
+  const deployment = await getDeployment(deploymentId);
 
   if (!deployment) {
     notFound();
@@ -60,15 +64,6 @@ export default async function Page({ params }: { params: { deploymentId: string 
             {deployment.description}
           </p>
         </div>
-
-        {deployment.configuration && (
-          <div className="border rounded-lg p-4">
-            <h2 className="text-xl font-semibold mb-4">Configuration</h2>
-            <pre className="bg-gray-100 p-4 rounded overflow-x-auto">
-              {JSON.stringify(deployment.configuration, null, 2)}
-            </pre>
-          </div>
-        )}
       </div>
     </div>
   );

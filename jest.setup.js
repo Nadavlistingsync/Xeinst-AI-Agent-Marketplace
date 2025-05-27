@@ -33,19 +33,45 @@ jest.mock('next/navigation', () => ({
   },
 }))
 
-// Mock IntersectionObserver for framer-motion
-if (typeof window !== 'undefined') {
-  window.IntersectionObserver = window.IntersectionObserver || class {
-    constructor() {}
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  }
-} else {
-  global.IntersectionObserver = class {
-    constructor() {}
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  }
-} 
+// Mock next/image
+jest.mock('next/image', () => ({
+  __esModule: true,
+  default: (props) => {
+    // eslint-disable-next-line jsx-a11y/alt-text
+    return <img {...props} />;
+  },
+}))
+
+// Mock fetch
+global.fetch = jest.fn();
+
+// Mock IntersectionObserver
+global.IntersectionObserver = class IntersectionObserver {
+  constructor() {}
+  observe() { return null; }
+  unobserve() { return null; }
+  disconnect() { return null; }
+};
+
+// Mock ResizeObserver
+global.ResizeObserver = class ResizeObserver {
+  constructor() {}
+  observe() { return null; }
+  unobserve() { return null; }
+  disconnect() { return null; }
+};
+
+// Mock window.matchMedia
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: jest.fn().mockImplementation(query => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+    dispatchEvent: jest.fn(),
+  })),
+}); 

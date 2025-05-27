@@ -9,7 +9,7 @@ export async function getProduct(id: string) {
 }
 
 export async function getProductBySlug(slug: string) {
-  const [product] = await db.select().from(products).where(eq(products.slug, slug));
+  const [product] = await db.select().from(products).where(eq(products.category, slug));
   return product;
 }
 
@@ -77,7 +77,7 @@ export async function getUserReview(userId: string, productId: string) {
 
 // Deployment operations
 export async function getDeployments(userId: string) {
-  return await db.select().from(deployments).where(eq(deployments.user_id, userId));
+  return await db.select().from(deployments).where(eq(deployments.deployed_by, userId));
 }
 
 export async function getDeployment(id: string) {

@@ -1,38 +1,45 @@
-import { pgTable, uuid, text, timestamp, decimal, boolean, integer } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, timestamp, decimal, boolean, integer, json } from 'drizzle-orm/pg-core';
 
 export const products = pgTable('products', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: text('id').primaryKey(),
   name: text('name').notNull(),
-  category: text('category').notNull(),
+  slug: text('slug').notNull().unique(),
   description: text('description').notNull(),
-  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
-  documentation: text('documentation'),
+  long_description: text('long_description'),
+  category: text('category').notNull(),
+  price: text('price').notNull(),
+  image_url: text('image_url'),
   file_url: text('file_url').notNull(),
-  uploaded_by: uuid('uploaded_by').references(() => users.id),
-  is_public: boolean('is_public').default(true),
-  is_featured: boolean('is_featured').default(false),
-  earnings_split: decimal('earnings_split', { precision: 3, scale: 2 }).default('0.70'),
-  status: text('status').default('pending'),
-  download_count: integer('download_count').default(0),
-  average_rating: decimal('average_rating', { precision: 3, scale: 2 }),
+  documentation: text('documentation'),
+  features: json('features').$type<string[]>(),
+  requirements: json('requirements').$type<string[]>(),
+  rating: integer('rating').default(0),
+  average_rating: integer('average_rating').default(0),
   total_ratings: integer('total_ratings').default(0),
-  features: text('features').array(),
-  requirements: text('requirements'),
-  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  created_by: text('created_by').notNull(),
+  uploaded_by: text('uploaded_by').notNull(),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
+  is_public: boolean('is_public').default(true).notNull(),
+  is_featured: boolean('is_featured').default(false).notNull(),
+  download_count: integer('download_count').default(0),
+  earnings_split: decimal('earnings_split', { precision: 3, scale: 2 }).default('0.70'),
 });
 
+export type Product = typeof products.$inferSelect;
+export type NewProduct = typeof products.$inferInsert;
+
 export const users = pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: text('id').primaryKey(),
+  name: text('name'),
   email: text('email').notNull().unique(),
-  password: text('password').notNull(),
-  role: text('role').notNull().default('user'),
-  full_name: text('full_name'),
-  stripe_customer_id: text('stripe_customer_id'),
-  stripe_account_id: text('stripe_account_id'),
-  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  image: text('image'),
+  created_at: timestamp('created_at').defaultNow().notNull(),
+  updated_at: timestamp('updated_at').defaultNow().notNull(),
 });
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
 
 export const reviews = pgTable('reviews', {
   id: uuid('id').defaultRandom().primaryKey(),

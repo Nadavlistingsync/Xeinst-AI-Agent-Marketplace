@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { getProduct } from '@/lib/db-helpers';
 import { Star } from 'lucide-react';
 import Image from 'next/image';
-import AgentReviews from '@/components/AgentReviews';
-import { useSession } from 'next-auth/react';
+import { AgentReviews } from '@/components/AgentReviews';
 import { toast } from 'react-hot-toast';
 
 interface Agent {
@@ -24,185 +26,105 @@ interface Agent {
   created_by: string;
 }
 
-export default function AgentPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { data: session } = useSession();
-  const [agent, setAgent] = useState<Agent | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+export default async function AgentPage({ params }: { params: { id: string } }) {
+  const product = await getProduct(params.id);
+  const session = await getServerSession(authOptions);
 
-  useEffect(() => {
-    const fetchAgent = async () => {
-      try {
-        const response = await fetch(`/api/list-products?id=${params.id}`);
-        const data = await response.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        setAgent(data.products[0]);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch agent details');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAgent();
-  }, [params.id]);
-
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this agent? This action cannot be undone.')) {
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      const response = await fetch(`/api/agents/${params.id}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-      if (data.error) throw new Error(data.error);
-
-      toast.success('Agent deleted successfully');
-      router.push('/dashboard');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete agent');
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  if (loading) {
+  if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold">Agent not found</h1>
       </div>
     );
   }
 
-  if (error || !agent) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-500 text-center">
-          <h2 className="text-2xl font-bold mb-2">Error</h2>
-          <p>{error || 'Agent not found'}</p>
-        </div>
-      </div>
-    );
-  }
+  const isCreator = session?.user?.id === product.created_by;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {agent.image_url && (
-            <div className="w-full h-64 md:h-96 relative">
-              <Image
-                src={agent.image_url}
-                alt={agent.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                priority
-              />
+    <div className="container mx-auto px-4 py-8">
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="relative h-96 w-full">
+          {product.image_url && (
+            <Image
+              src={product.image_url}
+              alt={product.name}
+              fill
+              className="object-cover"
+            />
+          )}
+        </div>
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+              <div className="flex items-center mb-4">
+                <Star className="w-5 h-5 text-yellow-400 fill-current" />
+                <span className="ml-1">{product.average_rating || 0}</span>
+                <span className="ml-2 text-gray-500">
+                  ({product.total_ratings || 0} reviews)
+                </span>
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-blue-600">${product.price}</div>
+          </div>
+
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold mb-2">Description</h2>
+            <p className="text-gray-600">{product.long_description || product.description}</p>
+          </div>
+
+          {product.features && product.features.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-2">Features</h2>
+              <ul className="list-disc list-inside text-gray-600">
+                {product.features.map((feature, index) => (
+                  <li key={index}>{feature}</li>
+                ))}
+              </ul>
             </div>
           )}
-          
-          <div className="p-8">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">{agent.name}</h1>
-                <div className="flex items-center">
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm mr-4">
-                    {agent.tag}
-                  </span>
-                  <div className="flex items-center">
-                    <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                    <span className="ml-1 text-gray-600">{agent.rating}</span>
-                  </div>
-                </div>
-              </div>
-              {agent.price && (
-                <div className="text-3xl font-bold text-blue-600">
-                  ${agent.price}
-                </div>
-              )}
+
+          {product.requirements && product.requirements.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold mb-2">Requirements</h2>
+              <ul className="list-disc list-inside text-gray-600">
+                {product.requirements.map((requirement, index) => (
+                  <li key={index}>{requirement}</li>
+                ))}
+              </ul>
             </div>
+          )}
 
-            <p className="text-gray-600 text-lg mb-8">{agent.description}</p>
-
-            {agent.long_description && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-4">About this Agent</h2>
-                <p className="text-gray-600">{agent.long_description}</p>
-              </div>
+          <div className="flex justify-between items-center mt-8">
+            {isCreator ? (
+              <>
+                <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                  Edit
+                </button>
+                <button className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">
+                  Delete
+                </button>
+              </>
+            ) : (
+              <>
+                <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                  Contact Creator
+                </button>
+                <button className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+                  Purchase
+                </button>
+              </>
             )}
-
-            {agent.features && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-4">Features</h2>
-                <ul className="list-disc list-inside space-y-2">
-                  {agent.features.map((feature, index) => (
-                    <li key={index} className="text-gray-600">{feature}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {agent.requirements && (
-              <div className="mb-8">
-                <h2 className="text-2xl font-semibold mb-4">Requirements</h2>
-                <ul className="list-disc list-inside space-y-2">
-                  {agent.requirements.map((requirement, index) => (
-                    <li key={index} className="text-gray-600">{requirement}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <div className="flex justify-end space-x-4">
-              {session?.user?.email === agent.created_by ? (
-                <>
-                  <button
-                    onClick={() => router.push(`/agent/${agent.id}/edit`)}
-                    className="bg-white text-blue-600 border-2 border-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 transition-colors duration-300"
-                  >
-                    Edit Agent
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    className="bg-red-600 text-white py-3 px-8 rounded-lg hover:bg-red-700 transition-colors duration-300 disabled:opacity-50"
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete Agent'}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button className="bg-white text-blue-600 border-2 border-blue-600 py-3 px-8 rounded-lg hover:bg-blue-50 transition-colors duration-300">
-                    Contact Seller
-                  </button>
-                  <button className="bg-blue-600 text-white py-3 px-8 rounded-lg hover:bg-blue-700 transition-colors duration-300">
-                    Purchase Agent
-                  </button>
-                </>
-              )}
-            </div>
           </div>
         </div>
+      </div>
 
-        {/* Reviews Section */}
-        <div className="mt-8 bg-white rounded-xl shadow-lg p-8">
-          <h2 className="text-2xl font-semibold mb-6">Reviews & Ratings</h2>
-          <AgentReviews
-            agentId={String(agent.id)}
-            averageRating={agent.average_rating || 0}
-            totalRatings={agent.total_ratings || 0}
-          />
-        </div>
+      <div className="mt-8">
+        <AgentReviews
+          productId={product.id}
+          averageRating={Number(product.average_rating) || 0}
+          totalRatings={product.total_ratings || 0}
+        />
       </div>
     </div>
   );

@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
       .values({
         name,
         description,
-        price: parseFloat(price),
+        price: price,
         category,
         uploaded_by: uploader_id,
         file_url: `/uploads/${fileName}`,

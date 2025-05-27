@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { db } from "@/lib/db";
 import { products } from "@/lib/schema";
-import { eq } from "drizzle-orm";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -79,17 +78,13 @@ export default function UploadPage() {
 
     try {
       let uploadFile: File | null = null;
-      let fileName = "";
 
       if (uploadType === "file") {
         if (!file) throw new Error("Please select a file to upload");
         uploadFile = file;
-        const fileExt = file.name.split(".").pop();
-        fileName = `${Math.random()}.${fileExt}`;
       } else {
         if (!githubUrl) throw new Error("Please enter a GitHub repository URL");
         uploadFile = await fetchGithubRepoAsZip(githubUrl);
-        fileName = `${Math.random()}.zip`;
       }
 
       // Upload file to S3
@@ -100,13 +95,12 @@ export default function UploadPage() {
         name: formData.name,
         category: formData.category,
         description: formData.description,
-        price: parseFloat(formData.price),
+        price: formData.price,
         documentation: formData.documentation,
         file_url: fileUrl,
         uploaded_by: session.user.id,
         is_public: true,
         status: "pending",
-        source: uploadType === "github" ? githubUrl : "upload",
       }).returning();
 
       router.push(`/product/${product.id}`);
@@ -199,15 +193,15 @@ export default function UploadPage() {
             value={formData.description}
             onChange={handleInputChange}
             required
-            rows={3}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            rows={4}
             aria-required="true"
           />
         </div>
 
         <div>
           <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-            Price ($)
+            Price
           </label>
           <input
             type="number"
@@ -220,23 +214,20 @@ export default function UploadPage() {
             step="0.01"
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             aria-required="true"
-            aria-label="Price in dollars"
           />
         </div>
 
         <div>
           <label htmlFor="documentation" className="block text-sm font-medium text-gray-700">
-            Documentation (Markdown)
+            Documentation
           </label>
           <textarea
             id="documentation"
             name="documentation"
             value={formData.documentation}
             onChange={handleInputChange}
-            required
-            rows={5}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            aria-required="true"
+            rows={4}
           />
         </div>
 
@@ -249,10 +240,9 @@ export default function UploadPage() {
               type="file"
               id="file"
               onChange={handleFileChange}
-              required={uploadType === "file"}
+              required
               className="mt-1 block w-full"
-              aria-required={uploadType === "file"}
-              aria-label="Select file to upload"
+              aria-required="true"
             />
           </div>
         ) : (
@@ -261,15 +251,14 @@ export default function UploadPage() {
               GitHub Repository URL
             </label>
             <input
-              type="text"
+              type="url"
               id="githubUrl"
               value={githubUrl}
               onChange={handleGithubUrlChange}
-              required={uploadType === "github"}
-              placeholder="https://github.com/owner/repo"
+              required
+              placeholder="https://github.com/username/repo"
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              aria-required={uploadType === "github"}
-              aria-label="GitHub repository URL"
+              aria-required="true"
             />
           </div>
         )}
@@ -277,11 +266,12 @@ export default function UploadPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-60"
-          aria-busy={loading}
-          aria-label={loading ? "Uploading..." : "Submit form"}
+          className={`w-full py-2 px-4 rounded-md text-white font-medium ${
+            loading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
+          }`}
+          aria-disabled={loading}
         >
-          {loading ? (uploadType === "file" ? "Uploading..." : "Importing from GitHub...") : (uploadType === "file" ? "Upload Product" : "Import Product")}
+          {loading ? "Uploading..." : "Upload"}
         </button>
       </form>
     </div>

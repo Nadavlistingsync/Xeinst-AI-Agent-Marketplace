@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
     error: '/auth/error',
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account }) {
       if (account?.provider === 'github') {
         // Check if user exists
         const [existingUser] = await db
@@ -40,12 +40,13 @@ export const authOptions: NextAuthOptions = {
           await db.insert(users).values({
             email: user.email!,
             full_name: user.name,
+            password: '', // Required field, but not used for GitHub auth
           });
         }
       }
       return true;
     },
-    async session({ session, token }) {
+    async session({ session }) {
       if (session?.user) {
         const [user] = await db
           .select()
@@ -59,7 +60,7 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account }) {
       if (account) {
         token.accessToken = account.access_token;
       }
@@ -67,10 +68,10 @@ export const authOptions: NextAuthOptions = {
     },
   },
   events: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user }) {
       console.log('User signed in:', user.email);
     },
-    async signOut({ session, token }) {
+    async signOut({ session }) {
       console.log('User signed out:', session?.user?.email);
     },
   },
