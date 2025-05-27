@@ -3,7 +3,13 @@ import { authOptions } from '@/lib/auth';
 import { getProduct } from '@/lib/db-helpers';
 import { AgentPageClient } from './AgentPageClient';
 
-export default async function AgentPage({ params }: { params: { id: string } }) {
+interface PageProps {
+  params: {
+    id: string;
+  };
+}
+
+export default async function AgentPage({ params }: PageProps) {
   const product = await getProduct(params.id);
   const session = await getServerSession(authOptions);
 

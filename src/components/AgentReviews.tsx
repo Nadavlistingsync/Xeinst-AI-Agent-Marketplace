@@ -209,4 +209,5 @@ const AgentReviews = ({ productId, averageRating, totalRatings }: AgentReviewsPr
   );
 };
 
+export { AgentReviews };
 export default AgentReviews; 
