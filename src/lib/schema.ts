@@ -90,6 +90,17 @@ export const purchases = pgTable('purchases', {
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const files = pgTable('files', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  name: text('name').notNull(),
+  type: text('type').notNull(),
+  size: integer('size').notNull(),
+  data: text('data').notNull(), // Base64 encoded file data
+  uploaded_by: text('uploaded_by').notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const schema = {
   products,
   users,
@@ -97,4 +108,5 @@ export const schema = {
   earnings,
   deployments,
   purchases,
+  files,
 }; 
