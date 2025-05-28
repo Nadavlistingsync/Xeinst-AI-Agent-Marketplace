@@ -1,23 +1,16 @@
 {
   "version": 2,
-  "buildCommand": "prisma generate && next build",
-  "devCommand": "npm run dev",
+  "buildCommand": "next build",
+  "devCommand": "next dev",
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["iad1"],
   "env": {
-    "NODE_ENV": "production",
     "DATABASE_URL": "@database_url",
-    "NEXTAUTH_URL": "@nextauth_url",
     "NEXTAUTH_SECRET": "@nextauth_secret",
+    "NEXTAUTH_URL": "@nextauth_url",
+    "NEXT_PUBLIC_SITE_URL": "@next_public_site_url",
     "GITHUB_ID": "@github_id",
-    "GITHUB_SECRET": "@github_secret",
-    "STRIPE_SECRET_KEY": "@stripe_secret_key",
-    "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
-    "STRIPE_PRICE_ID": "@stripe_price_id",
-    "AWS_ACCESS_KEY_ID": "@aws_access_key_id",
-    "AWS_SECRET_ACCESS_KEY": "@aws_secret_access_key",
-    "AWS_REGION": "@aws_region",
-    "AWS_BUCKET_NAME": "@aws_bucket_name"
+    "GITHUB_SECRET": "@github_secret"
   }
 } 
