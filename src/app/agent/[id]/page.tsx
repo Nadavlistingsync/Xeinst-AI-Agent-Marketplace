@@ -10,7 +10,7 @@ interface AgentPageProps {
 }
 
 export async function generateMetadata({ params }: AgentPageProps): Promise<Metadata> {
-  const agent = await prisma.deployments.findUnique({
+  const agent = await prisma.deployment.findUnique({
     where: { id: params.id },
     select: { name: true, description: true },
   });
@@ -28,7 +28,7 @@ export async function generateMetadata({ params }: AgentPageProps): Promise<Meta
 }
 
 export default async function AgentPageRoute({ params }: AgentPageProps) {
-  const agent = await prisma.deployments.findUnique({
+  const agent = await prisma.deployment.findUnique({
     where: { id: params.id },
   });
 

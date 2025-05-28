@@ -69,7 +69,7 @@ export default function FeaturedAgents() {
 
   useEffect(() => {
     fetchAgents();
-  }, []);
+  }, [fetchAgents]);
 
   if (error) {
     return (

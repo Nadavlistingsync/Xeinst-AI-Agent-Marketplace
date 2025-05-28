@@ -36,6 +36,7 @@ const handler = NextAuth({
           id: user.id,
           email: user.email,
           role: user.role,
+          subscription_tier: user.subscription_tier,
         };
       }
     })
@@ -48,6 +49,7 @@ const handler = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.subscription_tier = user.subscription_tier;
       }
       return token;
     },
@@ -55,6 +57,7 @@ const handler = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.subscription_tier = token.subscription_tier as string;
       }
       return session;
     }

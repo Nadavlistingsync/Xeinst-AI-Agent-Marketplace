@@ -44,7 +44,7 @@ export function AgentPage({ agentId }: AgentPageProps) {
 
   useEffect(() => {
     fetchAgentDetails();
-  }, [agentId]);
+  }, [fetchAgentDetails]);
 
   const fetchAgentDetails = async () => {
     try {

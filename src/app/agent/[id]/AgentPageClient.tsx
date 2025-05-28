@@ -3,7 +3,6 @@
 import { Star } from 'lucide-react';
 import Image from 'next/image';
 import { AgentReviews } from '@/components/AgentReviews';
-import { toast } from 'react-hot-toast';
 import { Product } from '@/lib/schema';
 
 interface AgentPageClientProps {

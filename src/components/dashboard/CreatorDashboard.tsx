@@ -42,10 +42,8 @@ export function CreatorDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (session) {
-      fetchDashboardData();
-    }
-  }, [session]);
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const fetchDashboardData = async () => {
     try {

@@ -36,6 +36,7 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword,
         role: 'user',
+        subscription_tier: 'free',
       })
       .returning();
 

@@ -41,12 +41,13 @@ export const authOptions: NextAuthOptions = {
             email: user.email!,
             full_name: user.name,
             password: '', // Required field, but not used for GitHub auth
+            subscription_tier: 'free', // Set default subscription tier
           });
         }
       }
       return true;
     },
-    async session({ session }) {
+    async session({ session, token }) {
       if (session?.user) {
         const [user] = await db
           .select()
@@ -56,13 +57,20 @@ export const authOptions: NextAuthOptions = {
 
         if (user) {
           session.user.id = user.id;
+          session.user.subscription_tier = user.subscription_tier;
+          session.user.role = user.role;
         }
       }
       return session;
     },
-    async jwt({ token, account }) {
+    async jwt({ token, user, account }) {
       if (account) {
         token.accessToken = account.access_token;
+      }
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+        token.subscription_tier = user.subscription_tier;
       }
       return token;
     },
