@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -42,11 +42,7 @@ export function AgentPage({ agentId }: AgentPageProps) {
   const [loading, setLoading] = useState(true);
   const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
 
-  useEffect(() => {
-    fetchAgentDetails();
-  }, [fetchAgentDetails]);
-
-  const fetchAgentDetails = async () => {
+  const fetchAgentDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/agents/${agentId}`);
       if (!response.ok) {
@@ -64,7 +60,11 @@ export function AgentPage({ agentId }: AgentPageProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [agentId, toast]);
+
+  useEffect(() => {
+    fetchAgentDetails();
+  }, [fetchAgentDetails]);
 
   const handleDownload = async () => {
     if (!session) {

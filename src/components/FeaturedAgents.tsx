@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Star, TrendingUp, Award, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
@@ -45,7 +45,7 @@ export default function FeaturedAgents() {
     }
   };
 
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
     try {
       setError(null);
       setLoading(true);
@@ -65,7 +65,7 @@ export default function FeaturedAgents() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchAgents();
