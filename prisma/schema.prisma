@@ -39,6 +39,7 @@ model Deployment {
   downloads     Int       @default(0)
   rating        Float     @default(0)
   rating_count  Int       @default(0)
+  download_count Int      @default(0)
 }
 
 model Earning {
