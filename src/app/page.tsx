@@ -3,6 +3,7 @@
 import FeaturedAgents from '@/components/FeaturedAgents';
 import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
+import Link from 'next/link';
 
 function ErrorFallback({ error }: { error: Error }) {
   return (
@@ -33,12 +34,12 @@ export default function Home() {
         <p className="relative z-10 text-xl md:text-2xl text-white/80 max-w-2xl mx-auto mb-8">
           Discover and deploy powerful AI agents to automate your tasks and enhance your productivity.
         </p>
-        <a
+        <Link
           href="/marketplace"
           className="relative z-10 inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-4 rounded-xl shadow-lg transition-all duration-300 text-lg mt-2"
         >
           Explore Marketplace
-        </a>
+        </Link>
         <div className="relative z-10 mt-8">
           <svg width="80" height="80" fill="none" viewBox="0 0 80 80"><circle cx="40" cy="40" r="38" stroke="#60A5FA" strokeWidth="4" fill="#1e293b" /><path d="M40 20v20l14 8" stroke="#60A5FA" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </div>
