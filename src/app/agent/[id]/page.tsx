@@ -1,26 +1,46 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { getProduct } from '@/lib/db-helpers';
-import { AgentPageClient } from './AgentPageClient';
+import { Metadata } from 'next';
+import { AgentPage } from '@/components/agent/AgentPage';
+import { notFound } from 'next/navigation';
+import prisma from '@/lib/prisma';
 
-interface PageProps {
-  params: { id: string }
-  searchParams: { [key: string]: string | string[] | undefined }
+interface AgentPageProps {
+  params: {
+    id: string;
+  };
 }
 
-export default async function AgentPage({ params, searchParams }: PageProps) {
-  const product = await getProduct(params.id);
-  const session = await getServerSession(authOptions);
+export async function generateMetadata({ params }: AgentPageProps): Promise<Metadata> {
+  const agent = await prisma.deployments.findUnique({
+    where: { id: params.id },
+    select: { name: true, description: true },
+  });
 
-  if (!product) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold">Agent not found</h1>
-      </div>
-    );
+  if (!agent) {
+    return {
+      title: 'Agent Not Found - Xeinst',
+    };
   }
 
-  const isCreator = session?.user?.id === product.created_by;
+  return {
+    title: `${agent.name} - Xeinst`,
+    description: agent.description,
+  };
+}
 
-  return <AgentPageClient product={product} isCreator={isCreator} />;
+export default async function AgentPageRoute({ params }: AgentPageProps) {
+  const agent = await prisma.deployments.findUnique({
+    where: { id: params.id },
+  });
+
+  if (!agent) {
+    notFound();
+  }
+
+  return (
+    <div className="container mx-auto py-8">
+      <div className="max-w-4xl mx-auto">
+        <AgentPage agentId={params.id} />
+      </div>
+    </div>
+  );
 } 

@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -12,4 +6,119 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model deployments {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  description  String?
+  model_type   String
+  framework    String
+  requirements String?
+  api_endpoint String?
+  environment  String   @default("production")
+  version      String
+  file_url     String
+  status       String   @default("pending")
+  deployed_by  String?  @db.Uuid
+  source       String
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+  users        users?   @relation(fields: [deployed_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "deployments_deployed_by_users_id_fk")
+}
+
+model earnings {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id            String?   @db.Uuid
+  product_id         String?   @db.Uuid
+  amount             Decimal   @db.Decimal(10, 2)
+  status             String?   @default("pending")
+  stripe_transfer_id String?
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  paid_at            DateTime? @db.Timestamptz(6)
+  products           products? @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "earnings_product_id_products_id_fk")
+  users              users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "earnings_user_id_users_id_fk")
+}
+
+model files {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  type        String
+  size        Int
+  data        String
+  uploaded_by String
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model products {
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name             String
+  category         String
+  description      String
+  price            Decimal     @db.Decimal(10, 2)
+  documentation    String?
+  file_url         String
+  uploaded_by      String?     @db.Uuid
+  is_public        Boolean     @default(true)
+  is_featured      Boolean     @default(false)
+  earnings_split   Decimal?    @default(0.70) @db.Decimal(3, 2)
+  status           String?     @default("pending")
+  download_count   Int?        @default(0)
+  average_rating   Decimal?    @default(0) @db.Decimal(3, 2)
+  total_ratings    Int?        @default(0)
+  created_at       DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime    @default(now()) @db.Timestamptz(6)
+  features         Json?
+  requirements     Json?
+  slug             String      @default("")
+  long_description String?
+  image_url        String?
+  rating           Int?        @default(0)
+  created_by       String?     @db.Uuid
+  earnings         earnings[]
+  users            users?      @relation(fields: [uploaded_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "products_uploaded_by_users_id_fk")
+  purchases        purchases[]
+  reviews          reviews[]
+}
+
+model purchases {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                  String?   @db.Uuid
+  product_id               String?   @db.Uuid
+  amount                   Decimal   @db.Decimal(10, 2)
+  status                   String?   @default("pending")
+  stripe_payment_intent_id String?
+  created_at               DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime  @default(now()) @db.Timestamptz(6)
+  products                 products? @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "purchases_product_id_products_id_fk")
+  users                    users?    @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "purchases_user_id_users_id_fk")
+}
+
+model reviews {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  product_id String?   @db.Uuid
+  user_id    String?   @db.Uuid
+  rating     Int
+  comment    String?
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  products   products? @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "reviews_product_id_products_id_fk")
+  users      users?    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "reviews_user_id_users_id_fk")
+}
+
+model users {
+  id                 String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email              String        @unique(map: "users_email_unique")
+  full_name          String?
+  stripe_customer_id String?
+  stripe_account_id  String?
+  created_at         DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime      @default(now()) @db.Timestamptz(6)
+  password           String
+  role               String        @default("user")
+  deployments        deployments[]
+  earnings           earnings[]
+  products           products[]
+  purchases          purchases[]
+  reviews            reviews[]
 }

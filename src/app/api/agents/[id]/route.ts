@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getProductById, updateProduct, deleteProduct } from '@/lib/db-helpers';
 import { deleteFileFromS3 } from '@/lib/s3-helpers';
+import prisma from '@/lib/prisma';
 
 export async function PUT(
   request: NextRequest,
@@ -85,6 +86,148 @@ export async function DELETE(
     console.error('Error deleting agent:', error);
     return NextResponse.json(
       { error: 'Failed to delete agent' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const agent = await prisma.deployments.findUnique({
+      where: { id: params.id },
+      include: {
+        users: {
+          select: {
+            id: true,
+            email: true,
+            full_name: true,
+          },
+        },
+      },
+    });
+
+    if (!agent) {
+      return NextResponse.json(
+        { error: 'Agent not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(agent);
+  } catch (error) {
+    console.error('Error fetching agent details:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const agent = await prisma.deployments.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!agent) {
+      return NextResponse.json(
+        { error: 'Agent not found' },
+        { status: 404 }
+      );
+    }
+
+    if (agent.deployed_by !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Not authorized to update this agent' },
+        { status: 403 }
+      );
+    }
+
+    const body = await req.json();
+    const updatedAgent = await prisma.deployments.update({
+      where: { id: params.id },
+      data: {
+        name: body.name,
+        description: body.description,
+        access_level: body.access_level,
+        license_type: body.license_type,
+        price_cents: body.price_cents,
+        updated_at: new Date(),
+      },
+    });
+
+    return NextResponse.json(updatedAgent);
+  } catch (error) {
+    console.error('Error updating agent:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const agent = await prisma.deployments.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!agent) {
+      return NextResponse.json(
+        { error: 'Agent not found' },
+        { status: 404 }
+      );
+    }
+
+    if (agent.deployed_by !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Not authorized to delete this agent' },
+        { status: 403 }
+      );
+    }
+
+    await prisma.deployments.delete({
+      where: { id: params.id },
+    });
+
+    return NextResponse.json({ message: 'Agent deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting agent:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
