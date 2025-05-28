@@ -7,8 +7,8 @@
   "regions": ["iad1"],
   "env": {
     "NODE_ENV": "production",
-    "DATABASE_URL": "@database_url",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret"
+    "DATABASE_URL": "postgres://neondb_owner:npg_PSt0Ahekuzd3@ep-misty-dust-a4k4h736-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require",
+    "NEXTAUTH_URL": "https://xeinst.com/",
+    "NEXTAUTH_SECRET": "zxoez0NdyhZw4cGZz7ojWSQlqqUBji/tKwnflAHeSYo="
   }
 } 
