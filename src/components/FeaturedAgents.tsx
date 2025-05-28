@@ -29,7 +29,7 @@ export default function FeaturedAgents() {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  const fetchWithRetry = async (url: string, retries = MAX_RETRIES): Promise<any> => {
+  const fetchWithRetry = useCallback(async (url: string, retries = MAX_RETRIES): Promise<any> => {
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -43,7 +43,7 @@ export default function FeaturedAgents() {
       }
       throw error;
     }
-  };
+  }, []);
 
   const fetchAgents = useCallback(async () => {
     try {
@@ -65,7 +65,7 @@ export default function FeaturedAgents() {
     } finally {
       setLoading(false);
     }
-  }, [fetchWithRetry]);
+  }, [fetchWithRetry, toast]);
 
   useEffect(() => {
     fetchAgents();
