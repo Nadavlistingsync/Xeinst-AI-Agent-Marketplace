@@ -40,6 +40,13 @@ model Deployment {
   rating        Float     @default(0)
   rating_count  Int       @default(0)
   download_count Int      @default(0)
+  status        String    @default("pending")
+  model_type    String
+  requirements  String?
+  api_endpoint  String?
+  environment   String    @default("production")
+  version       String
+  source        String
 }
 
 model Earning {
@@ -65,6 +72,7 @@ model Product {
   earnings    Earning[]
   purchases   Purchase[]
   reviews     Review[]
+  download_count Int    @default(0)
 }
 
 model Purchase {

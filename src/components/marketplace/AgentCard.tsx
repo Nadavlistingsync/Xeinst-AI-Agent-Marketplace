@@ -15,7 +15,7 @@ interface Agent {
   price_cents: number;
   users: {
     email: string;
-    full_name: string;
+    name: string;
   };
 }
 
@@ -66,7 +66,7 @@ export function AgentCard({ agent }: AgentCardProps) {
           </div>
 
           <div className="flex justify-between items-center text-sm text-gray-500">
-            <span>by {agent.users.full_name}</span>
+            <span>by {agent.users.name}</span>
             <span>v{agent.version}</span>
           </div>
 

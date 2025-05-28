@@ -1,16 +1,8 @@
 import { Metadata } from 'next';
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
-import { Star } from 'lucide-react';
-import Image from 'next/image';
-import SearchFilters, { SearchFilters as SearchFiltersType } from '@/components/SearchFilters';
-import { toast } from 'react-hot-toast';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { getProducts } from '@/lib/db-helpers';
-import Link from 'next/link';
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { AgentCard } from '@/components/marketplace/AgentCard';
 import { SearchBar } from '@/components/marketplace/SearchBar';
 import { FilterBar } from '@/components/marketplace/FilterBar';
@@ -36,11 +28,22 @@ export default async function MarketplacePage({
   const page = parseInt(searchParams.page || '1');
   const limit = 12;
 
-  const where = {
+  const where: Prisma.DeploymentWhereInput = {
+    access_level: 'public',
     ...(searchParams.search && {
       OR: [
-        { name: { contains: searchParams.search, mode: 'insensitive' } },
-        { description: { contains: searchParams.search, mode: 'insensitive' } },
+        {
+          name: {
+            contains: searchParams.search,
+            mode: Prisma.QueryMode.insensitive,
+          },
+        },
+        {
+          description: {
+            contains: searchParams.search,
+            mode: Prisma.QueryMode.insensitive,
+          },
+        },
       ],
     }),
     ...(searchParams.framework && { framework: searchParams.framework }),
@@ -72,13 +75,23 @@ export default async function MarketplacePage({
           select: {
             id: true,
             email: true,
-            full_name: true,
+            name: true,
           },
         },
       },
     }),
     prisma.deployment.count({ where }),
   ]);
+
+  const typedAgents = agents.map(agent => ({
+    ...agent,
+    access_level: agent.access_level as 'public' | 'basic' | 'premium',
+    license_type: agent.license_type as 'full-access' | 'limited-use' | 'view-only' | 'non-commercial',
+    users: {
+      ...agent.users,
+      name: agent.users.name ?? '',
+    },
+  }));
 
   const totalPages = Math.ceil(total / limit);
 
@@ -104,7 +117,7 @@ export default async function MarketplacePage({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {agents.map((agent) => (
+            {typedAgents.map((agent) => (
               <AgentCard key={agent.id} agent={agent} />
             ))}
           </div>

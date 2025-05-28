@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -32,20 +32,12 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
 
   const handleSave = async () => {
     if (!session) {
-      toast({
-        title: 'Authentication required',
-        description: 'Please sign in to save your agent',
-        variant: 'destructive',
-      });
+      toast.error('Authentication required. Please sign in to save your agent.');
       return;
     }
 
     if (!name || !code) {
-      toast({
-        title: 'Missing required fields',
-        description: 'Please provide a name and code for your agent',
-        variant: 'destructive',
-      });
+      toast.error('Missing required fields. Please provide a name and code for your agent.');
       return;
     }
 
@@ -87,17 +79,10 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
         onSave(agentData);
       }
 
-      toast({
-        title: 'Agent saved successfully',
-        description: 'Your agent has been saved and is ready to be deployed',
-      });
+      toast.success('Agent saved successfully. Your agent has been saved and is ready to be deployed.');
     } catch (error) {
       console.error('Error saving agent:', error);
-      toast({
-        title: 'Error saving agent',
-        description: 'There was an error saving your agent. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error('There was an error saving your agent. Please try again.');
     }
   };
 
@@ -128,7 +113,6 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
           <div>
             <Label htmlFor="framework">Framework</Label>
             <Select
-              id="framework"
               value={framework}
               onValueChange={setFramework}
             >

@@ -8,12 +8,9 @@ import { motion } from "framer-motion";
 import { uploadToS3 } from "@/lib/s3-helpers";
 import { createDeployment } from "@/lib/db-helpers";
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
-
 export default function DeployPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [deploymentStatus, setDeploymentStatus] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -31,7 +28,7 @@ export default function DeployPage() {
   });
 
   const [file, setFile] = useState<File | null>(null);
-  const [folderFiles, setFolderFiles] = useState<FileList | null>(null);
+  const [folderFiles] = useState<FileList | null>(null);
   const [uploadType, setUploadType] = useState<'file' | 'github'>("file");
   const [githubUrl, setGithubUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,8 +90,6 @@ export default function DeployPage() {
     e.preventDefault();
     if (!validateForm()) return;
     
-    setLoading(true);
-    setError("");
     setDeploymentStatus("Starting deployment...");
     setUploadProgress(0);
     setIsUploading(true);
@@ -124,29 +119,19 @@ export default function DeployPage() {
       setDeploymentStatus("Uploading files...");
       const filePath = `uploads/${session?.user?.id}/${Date.now()}-${fileName}`;
       
-      const uploadResult = await uploadToS3(fileToUpload, filePath, (progress) => {
-        setUploadProgress(progress);
-      });
-
-      if (!uploadResult.success) {
-        throw new Error(uploadResult.error || "Failed to upload file");
-      }
+      const uploadResult = await uploadToS3(fileToUpload, filePath);
 
       setDeploymentStatus("Creating deployment record...");
       
-      const source = uploadType === "github" ? "github" : "upload";
       const deployment = await createDeployment({
-        name: formData.name,
-        description: formData.description,
-        model_type: formData.modelType,
-        framework: formData.framework,
-        requirements: formData.requirements,
-        api_endpoint: formData.apiEndpoint,
-        environment: formData.environment,
-        version: formData.version,
-        file_url: filePath,
-        status: 'pending',
-        source
+        name: fileName,
+        description: "Deployed via web interface",
+        framework: "custom",
+        file_url: uploadResult,
+        deployed_by: session?.user?.id!,
+        model_type: "custom",
+        version: "1.0.0",
+        source: "web",
       });
 
       if (!deployment) {
@@ -160,7 +145,6 @@ export default function DeployPage() {
       setError(err instanceof Error ? err.message : "An error occurred during deployment");
       toast.error("Deployment failed");
     } finally {
-      setLoading(false);
       setIsUploading(false);
     }
   };

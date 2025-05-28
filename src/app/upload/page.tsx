@@ -91,8 +91,13 @@ export default function UploadPage() {
       const fileUrl = await uploadToS3(uploadFile);
 
       // Insert product into database
+      const slug = formData.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '');
       const [product] = await db.insert(products).values({
         name: formData.name,
+        slug,
         category: formData.category,
         description: formData.description,
         price: formData.price,
@@ -100,7 +105,6 @@ export default function UploadPage() {
         file_url: fileUrl,
         uploaded_by: session.user.id,
         is_public: true,
-        status: "pending",
       }).returning();
 
       router.push(`/product/${product.id}`);

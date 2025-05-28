@@ -26,6 +26,9 @@ const handler = NextAuth({
           throw new Error('No user found with this email');
         }
 
+        if (!user.password) {
+          throw new Error('No password set for this user');
+        }
         const isValid = await bcrypt.compare(credentials.password, user.password);
 
         if (!isValid) {
@@ -49,7 +52,7 @@ const handler = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.subscription_tier = user.subscription_tier;
+        token.subscription_tier = user.subscription_tier ?? 'free';
       }
       return token;
     },

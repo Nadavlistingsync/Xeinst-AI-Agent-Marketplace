@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useSession } from 'next-auth/react';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Table,
@@ -30,7 +29,6 @@ interface DashboardStats {
 }
 
 export function CreatorDashboard() {
-  const { data: session } = useSession();
   const { toast } = useToast();
   const [agents, setAgents] = useState<AgentStats[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
@@ -61,11 +59,7 @@ export function CreatorDashboard() {
       setStats(statsData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast({
-        title: 'Error loading dashboard',
-        description: 'Failed to load dashboard data. Please try again.',
-        variant: 'destructive',
-      });
+      toast('Failed to load dashboard data. Please try again.');
     } finally {
       setLoading(false);
     }

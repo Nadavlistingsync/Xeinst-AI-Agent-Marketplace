@@ -7,8 +7,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Session } from 'next-auth';
 import { signIn } from 'next-auth/react';
-import { ErrorBoundary } from './ErrorBoundary';
-import { CardSkeleton, PageSkeleton } from './LoadingSkeleton';
+import { PageSkeleton } from './LoadingSkeleton';
 import { toast } from 'react-hot-toast';
 import { fetchApi } from '@/lib/api';
 

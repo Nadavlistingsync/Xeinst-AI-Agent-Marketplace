@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { products } from '@/lib/schema';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
+import slugify from 'slugify';
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -24,10 +25,12 @@ export async function POST(req: NextRequest) {
     await writeFile(filePath, buffer);
 
     // Insert product metadata into DB
+    const slug = slugify(name, { lower: true, strict: true });
     const [product] = await db
       .insert(products)
       .values({
         name,
+        slug,
         description,
         price: price,
         category,

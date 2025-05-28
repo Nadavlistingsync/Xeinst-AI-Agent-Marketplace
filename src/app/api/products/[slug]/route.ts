@@ -22,7 +22,7 @@ const ProductSchema = z.object({
 });
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { slug: string } }
 ) {
   try {
@@ -60,7 +60,7 @@ export async function GET(
 }
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: { slug: string } }
 ) {
   try {

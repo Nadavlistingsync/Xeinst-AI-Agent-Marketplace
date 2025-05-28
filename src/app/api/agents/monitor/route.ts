@@ -27,7 +27,7 @@ export async function GET(req: Request) {
           select: {
             id: true,
             email: true,
-            full_name: true,
+            name: true,
           },
         },
       },
@@ -55,9 +55,9 @@ export async function GET(req: Request) {
     // 4. Validating API endpoints
 
     const health = {
-      status: agent.status,
+      status: 'unknown', // Placeholder since agent.status does not exist
       last_checked: new Date().toISOString(),
-      is_healthy: agent.status === 'active',
+      is_healthy: false, // Placeholder
       metrics: {
         uptime: '100%', // Placeholder
         response_time: '50ms', // Placeholder

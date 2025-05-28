@@ -183,7 +183,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         <div className="mt-8 bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-semibold mb-6">Reviews & Ratings</h2>
           <AgentReviews
-            agentId={product.id}
+            productId={product.id}
             averageRating={product.average_rating}
             totalRatings={product.total_ratings}
           />

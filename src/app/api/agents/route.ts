@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 
 export async function GET(req: Request) {
   try {
@@ -16,12 +17,12 @@ export async function GET(req: Request) {
     const status = searchParams.get('status');
     const search = searchParams.get('search');
 
-    const where = {
+    const where: Prisma.DeploymentWhereInput = {
       ...(status && { status }),
       ...(search && {
         OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
+          { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
+          { description: { contains: search, mode: Prisma.QueryMode.insensitive } },
         ],
       }),
     };
@@ -37,7 +38,7 @@ export async function GET(req: Request) {
             select: {
               id: true,
               email: true,
-              full_name: true,
+              name: true,
             },
           },
         },

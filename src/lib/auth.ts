@@ -39,7 +39,7 @@ export const authOptions: NextAuthOptions = {
           // Create new user
           await db.insert(users).values({
             email: user.email!,
-            full_name: user.name,
+            name: user.name,
             password: '', // Required field, but not used for GitHub auth
             subscription_tier: 'free', // Set default subscription tier
           });
@@ -47,7 +47,7 @@ export const authOptions: NextAuthOptions = {
       }
       return true;
     },
-    async session({ session, token }) {
+    async session({ session }) {
       if (session?.user) {
         const [user] = await db
           .select()
@@ -70,7 +70,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.subscription_tier = user.subscription_tier;
+        token.subscription_tier = user.subscription_tier ?? 'free';
       }
       return token;
     },

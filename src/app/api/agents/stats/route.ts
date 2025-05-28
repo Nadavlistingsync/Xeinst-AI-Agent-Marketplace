@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -17,10 +17,9 @@ export async function GET(req: Request) {
       totalDownloads,
     ] = await Promise.all([
       // Calculate total revenue from earnings
-      prisma.earnings.aggregate({
+      prisma.earning.aggregate({
         where: {
           user_id: session.user.id,
-          status: 'paid',
         },
         _sum: {
           amount: true,
@@ -40,7 +39,7 @@ export async function GET(req: Request) {
         },
       }),
       // Sum total downloads
-      prisma.products.aggregate({
+      prisma.product.aggregate({
         where: {
           uploaded_by: session.user.id,
         },

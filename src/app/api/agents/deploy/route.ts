@@ -5,17 +5,6 @@ import prisma from '@/lib/prisma';
 import { agentValidationSchema, validateAgentCode, deployAgent } from '@/lib/agent-deployment';
 import { z } from 'zod';
 
-const deployAgentSchema = z.object({
-  name: z.string().min(1).max(100),
-  description: z.string().optional(),
-  model_type: z.string(),
-  framework: z.string(),
-  requirements: z.string().optional(),
-  file_url: z.string().url(),
-  source: z.string(),
-  version: z.string(),
-});
-
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -39,13 +28,13 @@ export async function POST(req: Request) {
     const deployment = await prisma.deployment.create({
       data: {
         ...validatedData,
-        deployed_by: session.user.id,
-        status: 'pending',
+        deployed_by: session.user.id as string,
+        description: validatedData.description ?? '',
       },
     });
 
     // Start the deployment process
-    const { success, error } = await deployAgent(deployment.id, session.user.id);
+    const { success, error } = await deployAgent(deployment.id, session.user.id as string);
     if (!success) {
       return NextResponse.json({ error }, { status: 500 });
     }

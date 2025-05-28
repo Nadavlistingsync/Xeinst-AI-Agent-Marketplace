@@ -111,7 +111,7 @@ export async function GET(
           select: {
             id: true,
             email: true,
-            full_name: true,
+            name: true,
           },
         },
       },

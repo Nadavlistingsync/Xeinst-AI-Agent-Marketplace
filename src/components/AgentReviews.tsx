@@ -15,7 +15,7 @@ interface Review {
   comment: string;
   created_at: string;
   user: {
-    full_name: string;
+    name: string;
   };
 }
 
@@ -197,7 +197,7 @@ const AgentReviews = ({ productId, averageRating, totalRatings }: AgentReviewsPr
                   </div>
                   <p className="text-gray-600">{review.comment}</p>
                   <p className="text-sm text-gray-500 mt-2">
-                    {review.user.full_name}
+                    {review.user.name}
                   </p>
                 </div>
               ))

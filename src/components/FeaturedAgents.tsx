@@ -27,7 +27,6 @@ export default function FeaturedAgents() {
   const [trendingAgents, setTrendingAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
 
   const fetchWithRetry = useCallback(async (url: string, retries = MAX_RETRIES): Promise<any> => {
     try {
@@ -57,7 +56,6 @@ export default function FeaturedAgents() {
 
       setFeaturedAgents(featuredData.agents);
       setTrendingAgents(trendingData.agents);
-      setRetryCount(0);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to load agents';
       setError(errorMessage);
@@ -77,7 +75,6 @@ export default function FeaturedAgents() {
         <p className="text-red-600 mb-4">{error}</p>
         <button
           onClick={() => {
-            setRetryCount(prev => prev + 1);
             fetchAgents();
           }}
           className="flex items-center gap-2 mx-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"

@@ -12,18 +12,18 @@ export const db = drizzle(sql, { schema });
 export type DbClient = typeof db;
 
 // Helper functions for common database operations
-export async function query<T>(sql: string, params?: any[]): Promise<T[]> {
-  const result = await sql.query(sql, params);
-  return result.rows as T[];
+export async function query<T>(queryString: string, params?: any[]): Promise<T[]> {
+  const result = await sql.query(queryString, params);
+  return result as T[];
 }
 
-export async function queryOne<T>(sql: string, params?: any[]): Promise<T | null> {
-  const result = await sql.query(sql, params);
-  return (result.rows as T[])[0] || null;
+export async function queryOne<T>(queryString: string, params?: any[]): Promise<T | null> {
+  const result = await sql.query(queryString, params);
+  return (result as T[])[0] || null;
 }
 
-export async function execute(sql: string, params?: any[]): Promise<void> {
-  await sql.query(sql, params);
+export async function execute(queryString: string, params?: any[]): Promise<void> {
+  await sql.query(queryString, params);
 }
 
 export async function executeQuery(query: string, params: any[] = []) {
@@ -38,7 +38,7 @@ export async function executeQuery(query: string, params: any[] = []) {
 
 export async function executeTransaction(queries: { query: string; params: any[] }[]) {
   try {
-    const result = await sql.transaction(async (tx) => {
+    const result = await (sql.transaction as any)(async (tx: any) => {
       const results = [];
       for (const { query, params } of queries) {
         const result = await tx.query(query, params);

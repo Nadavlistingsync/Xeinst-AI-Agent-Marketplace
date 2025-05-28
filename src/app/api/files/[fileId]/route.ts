@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getFile } from '@/lib/file-helpers';
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { fileId: string } }
 ) {
   try {

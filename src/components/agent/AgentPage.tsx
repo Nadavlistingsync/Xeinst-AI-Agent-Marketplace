@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -31,13 +31,12 @@ interface Agent {
   uploaded_by: string;
   users: {
     email: string;
-    full_name: string;
+    name: string;
   };
 }
 
 export function AgentPage({ agentId }: AgentPageProps) {
   const { data: session } = useSession();
-  const { toast } = useToast();
   const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
@@ -52,15 +51,11 @@ export function AgentPage({ agentId }: AgentPageProps) {
       setAgent(data);
     } catch (error) {
       console.error('Error fetching agent details:', error);
-      toast({
-        title: 'Error loading agent',
-        description: 'Failed to load agent details. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load agent details. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [agentId, toast]);
+  }, [agentId]);
 
   useEffect(() => {
     fetchAgentDetails();
@@ -88,17 +83,10 @@ export function AgentPage({ agentId }: AgentPageProps) {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast({
-        title: 'Download started',
-        description: 'Your agent is being downloaded.',
-      });
+      toast.success('Your agent is being downloaded.');
     } catch (error) {
       console.error('Error downloading agent:', error);
-      toast({
-        title: 'Download failed',
-        description: 'Failed to download the agent. Please try again.',
-        variant: 'destructive',
-      });
+      toast.error('Failed to download the agent. Please try again.');
     }
   };
 
@@ -123,7 +111,7 @@ export function AgentPage({ agentId }: AgentPageProps) {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold">{agent.name}</h1>
-          <p className="text-gray-500">by {agent.users.full_name}</p>
+          <p className="text-gray-500">by {agent.users.name}</p>
         </div>
         <div className="flex space-x-4">
           <Button
