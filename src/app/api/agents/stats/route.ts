@@ -27,13 +27,13 @@ export async function GET(req: Request) {
         },
       }),
       // Count total agents
-      prisma.deployments.count({
+      prisma.deployment.count({
         where: {
           deployed_by: session.user.id,
         },
       }),
       // Count active agents
-      prisma.deployments.count({
+      prisma.deployment.count({
         where: {
           deployed_by: session.user.id,
           status: 'active',

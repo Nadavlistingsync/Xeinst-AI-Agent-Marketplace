@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     }
 
     // Create the deployment record
-    const deployment = await prisma.deployments.create({
+    const deployment = await prisma.deployment.create({
       data: {
         ...validatedData,
         deployed_by: session.user.id,

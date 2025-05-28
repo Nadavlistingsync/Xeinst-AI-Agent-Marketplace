@@ -104,7 +104,7 @@ export async function GET(
       );
     }
 
-    const agent = await prisma.deployments.findUnique({
+    const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       include: {
         users: {
@@ -147,7 +147,7 @@ export async function PATCH(
       );
     }
 
-    const agent = await prisma.deployments.findUnique({
+    const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
     });
 
@@ -166,7 +166,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const updatedAgent = await prisma.deployments.update({
+    const updatedAgent = await prisma.deployment.update({
       where: { id: params.id },
       data: {
         name: body.name,

@@ -67,7 +67,7 @@ export async function GET(
     const blob = await response.blob();
 
     // Update download count
-    await prisma.deployments.update({
+    await prisma.deployment.update({
       where: { id: params.id },
       data: {
         download_count: {

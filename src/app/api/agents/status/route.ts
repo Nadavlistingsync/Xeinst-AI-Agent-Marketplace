@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { agentId, status, api_endpoint } = updateStatusSchema.parse(body);
 
-    const agent = await prisma.deployments.findUnique({
+    const agent = await prisma.deployment.findUnique({
       where: { id: agentId },
     });
 
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const updatedAgent = await prisma.deployments.update({
+    const updatedAgent = await prisma.deployment.update({
       where: { id: agentId },
       data: {
         status,

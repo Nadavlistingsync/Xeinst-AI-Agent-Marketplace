@@ -36,7 +36,7 @@ export async function deployAgent(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const agent = await prisma.deployments.findUnique({
+    const agent = await prisma.deployment.findUnique({
       where: { id: agentId },
     });
 
@@ -49,7 +49,7 @@ export async function deployAgent(
     }
 
     // Update status to deploying
-    await prisma.deployments.update({
+    await prisma.deployment.update({
       where: { id: agentId },
       data: { status: 'deploying' },
     });
@@ -65,7 +65,7 @@ export async function deployAgent(
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Update status to active
-    await prisma.deployments.update({
+    await prisma.deployment.update({
       where: { id: agentId },
       data: {
         status: 'active',
@@ -76,7 +76,7 @@ export async function deployAgent(
     return { success: true };
   } catch (error) {
     console.error('Error deploying agent:', error);
-    await prisma.deployments.update({
+    await prisma.deployment.update({
       where: { id: agentId },
       data: { status: 'failed' },
     });
@@ -89,7 +89,7 @@ export async function stopAgent(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const agent = await prisma.deployments.findUnique({
+    const agent = await prisma.deployment.findUnique({
       where: { id: agentId },
     });
 
@@ -107,7 +107,7 @@ export async function stopAgent(
     // 2. Shutting down the container
     // 3. Cleaning up resources
 
-    await prisma.deployments.update({
+    await prisma.deployment.update({
       where: { id: agentId },
       data: { status: 'stopped' },
     });

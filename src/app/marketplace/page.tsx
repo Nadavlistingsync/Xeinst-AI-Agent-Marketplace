@@ -62,7 +62,7 @@ export default async function MarketplacePage({
   };
 
   const [agents, total] = await Promise.all([
-    prisma.deployments.findMany({
+    prisma.deployment.findMany({
       where,
       skip: (page - 1) * limit,
       take: limit,
@@ -77,7 +77,7 @@ export default async function MarketplacePage({
         },
       },
     }),
-    prisma.deployments.count({ where }),
+    prisma.deployment.count({ where }),
   ]);
 
   const totalPages = Math.ceil(total / limit);

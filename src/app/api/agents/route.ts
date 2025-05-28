@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     };
 
     const [agents, total] = await Promise.all([
-      prisma.deployments.findMany({
+      prisma.deployment.findMany({
         where,
         skip: (page - 1) * limit,
         take: limit,
@@ -42,7 +42,7 @@ export async function GET(req: Request) {
           },
         },
       }),
-      prisma.deployments.count({ where }),
+      prisma.deployment.count({ where }),
     ]);
 
     return NextResponse.json({
@@ -80,7 +80,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    const agent = await prisma.deployments.findUnique({
+    const agent = await prisma.deployment.findUnique({
       where: { id: agentId },
     });
 
@@ -98,7 +98,7 @@ export async function DELETE(req: Request) {
       );
     }
 
-    await prisma.deployments.delete({
+    await prisma.deployment.delete({
       where: { id: agentId },
     });
 

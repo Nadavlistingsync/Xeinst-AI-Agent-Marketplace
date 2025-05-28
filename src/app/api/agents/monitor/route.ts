@@ -20,7 +20,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const agent = await prisma.deployments.findUnique({
+    const agent = await prisma.deployment.findUnique({
       where: { id: agentId },
       include: {
         users: {
