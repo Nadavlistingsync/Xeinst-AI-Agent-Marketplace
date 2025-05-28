@@ -4,13 +4,5 @@
   "devCommand": "next dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "regions": ["iad1"],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "NEXTAUTH_URL": "@nextauth_url",
-    "NEXT_PUBLIC_SITE_URL": "@next_public_site_url",
-    "GITHUB_ID": "@github_id",
-    "GITHUB_SECRET": "@github_secret"
-  }
+  "regions": ["iad1"]
 } 
