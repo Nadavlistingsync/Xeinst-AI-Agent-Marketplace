@@ -1,14 +1,23 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "prisma generate && next build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["iad1"],
   "env": {
     "NODE_ENV": "production",
-    "DATABASE_URL": "postgres://neondb_owner:npg_PSt0Ahekuzd3@ep-misty-dust-a4k4h736-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require",
-    "NEXTAUTH_URL": "https://xeinst.com/",
-    "NEXTAUTH_SECRET": "zxoez0NdyhZw4cGZz7ojWSQlqqUBji/tKwnflAHeSYo="
+    "DATABASE_URL": "@database_url",
+    "NEXTAUTH_URL": "@nextauth_url",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "GITHUB_ID": "@github_id",
+    "GITHUB_SECRET": "@github_secret",
+    "STRIPE_SECRET_KEY": "@stripe_secret_key",
+    "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
+    "STRIPE_PRICE_ID": "@stripe_price_id",
+    "AWS_ACCESS_KEY_ID": "@aws_access_key_id",
+    "AWS_SECRET_ACCESS_KEY": "@aws_secret_access_key",
+    "AWS_REGION": "@aws_region",
+    "AWS_BUCKET_NAME": "@aws_bucket_name"
   }
 } 

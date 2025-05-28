@@ -11,7 +11,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getProducts } from '@/lib/db-helpers';
 import Link from 'next/link';
-import { Metadata } from 'next';
 import prisma from '@/lib/prisma';
 import { AgentCard } from '@/components/marketplace/AgentCard';
 import { SearchBar } from '@/components/marketplace/SearchBar';
@@ -25,11 +24,6 @@ interface MarketplacePageProps {
     page?: string;
   };
 }
-
-export const metadata: Metadata = {
-  title: 'Marketplace - Xeinst',
-  description: 'Discover and download AI agents',
-};
 
 export default async function MarketplacePage({
   searchParams,

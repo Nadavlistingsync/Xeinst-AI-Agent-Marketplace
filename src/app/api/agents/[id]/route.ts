@@ -49,20 +49,23 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: NextRequest,
-  context: any
+  req: Request,
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = context.params;
+    const { id } = params;
 
     // Check if user owns the agent
-    const agent = await getProductById(id);
-    if (!agent || agent.uploaded_by !== session.user.id) {
+    const agent = await prisma.deployments.findUnique({
+      where: { id },
+    });
+
+    if (!agent || agent.deployed_by !== session.user.id) {
       return NextResponse.json(
         { error: 'You do not have permission to delete this agent' },
         { status: 403 }
@@ -79,7 +82,9 @@ export async function DELETE(
     }
 
     // Delete the agent from the database
-    await deleteProduct(id);
+    await prisma.deployments.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -181,51 +186,6 @@ export async function PATCH(
     return NextResponse.json(updatedAgent);
   } catch (error) {
     console.error('Error updating agent:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const agent = await prisma.deployments.findUnique({
-      where: { id: params.id },
-    });
-
-    if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
-    }
-
-    if (agent.deployed_by !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Not authorized to delete this agent' },
-        { status: 403 }
-      );
-    }
-
-    await prisma.deployments.delete({
-      where: { id: params.id },
-    });
-
-    return NextResponse.json({ message: 'Agent deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting agent:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

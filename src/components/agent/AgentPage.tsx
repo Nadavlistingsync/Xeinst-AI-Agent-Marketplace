@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/components/ui/use-toast';
