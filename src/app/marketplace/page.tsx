@@ -1,5 +1,4 @@
-"use client";
-
+import { Metadata } from 'next';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -24,6 +23,11 @@ interface MarketplacePageProps {
     page?: string;
   };
 }
+
+export const metadata: Metadata = {
+  title: 'Marketplace - Xeinst',
+  description: 'Discover and download AI agents',
+};
 
 export default async function MarketplacePage({
   searchParams,

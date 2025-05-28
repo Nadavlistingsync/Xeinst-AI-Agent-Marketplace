@@ -54,18 +54,15 @@ export async function DELETE(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = params;
 
     // Check if user owns the agent
-    const agent = await prisma.deployments.findUnique({
-      where: { id },
-    });
-
-    if (!agent || agent.deployed_by !== session.user.id) {
+    const agent = await getProductById(id);
+    if (!agent || agent.uploaded_by !== session.user.id) {
       return NextResponse.json(
         { error: 'You do not have permission to delete this agent' },
         { status: 403 }
@@ -82,9 +79,7 @@ export async function DELETE(
     }
 
     // Delete the agent from the database
-    await prisma.deployments.delete({
-      where: { id },
-    });
+    await deleteProduct(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
