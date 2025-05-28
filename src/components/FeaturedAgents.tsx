@@ -65,7 +65,7 @@ export default function FeaturedAgents() {
     } finally {
       setLoading(false);
     }
-  }, [fetchWithRetry, toast]);
+  }, [fetchWithRetry]);
 
   useEffect(() => {
     fetchAgents();
