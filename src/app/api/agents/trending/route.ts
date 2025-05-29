@@ -4,16 +4,6 @@ import { products } from '@/lib/schema';
 import { eq, desc } from 'drizzle-orm';
 import { z } from 'zod';
 
-jest.mock('next/server', () => ({
-  NextResponse: {
-    json: jest.fn((data, init) => ({
-      json: () => Promise.resolve(data),
-      status: init?.status || 200,
-      headers: new (global.Headers || function(h) { return h || {}; })(init?.headers || {}),
-    })),
-  },
-}));
-
 const ProductSchema = z.object({
   id: z.string(),
   name: z.string(),
