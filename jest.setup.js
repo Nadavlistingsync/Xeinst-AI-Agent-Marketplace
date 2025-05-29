@@ -76,4 +76,18 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-global.Response = require('node-fetch').Response; 
+global.Response = require('node-fetch').Response;
+
+global.Headers = global.Headers || function(headers) { return headers || {}; };
+jest.mock('next/server', () => ({
+  NextResponse: {
+    json: jest.fn((data, init) => {
+      const response = {
+        json: () => Promise.resolve(data),
+        status: init?.status || 200,
+        headers: new Headers(init?.headers || {}),
+      };
+      return response;
+    }),
+  },
+})); 

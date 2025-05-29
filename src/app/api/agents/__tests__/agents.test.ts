@@ -1,7 +1,7 @@
-import { NextRequest } from 'next/server';
 import { GET as getFeatured } from '../featured/route';
 import { GET as getTrending } from '../trending/route';
 import { db } from '@/lib/db';
+import { NextResponse } from 'next/server';
 
 // Mock the database
 jest.mock('@/lib/db', () => ({
@@ -11,7 +11,7 @@ jest.mock('@/lib/db', () => ({
     where: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     limit: jest.fn().mockResolvedValue([]),
-  },
+  } as unknown as typeof db,
 }));
 
 describe('Agents API', () => {
@@ -24,6 +24,7 @@ describe('Agents API', () => {
       const response = await getFeatured();
       const data = await response.json();
 
+      expect(response).toBeInstanceOf(Object);
       expect(response.status).toBe(200);
       expect(data).toEqual({
         agents: [],
@@ -54,6 +55,7 @@ describe('Agents API', () => {
       const response = await getFeatured();
       const data = await response.json();
 
+      expect(response).toBeInstanceOf(Object);
       expect(response.status).toBe(200);
       expect(data.agents).toHaveLength(1);
       expect(data.count).toBe(1);
@@ -66,6 +68,7 @@ describe('Agents API', () => {
       const response = await getFeatured();
       const data = await response.json();
 
+      expect(response).toBeInstanceOf(Object);
       expect(response.status).toBe(503);
       expect(data.error).toBe('Database connection error');
     });
@@ -76,6 +79,7 @@ describe('Agents API', () => {
       const response = await getTrending();
       const data = await response.json();
 
+      expect(response).toBeInstanceOf(Object);
       expect(response.status).toBe(200);
       expect(data).toEqual({
         agents: [],
@@ -106,6 +110,7 @@ describe('Agents API', () => {
       const response = await getTrending();
       const data = await response.json();
 
+      expect(response).toBeInstanceOf(Object);
       expect(response.status).toBe(200);
       expect(data.agents).toHaveLength(1);
       expect(data.count).toBe(1);
@@ -118,6 +123,7 @@ describe('Agents API', () => {
       const response = await getTrending();
       const data = await response.json();
 
+      expect(response).toBeInstanceOf(Object);
       expect(response.status).toBe(503);
       expect(data.error).toBe('Database connection error');
     });

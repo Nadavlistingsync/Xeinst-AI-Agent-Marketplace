@@ -10,6 +10,7 @@ const customJestConfig = {
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
+    '^next/server$': '<rootDir>/__mocks__/next/server.js',
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverageFrom: [

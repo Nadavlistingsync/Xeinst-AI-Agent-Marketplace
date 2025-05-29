@@ -31,16 +31,24 @@ export default function FeaturedAgents() {
   const fetchWithRetry = useCallback(async (url: string, retries = MAX_RETRIES): Promise<any> => {
     try {
       const response = await fetch(url);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
-      if (data.error) throw new Error(data.error);
+      if (data.error) {
+        throw new Error(data.error);
+      }
       return data;
     } catch (error) {
       if (retries > 0) {
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
         return fetchWithRetry(url, retries - 1);
       }
-      throw error;
+      // Ensure we always throw an Error object with a message
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to fetch data');
     }
   }, []);
 
@@ -116,6 +124,7 @@ export default function FeaturedAgents() {
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    priority={false}
                   />
                 </div>
               )}
@@ -125,7 +134,10 @@ export default function FeaturedAgents() {
                     {agent.tag}
                   </span>
                   <div className="flex items-center">
-                    <Star className="w-5 h-5 text-yellow-400 fill-current" />
+                    <Star
+                      className="w-5 h-5"
+                      fill="currentColor"
+                    />
                     <span className="ml-1 text-gray-600">
                       {agent.average_rating.toFixed(1)}
                     </span>
@@ -177,6 +189,7 @@ export default function FeaturedAgents() {
                     fill
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    priority={false}
                   />
                 </div>
               )}

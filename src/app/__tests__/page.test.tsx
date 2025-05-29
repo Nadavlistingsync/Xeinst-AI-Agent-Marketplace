@@ -21,9 +21,9 @@ describe('Home Page', () => {
     expect(featuredHeading).toBeInTheDocument()
   })
 
-  it('renders the products section', () => {
+  it('renders the why choose us section', () => {
     render(<Home />)
-    const productsHeading = screen.getByText('Our Products')
-    expect(productsHeading).toBeInTheDocument()
+    const whyChooseHeading = screen.getByText('Why Choose Our Platform?')
+    expect(whyChooseHeading).toBeInTheDocument()
   })
 }) 

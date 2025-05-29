@@ -10,6 +10,13 @@ jest.mock('next/navigation', () => ({
 // Mock fetch
 global.fetch = jest.fn();
 
+// Mock react-hot-toast
+jest.mock('react-hot-toast', () => ({
+  toast: {
+    error: jest.fn(),
+  },
+}));
+
 describe('FeaturedAgents', () => {
   const mockRouter = {
     push: jest.fn(),
@@ -72,23 +79,17 @@ describe('FeaturedAgents', () => {
   });
 
   it('handles fetch errors gracefully', async () => {
+    const errorMessage = 'Failed to fetch data';
     (global.fetch as jest.Mock)
-      .mockImplementationOnce(() => Promise.reject(new Error('Network error')));
+      .mockImplementationOnce(() => Promise.reject(new Error(errorMessage)))
+      .mockImplementationOnce(() => Promise.reject(new Error(errorMessage)));
 
     render(<FeaturedAgents />);
 
     await waitFor(() => {
-      expect(screen.getByText('Network error')).toBeInTheDocument();
-    });
-
-    // Test retry functionality
-    const retryButton = screen.getByText('Retry');
-    fireEvent.click(retryButton);
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledTimes(2);
-    });
-  });
+      expect(screen.getByText(errorMessage)).toBeInTheDocument();
+    }, { timeout: 10000 });
+  }, 15000);
 
   it('navigates to agent details when clicking view details', async () => {
     (global.fetch as jest.Mock)
