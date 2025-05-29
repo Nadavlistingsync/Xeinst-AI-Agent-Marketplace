@@ -12,7 +12,8 @@
     "test:coverage": "jest --coverage",
     "db:generate": "drizzle-kit generate:pg",
     "db:push": "drizzle-kit push:pg",
-    "db:migrate": "tsx src/lib/migrations.ts"
+    "db:migrate": "tsx src/lib/migrations.ts",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.817.0",

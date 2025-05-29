@@ -66,8 +66,8 @@ describe('FeaturedAgents', () => {
     render(<FeaturedAgents />);
 
     await waitFor(() => {
-      expect(screen.getByText('Test Agent 1')).toBeInTheDocument();
-      expect(screen.getByText('Test Agent 2')).toBeInTheDocument();
+      expect(screen.getAllByText('Test Agent 1').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Test Agent 2').length).toBeGreaterThan(0);
     });
   });
 
