@@ -8,12 +8,7 @@
   "env": {
     "NODE_ENV": "production",
     "NEXT_PUBLIC_APP_URL": "https://ai-agency-website.vercel.app",
-    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe_publishable_key",
-    "STRIPE_SECRET_KEY": "@stripe_secret_key",
-    "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
-    "DATABASE_URL": "@database_url",
-    "NEXTAUTH_URL": "https://ai-agency-website.vercel.app",
-    "NEXTAUTH_SECRET": "@nextauth_secret"
+    "NEXTAUTH_URL": "https://ai-agency-website.vercel.app"
   },
   "builds": [
     {
