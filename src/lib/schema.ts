@@ -107,24 +107,28 @@ export const files = pgTable('files', {
 
 export const agentFeedbacks = pgTable('agent_feedbacks', {
   id: uuid('id').defaultRandom().primaryKey(),
-  agentId: uuid('agent_id').notNull(),
-  userId: uuid('user_id').notNull(),
+  agentId: uuid('agent_id').notNull().references(() => deployments.id),
+  userId: uuid('user_id').notNull().references(() => users.id),
   rating: integer('rating').notNull(),
   comment: text('comment'),
+  sentiment_score: decimal('sentiment_score', { precision: 3, scale: 2 }),
+  categories: jsonb('categories').$type<{ [key: string]: number }>(),
   creator_response: text('creator_response'),
   response_date: timestamp('response_date', { withTimezone: true }),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const notifications = pgTable('notifications', {
   id: uuid('id').defaultRandom().primaryKey(),
-  user_id: uuid('user_id').notNull(),
+  userId: uuid('user_id').notNull().references(() => users.id),
   type: text('type').notNull(),
   title: text('title').notNull(),
   message: text('message').notNull(),
-  metadata: text('metadata'),
+  metadata: jsonb('metadata').$type<Record<string, any>>(),
   is_read: boolean('is_read').default(false).notNull(),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const schema = {

@@ -6,7 +6,18 @@
   "framework": "nextjs",
   "regions": ["iad1"],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "NEXT_PUBLIC_APP_URL": "https://ai-agency-website.vercel.app",
+    "NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY": "@stripe_publishable_key",
+    "STRIPE_SECRET_KEY": "@stripe_secret_key",
+    "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
+    "DATABASE_URL": "@database_url",
+    "NEXTAUTH_URL": "https://ai-agency-website.vercel.app",
+    "NEXTAUTH_SECRET": "@nextauth_secret",
+    "AWS_ACCESS_KEY_ID": "@aws_access_key_id",
+    "AWS_SECRET_ACCESS_KEY": "@aws_secret_access_key",
+    "AWS_REGION": "@aws_region",
+    "AWS_BUCKET_NAME": "@aws_bucket_name"
   },
   "builds": [
     {
