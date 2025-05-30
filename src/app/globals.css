@@ -23,7 +23,12 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--background-start-rgb)),
+    rgb(var(--background-end-rgb))
+  );
+  min-height: 100vh;
   font-family: 'Montserrat', sans-serif;
 }
 
@@ -42,7 +47,7 @@ html {
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-light tracking-wider;
+    @apply font-bold tracking-tight;
   }
 
   a {
@@ -52,13 +57,11 @@ html {
 
 @layer components {
   .container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+    @apply px-4 mx-auto max-w-7xl sm:px-6 lg:px-8;
   }
   
   .glow-text {
-    text-shadow: 
-      0 0 10px rgba(255,255,255,0.8),
-      0 0 20px rgba(255,255,255,0.3);
+    text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
   }
   
   .glow-text-lg {
@@ -79,7 +82,17 @@ html {
   }
   
   .glass-card {
-    @apply bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    transition: all 0.3s ease;
+  }
+  
+  .glass-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
   }
   
   .btn-primary {
@@ -92,7 +105,7 @@ html {
 
   /* Remove default focus styles and add custom ones */
   *:focus {
-    @apply outline-none ring-2 ring-blue-400 ring-offset-2 ring-offset-black;
+    @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-black;
   }
 
   /* Ensure proper spacing for mobile */
@@ -103,16 +116,65 @@ html {
   }
 }
 
-@keyframes gradient-move {
-  0%, 100% {
+@keyframes gradient {
+  0% {
     background-position: 0% 50%;
   }
   50% {
     background-position: 100% 50%;
   }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
-.animate-gradient-move {
+.animate-gradient {
   background-size: 200% 200%;
-  animation: gradient-move 12s ease-in-out infinite;
+  animation: gradient 15s ease infinite;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.7);
+}
+
+/* Button Hover Effects */
+.hover-lift {
+  transition: transform 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* Loading Animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Selection Styles */
+::selection {
+  @apply bg-blue-500/20 text-white;
 }
