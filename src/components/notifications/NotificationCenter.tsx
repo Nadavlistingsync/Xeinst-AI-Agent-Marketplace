@@ -9,6 +9,8 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/components/ui/use-toast';
 import { formatDistanceToNow } from 'date-fns';
+import { useSession } from 'next-auth/react';
+import io from 'socket.io-client';
 
 interface Notification {
   id: string;
@@ -21,10 +23,41 @@ interface Notification {
 }
 
 export function NotificationCenter() {
+  const { data: session } = useSession();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [socket, setSocket] = useState<any>(null);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      // Initialize socket connection
+      const socketInstance = io({
+        path: '/api/socket',
+      });
+
+      socketInstance.on('connect', () => {
+        console.log('Socket connected');
+        socketInstance.emit('join', session.user.id);
+      });
+
+      socketInstance.on('notification', (newNotification: Notification) => {
+        setNotifications(prev => [newNotification, ...prev]);
+        setUnreadCount(prev => prev + 1);
+        toast({
+          title: newNotification.title,
+          description: newNotification.message,
+        });
+      });
+
+      setSocket(socketInstance);
+
+      return () => {
+        socketInstance.disconnect();
+      };
+    }
+  }, [session?.user?.id, toast]);
 
   const fetchNotifications = async () => {
     try {
@@ -46,9 +79,6 @@ export function NotificationCenter() {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll for new notifications every minute
-    const interval = setInterval(fetchNotifications, 60000);
-    return () => clearInterval(interval);
   }, [toast]);
 
   const markAsRead = async (notificationId: string) => {
