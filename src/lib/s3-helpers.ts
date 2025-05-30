@@ -1,52 +1,42 @@
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { unlink } from 'fs/promises';
 
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION!,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-});
+const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
 
 export async function uploadToS3(file: File, key: string): Promise<string> {
-  const arrayBuffer = await file.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  try {
+    // Ensure upload directory exists
+    await mkdir(UPLOAD_DIR, { recursive: true });
 
-  const command = new PutObjectCommand({
-    Bucket: process.env.AWS_BUCKET_NAME!,
-    Key: key,
-    Body: buffer,
-    ContentType: file.type,
-  });
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const fileName = `${uuidv4()}-${file.name}`;
+    const filePath = join(UPLOAD_DIR, fileName);
 
-  await s3Client.send(command);
-  return `https://${process.env.AWS_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+    await writeFile(filePath, buffer);
+    return `/uploads/${fileName}`;
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw new Error('Failed to upload file');
+  }
 }
 
 export async function getSignedDownloadUrl(key: string): Promise<string> {
-  const command = new GetObjectCommand({
-    Bucket: process.env.AWS_BUCKET_NAME!,
-    Key: key,
-  });
-
-  return getSignedUrl(s3Client, command, { expiresIn: 3600 });
+  return `/uploads/${key}`;
 }
 
-export async function getS3SignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
-  const command = new GetObjectCommand({
-    Bucket: process.env.AWS_BUCKET_NAME!,
-    Key: key,
-  });
-
-  return getSignedUrl(s3Client, command, { expiresIn });
+export async function getS3SignedUrl(key: string): Promise<string> {
+  return `/uploads/${key}`;
 }
 
 export async function deleteFileFromS3(key: string): Promise<void> {
-  const command = new DeleteObjectCommand({
-    Bucket: process.env.AWS_BUCKET_NAME!,
-    Key: key,
-  });
-
-  await s3Client.send(command);
+  try {
+    const filePath = join(UPLOAD_DIR, key);
+    await unlink(filePath);
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    throw new Error('Failed to delete file');
+  }
 } 
