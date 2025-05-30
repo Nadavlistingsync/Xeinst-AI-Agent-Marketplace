@@ -22,6 +22,7 @@ model User {
   purchases       Purchase[]
   reviews         Review[]
   feedbacks       AgentFeedback[]
+  notifications   Notification[]
 }
 
 model Deployment {
@@ -152,4 +153,18 @@ model AgentFeedback {
 
   @@index([agentId])
   @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // 'feedback' | 'system' | 'update'
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([read])
 }

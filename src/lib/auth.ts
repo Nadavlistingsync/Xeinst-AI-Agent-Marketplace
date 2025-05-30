@@ -57,7 +57,7 @@ export const authOptions: NextAuthOptions = {
 
         if (user) {
           session.user.id = user.id;
-          session.user.subscription_tier = user.subscription_tier;
+          session.user.subscription_tier = user.subscription_tier as 'free' | 'basic' | 'premium';
           session.user.role = user.role;
         }
       }
@@ -70,7 +70,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.subscription_tier = user.subscription_tier ?? 'free';
+        token.subscription_tier = (user.subscription_tier ?? 'free') as 'free' | 'basic' | 'premium';
       }
       return token;
     },
