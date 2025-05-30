@@ -6,11 +6,12 @@
 
 :root {
   --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 0, 0, 0;
-  --background-end-rgb: 0, 0, 0;
-  --accent-rgb: 0, 100, 255;
+  --background-start-rgb: 10, 15, 30;
+  --background-end-rgb: 5, 8, 20;
+  --accent-rgb: 0, 180, 255;
   --glass-bg: rgba(30, 34, 54, 0.7);
   --glass-border: rgba(255,255,255,0.12);
+  --electric-blue: #00b4ff;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,11 +24,7 @@
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-    to bottom,
-    rgb(var(--background-start-rgb)),
-    rgb(var(--background-end-rgb))
-  );
+  background: linear-gradient(120deg, #0a0f1e 0%, #050814 100%);
   min-height: 100vh;
   font-family: 'Montserrat', sans-serif;
 }
@@ -48,10 +45,11 @@ html {
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight;
+    letter-spacing: -0.01em;
   }
 
   a {
-    @apply text-white hover:text-blue-400 transition-all duration-300;
+    @apply text-white hover:text-[#00b4ff] transition-all duration-300;
   }
 }
 
@@ -61,7 +59,7 @@ html {
   }
   
   .glow-text {
-    text-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    text-shadow: 0 0 16px var(--electric-blue), 0 0 2px #fff;
   }
   
   .glow-text-lg {
@@ -73,39 +71,39 @@ html {
   }
   
   .logo-glow {
-    text-shadow: 
-      0 0 25px rgba(255,255,255,0.8),
-      0 0 45px rgba(255,255,255,0.4),
-      0 0 65px rgba(255,255,255,0.3),
-      0 0 85px rgba(255,255,255,0.2);
+    text-shadow: 0 0 32px var(--electric-blue), 0 0 2px #fff;
     @apply text-white font-light tracking-wider;
   }
   
   .glass-card {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 1rem;
-    transition: all 0.3s ease;
+    background: rgba(30, 34, 54, 0.7);
+    backdrop-filter: blur(16px);
+    border: 1.5px solid var(--glass-border);
+    border-radius: 1.25rem;
+    box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
+    transition: all 0.3s cubic-bezier(.4,2,.6,1);
   }
   
   .glass-card:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
+    background: rgba(30, 34, 54, 0.85);
+    border-color: var(--electric-blue);
+    box-shadow: 0 12px 48px 0 var(--electric-blue), 0 2px 8px 0 #000;
+    transform: translateY(-4px) scale(1.02);
   }
   
   .btn-primary {
-    @apply bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20;
+    @apply bg-[#00b4ff] text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:bg-[#0090cc] transition-all duration-300 hover:shadow-xl hover:shadow-[#00b4ff]/30;
+    letter-spacing: 0.01em;
   }
 
   .btn-secondary {
-    @apply bg-white/10 text-white px-6 py-2.5 rounded-lg hover:bg-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-white/10;
+    @apply bg-white/10 text-white px-8 py-3 rounded-xl font-bold hover:bg-white/20 transition-all duration-300 hover:shadow-lg hover:shadow-white/10;
+    letter-spacing: 0.01em;
   }
 
   /* Remove default focus styles and add custom ones */
   *:focus {
-    @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-black;
+    @apply outline-none ring-2 ring-[#00b4ff] ring-offset-2 ring-offset-black;
   }
 
   /* Ensure proper spacing for mobile */
@@ -129,6 +127,7 @@ html {
 }
 
 .animate-gradient {
+  background: linear-gradient(120deg, #0a0f1e 0%, #050814 100%);
   background-size: 200% 200%;
   animation: gradient 15s ease infinite;
 }
@@ -139,16 +138,16 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.5);
+  background: var(--electric-blue);
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.7);
+  background: #0090cc;
 }
 
 /* Button Hover Effects */
@@ -176,5 +175,5 @@ html {
 
 /* Selection Styles */
 ::selection {
-  @apply bg-blue-500/20 text-white;
+  @apply bg-[#00b4ff]/20 text-white;
 }

@@ -105,22 +105,22 @@ export default function FeaturedAgents() {
   return (
     <div className="space-y-20">
       {/* Featured Agents */}
-      <section className="pb-12 border-b border-white/10">
+      <section className="pb-12 border-b border-[#00b4ff]/10">
         <div className="flex items-center mb-8">
-          <Award className="w-7 h-7 text-yellow-400 mr-3" />
-          <h2 className="text-3xl font-extrabold text-white tracking-tight">Featured Agents</h2>
+          <Award className="w-7 h-7 text-[#00b4ff] mr-3" />
+          <h2 className="text-4xl font-extrabold text-white tracking-tight glow-text">Featured Agents</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {featuredAgents.length === 0 ? (
             <div className="col-span-full text-center text-gray-400">No featured agents found.</div>
           ) : (
             featuredAgents.map((agent) => (
               <div
                 key={agent.id}
-                className="bg-gradient-to-br from-gray-900 via-black to-gray-800 rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-white/10 flex flex-col"
+                className="glass-card rounded-2xl shadow-2xl overflow-hidden hover:shadow-[#00b4ff]/40 transition-all duration-300 border border-[#00b4ff]/10 flex flex-col hover:scale-[1.025] cursor-pointer"
               >
                 {agent.image_url && (
-                  <div className="relative h-48 w-full">
+                  <div className="relative h-52 w-full">
                     <Image
                       src={agent.image_url}
                       alt={agent.name}
@@ -131,34 +131,34 @@ export default function FeaturedAgents() {
                     />
                   </div>
                 )}
-                <div className="p-7 flex flex-col flex-1">
+                <div className="p-8 flex flex-col flex-1">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    <span className="px-4 py-1 bg-[#00b4ff]/10 text-[#00b4ff] rounded-full text-base font-semibold border border-[#00b4ff]/30">
                       {agent.tag}
                     </span>
                     <div className="flex items-center">
                       <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                      <span className="ml-1 text-white font-semibold">
+                      <span className="ml-1 text-white font-bold text-lg">
                         {agent.average_rating.toFixed(1)}
                       </span>
-                      <span className="ml-1 text-gray-400">
+                      <span className="ml-1 text-gray-400 text-base">
                         ({agent.total_ratings})
                       </span>
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-2 text-white">{agent.name}</h3>
-                  <p className="text-gray-300 mb-4 line-clamp-2 flex-1">{agent.description}</p>
+                  <h3 className="text-2xl font-bold mb-2 text-white glow-text">{agent.name}</h3>
+                  <p className="text-gray-300 mb-4 line-clamp-2 flex-1 text-lg">{agent.description}</p>
                   <div className="flex items-center justify-between mt-auto pt-4">
                     {agent.price ? (
-                      <span className="text-xl font-bold text-blue-400">
+                      <span className="text-2xl font-bold text-[#00b4ff]">
                         ${agent.price}
                       </span>
                     ) : (
-                      <span className="text-green-400 font-semibold">Free</span>
+                      <span className="text-green-400 font-semibold text-lg">Free</span>
                     )}
                     <button
                       onClick={() => router.push(`/agent/${agent.id}`)}
-                      className="btn-primary px-5 py-2 text-base font-semibold shadow hover:shadow-blue-500/20"
+                      className="btn-primary px-7 py-3 text-lg font-bold shadow hover:shadow-[#00b4ff]/30"
                     >
                       View Details
                     </button>
@@ -172,20 +172,20 @@ export default function FeaturedAgents() {
       {/* Trending Agents */}
       <section className="pt-12">
         <div className="flex items-center mb-8">
-          <TrendingUp className="w-7 h-7 text-green-400 mr-3" />
-          <h2 className="text-3xl font-extrabold text-white tracking-tight">Trending Now</h2>
+          <TrendingUp className="w-7 h-7 text-purple-400 mr-3" />
+          <h2 className="text-4xl font-extrabold text-white tracking-tight glow-text">Trending Now</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
           {trendingAgents.length === 0 ? (
             <div className="col-span-full text-center text-gray-400">No trending agents found.</div>
           ) : (
             trendingAgents.map((agent) => (
               <div
                 key={agent.id}
-                className="bg-gradient-to-br from-gray-900 via-black to-gray-800 rounded-2xl shadow-xl overflow-hidden hover:shadow-2xl transition-shadow duration-300 border border-white/10 flex flex-col"
+                className="glass-card rounded-2xl shadow-2xl overflow-hidden hover:shadow-purple-400/30 transition-all duration-300 border border-purple-400/10 flex flex-col hover:scale-[1.025] cursor-pointer"
               >
                 {agent.image_url && (
-                  <div className="relative h-48 w-full">
+                  <div className="relative h-52 w-full">
                     <Image
                       src={agent.image_url}
                       alt={agent.name}
@@ -196,9 +196,9 @@ export default function FeaturedAgents() {
                     />
                   </div>
                 )}
-                <div className="p-7 flex flex-col flex-1">
+                <div className="p-8 flex flex-col flex-1">
                   <div className="flex items-center justify-between mb-4">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    <span className="px-4 py-1 bg-purple-400/10 text-purple-400 rounded-full text-base font-semibold border border-purple-400/30">
                       {agent.tag}
                     </span>
                     <div className="flex items-center text-gray-400">
@@ -206,19 +206,19 @@ export default function FeaturedAgents() {
                       <span>{agent.download_count} downloads</span>
                     </div>
                   </div>
-                  <h3 className="text-xl font-bold mb-2 text-white">{agent.name}</h3>
-                  <p className="text-gray-300 mb-4 line-clamp-2 flex-1">{agent.description}</p>
+                  <h3 className="text-2xl font-bold mb-2 text-white glow-text">{agent.name}</h3>
+                  <p className="text-gray-300 mb-4 line-clamp-2 flex-1 text-lg">{agent.description}</p>
                   <div className="flex items-center justify-between mt-auto pt-4">
                     {agent.price ? (
-                      <span className="text-xl font-bold text-blue-400">
+                      <span className="text-2xl font-bold text-purple-400">
                         ${agent.price}
                       </span>
                     ) : (
-                      <span className="text-green-400 font-semibold">Free</span>
+                      <span className="text-green-400 font-semibold text-lg">Free</span>
                     )}
                     <button
                       onClick={() => router.push(`/agent/${agent.id}`)}
-                      className="btn-primary px-5 py-2 text-base font-semibold shadow hover:shadow-blue-500/20"
+                      className="btn-primary px-7 py-3 text-lg font-bold shadow hover:shadow-purple-400/30"
                     >
                       View Details
                     </button>
