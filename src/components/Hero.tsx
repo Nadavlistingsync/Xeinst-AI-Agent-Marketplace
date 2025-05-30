@@ -14,10 +14,11 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="mb-6"
+          className="mb-8"
         >
-          <span className="inline-block px-4 py-2 rounded-full bg-blue-500/10 text-blue-400 text-sm font-medium mb-4">
-            🚀 Next-Gen AI Solutions
+          <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-blue-500/10 text-blue-400 text-base font-semibold mb-6 shadow-sm">
+            <span role="img" aria-label="rocket" className="text-xl align-middle">🚀</span>
+            Next-Gen AI Solutions
           </span>
         </motion.div>
 
@@ -25,7 +26,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6"
+          className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white mb-8 leading-tight"
         >
           Transform Your Business with
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500"> AI Solutions</span>
@@ -35,7 +36,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-lg sm:text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed"
+          className="text-xl sm:text-2xl md:text-3xl text-gray-300 mb-14 max-w-3xl mx-auto leading-relaxed"
         >
           We help businesses leverage cutting-edge AI technology to drive growth, efficiency, and innovation.
           Start your AI journey today.
@@ -45,42 +46,45 @@ export default function Hero() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="flex flex-col sm:flex-row gap-6 justify-center"
+          className="flex flex-col sm:flex-row gap-6 justify-center mb-14"
         >
           <a
             href="#contact"
-            className="group inline-flex items-center justify-center px-8 py-4 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 md:py-4 md:text-lg md:px-10 transition-all duration-300 shadow-lg hover:shadow-blue-500/25"
+            className="btn-primary text-lg font-semibold px-10 py-4 shadow-lg hover:shadow-blue-500/25 focus:shadow-blue-500/40"
           >
             Get Started
             <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </a>
           <a
             href="#features"
-            className="group inline-flex items-center justify-center px-8 py-4 border border-blue-500/20 text-base font-medium rounded-lg text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 md:py-4 md:text-lg md:px-10 transition-all duration-300"
+            className="btn-secondary text-lg font-semibold px-10 py-4 shadow-lg hover:shadow-white/20 focus:shadow-white/30"
           >
             Explore Features
             <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
           </a>
         </motion.div>
 
-        {/* Trust indicators */}
+        {/* Stat cards */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-16 flex flex-wrap justify-center gap-8 text-gray-400"
+          className="flex flex-col sm:flex-row justify-center gap-6 mt-2"
         >
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">⭐</span>
-            <span>4.9/5 Rating</span>
+          <div className="flex flex-col items-center bg-white/10 rounded-xl px-8 py-6 shadow-md min-w-[180px]">
+            <span className="text-3xl mb-2">⭐</span>
+            <span className="text-2xl font-bold text-white">4.9/5</span>
+            <span className="text-gray-300 text-base mt-1">Rating</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">👥</span>
-            <span>1000+ Users</span>
+          <div className="flex flex-col items-center bg-white/10 rounded-xl px-8 py-6 shadow-md min-w-[180px]">
+            <span className="text-3xl mb-2">👥</span>
+            <span className="text-2xl font-bold text-white">1000+</span>
+            <span className="text-gray-300 text-base mt-1">Users</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🚀</span>
-            <span>24/7 Support</span>
+          <div className="flex flex-col items-center bg-white/10 rounded-xl px-8 py-6 shadow-md min-w-[180px]">
+            <span className="text-3xl mb-2">🚀</span>
+            <span className="text-2xl font-bold text-white">24/7</span>
+            <span className="text-gray-300 text-base mt-1">Support</span>
           </div>
         </motion.div>
       </div>

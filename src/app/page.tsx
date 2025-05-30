@@ -32,63 +32,54 @@ const fadeInUp = {
 
 export default function Home() {
   return (
-    <main className="flex flex-col gap-32 pt-24">
+    <main className="flex flex-col gap-32 pt-28">
       {/* Modern Hero Section */}
       <Hero />
 
       {/* Featured & Trending Agents */}
-      <section className="container">
+      <section className="container py-20 bg-gradient-to-b from-black via-gray-900 to-black rounded-3xl shadow-2xl border border-white/10 mb-20">
         <ErrorBoundary FallbackComponent={ErrorFallback}>
           <Suspense fallback={<LoadingFallback />}>
-            <motion.div 
-              {...fadeInUp}
-              className="glass-card p-8 mb-12 backdrop-blur-lg bg-white/5 border border-white/10 rounded-2xl shadow-2xl"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold mb-8 text-white glow-text flex items-center gap-3">
-                <Sparkles className="h-8 w-8 text-blue-400" />
-                Featured Agents
-              </h2>
-              <FeaturedAgents />
-            </motion.div>
+            <FeaturedAgents />
           </Suspense>
         </ErrorBoundary>
       </section>
 
       {/* Why Choose Section */}
-      <section className="container text-center">
-        <motion.div 
+      <section className="container text-center py-20 bg-black/80 rounded-3xl shadow-2xl border border-white/10">
+        <motion.div
           {...fadeInUp}
-          className="glass-card p-10 backdrop-blur-lg bg-white/5 border border-white/10 rounded-2xl shadow-2xl"
+          className="glass-card p-12 backdrop-blur-lg bg-white/5 border border-white/10 rounded-2xl shadow-2xl"
         >
-          <h2 className="text-3xl md:text-4xl font-bold mb-12 text-white glow-text">Why Choose Our Platform?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
-            <motion.div 
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-14 text-white glow-text">Why Choose Our Platform?</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mt-10">
+            <motion.div
               whileHover={{ scale: 1.05 }}
-              className="p-8 glass-card backdrop-blur-lg bg-white/5 border border-white/10 rounded-xl hover:border-blue-500/50 transition-all duration-300"
+              className="p-10 glass-card backdrop-blur-lg bg-white/5 border border-white/10 rounded-xl hover:border-blue-500/50 transition-all duration-300 shadow-lg"
             >
-              <Zap className="h-12 w-12 text-blue-400 mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold mb-4 text-blue-400">Verified Agents</h3>
-              <p className="text-white/80 leading-relaxed">
+              <Zap className="h-14 w-14 text-blue-400 mb-6 mx-auto" />
+              <h3 className="text-2xl font-semibold mb-4 text-blue-400">Verified Agents</h3>
+              <p className="text-white/80 leading-relaxed text-lg">
                 All agents are thoroughly tested and verified for quality and performance.
               </p>
             </motion.div>
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
-              className="p-8 glass-card backdrop-blur-lg bg-white/5 border border-white/10 rounded-xl hover:border-blue-500/50 transition-all duration-300"
+              className="p-10 glass-card backdrop-blur-lg bg-white/5 border border-white/10 rounded-xl hover:border-blue-500/50 transition-all duration-300 shadow-lg"
             >
-              <Sparkles className="h-12 w-12 text-blue-400 mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold mb-4 text-blue-400">Easy Integration</h3>
-              <p className="text-white/80 leading-relaxed">
+              <Sparkles className="h-14 w-14 text-blue-400 mb-6 mx-auto" />
+              <h3 className="text-2xl font-semibold mb-4 text-blue-400">Easy Integration</h3>
+              <p className="text-white/80 leading-relaxed text-lg">
                 Simple deployment process with comprehensive documentation and support.
               </p>
             </motion.div>
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
-              className="p-8 glass-card backdrop-blur-lg bg-white/5 border border-white/10 rounded-xl hover:border-blue-500/50 transition-all duration-300"
+              className="p-10 glass-card backdrop-blur-lg bg-white/5 border border-white/10 rounded-xl hover:border-blue-500/50 transition-all duration-300 shadow-lg"
             >
-              <Users className="h-12 w-12 text-blue-400 mb-4 mx-auto" />
-              <h3 className="text-xl font-semibold mb-4 text-blue-400">Community Driven</h3>
-              <p className="text-white/80 leading-relaxed">
+              <Users className="h-14 w-14 text-blue-400 mb-6 mx-auto" />
+              <h3 className="text-2xl font-semibold mb-4 text-blue-400">Community Driven</h3>
+              <p className="text-white/80 leading-relaxed text-lg">
                 Join a growing community of developers and users sharing their experiences.
               </p>
             </motion.div>
