@@ -176,4 +176,38 @@ async function deleteServerlessFunction(name: string): Promise<void> {
   if (!response.ok) {
     throw new Error('Failed to delete serverless function');
   }
+}
+
+export async function createAgentVersion({
+  agentId,
+  version,
+  file_url,
+  requirements,
+  createdBy,
+  changelog,
+}: {
+  agentId: string;
+  version: string;
+  file_url: string;
+  requirements?: string;
+  createdBy: string;
+  changelog?: string;
+}) {
+  return prisma.agentVersion.create({
+    data: {
+      agentId,
+      version,
+      file_url,
+      requirements,
+      createdBy,
+      changelog,
+    },
+  });
+}
+
+export async function getAgentVersions(agentId: string) {
+  return prisma.agentVersion.findMany({
+    where: { agentId },
+    orderBy: { createdAt: 'desc' },
+  });
 } 

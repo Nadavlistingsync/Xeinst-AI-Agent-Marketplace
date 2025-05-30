@@ -21,6 +21,7 @@ model User {
   products        Product[]
   purchases       Purchase[]
   reviews         Review[]
+  feedbacks       AgentFeedback[]
 }
 
 model Deployment {
@@ -47,6 +48,8 @@ model Deployment {
   environment   String    @default("production")
   version       String
   source        String
+  agentVersions AgentVersion[]
+  feedbacks     AgentFeedback[]
 }
 
 model Earning {
@@ -121,4 +124,32 @@ model AgentLog {
   @@index([agentId])
   @@index([level])
   @@index([timestamp])
+}
+
+model AgentVersion {
+  id          String   @id @default(cuid())
+  agentId     String
+  version     String
+  file_url    String
+  requirements String?
+  createdAt   DateTime @default(now())
+  createdBy   String
+  changelog   String?
+  deployment  Deployment @relation(fields: [agentId], references: [id])
+
+  @@index([agentId])
+}
+
+model AgentFeedback {
+  id        String   @id @default(cuid())
+  agentId   String
+  userId    String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  deployment Deployment @relation(fields: [agentId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([agentId])
+  @@index([userId])
 }

@@ -144,4 +144,37 @@ export async function getAgentHealth(agentId: string): Promise<{
   }
 
   return { status, issues };
+}
+
+export async function submitAgentFeedback({
+  agentId,
+  userId,
+  rating,
+  comment,
+}: {
+  agentId: string;
+  userId: string;
+  rating: number;
+  comment?: string;
+}) {
+  return prisma.agentFeedback.create({
+    data: {
+      agentId,
+      userId,
+      rating,
+      comment,
+    },
+  });
+}
+
+export async function getAgentFeedback(agentId: string) {
+  return prisma.agentFeedback.findMany({
+    where: { agentId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: {
+        select: { id: true, name: true, email: true },
+      },
+    },
+  });
 } 
