@@ -3,6 +3,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { startBackgroundJobs } from '@/lib/background-jobs';
+
+// Start background jobs when the module is loaded
+startBackgroundJobs();
 
 export async function GET(req: Request) {
   try {
