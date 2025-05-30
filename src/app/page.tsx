@@ -1,35 +1,5 @@
 'use client';
 
-import FeaturedAgents from '@/components/FeaturedAgents';
-import { Suspense } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
-import Hero from '@/components/Hero';
-import { motion } from 'framer-motion';
-import { Sparkles, Zap, Users } from 'lucide-react';
-
-function ErrorFallback({ error }: { error: Error }) {
-  return (
-    <div className="text-center py-12">
-      <h2 className="text-2xl font-bold text-red-600 mb-4">Something went wrong</h2>
-      <p className="text-gray-600">{error.message}</p>
-    </div>
-  );
-}
-
-function LoadingFallback() {
-  return (
-    <div className="flex justify-center py-12">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-    </div>
-  );
-}
-
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6 }
-};
-
 export default function Home() {
   return (
     <main className="bg-[#0a1020] text-white font-sans">
