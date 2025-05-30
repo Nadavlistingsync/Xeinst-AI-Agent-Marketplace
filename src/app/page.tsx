@@ -32,59 +32,39 @@ const fadeInUp = {
 
 export default function Home() {
   return (
-    <main className="flex flex-col gap-32 pt-28">
-      {/* Modern Hero Section */}
-      <Hero />
-
-      {/* Featured & Trending Agents */}
-      <section className="container py-20 bg-gradient-to-b from-black via-gray-900 to-black rounded-3xl shadow-2xl border border-white/10 mb-20">
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
-          <Suspense fallback={<LoadingFallback />}>
-            <FeaturedAgents />
-          </Suspense>
-        </ErrorBoundary>
+    <main className="bg-[#0a1020] text-white font-sans">
+      {/* Hero Section */}
+      <section className="w-full py-28 bg-gradient-to-br from-[#0a1020] to-[#181c2a] text-center">
+        <div className="container mx-auto max-w-3xl flex flex-col items-center justify-center">
+          <span className="inline-block bg-[#00b4ff]/15 text-[#00b4ff] font-bold text-lg rounded-full px-6 py-2 mb-8 border border-[#00b4ff]">🚀 Next-Gen AI Solutions</span>
+          <h1 className="text-5xl md:text-6xl font-extrabold mb-6 leading-tight">Transform Your Business with <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#00b4ff] to-purple-400">AI Solutions</span></h1>
+          <p className="text-xl md:text-2xl text-gray-300 mb-10 leading-relaxed">Unlock the power of custom AI. We build, deploy, and support next-gen AI agents tailored to your business—fast, secure, and scalable.</p>
+          <a href="#contact" className="inline-block bg-[#00b4ff] hover:bg-[#0090cc] text-white font-bold text-xl rounded-xl px-10 py-4 shadow-lg transition-all duration-300">Get Started</a>
+        </div>
       </section>
 
-      {/* Why Choose Section */}
-      <section className="container text-center py-20 bg-black/80 rounded-3xl shadow-2xl border border-white/10">
-        <motion.div
-          {...fadeInUp}
-          className="glass-card p-12 backdrop-blur-lg bg-white/5 border border-white/10 rounded-2xl shadow-2xl"
-        >
-          <h2 className="text-4xl md:text-5xl font-extrabold mb-14 text-white glow-text">Why Choose Our Platform?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mt-10">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="p-10 glass-card backdrop-blur-lg bg-white/5 border border-white/10 rounded-xl hover:border-blue-500/50 transition-all duration-300 shadow-lg"
-            >
-              <Zap className="h-14 w-14 text-blue-400 mb-6 mx-auto" />
-              <h3 className="text-2xl font-semibold mb-4 text-blue-400">Verified Agents</h3>
-              <p className="text-white/80 leading-relaxed text-lg">
-                All agents are thoroughly tested and verified for quality and performance.
-              </p>
-            </motion.div>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="p-10 glass-card backdrop-blur-lg bg-white/5 border border-white/10 rounded-xl hover:border-blue-500/50 transition-all duration-300 shadow-lg"
-            >
-              <Sparkles className="h-14 w-14 text-blue-400 mb-6 mx-auto" />
-              <h3 className="text-2xl font-semibold mb-4 text-blue-400">Easy Integration</h3>
-              <p className="text-white/80 leading-relaxed text-lg">
-                Simple deployment process with comprehensive documentation and support.
-              </p>
-            </motion.div>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="p-10 glass-card backdrop-blur-lg bg-white/5 border border-white/10 rounded-xl hover:border-blue-500/50 transition-all duration-300 shadow-lg"
-            >
-              <Users className="h-14 w-14 text-blue-400 mb-6 mx-auto" />
-              <h3 className="text-2xl font-semibold mb-4 text-blue-400">Community Driven</h3>
-              <p className="text-white/80 leading-relaxed text-lg">
-                Join a growing community of developers and users sharing their experiences.
-              </p>
-            </motion.div>
+      {/* Features Section */}
+      <section className="w-full py-24 bg-[#181c2a]">
+        <div className="container mx-auto">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-center mb-16">Why Choose Our Platform?</h2>
+          <div className="flex flex-col md:flex-row gap-10 justify-center items-stretch">
+            <div className="flex-1 bg-white/5 border border-[#00b4ff]/10 rounded-2xl shadow-xl p-10 text-center hover:border-[#00b4ff] hover:shadow-[#00b4ff]/20 transition-all duration-300">
+              <span className="block text-4xl mb-4 text-[#00b4ff]">✅</span>
+              <h3 className="text-xl font-bold mb-2">Verified Agents</h3>
+              <p className="text-gray-300">All agents are thoroughly tested and verified for quality and performance.</p>
+            </div>
+            <div className="flex-1 bg-white/5 border border-[#00b4ff]/10 rounded-2xl shadow-xl p-10 text-center hover:border-[#00b4ff] hover:shadow-[#00b4ff]/20 transition-all duration-300">
+              <span className="block text-4xl mb-4 text-[#00b4ff]">⚡</span>
+              <h3 className="text-xl font-bold mb-2">Easy Integration</h3>
+              <p className="text-gray-300">Simple deployment process with comprehensive documentation and support.</p>
+            </div>
+            <div className="flex-1 bg-white/5 border border-[#00b4ff]/10 rounded-2xl shadow-xl p-10 text-center hover:border-[#00b4ff] hover:shadow-[#00b4ff]/20 transition-all duration-300">
+              <span className="block text-4xl mb-4 text-[#00b4ff]">🌐</span>
+              <h3 className="text-xl font-bold mb-2">Community Driven</h3>
+              <p className="text-gray-300">Join a growing community of developers and users sharing their experiences.</p>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </section>
     </main>
   );
