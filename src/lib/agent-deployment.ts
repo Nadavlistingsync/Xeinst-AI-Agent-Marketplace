@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import prisma from './prisma';
+import JSZip from 'jszip';
 
 export const agentValidationSchema = z.object({
   name: z.string().min(1).max(100),
@@ -54,22 +55,34 @@ export async function deployAgent(
       data: { status: 'deploying' },
     });
 
-    // TODO: Implement actual deployment logic
-    // This could involve:
-    // 1. Setting up a serverless function
-    // 2. Deploying to a container
-    // 3. Setting up API endpoints
-    // 4. Configuring monitoring and logging
+    // Fetch the agent code
+    const response = await fetch(agent.file_url);
+    const zipBlob = await response.blob();
+    const zip = await JSZip.loadAsync(zipBlob);
 
-    // For now, we'll simulate a successful deployment
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Extract the main agent file
+    const mainFile = zip.file('agent.py') || zip.file('agent.js') || zip.file('agent.ts');
+    if (!mainFile) {
+      throw new Error('Main agent file not found in the zip');
+    }
 
-    // Update status to active
+    const code = await mainFile.async('text');
+
+    // Create serverless function
+    const functionName = `agent-${agentId}`;
+    const apiEndpoint = await createServerlessFunction({
+      name: functionName,
+      code,
+      framework: agent.framework,
+      requirements: agent.requirements,
+    });
+
+    // Update agent status and endpoint
     await prisma.deployment.update({
       where: { id: agentId },
       data: {
         status: 'active',
-        api_endpoint: `https://api.example.com/agents/${agentId}`,
+        api_endpoint: apiEndpoint,
       },
     });
 
@@ -82,6 +95,41 @@ export async function deployAgent(
     });
     return { success: false, error: 'Deployment failed' };
   }
+}
+
+async function createServerlessFunction({
+  name,
+  code,
+  framework,
+  requirements,
+}: {
+  name: string;
+  code: string;
+  framework: string;
+  requirements?: string;
+}): Promise<string> {
+  // Create a serverless function using Vercel's API
+  const response = await fetch('https://api.vercel.com/v1/functions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.VERCEL_API_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      name,
+      code,
+      framework,
+      requirements,
+      runtime: framework === 'python' ? 'python3.9' : 'nodejs18.x',
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to create serverless function');
+  }
+
+  const data = await response.json();
+  return data.url;
 }
 
 export async function stopAgent(
@@ -101,11 +149,9 @@ export async function stopAgent(
       return { success: false, error: 'Not authorized to stop this agent' };
     }
 
-    // TODO: Implement actual stop logic
-    // This could involve:
-    // 1. Stopping the serverless function
-    // 2. Shutting down the container
-    // 3. Cleaning up resources
+    // Delete the serverless function
+    const functionName = `agent-${agentId}`;
+    await deleteServerlessFunction(functionName);
 
     await prisma.deployment.update({
       where: { id: agentId },
@@ -116,5 +162,18 @@ export async function stopAgent(
   } catch (error) {
     console.error('Error stopping agent:', error);
     return { success: false, error: 'Failed to stop agent' };
+  }
+}
+
+async function deleteServerlessFunction(name: string): Promise<void> {
+  const response = await fetch(`https://api.vercel.com/v1/functions/${name}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${process.env.VERCEL_API_TOKEN}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to delete serverless function');
   }
 } 

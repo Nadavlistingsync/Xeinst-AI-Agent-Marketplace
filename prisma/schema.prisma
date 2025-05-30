@@ -96,3 +96,29 @@ model Review {
   products    Product?  @relation(fields: [product_id], references: [id])
   users       User?     @relation(fields: [user_id], references: [id])
 }
+
+model AgentMetrics {
+  id             String   @id @default(cuid())
+  agentId        String   @unique
+  requests       Int      @default(0)
+  errors         Int      @default(0)
+  avgResponseTime Float   @default(0)
+  lastActive     DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([agentId])
+}
+
+model AgentLog {
+  id        String   @id @default(cuid())
+  agentId   String
+  level     String   // 'info' | 'warning' | 'error'
+  message   String
+  metadata  Json?
+  timestamp DateTime @default(now())
+
+  @@index([agentId])
+  @@index([level])
+  @@index([timestamp])
+}
