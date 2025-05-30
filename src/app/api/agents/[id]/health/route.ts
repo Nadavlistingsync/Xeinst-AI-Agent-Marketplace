@@ -5,7 +5,7 @@ import { getAgentHealth } from '@/lib/agent-monitoring';
 import prisma from '@/lib/prisma';
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -23,13 +23,13 @@ export async function GET(
     }
 
     // Check if user has access to the agent
-    if (
-      agent.deployed_by !== session.user.id &&
-      agent.access_level !== 'public' &&
-      (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') &&
-      (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic')
-    ) {
-      return new NextResponse('Forbidden', { status: 403 });
+    if (agent.deployed_by !== session.user.id && agent.access_level !== 'public') {
+      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
+        return new NextResponse('Forbidden', { status: 403 });
+      }
+      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
+        return new NextResponse('Forbidden', { status: 403 });
+      }
     }
 
     const health = await getAgentHealth(params.id);

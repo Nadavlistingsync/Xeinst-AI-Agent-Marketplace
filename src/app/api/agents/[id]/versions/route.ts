@@ -5,7 +5,7 @@ import { getAgentVersions } from '@/lib/agent-deployment';
 import prisma from '@/lib/prisma';
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ) {
   try {

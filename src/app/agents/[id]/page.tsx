@@ -62,7 +62,7 @@ export default async function AgentPage({ params }: AgentPageProps) {
         </TabsList>
         
         <TabsContent value="details">
-          <AgentDetails agent={agent} />
+          <AgentDetails agentId={agent.id} />
         </TabsContent>
         
         <TabsContent value="feedback">

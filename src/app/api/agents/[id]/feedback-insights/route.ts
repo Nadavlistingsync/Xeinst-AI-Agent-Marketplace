@@ -23,17 +23,16 @@ export async function GET(
     }
 
     // Check if user has access to the agent
-    if (
-      agent.deployed_by !== session.user.id &&
-      agent.access_level !== 'public' &&
-      (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') &&
-      (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic')
-    ) {
-      return new NextResponse('Forbidden', { status: 403 });
+    if (agent.deployed_by !== session.user.id && agent.access_level !== 'public') {
+      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
+        return new NextResponse('Forbidden', { status: 403 });
+      }
+      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
+        return new NextResponse('Forbidden', { status: 403 });
+      }
     }
 
     const { searchParams } = new URL(request.url);
-    const days = searchParams.get('days') ? parseInt(searchParams.get('days')!) : 30;
     const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined;
     const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined;
 

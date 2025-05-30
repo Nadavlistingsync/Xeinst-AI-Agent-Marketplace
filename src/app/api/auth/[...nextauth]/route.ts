@@ -39,7 +39,9 @@ const handler = NextAuth({
           id: user.id,
           email: user.email,
           role: user.role,
-          subscription_tier: user.subscription_tier,
+          subscription_tier: (['free', 'basic', 'premium'].includes(user.subscription_tier)
+            ? user.subscription_tier
+            : 'free') as 'free' | 'basic' | 'premium',
         };
       }
     })
@@ -60,7 +62,7 @@ const handler = NextAuth({
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
-        session.user.subscription_tier = token.subscription_tier as string;
+        session.user.subscription_tier = token.subscription_tier as 'free' | 'basic' | 'premium';
       }
       return session;
     }

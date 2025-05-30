@@ -2,14 +2,13 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { submitAgentFeedback, getAgentFeedback } from '@/lib/agent-monitoring';
-import prisma from '@/lib/prisma';
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  _request: Request,
+  context: { params: { id: string } }
 ) {
   try {
-    const feedback = await getAgentFeedback(params.id);
+    const feedback = await getAgentFeedback(context.params.id);
     return NextResponse.json(feedback);
   } catch (error) {
     console.error('Error fetching agent feedback:', error);

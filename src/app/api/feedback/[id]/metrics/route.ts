@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { analyzeFeedback } from '@/lib/feedback-monitoring';
 
 export async function GET(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
