@@ -56,8 +56,8 @@ export default async function Page({ params }: AgentPageProps) {
   if (
     agent.deployed_by !== session.user.id &&
     agent.access_level !== 'public' &&
-    (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') &&
-    (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic')
+    ((agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') ||
+     (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic'))
   ) {
     redirect('/403');
   }

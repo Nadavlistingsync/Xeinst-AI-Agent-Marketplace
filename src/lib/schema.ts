@@ -105,6 +105,28 @@ export const files = pgTable('files', {
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const agentFeedbacks = pgTable('agent_feedbacks', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  agentId: uuid('agent_id').notNull(),
+  userId: uuid('user_id').notNull(),
+  rating: integer('rating').notNull(),
+  comment: text('comment'),
+  creator_response: text('creator_response'),
+  response_date: timestamp('response_date', { withTimezone: true }),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const notifications = pgTable('notifications', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  user_id: uuid('user_id').notNull(),
+  type: text('type').notNull(),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  metadata: text('metadata'),
+  is_read: boolean('is_read').default(false).notNull(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const schema = {
   products,
   users,
@@ -113,4 +135,6 @@ export const schema = {
   deployments,
   purchases,
   files,
+  agentFeedbacks,
+  notifications,
 }; 
