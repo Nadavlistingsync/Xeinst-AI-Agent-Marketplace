@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { markNotificationAsRead } from '@/lib/notifications';
 
 export async function POST(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
