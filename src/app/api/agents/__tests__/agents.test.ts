@@ -1,24 +1,25 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getFeaturedAgents, getTrendingAgents } from '../route';
-import { db } from '@/lib/db';
-import { agents } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import prisma from '@/lib/prisma';
 import { getAgentLogs, getAgentMetrics, logAgentEvent } from '@/lib/agent-monitoring';
-import { agentLog, agentMetrics } from '@/lib/schema';
-import { and } from 'drizzle-orm';
 
-// Mock the database
-vi.mock('@/lib/db', () => ({
-  db: {
-    select: vi.fn().mockReturnThis(),
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    orderBy: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
-    values: vi.fn().mockResolvedValue([]),
-    update: vi.fn().mockReturnThis(),
-    set: vi.fn().mockReturnThis(),
+// Mock Prisma
+vi.mock('@/lib/prisma', () => ({
+  default: {
+    deployment: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      count: vi.fn(),
+      delete: vi.fn(),
+    },
+    agentLog: {
+      create: vi.fn(),
+      findMany: vi.fn(),
+    },
+    agentMetrics: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+    },
   },
 }));
 
@@ -55,6 +56,11 @@ describe('Agents API', () => {
       last_earnings_date: new Date(),
       last_deployment_date: new Date(),
       last_usage_date: new Date(),
+      users: {
+        id: 'user1',
+        email: 'test@example.com',
+        name: 'Test User',
+      },
     },
   ];
 
@@ -64,32 +70,23 @@ describe('Agents API', () => {
 
   describe('getFeaturedAgents', () => {
     it('should return featured agents', async () => {
-      const mockQuery = {
-        where: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue(mockAgents),
-      };
-
-      (db.select as jest.Mock).mockReturnValue(mockQuery);
-      (db.from as jest.Mock).mockReturnValue(mockQuery);
-      (db.where as jest.Mock).mockReturnValue(mockQuery);
-      (db.orderBy as jest.Mock).mockReturnValue(mockQuery);
+      (prisma.deployment.findMany as any).mockResolvedValue(mockAgents);
+      (prisma.deployment.count as any).mockResolvedValue(mockAgents.length);
 
       const result = await getFeaturedAgents();
-      expect(result).toEqual({ agents: mockAgents });
+      expect(result).toEqual({
+        agents: mockAgents,
+        pagination: {
+          total: mockAgents.length,
+          pages: 1,
+          page: 1,
+          limit: 10,
+        },
+      });
     });
 
     it('should handle database errors', async () => {
-      const mockQuery = {
-        where: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockRejectedValue(new Error('Database error')),
-      };
-
-      (db.select as jest.Mock).mockReturnValue(mockQuery);
-      (db.from as jest.Mock).mockReturnValue(mockQuery);
-      (db.where as jest.Mock).mockReturnValue(mockQuery);
-      (db.orderBy as jest.Mock).mockReturnValue(mockQuery);
+      (prisma.deployment.findMany as any).mockRejectedValue(new Error('Database error'));
 
       await expect(getFeaturedAgents()).rejects.toThrow('Database error');
     });
@@ -97,32 +94,23 @@ describe('Agents API', () => {
 
   describe('getTrendingAgents', () => {
     it('should return trending agents', async () => {
-      const mockQuery = {
-        where: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockResolvedValue(mockAgents),
-      };
-
-      (db.select as jest.Mock).mockReturnValue(mockQuery);
-      (db.from as jest.Mock).mockReturnValue(mockQuery);
-      (db.where as jest.Mock).mockReturnValue(mockQuery);
-      (db.orderBy as jest.Mock).mockReturnValue(mockQuery);
+      (prisma.deployment.findMany as any).mockResolvedValue(mockAgents);
+      (prisma.deployment.count as any).mockResolvedValue(mockAgents.length);
 
       const result = await getTrendingAgents();
-      expect(result).toEqual({ agents: mockAgents });
+      expect(result).toEqual({
+        agents: mockAgents,
+        pagination: {
+          total: mockAgents.length,
+          pages: 1,
+          page: 1,
+          limit: 10,
+        },
+      });
     });
 
     it('should handle database errors', async () => {
-      const mockQuery = {
-        where: vi.fn().mockReturnThis(),
-        orderBy: vi.fn().mockReturnThis(),
-        limit: vi.fn().mockRejectedValue(new Error('Database error')),
-      };
-
-      (db.select as jest.Mock).mockReturnValue(mockQuery);
-      (db.from as jest.Mock).mockReturnValue(mockQuery);
-      (db.where as jest.Mock).mockReturnValue(mockQuery);
-      (db.orderBy as jest.Mock).mockReturnValue(mockQuery);
+      (prisma.deployment.findMany as any).mockRejectedValue(new Error('Database error'));
 
       await expect(getTrendingAgents()).rejects.toThrow('Database error');
     });
@@ -132,6 +120,10 @@ describe('Agents API', () => {
 describe('Agent Monitoring', () => {
   const mockAgentId = 'test-agent-id';
   const mockDate = new Date('2024-01-01');
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   describe('getAgentLogs', () => {
     it('should fetch logs with default options', async () => {
@@ -148,13 +140,18 @@ describe('Agent Monitoring', () => {
         },
       ];
 
-      (db.select as any).mockResolvedValue(mockLogs);
+      (prisma.agentLog.findMany as any).mockResolvedValue(mockLogs);
 
       const logs = await getAgentLogs(mockAgentId);
 
-      expect(db.select).toHaveBeenCalled();
-      expect(db.from).toHaveBeenCalledWith(agentLog);
-      expect(db.where).toHaveBeenCalledWith(eq(agentLog.agentId, mockAgentId));
+      expect(prisma.agentLog.findMany).toHaveBeenCalledWith({
+        where: {
+          agentId: mockAgentId,
+        },
+        orderBy: {
+          timestamp: 'desc',
+        },
+      });
       expect(logs).toEqual(mockLogs);
     });
 
@@ -172,7 +169,7 @@ describe('Agent Monitoring', () => {
         },
       ];
 
-      (db.select as any).mockResolvedValue(mockLogs);
+      (prisma.agentLog.findMany as any).mockResolvedValue(mockLogs);
 
       const logs = await getAgentLogs(mockAgentId, {
         startDate: mockDate,
@@ -181,12 +178,20 @@ describe('Agent Monitoring', () => {
         limit: 10,
       });
 
-      expect(db.select).toHaveBeenCalled();
-      expect(db.from).toHaveBeenCalledWith(agentLog);
-      expect(db.where).toHaveBeenCalledWith(and(
-        eq(agentLog.agentId, mockAgentId),
-        eq(agentLog.level, 'error')
-      ));
+      expect(prisma.agentLog.findMany).toHaveBeenCalledWith({
+        where: {
+          agentId: mockAgentId,
+          level: 'error',
+          timestamp: {
+            gte: mockDate,
+            lte: new Date('2024-01-02'),
+          },
+        },
+        orderBy: {
+          timestamp: 'desc',
+        },
+        take: 10,
+      });
       expect(logs).toEqual(mockLogs);
     });
   });
@@ -204,18 +209,20 @@ describe('Agent Monitoring', () => {
         updated_at: mockDate,
       };
 
-      (db.select as any).mockResolvedValue([mockMetrics]);
+      (prisma.agentMetrics.findUnique as any).mockResolvedValue(mockMetrics);
 
       const metrics = await getAgentMetrics(mockAgentId);
 
-      expect(db.select).toHaveBeenCalled();
-      expect(db.from).toHaveBeenCalledWith(agentMetrics);
-      expect(db.where).toHaveBeenCalledWith(eq(agentMetrics.agentId, mockAgentId));
+      expect(prisma.agentMetrics.findUnique).toHaveBeenCalledWith({
+        where: {
+          agentId: mockAgentId,
+        },
+      });
       expect(metrics).toEqual(mockMetrics);
     });
 
     it('should return null when no metrics found', async () => {
-      (db.select as any).mockResolvedValue([]);
+      (prisma.agentMetrics.findUnique as any).mockResolvedValue(null);
 
       const metrics = await getAgentMetrics(mockAgentId);
 
@@ -231,15 +238,46 @@ describe('Agent Monitoring', () => {
         metadata: { test: 'data' },
       };
 
-      await logAgentEvent(mockAgentId, mockEvent.level, mockEvent.message, mockEvent.metadata);
-
-      expect(db.insert).toHaveBeenCalledWith(agentLog);
-      expect(db.values).toHaveBeenCalledWith(expect.objectContaining({
+      const mockCreatedLog = {
+        id: expect.any(String),
         agentId: mockAgentId,
         level: mockEvent.level,
         message: mockEvent.message,
         metadata: mockEvent.metadata,
-      }));
+        timestamp: expect.any(Date),
+        created_at: expect.any(Date),
+        updated_at: expect.any(Date),
+      };
+
+      (prisma.agentLog.create as any).mockResolvedValue(mockCreatedLog);
+
+      await logAgentEvent(mockAgentId, mockEvent.level, mockEvent.message, mockEvent.metadata);
+
+      expect(prisma.agentLog.create).toHaveBeenCalledWith({
+        data: {
+          agentId: mockAgentId,
+          level: mockEvent.level,
+          message: mockEvent.message,
+          metadata: mockEvent.metadata,
+          timestamp: expect.any(Date),
+          created_at: expect.any(Date),
+          updated_at: expect.any(Date),
+        },
+      });
+    });
+
+    it('should handle database errors', async () => {
+      const mockEvent = {
+        level: 'info' as const,
+        message: 'Test event',
+        metadata: { test: 'data' },
+      };
+
+      (prisma.agentLog.create as any).mockRejectedValue(new Error('Database error'));
+
+      await expect(
+        logAgentEvent(mockAgentId, mockEvent.level, mockEvent.message, mockEvent.metadata)
+      ).rejects.toThrow('Database error');
     });
   });
 }); 

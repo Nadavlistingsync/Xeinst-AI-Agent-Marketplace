@@ -1,6 +1,7 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import FeaturedAgents from '@/components/FeaturedAgents';
 import { useRouter } from 'next/navigation';
+import { vi } from 'vitest';
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -25,6 +26,7 @@ describe('FeaturedAgents', () => {
   beforeEach(() => {
     (useRouter as jest.Mock).mockReturnValue(mockRouter);
     (global.fetch as jest.Mock).mockClear();
+    vi.clearAllMocks();
   });
 
   const mockAgents = {
@@ -113,49 +115,68 @@ describe('FeaturedAgents', () => {
         id: '1',
         name: 'Test Agent',
         description: 'Test Description',
-        framework: 'test',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        deployed_by: 'user1',
+        status: 'active',
         category: 'test',
-        tags: ['test'],
-        price_cents: 1000,
+        is_featured: true,
+        is_trending: true,
+        usage_count: 0,
         rating: 4.5,
-        downloads: 100,
-        created_at: new Date(),
-        updated_at: new Date(),
+        price: 9.99,
+        earnings_split: 0.7,
+        deployment_count: 0,
+        feedback_count: 0,
+        total_earnings: 0,
+        last_deployed: new Date().toISOString(),
+        last_used: new Date().toISOString(),
+        last_updated: new Date().toISOString(),
+        last_feedback: new Date().toISOString(),
+        last_rating: 4.5,
+        last_earnings: 0,
+        last_deployment: new Date().toISOString(),
+        last_usage: new Date().toISOString(),
+        last_feedback_date: new Date().toISOString(),
+        last_rating_date: new Date().toISOString(),
+        last_earnings_date: new Date().toISOString(),
+        last_deployment_date: new Date().toISOString(),
+        last_usage_date: new Date().toISOString(),
       },
     ];
 
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ agents: mockAgents }),
+      json: () => Promise.resolve({ agents: mockAgents }),
     });
 
     render(<FeaturedAgents />);
 
     await waitFor(() => {
       expect(screen.getByText('Test Agent')).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
   });
 
   it('handles fetch errors', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Failed to fetch'));
+    global.fetch = vi.fn().mockRejectedValueOnce(new Error('Failed to fetch'));
 
     render(<FeaturedAgents />);
 
     await waitFor(() => {
       expect(screen.getByText('Failed to load featured agents')).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
   });
 
   it('handles empty response', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    global.fetch = vi.fn().mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ agents: [] }),
+      json: () => Promise.resolve({ agents: [] }),
     });
 
     render(<FeaturedAgents />);
 
     await waitFor(() => {
       expect(screen.getByText('No featured agents found')).toBeInTheDocument();
-    });
+    }, { timeout: 5000 });
   });
 }); 

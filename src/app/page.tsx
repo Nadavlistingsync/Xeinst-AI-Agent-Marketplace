@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import FeaturedAgents from '@/components/FeaturedAgents';
 
 export default function Home() {
   return (
@@ -59,6 +60,13 @@ export default function Home() {
               <div className="text-gray-300">Uptime</div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Featured Agents Section */}
+      <section className="w-full py-24 bg-[#0B0C10]">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <FeaturedAgents />
         </div>
       </section>
 

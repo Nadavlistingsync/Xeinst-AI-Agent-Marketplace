@@ -1,6 +1,12 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import Home from '../page'
+import { vi } from 'vitest'
+
+// Mock the FeaturedAgents component
+vi.mock('@/components/FeaturedAgents', () => ({
+  default: () => <div data-testid="featured-agents">Featured Agents</div>,
+}))
 
 describe('Home Page', () => {
   it('renders the main heading', () => {
@@ -19,6 +25,7 @@ describe('Home Page', () => {
     render(<Home />)
     const heading = screen.getByText(/Transform Your Business with/i)
     expect(heading).toBeInTheDocument()
+    expect(screen.getByText('AI Solutions')).toBeInTheDocument()
   })
 
   it('renders the features section', () => {
@@ -29,13 +36,18 @@ describe('Home Page', () => {
 
   it('renders the featured agents section', () => {
     render(<Home />)
-    const featuredHeading = screen.getByText('Featured Agents')
-    expect(featuredHeading).toBeInTheDocument()
+    expect(screen.getByTestId('featured-agents')).toBeInTheDocument()
   })
 
   it('renders the why choose us section', () => {
     render(<Home />)
     const whyChooseHeading = screen.getByText('Why Choose Our Platform?')
     expect(whyChooseHeading).toBeInTheDocument()
+  })
+
+  it('renders the stats section', () => {
+    render(<Home />)
+    expect(screen.getByText('98%')).toBeInTheDocument()
+    expect(screen.getByText('Client Satisfaction')).toBeInTheDocument()
   })
 }) 
