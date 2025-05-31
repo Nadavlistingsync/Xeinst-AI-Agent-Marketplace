@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate signed URL
-    const signedUrl = await getS3SignedUrl(product.file_url, 600); // 10 minutes
+    const signedUrl = await getS3SignedUrl(product.file_url);
 
     if (!signedUrl) {
       return NextResponse.json({ error: 'Failed to generate download URL' }, { status: 500 });
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
     }
 
     // Generate signed URL for S3 object
-    const signedUrl = await getS3SignedUrl(product.file_url, 3600); // 1 hour
+    const signedUrl = await getS3SignedUrl(product.file_url);
 
     if (!signedUrl) {
       return NextResponse.json(
