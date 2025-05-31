@@ -1,52 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { products } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
-import { readFile } from 'fs/promises';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import { join } from 'path';
+import { readFile } from 'fs/promises';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (!id) {
+    const { agentId } = await req.json();
+    if (!agentId) {
       return NextResponse.json({ error: 'Agent ID is required' }, { status: 400 });
     }
 
-    const [product] = await db
-      .select()
-      .from(products)
-      .where(eq(products.id, id))
-      .limit(1);
+    const agent = await prisma.deployment.findUnique({
+      where: { id: agentId }
+    });
 
-    if (!product) {
+    if (!agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
     }
 
-    // Read the file from local storage
-    const filePath = join(process.cwd(), 'public', product.file_url);
+    if (agent.deployedBy !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // Read file from local storage
+    const filePath = join(process.cwd(), 'public', agent.fileUrl!);
     const fileBuffer = await readFile(filePath);
 
-    // Update download count
-    await db
-      .update(products)
-      .set({ download_count: (product.download_count ?? 0) + 1 })
-      .where(eq(products.id, id));
-
-    // Return the file
+    // Return file as download
     return new NextResponse(fileBuffer, {
       headers: {
         'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${product.name}.zip"`,
+        'Content-Disposition': `attachment; filename="${agent.name}"`,
       },
     });
   } catch (error) {
     console.error('Error downloading agent:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to download agent' },
       { status: 500 }
     );
   }

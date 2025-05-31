@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getAgentLogs } from '@/lib/agent-monitoring';
-import prisma from '@/lib/prisma';
 
 export async function GET(
   request: Request,
@@ -10,35 +9,18 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
+    if (!session?.user?.id) {
       return new NextResponse('Unauthorized', { status: 401 });
-    }
-
-    const agent = await prisma.deployment.findUnique({
-      where: { id: params.id },
-    });
-
-    if (!agent) {
-      return new NextResponse('Agent not found', { status: 404 });
-    }
-
-    // Check if user has access to the agent
-    if (agent.deployed_by !== session.user.id && agent.access_level !== 'public') {
-      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
-        return new NextResponse('Forbidden', { status: 403 });
-      }
-      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
-        return new NextResponse('Forbidden', { status: 403 });
-      }
     }
 
     const { searchParams } = new URL(request.url);
     const level = searchParams.get('level') as 'info' | 'warning' | 'error' | undefined;
+    const limit = parseInt(searchParams.get('limit') || '100', 10);
 
     const logs = await getAgentLogs(params.id, {
       startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
       endDate: new Date(),
-      limit: 100,
+      limit,
       level
     });
 

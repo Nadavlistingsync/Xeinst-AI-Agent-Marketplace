@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
 import { uploadToS3 } from "@/lib/s3-helpers";
 import { createDeployment } from "@/lib/db-helpers";
+import { uploadFile } from '@/lib/file-helpers';
 
 export default function DeployPage() {
   const router = useRouter();
@@ -88,64 +89,40 @@ export default function DeployPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    
-    setDeploymentStatus("Starting deployment...");
-    setUploadProgress(0);
-    setIsUploading(true);
-    
+    setIsDeploying(true);
+
     try {
-      let fileName = "";
-      let fileToUpload: File;
+      // Upload file
+      const fileUrl = await uploadFile(uploadFile, session?.user?.id!);
 
-      if (uploadType === "file") {
-        if (folderFiles) {
-          setDeploymentStatus("Compressing folder...");
-          fileToUpload = await zipFolderFiles(folderFiles);
-          fileName = `${Math.random()}-${fileToUpload.name}`;
-        } else if (file) {
-          fileToUpload = file;
-          fileName = `${Math.random()}-${file.name}`;
-        } else {
-          throw new Error("Please select a file or folder to upload");
-        }
-      } else {
-        if (!githubUrl) throw new Error("Please enter a GitHub repository URL");
-        setDeploymentStatus("Fetching GitHub repository...");
-        fileToUpload = await fetchGithubRepoAsZip(githubUrl);
-        fileName = `${Math.random()}.zip`;
-      }
-
-      setDeploymentStatus("Uploading files...");
-      const filePath = `uploads/${session?.user?.id}/${Date.now()}-${fileName}`;
-      
-      const uploadResult = await uploadToS3(filePath, fileToUpload);
-
-      setDeploymentStatus("Creating deployment record...");
-      
-      const deployment = await createDeployment({
-        name: fileName,
-        description: "Deployed via web interface",
-        framework: "custom",
-        file_url: uploadResult,
-        deployed_by: session?.user?.id!,
-        model_type: "custom",
-        version: "1.0.0",
-        source: "web",
+      // Create deployment
+      const response = await fetch('/api/deployments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          framework: formData.framework,
+          fileUrl,
+          modelType: formData.modelType,
+          requirements: formData.requirements,
+          version: formData.version,
+        }),
       });
 
-      if (!deployment) {
-        throw new Error("Failed to create deployment record");
+      if (!response.ok) {
+        throw new Error('Failed to create deployment');
       }
 
-      toast.success("Deployment created successfully!");
-      router.push(`/deployments/${deployment.id}`);
-    } catch (err) {
-      console.error("Deployment error:", err);
-      setError(err instanceof Error ? err.message : "An error occurred during deployment");
-      toast.error("Deployment failed");
+      toast.success('Deployment created successfully!');
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Error creating deployment:', error);
+      toast.error('Failed to create deployment');
     } finally {
-      setIsUploading(false);
+      setIsDeploying(false);
     }
   };
 
@@ -169,20 +146,6 @@ export default function DeployPage() {
     });
     const blob = await zip.generateAsync({ type: "blob" });
     return new File([blob], `folder-upload-${Date.now()}.zip`, { type: "application/zip" });
-  };
-
-  const handleFileUpload = async (file: File) => {
-    try {
-      setUploadProgress(0);
-      const filePath = `agents/${session?.user?.id}/${Date.now()}-${file.name}`;
-      await uploadToS3(filePath, file);
-      setUploadProgress(100);
-      setFormData(prev => ({ ...prev, filePath }));
-    } catch (error) {
-      console.error('Error uploading file:', error);
-      setError('Failed to upload file. Please try again.');
-      setUploadProgress(0);
-    }
   };
 
   return (

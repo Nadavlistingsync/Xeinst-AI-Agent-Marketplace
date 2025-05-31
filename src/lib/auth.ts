@@ -1,95 +1,91 @@
+import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
-import { getServerSession as getNextAuthServerSession } from "next-auth";
-import GithubProvider from "next-auth/providers/github";
-import { db } from "./db";
-import { users } from "./schema";
-import { eq } from "drizzle-orm";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { prisma } from "./prisma";
+import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
+  adapter: PrismaAdapter(prisma),
   providers: [
-    GithubProvider({
-      clientId: process.env.GITHUB_ID!,
-      clientSecret: process.env.GITHUB_SECRET!,
-      authorization: {
-        params: {
-          scope: 'read:user user:email',
-        },
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
       },
-    }),
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Invalid credentials");
+        }
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email }
+        });
+
+        if (!user || !user.password) {
+          throw new Error("Invalid credentials");
+        }
+
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
+
+        if (!isPasswordValid) {
+          throw new Error("Invalid credentials");
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+          role: user.role,
+          subscriptionTier: user.subscriptionTier
+        };
+      }
+    })
   ],
   session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    strategy: "jwt"
   },
   pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
+    signIn: "/login"
   },
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === 'github') {
-        // Check if user exists
-        const [existingUser] = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, user.email!))
-          .limit(1);
-
-        if (!existingUser) {
-          // Create new user
-          await db.insert(users).values({
-            email: user.email!,
-            name: user.name,
-            password: '', // Required field, but not used for GitHub auth
-            subscription_tier: 'free', // Set default subscription tier
-          });
-        }
-      }
-      return true;
-    },
-    async session({ session }) {
-      if (session?.user) {
-        const [user] = await db
-          .select()
-          .from(users)
-          .where(eq(users.email, session.user.email!))
-          .limit(1);
-
-        if (user) {
-          session.user.id = user.id;
-          session.user.subscription_tier = user.subscription_tier as 'free' | 'basic' | 'premium';
-          session.user.role = user.role;
-        }
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.image = token.picture;
+        session.user.role = token.role;
+        session.user.subscriptionTier = token.subscriptionTier;
       }
       return session;
     },
-    async jwt({ token, user, account }) {
-      if (account) {
-        token.accessToken = account.access_token;
-      }
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.subscription_tier = (user.subscription_tier ?? 'free') as 'free' | 'basic' | 'premium';
-      }
-      return token;
-    },
-  },
-  events: {
-    async signIn({ user }) {
-      console.log('User signed in:', user.email);
-    },
-    async signOut({ session }) {
-      console.log('User signed out:', session?.user?.email);
-    },
-  },
-};
+    async jwt({ token, user }) {
+      const dbUser = await prisma.user.findFirst({
+        where: {
+          email: token.email!
+        }
+      });
 
-export async function getServerSession() {
-  try {
-    return await getNextAuthServerSession(authOptions);
-  } catch (error) {
-    console.error('Error getting server session:', error);
-    return null;
+      if (!dbUser) {
+        if (user) {
+          token.id = user.id;
+        }
+        return token;
+      }
+
+      return {
+        id: dbUser.id,
+        name: dbUser.name,
+        email: dbUser.email,
+        picture: dbUser.image,
+        role: dbUser.role,
+        subscriptionTier: dbUser.subscriptionTier
+      };
+    }
   }
-} 
+}; 

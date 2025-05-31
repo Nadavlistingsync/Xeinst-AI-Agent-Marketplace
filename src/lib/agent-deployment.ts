@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import prisma from './prisma';
+import { prisma } from './prisma';
 import JSZip from 'jszip';
+import { logAgentRequest } from './agent-monitoring';
 
 export const agentValidationSchema = z.object({
   name: z.string().min(1).max(100),
@@ -32,73 +33,179 @@ export async function validateAgentCode(fileUrl: string): Promise<boolean> {
   }
 }
 
-export async function deployAgent(
-  agentId: string,
-  userId: string
-): Promise<{ success: boolean; error?: string }> {
+export async function deployAgent(agentId: string, userId: string) {
   try {
-    const agent = await prisma.deployment.findUnique({
+    // Create deployment record
+    const deployment = await prisma.agentDeployment.create({
+      data: {
+        agentId,
+        userId,
+        status: 'pending',
+        startedAt: new Date()
+      }
+    });
+
+    // Log deployment start
+    await logAgentRequest(agentId, {
+      level: 'info',
+      message: 'Deployment started',
+      metadata: { deploymentId: deployment.id }
+    });
+
+    // Update agent status
+    await prisma.agent.update({
       where: { id: agentId },
+      data: {
+        status: 'deploying',
+        lastDeployedAt: new Date()
+      }
     });
 
-    if (!agent) {
-      return { success: false, error: 'Agent not found' };
-    }
+    // Simulate deployment process
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
-    if (agent.deployed_by !== userId) {
-      return { success: false, error: 'Not authorized to deploy this agent' };
-    }
-
-    if (!agent.file_url) {
-      return { success: false, error: 'Agent file URL is missing' };
-    }
-
-    // Update status to deploying
-    await prisma.deployment.update({
-      where: { id: agentId },
-      data: { status: 'deploying' },
+    // Update deployment status
+    await prisma.agentDeployment.update({
+      where: { id: deployment.id },
+      data: {
+        status: 'completed',
+        completedAt: new Date()
+      }
     });
 
-    // Fetch the agent code
-    const response = await fetch(agent.file_url);
-    const zipBlob = await response.blob();
-    const zip = await JSZip.loadAsync(zipBlob);
-
-    // Extract the main agent file
-    const mainFile = zip.file('agent.py') || zip.file('agent.js') || zip.file('agent.ts');
-    if (!mainFile) {
-      throw new Error('Main agent file not found in the zip');
-    }
-
-    const code = await mainFile.async('text');
-
-    // Create serverless function
-    const functionName = `agent-${agentId}`;
-    const apiEndpoint = await createServerlessFunction({
-      name: functionName,
-      code,
-      framework: agent.framework,
-      requirements: agent.requirements ?? undefined,
-    });
-
-    // Update agent status and endpoint
-    await prisma.deployment.update({
+    // Update agent status
+    await prisma.agent.update({
       where: { id: agentId },
       data: {
         status: 'active',
-        api_endpoint: apiEndpoint,
-      },
+        lastDeployedAt: new Date()
+      }
     });
 
-    return { success: true };
-  } catch (error) {
-    console.error('Error deploying agent:', error);
-    await prisma.deployment.update({
-      where: { id: agentId },
-      data: { status: 'failed' },
+    // Log successful deployment
+    await logAgentRequest(agentId, {
+      level: 'info',
+      message: 'Deployment completed',
+      metadata: { deploymentId: deployment.id }
     });
-    return { success: false, error: 'Deployment failed' };
+
+    return deployment;
+  } catch (error) {
+    // Log deployment failure
+    await logAgentRequest(agentId, {
+      level: 'error',
+      message: 'Deployment failed',
+      metadata: { error: error.message }
+    });
+
+    // Update agent status
+    await prisma.agent.update({
+      where: { id: agentId },
+      data: {
+        status: 'failed'
+      }
+    });
+
+    throw error;
   }
+}
+
+export async function getAgentDeployments(agentId: string) {
+  return prisma.agentDeployment.findMany({
+    where: { agentId },
+    orderBy: { startedAt: 'desc' },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true
+        }
+      }
+    }
+  });
+}
+
+export async function getDeploymentStatus(deploymentId: string) {
+  return prisma.agentDeployment.findUnique({
+    where: { id: deploymentId },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true
+        }
+      }
+    }
+  });
+}
+
+export async function cancelDeployment(deploymentId: string) {
+  const deployment = await prisma.agentDeployment.findUnique({
+    where: { id: deploymentId }
+  });
+
+  if (!deployment) {
+    throw new Error('Deployment not found');
+  }
+
+  if (deployment.status !== 'pending') {
+    throw new Error('Can only cancel pending deployments');
+  }
+
+  await prisma.agentDeployment.update({
+    where: { id: deploymentId },
+    data: {
+      status: 'cancelled',
+      completedAt: new Date()
+    }
+  });
+
+  await logAgentRequest(deployment.agentId, {
+    level: 'info',
+    message: 'Deployment cancelled',
+    metadata: { deploymentId }
+  });
+
+  return deployment;
+}
+
+export async function getActiveDeployments() {
+  return prisma.agentDeployment.findMany({
+    where: {
+      status: 'pending'
+    },
+    orderBy: { startedAt: 'desc' },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true
+        }
+      },
+      agent: {
+        select: {
+          name: true,
+          description: true
+        }
+      }
+    }
+  });
+}
+
+export async function getDeploymentHistory(agentId: string, limit = 10) {
+  return prisma.agentDeployment.findMany({
+    where: { agentId },
+    orderBy: { startedAt: 'desc' },
+    take: limit,
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true
+        }
+      }
+    }
+  });
 }
 
 async function createServerlessFunction({

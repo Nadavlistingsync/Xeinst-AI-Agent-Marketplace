@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { db } from "@/lib/db";
 import { products } from "@/lib/schema";
+import { uploadFile } from '@/lib/file-helpers';
+import { toast } from "react-hot-toast";
 
 export default function UploadPage() {
   const router = useRouter();
@@ -48,23 +50,6 @@ export default function UploadPage() {
     return new File([blob], `${repo}-main.zip`, { type: "application/zip" });
   };
 
-  const uploadToS3 = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to upload file');
-    }
-    
-    const data = await response.json();
-    return data.url;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -87,8 +72,8 @@ export default function UploadPage() {
         uploadFile = await fetchGithubRepoAsZip(githubUrl);
       }
 
-      // Upload file to S3
-      const fileUrl = await uploadToS3(uploadFile);
+      // Upload file
+      const fileUrl = await uploadFile(uploadFile, session?.user?.id!);
 
       // Insert product into database
       const slug = formData.name
@@ -107,9 +92,11 @@ export default function UploadPage() {
         is_public: true,
       }).returning();
 
+      toast.success('Product uploaded successfully!');
       router.push(`/product/${product.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      console.error('Error uploading product:', err);
+      toast.error('Failed to upload product');
     } finally {
       setLoading(false);
     }

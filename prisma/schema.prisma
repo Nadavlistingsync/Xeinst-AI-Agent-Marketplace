@@ -8,163 +8,212 @@ datasource db {
 }
 
 model User {
-  id              String         @id @default(cuid())
-  email           String         @unique
+  id              String    @id @default(uuid())
   name            String?
-  password        String?
+  email           String    @unique
+  password        String
   image           String?
-  created_at      DateTime       @default(now())
-  updated_at      DateTime       @updatedAt
-  deployments     Deployment[]
-  subscription_tier String       @default("free")
-  earnings        Earning[]
-  products        Product[]
+  role            String    @default("user")
+  subscriptionTier String   @default("free")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  createdProducts Product[] @relation("ProductCreator")
+  uploadedProducts Product[] @relation("ProductUploader")
   purchases       Purchase[]
-  reviews         Review[]
+  deployments     Deployment[]
   feedbacks       AgentFeedback[]
   notifications   Notification[]
-}
+  reviews         Review[]   @relation("UserReviews")
+  earnings        Earning[]  @relation("UserEarnings")
+  files           File[]     @relation("UserFiles")
 
-model Deployment {
-  id            String    @id @default(cuid())
-  name          String
-  description   String
-  framework     String
-  file_url      String?
-  deployed_by   String
-  users         User      @relation(fields: [deployed_by], references: [id])
-  created_at    DateTime  @default(now())
-  updated_at    DateTime  @updatedAt
-  access_level  String    @default("public")
-  license_type  String    @default("free")
-  price_cents   Int       @default(0)
-  downloads     Int       @default(0)
-  rating        Float     @default(0)
-  rating_count  Int       @default(0)
-  download_count Int      @default(0)
-  status        String    @default("pending")
-  model_type    String
-  requirements  String?
-  api_endpoint  String?
-  environment   String    @default("production")
-  version       String
-  source        String
-  agentVersions AgentVersion[]
-  feedbacks     AgentFeedback[]
-}
-
-model Earning {
-  id          String    @id @default(cuid())
-  amount      Float
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  product_id  String?
-  user_id     String?
-  products    Product?  @relation(fields: [product_id], references: [id])
-  users       User?     @relation(fields: [user_id], references: [id])
+  @@map("users")
 }
 
 model Product {
-  id          String    @id @default(cuid())
-  name        String
-  description String
-  price       Float
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  uploaded_by String?
-  users       User?     @relation(fields: [uploaded_by], references: [id])
-  earnings    Earning[]
-  purchases   Purchase[]
-  reviews     Review[]
-  download_count Int    @default(0)
-}
+  id              String    @id @default(uuid())
+  name            String
+  slug            String    @unique
+  description     String
+  longDescription String?   @map("long_description")
+  category        String
+  price           Decimal   @db.Decimal(10, 2)
+  imageUrl        String?   @map("image_url")
+  fileUrl         String    @map("file_url")
+  documentation   String?
+  features        String[]
+  requirements    String[]
+  rating          Int       @default(0)
+  averageRating   Decimal   @default(0) @db.Decimal(3, 2)
+  totalRatings    Int       @default(0)
+  createdBy       String    @map("created_by")
+  uploadedBy      String    @map("uploaded_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  isPublic        Boolean   @default(true) @map("is_public")
+  isFeatured      Boolean   @default(false) @map("is_featured")
+  downloadCount   Int       @default(0) @map("download_count")
+  earningsSplit   Decimal   @default(0.70) @db.Decimal(3, 2)
+  creator         User      @relation("ProductCreator", fields: [createdBy], references: [id])
+  uploader        User      @relation("ProductUploader", fields: [uploadedBy], references: [id])
+  purchases       Purchase[]
+  reviews         Review[]
+  earnings        Earning[]
 
-model Purchase {
-  id          String    @id @default(cuid())
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @default(now())
-  product_id  String?
-  user_id     String?
-  products    Product?  @relation(fields: [product_id], references: [id])
-  users       User?     @relation(fields: [user_id], references: [id])
+  @@map("products")
 }
 
 model Review {
-  id          String    @id @default(cuid())
-  rating      Int
-  comment     String?
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @default(now())
-  product_id  String?
-  user_id     String?
-  products    Product?  @relation(fields: [product_id], references: [id])
-  users       User?     @relation(fields: [user_id], references: [id])
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  userId    String   @map("user_id")
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation("UserReviews", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
 }
 
-model AgentMetrics {
-  id             String   @id @default(cuid())
-  agentId        String   @unique
-  requests       Int      @default(0)
-  errors         Int      @default(0)
-  avgResponseTime Float   @default(0)
-  lastActive     DateTime @default(now())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+model Earning {
+  id                String    @id @default(uuid())
+  userId           String    @map("user_id")
+  productId        String    @map("product_id")
+  amount           Decimal   @db.Decimal(10, 2)
+  status           String    @default("pending")
+  stripeTransferId String?   @map("stripe_transfer_id")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  paidAt           DateTime? @map("paid_at")
+  user             User      @relation("UserEarnings", fields: [userId], references: [id])
+  product          Product   @relation(fields: [productId], references: [id])
 
-  @@index([agentId])
+  @@map("earnings")
 }
 
-model AgentLog {
-  id        String   @id @default(cuid())
-  agentId   String
-  level     String   // 'info' | 'warning' | 'error'
-  message   String
-  metadata  Json?
-  timestamp DateTime @default(now())
+model Deployment {
+  id            String    @id @default(uuid())
+  name          String
+  description   String
+  framework     String
+  fileUrl       String?   @map("file_url")
+  deployedBy    String    @map("deployed_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  accessLevel   String    @default("public") @map("access_level")
+  licenseType   String    @default("free") @map("license_type")
+  priceCents    Int       @default(0) @map("price_cents")
+  downloads     Int       @default(0)
+  rating        Decimal   @default(0) @db.Decimal(3, 2)
+  ratingCount   Int       @default(0) @map("rating_count")
+  downloadCount Int       @default(0) @map("download_count")
+  status        String    @default("pending")
+  modelType     String    @map("model_type")
+  requirements  String?
+  apiEndpoint   String?   @map("api_endpoint")
+  environment   String    @default("production")
+  version       String
+  source        String
+  deployer      User      @relation(fields: [deployedBy], references: [id])
+  metrics       AgentMetrics?
+  logs          AgentLog[]
+  feedbacks     AgentFeedback[]
 
-  @@index([agentId])
-  @@index([level])
-  @@index([timestamp])
+  @@map("deployments")
 }
 
-model AgentVersion {
-  id          String   @id @default(cuid())
-  agentId     String
-  version     String
-  file_url    String
-  requirements String?
-  createdAt   DateTime @default(now())
-  createdBy   String
-  changelog   String?
-  deployment  Deployment @relation(fields: [agentId], references: [id])
+model Purchase {
+  id                    String    @id @default(uuid())
+  userId               String    @map("user_id")
+  productId            String    @map("product_id")
+  amount               Decimal   @db.Decimal(10, 2)
+  status               String    @default("pending")
+  stripePaymentIntentId String?  @map("stripe_payment_intent_id")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  user                 User      @relation(fields: [userId], references: [id])
+  product              Product   @relation(fields: [productId], references: [id])
 
-  @@index([agentId])
+  @@map("purchases")
 }
 
 model AgentFeedback {
-  id        String   @id @default(cuid())
-  agentId   String
-  userId    String
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
-  deployment Deployment @relation(fields: [agentId], references: [id])
-  user      User      @relation(fields: [userId], references: [id])
+  id             String    @id @default(uuid())
+  agentId        String    @map("agent_id")
+  userId         String    @map("user_id")
+  rating         Int
+  comment        String?
+  sentimentScore Decimal?  @map("sentiment_score") @db.Decimal(3, 2)
+  categories     Json?
+  creatorResponse String?  @map("creator_response")
+  responseDate   DateTime? @map("response_date")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  agent          Deployment @relation(fields: [agentId], references: [id])
+  user           User      @relation(fields: [userId], references: [id])
 
-  @@index([agentId])
-  @@index([userId])
+  @@map("agent_feedbacks")
 }
 
 model Notification {
-  id        String   @id @default(cuid())
-  userId    String
-  type      String   // 'feedback' | 'system' | 'update'
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String
+  title     String
   message   String
+  metadata  Json?
   read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
   user      User     @relation(fields: [userId], references: [id])
 
-  @@index([userId])
-  @@index([type])
-  @@index([read])
+  @@map("notifications")
+}
+
+model AgentMetrics {
+  id                String    @id @default(uuid())
+  agentId          String    @unique @map("agent_id")
+  totalRequests    Int       @default(0) @map("total_requests")
+  averageResponseTime Int     @default(0) @map("average_response_time")
+  errorRate        Float     @default(0) @map("error_rate")
+  successRate      Float     @default(0) @map("success_rate")
+  activeUsers      Int       @default(0) @map("active_users")
+  requestsPerMinute Float    @default(0) @map("requests_per_minute")
+  averageTokensUsed Int      @default(0) @map("average_tokens_used")
+  costPerRequest   Float     @default(0) @map("cost_per_request")
+  totalCost        Float     @default(0) @map("total_cost")
+  lastUpdated      DateTime  @default(now()) @map("last_updated")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  agent            Deployment @relation(fields: [agentId], references: [id])
+
+  @@map("agent_metrics")
+}
+
+model AgentLog {
+  id        String   @id @default(uuid())
+  agentId   String   @map("agent_id")
+  level     String
+  message   String
+  metadata  Json?
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  agent     Deployment @relation(fields: [agentId], references: [id])
+
+  @@map("agent_logs")
+}
+
+model File {
+  id          String   @id @default(uuid())
+  name        String
+  type        String
+  size        Int
+  path        String
+  uploadedBy  String   @map("uploaded_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User     @relation("UserFiles", fields: [uploadedBy], references: [id])
+
+  @@map("files")
 }

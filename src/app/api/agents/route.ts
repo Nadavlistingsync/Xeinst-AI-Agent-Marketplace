@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { startBackgroundJobs } from '@/lib/background-jobs';
+import { db } from '@/lib/db';
 
 // Start background jobs when the module is loaded
 startBackgroundJobs();
@@ -114,5 +115,33 @@ export async function DELETE(req: Request) {
       { error: 'Internal server error' },
       { status: 500 }
     );
+  }
+}
+
+export async function getFeaturedAgents() {
+  try {
+    const agents = await db.query.deployments.findMany({
+      where: (deployments, { eq }) => eq(deployments.status, 'active'),
+      orderBy: (deployments, { desc }) => [desc(deployments.download_count)],
+      limit: 5
+    });
+    return agents;
+  } catch (error) {
+    console.error('Error fetching featured agents:', error);
+    return [];
+  }
+}
+
+export async function getTrendingAgents() {
+  try {
+    const agents = await db.query.deployments.findMany({
+      where: (deployments, { eq }) => eq(deployments.status, 'active'),
+      orderBy: (deployments, { desc }) => [desc(deployments.rating)],
+      limit: 5
+    });
+    return agents;
+  } catch (error) {
+    console.error('Error fetching trending agents:', error);
+    return [];
   }
 } 

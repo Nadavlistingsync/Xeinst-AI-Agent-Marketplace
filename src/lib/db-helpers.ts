@@ -1,111 +1,171 @@
-import { db } from './db';
-import { products, reviews, deployments, users, purchases } from './schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { prisma } from './prisma';
 
 // Product operations
 export async function getProduct(id: string) {
-  const [product] = await db.select().from(products).where(eq(products.id, id));
-  return product;
-}
-
-export async function getProductBySlug(slug: string) {
-  const [product] = await db.select().from(products).where(eq(products.category, slug));
-  return product;
+  return prisma.product.findUnique({
+    where: { id }
+  });
 }
 
 export async function getProducts() {
-  return await db.select().from(products).orderBy(desc(products.created_at));
+  return prisma.product.findMany({
+    where: { isPublic: true },
+    orderBy: { createdAt: 'desc' }
+  });
 }
 
-export async function getUserProducts(userId: string) {
-  return await db.select().from(products).where(eq(products.uploaded_by, userId));
+export async function getFeaturedProducts() {
+  return prisma.product.findMany({
+    where: { 
+      isPublic: true,
+      isFeatured: true 
+    },
+    orderBy: { createdAt: 'desc' }
+  });
 }
 
-export async function createProduct(data: typeof products.$inferInsert) {
-  const [product] = await db.insert(products).values(data).returning();
-  return product;
+export async function getProductsByCategory(category: string) {
+  return prisma.product.findMany({
+    where: { 
+      isPublic: true,
+      category 
+    },
+    orderBy: { createdAt: 'desc' }
+  });
 }
 
-export async function getProductById(id: string) {
-  const [product] = await db.select().from(products).where(eq(products.id, id));
-  return product;
+export async function getProductsByUser(userId: string) {
+  return prisma.product.findMany({
+    where: { 
+      OR: [
+        { createdBy: userId },
+        { uploadedBy: userId }
+      ]
+    },
+    orderBy: { createdAt: 'desc' }
+  });
 }
 
-export async function updateProduct(id: string, data: Partial<typeof products.$inferInsert>) {
-  const [product] = await db.update(products)
-    .set({ ...data, updated_at: new Date() })
-    .where(eq(products.id, id))
-    .returning();
-  return product;
+export async function createProduct(data: any) {
+  return prisma.product.create({
+    data
+  });
+}
+
+export async function updateProduct(id: string, data: any) {
+  return prisma.product.update({
+    where: { id },
+    data
+  });
 }
 
 export async function deleteProduct(id: string) {
-  await db.delete(products).where(eq(products.id, id));
-}
-
-// Purchase operations
-export async function checkProductPurchase(userId: string, productId: string) {
-  const [purchase] = await db.select()
-    .from(purchases)
-    .where(and(
-      eq(purchases.user_id, userId),
-      eq(purchases.product_id, productId)
-    ));
-  return !!purchase;
-}
-
-export async function createPurchase(data: typeof purchases.$inferInsert) {
-  const [purchase] = await db.insert(purchases).values(data).returning();
-  return purchase;
+  return prisma.product.delete({
+    where: { id }
+  });
 }
 
 // Review operations
 export async function getProductReviews(productId: string) {
-  return await db.select().from(reviews).where(eq(reviews.product_id, productId));
+  return prisma.review.findMany({
+    where: { productId },
+    include: { user: true },
+    orderBy: { createdAt: 'desc' }
+  });
 }
 
-export async function createReview(data: typeof reviews.$inferInsert) {
-  const [review] = await db.insert(reviews).values(data).returning();
-  return review;
+export async function createReview(data: any) {
+  return prisma.review.create({
+    data
+  });
 }
 
-export async function getUserReview(userId: string, productId: string) {
-  const [review] = await db.select().from(reviews)
-    .where(and(eq(reviews.user_id, userId), eq(reviews.product_id, productId)));
-  return review;
+// Purchase operations
+export async function getPurchasesByUser(userId: string) {
+  return prisma.purchase.findMany({
+    where: { userId },
+    include: { product: true },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+export async function createPurchase(data: any) {
+  return prisma.purchase.create({
+    data
+  });
 }
 
 // Deployment operations
-export async function getDeployments(userId: string) {
-  return await db.select().from(deployments).where(eq(deployments.deployed_by, userId));
+export async function getDeploymentsByUser(userId: string) {
+  return prisma.deployment.findMany({
+    where: { deployedBy: userId },
+    orderBy: { createdAt: 'desc' }
+  });
 }
 
-export async function getDeployment(id: string) {
-  const [deployment] = await db.select().from(deployments).where(eq(deployments.id, id));
-  return deployment;
+export async function createDeployment(data: any) {
+  return prisma.deployment.create({
+    data
+  });
 }
 
-export async function createDeployment(data: typeof deployments.$inferInsert) {
-  const [deployment] = await db.insert(deployments).values(data).returning();
-  return deployment;
+// Feedback operations
+export async function getAgentFeedback(agentId: string) {
+  return prisma.agentFeedback.findMany({
+    where: { agentId },
+    include: { user: true },
+    orderBy: { createdAt: 'desc' }
+  });
 }
 
-// User operations
-export async function getUser(id: string) {
-  const [user] = await db.select().from(users).where(eq(users.id, id));
-  return user;
+export async function createAgentFeedback(data: any) {
+  return prisma.agentFeedback.create({
+    data
+  });
 }
 
-export async function getUserPurchases(userId: string) {
-  return await db.select().from(products)
-    .innerJoin(purchases, eq(products.id, purchases.product_id))
-    .where(eq(purchases.user_id, userId));
+// Notification operations
+export async function getUserNotifications(userId: string) {
+  return prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' }
+  });
 }
 
-// Trending products
-export async function getTrendingProducts(limit = 10) {
-  return await db.select()
-    .from(products)
-    .orderBy(desc(products.download_count))
-    .limit(limit);
+export async function createNotification(data: any) {
+  return prisma.notification.create({
+    data
+  });
+}
+
+// Metrics operations
+export async function getAgentMetrics(agentId: string) {
+  return prisma.agentMetrics.findUnique({
+    where: { agentId }
+  });
+}
+
+export async function updateAgentMetrics(agentId: string, data: any) {
+  return prisma.agentMetrics.upsert({
+    where: { agentId },
+    update: data,
+    create: {
+      agentId,
+      ...data
+    }
+  });
+}
+
+// Log operations
+export async function getAgentLogs(agentId: string) {
+  return prisma.agentLog.findMany({
+    where: { agentId },
+    orderBy: { timestamp: 'desc' }
+  });
+}
+
+export async function createAgentLog(data: any) {
+  return prisma.agentLog.create({
+    data
+  });
 } 
