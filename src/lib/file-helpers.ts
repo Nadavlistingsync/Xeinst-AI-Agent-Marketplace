@@ -1,56 +1,63 @@
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
-import { unlink } from 'fs/promises';
+import { prisma } from './db';
+import { File } from '@prisma/client';
 
-const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
+export async function uploadFile(
+  file: File,
+  userId: string
+): Promise<string> {
+  const fileRecord = await prisma.file.create({
+    data: {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      uploadedBy: userId,
+      path: '', // This will be updated after actual upload
+    },
+  });
 
-export async function uploadFile(file: File, userId: string) {
-  try {
-    // Create uploads directory if it doesn't exist
-    await mkdir(UPLOAD_DIR, { recursive: true });
+  // Here you would implement the actual file upload logic
+  // For example, using AWS S3, Google Cloud Storage, etc.
+  const fileUrl = `/api/files/${fileRecord.id}`;
 
-    // Generate unique filename
-    const fileExtension = file.name.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExtension}`;
-    const filePath = join(UPLOAD_DIR, fileName);
+  // Update the file record with the URL
+  await prisma.file.update({
+    where: { id: fileRecord.id },
+    data: { path: fileUrl },
+  });
 
-    // Convert File to Buffer
-    const buffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(buffer);
-
-    // Write file to disk
-    await writeFile(filePath, uint8Array);
-
-    // Return the public URL path
-    return `/uploads/${fileName}`;
-  } catch (error) {
-    console.error('Error uploading file:', error);
-    throw new Error('Failed to upload file');
-  }
+  return fileUrl;
 }
 
-export async function deleteFile(filePath: string) {
-  try {
-    const fullPath = join(process.cwd(), 'public', filePath);
-    await unlink(fullPath);
-  } catch (error) {
-    console.error('Error deleting file:', error);
-    throw new Error('Failed to delete file');
-  }
+export async function getFile(id: string): Promise<File | null> {
+  return prisma.file.findUnique({
+    where: { id },
+  });
 }
 
-export async function getFile(fileId: string) {
-  try {
-    const [file] = await db.select().from(files).where(eq(files.id, fileId));
-    if (!file) {
-      throw new Error('File not found');
-    }
-    return file;
-  } catch (error) {
-    console.error('Error getting file:', error);
-    throw new Error('Failed to get file');
+export async function deleteFile(id: string): Promise<File> {
+  const file = await prisma.file.findUnique({
+    where: { id },
+  });
+
+  if (!file) {
+    throw new Error('File not found');
   }
+
+  // Here you would implement the actual file deletion logic
+  // For example, deleting from AWS S3, Google Cloud Storage, etc.
+
+  return prisma.file.delete({
+    where: { id },
+  });
+}
+
+export async function listFiles(userId: string): Promise<File[]> {
+  return prisma.file.findMany({
+    where: { uploadedBy: userId },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
 }
 
 export function getFileUrl(fileId: string) {

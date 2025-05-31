@@ -1,8 +1,8 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "./db";
-import { compare } from "bcryptjs";
+import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -34,7 +34,10 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const isPasswordValid = await compare(credentials.password, user.password);
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
 
         if (!isPasswordValid) {
           return null;
@@ -46,21 +49,22 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
-          subscription_tier: user.subscriptionTier,
+          subscription_tier: user.subscription_tier,
         };
       },
     }),
   ],
   callbacks: {
-    async session({ session, token }) {
+    async session({ token, session }) {
       if (token) {
         session.user.id = token.id as string;
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.image = token.picture;
         session.user.role = token.role as string;
-        session.user.subscription_tier = token.subscription_tier as string;
+        session.user.subscription_tier = token.subscription_tier as "free" | "basic" | "premium";
       }
+
       return session;
     },
     async jwt({ token, user }) {
@@ -72,7 +76,7 @@ export const authOptions: NextAuthOptions = {
 
       if (!dbUser) {
         if (user) {
-          token.id = user.id;
+          token.id = user?.id;
         }
         return token;
       }
@@ -83,7 +87,7 @@ export const authOptions: NextAuthOptions = {
         email: dbUser.email,
         picture: dbUser.image,
         role: dbUser.role,
-        subscription_tier: dbUser.subscriptionTier,
+        subscription_tier: dbUser.subscription_tier,
       };
     },
   },

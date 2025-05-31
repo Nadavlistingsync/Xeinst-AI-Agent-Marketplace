@@ -163,7 +163,7 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
                       <p className="font-medium mb-2">Your Response:</p>
                       <p>{feedback.creator_response}</p>
                       <p className="text-sm text-muted-foreground mt-2">
-                        {formatDistanceToNow(new Date(feedback.response_date!), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(feedback.response_date || ''), { addSuffix: true })}
                       </p>
                     </div>
                   ) : (
@@ -232,7 +232,7 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
                       <p className="font-medium mb-2">Your Response:</p>
                       <p>{feedback.creator_response}</p>
                       <p className="text-sm text-muted-foreground mt-2">
-                        {formatDistanceToNow(new Date(feedback.response_date!), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(feedback.response_date || ''), { addSuffix: true })}
                       </p>
                     </div>
                   </CardContent>

@@ -6,13 +6,15 @@ import { Prisma } from '@prisma/client';
 import { AgentCard } from '@/components/marketplace/AgentCard';
 import { SearchBar } from '@/components/marketplace/SearchBar';
 import { FilterBar } from '@/components/marketplace/FilterBar';
+import { getDeployments } from '@/lib/agent-deployment';
+import { Suspense } from "react";
+import { Deployment } from "@prisma/client";
 
 interface MarketplacePageProps {
   searchParams: {
-    search?: string;
+    query?: string;
     framework?: string;
-    access_level?: string;
-    page?: string;
+    accessLevel?: string;
   };
 }
 
@@ -21,141 +23,82 @@ export const metadata: Metadata = {
   description: 'Discover and download AI agents',
 };
 
-export default async function MarketplacePage({
-  searchParams,
-}: MarketplacePageProps) {
-  const session = await getServerSession(authOptions);
-  const page = parseInt(searchParams.page || '1');
-  const limit = 12;
+export default async function MarketplacePage({ searchParams }: MarketplacePageProps) {
+  const { query, framework, accessLevel } = searchParams;
 
-  const where: Prisma.DeploymentWhereInput = {
-    access_level: 'public',
-    ...(searchParams.search && {
-      OR: [
-        {
-          name: {
-            contains: searchParams.search,
-            mode: Prisma.QueryMode.insensitive,
-          },
-        },
-        {
-          description: {
-            contains: searchParams.search,
-            mode: Prisma.QueryMode.insensitive,
-          },
-        },
-      ],
-    }),
-    ...(searchParams.framework && { framework: searchParams.framework }),
-    ...(searchParams.access_level && { access_level: searchParams.access_level }),
-    ...(session?.user?.subscription_tier === 'basic' && {
-      OR: [
-        { access_level: 'public' },
-        { access_level: 'basic' },
-      ],
-    }),
-    ...(session?.user?.subscription_tier === 'premium' && {
-      OR: [
-        { access_level: 'public' },
-        { access_level: 'basic' },
-        { access_level: 'premium' },
-      ],
-    }),
-    ...(!session && { access_level: 'public' }),
-  };
-
-  const [agents, total] = await Promise.all([
-    prisma.deployment.findMany({
-      where,
-      skip: (page - 1) * limit,
-      take: limit,
-      orderBy: { created_at: 'desc' },
-      include: {
-        users: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
+  const deployments = await getDeployments({
+    where: {
+      OR: query
+        ? [
+            { name: { contains: query, mode: "insensitive" } },
+            { description: { contains: query, mode: "insensitive" } },
+          ]
+        : undefined,
+      accessLevel: accessLevel || "public",
+      framework: framework,
+    },
+    orderBy: { createdAt: "desc" },
+    include: {
+      deployer: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
         },
       },
-    }),
-    prisma.deployment.count({ where }),
-  ]);
-
-  const typedAgents = agents.map(agent => ({
-    ...agent,
-    access_level: agent.access_level as 'public' | 'basic' | 'premium',
-    license_type: agent.license_type as 'full-access' | 'limited-use' | 'view-only' | 'non-commercial',
-    users: {
-      ...agent.users,
-      name: agent.users.name ?? '',
     },
+  });
+
+  const agents = deployments.map((agent) => ({
+    id: agent.id,
+    name: agent.name,
+    description: agent.description,
+    framework: agent.framework,
+    environment: agent.environment,
+    status: agent.status,
+    rating: Number(agent.rating),
+    ratingCount: agent.ratingCount || 0,
+    downloadCount: agent.downloadCount,
+    priceCents: agent.priceCents,
+    accessLevel: agent.accessLevel,
+    licenseType: agent.licenseType,
+    accessLevel: agent.accessLevel as "public" | "basic" | "premium",
+    licenseType: agent.licenseType as "full-access" | "limited-use" | "view-only" | "non-commercial",
+    deployer: {
+      id: agent.deployer.id,
+      name: agent.deployer.name ?? "",
+      email: agent.deployer.email,
+      image: agent.deployer.image,
+    },
+    createdAt: agent.createdAt,
+    updatedAt: agent.updatedAt,
+    apiEndpoint: agent.apiEndpoint,
   }));
 
-  const totalPages = Math.ceil(total / limit);
-
   return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Marketplace</h1>
-          {session && (
-            <a
-              href="/agent-builder"
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            >
-              Create Agent
-            </a>
-          )}
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-4">AI Agent Marketplace</h1>
+        <p className="text-gray-600">
+          Discover and deploy powerful AI agents for your business needs
+        </p>
+      </div>
 
-        <div className="space-y-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <SearchBar />
-            <FilterBar />
-          </div>
+      <div className="mb-8">
+        <SearchBar />
+      </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {typedAgents.map((agent) => (
-              <AgentCard key={agent.id} agent={agent} />
-            ))}
-          </div>
+      <div className="mb-8">
+        <FilterBar />
+      </div>
 
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-8">
-              <div className="flex space-x-2">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (pageNum) => (
-                    <a
-                      key={pageNum}
-                      href={`/marketplace?page=${pageNum}${
-                        searchParams.search
-                          ? `&search=${searchParams.search}`
-                          : ''
-                      }${
-                        searchParams.framework
-                          ? `&framework=${searchParams.framework}`
-                          : ''
-                      }${
-                        searchParams.access_level
-                          ? `&access_level=${searchParams.access_level}`
-                          : ''
-                      }`}
-                      className={`px-4 py-2 rounded-md ${
-                        pageNum === page
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 hover:bg-gray-200'
-                      }`}
-                    >
-                      {pageNum}
-                    </a>
-                  )
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Suspense fallback={<div>Loading agents...</div>}>
+          {agents.map((agent) => (
+            <AgentCard key={agent.id} agent={agent} />
+          ))}
+        </Suspense>
       </div>
     </div>
   );

@@ -1,82 +1,70 @@
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useSession } from 'next-auth/react';
-import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { StarIcon } from "lucide-react";
+import { formatDistanceToNow } from 'date-fns';
 
 interface Agent {
   id: string;
   name: string;
   description: string;
   framework: string;
-  version: string;
-  status: string;
-  access_level: 'public' | 'basic' | 'premium';
-  license_type: 'full-access' | 'limited-use' | 'view-only' | 'non-commercial';
-  price_cents: number;
-  users: {
-    email: string;
-    name: string;
+  accessLevel: string;
+  licenseType: string;
+  priceCents: number;
+  rating: number;
+  ratingCount: number;
+  downloadCount: number;
+  createdAt: Date;
+  deployer: {
+    name: string | null;
+    image: string | null;
   };
 }
 
 interface AgentCardProps {
   agent: Agent;
+  onSelect?: (agent: Agent) => void;
 }
 
-export function AgentCard({ agent }: AgentCardProps) {
-  const { data: session } = useSession();
-
-  const canAccess = () => {
-    if (!session) return agent.access_level === 'public';
-    if (agent.access_level === 'public') return true;
-    if (agent.access_level === 'basic' && session.user.subscription_tier === 'basic') return true;
-    if (agent.access_level === 'premium' && session.user.subscription_tier === 'premium') return true;
-    return false;
-  };
-
+export function AgentCard({ agent, onSelect }: AgentCardProps) {
   return (
-    <Link href={`/agent/${agent.id}`}>
-      <Card className="h-full hover:shadow-lg transition-shadow">
-        <div className="p-6 space-y-4">
-          <div className="flex justify-between items-start">
-            <h3 className="text-xl font-semibold line-clamp-1">{agent.name}</h3>
-            <Badge
-              variant={
-                agent.access_level === 'public'
-                  ? 'default'
-                  : agent.access_level === 'basic'
-                  ? 'secondary'
-                  : 'destructive'
-              }
-            >
-              {agent.access_level}
-            </Badge>
+    <Card className="h-full flex flex-col">
+      <CardHeader>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-xl">{agent.name}</CardTitle>
+            <CardDescription className="mt-1">
+              by {agent.deployer.name || "Anonymous"}
+            </CardDescription>
           </div>
-
-          <p className="text-gray-600 line-clamp-2">{agent.description}</p>
-
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">{agent.framework}</Badge>
-            <Badge variant="outline">{agent.license_type}</Badge>
-            {agent.price_cents > 0 && (
-              <Badge variant="outline">
-                ${(agent.price_cents / 100).toFixed(2)}
-              </Badge>
-            )}
-          </div>
-
-          <div className="flex justify-between items-center text-sm text-gray-500">
-            <span>by {agent.users.name}</span>
-            <span>v{agent.version}</span>
-          </div>
-
-          {!canAccess() && (
-            <div className="mt-4 p-2 bg-yellow-50 text-yellow-800 rounded-md text-sm">
-              Requires {agent.access_level} subscription
-            </div>
-          )}
+          <Badge variant={agent.accessLevel === "public" ? "default" : "secondary"}>
+            {agent.accessLevel}
+          </Badge>
         </div>
-      </Card>
-    </Link>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <p className="text-gray-600 line-clamp-3">{agent.description}</p>
+        <div className="mt-4 flex items-center gap-2">
+          <div className="flex items-center">
+            <StarIcon className="w-4 h-4 text-yellow-400 fill-current" />
+            <span className="ml-1">{agent.rating.toFixed(1)}</span>
+          </div>
+          <span className="text-gray-500">({agent.ratingCount} reviews)</span>
+        </div>
+        <div className="mt-2 text-sm text-gray-500">
+          {agent.downloadCount} downloads
+        </div>
+        <div className="mt-2 text-sm text-gray-500">
+          Created {formatDistanceToNow(new Date(agent.createdAt), { addSuffix: true })}
+        </div>
+      </CardContent>
+      <CardFooter className="flex justify-between items-center">
+        <div className="text-lg font-semibold">
+          {agent.priceCents > 0 ? `$${(agent.priceCents / 100).toFixed(2)}` : "Free"}
+        </div>
+        <Button onClick={() => onSelect?.(agent)}>View Details</Button>
+      </CardFooter>
+    </Card>
   );
 } 

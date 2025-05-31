@@ -1,16 +1,89 @@
-import { prisma } from './prisma';
+import { Prisma } from "@prisma/client";
+import prisma from "./db";
 
 // Product operations
 export async function getProduct(id: string) {
   return prisma.product.findUnique({
-    where: { id }
+    where: { id },
+    include: {
+      creator: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      uploader: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      reviews: {
+        include: {
+          user: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+        },
+      },
+    },
   });
 }
 
-export async function getProducts() {
+export async function getProducts(params: {
+  query?: string;
+  category?: string;
+  minPrice?: number;
+  maxPrice?: number;
+}) {
+  const { query, category, minPrice, maxPrice } = params;
+
+  const where: Prisma.ProductWhereInput = {
+    isPublic: true,
+  };
+
+  if (query) {
+    where.OR = [
+      { name: { contains: query, mode: "insensitive" } },
+      { description: { contains: query, mode: "insensitive" } },
+    ];
+  }
+
+  if (category) {
+    where.category = category;
+  }
+
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    where.price = {};
+    if (minPrice !== undefined) {
+      where.price.gte = minPrice;
+    }
+    if (maxPrice !== undefined) {
+      where.price.lte = maxPrice;
+    }
+  }
+
   return prisma.product.findMany({
-    where: { isPublic: true },
-    orderBy: { createdAt: 'desc' }
+    where,
+    include: {
+      creator: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      uploader: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 }
 
@@ -46,22 +119,50 @@ export async function getProductsByUser(userId: string) {
   });
 }
 
-export async function createProduct(data: any) {
+export async function createProduct(data: Prisma.ProductCreateInput) {
   return prisma.product.create({
-    data
+    data,
+    include: {
+      creator: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      uploader: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 }
 
-export async function updateProduct(id: string, data: any) {
+export async function updateProduct(id: string, data: Prisma.ProductUpdateInput) {
   return prisma.product.update({
     where: { id },
-    data
+    data,
+    include: {
+      creator: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      uploader: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 }
 
 export async function deleteProduct(id: string) {
   return prisma.product.delete({
-    where: { id }
+    where: { id },
   });
 }
 
@@ -69,43 +170,211 @@ export async function deleteProduct(id: string) {
 export async function getProductReviews(productId: string) {
   return prisma.review.findMany({
     where: { productId },
-    include: { user: true },
-    orderBy: { createdAt: 'desc' }
+    include: {
+      user: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 }
 
-export async function createReview(data: any) {
+export async function createReview(data: Prisma.ReviewCreateInput) {
   return prisma.review.create({
-    data
+    data,
+    include: {
+      user: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+    },
+  });
+}
+
+export async function getUserReview(productId: string, userId: string) {
+  return prisma.review.findFirst({
+    where: {
+      productId,
+      userId,
+    },
+    include: {
+      user: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+    },
   });
 }
 
 // Purchase operations
-export async function getPurchasesByUser(userId: string) {
+export async function getUserPurchases(userId: string) {
   return prisma.purchase.findMany({
     where: { userId },
-    include: { product: true },
-    orderBy: { createdAt: 'desc' }
+    include: {
+      product: {
+        include: {
+          creator: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+          uploader: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 }
 
-export async function createPurchase(data: any) {
-  return prisma.purchase.create({
-    data
+export async function getUserProducts(userId: string) {
+  return prisma.product.findMany({
+    where: {
+      OR: [
+        { createdBy: userId },
+        { uploadedBy: userId },
+      ],
+    },
+    include: {
+      creator: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      uploader: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 }
 
 // Deployment operations
-export async function getDeploymentsByUser(userId: string) {
+export async function getDeployments(params: {
+  query?: string;
+  framework?: string;
+  accessLevel?: string;
+  licenseType?: string;
+}) {
+  const { query, framework, accessLevel, licenseType } = params;
+
+  const where: Prisma.DeploymentWhereInput = {
+    status: "active",
+  };
+
+  if (query) {
+    where.OR = [
+      { name: { contains: query, mode: "insensitive" } },
+      { description: { contains: query, mode: "insensitive" } },
+    ];
+  }
+
+  if (framework) {
+    where.framework = framework;
+  }
+
+  if (accessLevel) {
+    where.accessLevel = accessLevel;
+  }
+
+  if (licenseType) {
+    where.licenseType = licenseType;
+  }
+
   return prisma.deployment.findMany({
-    where: { deployedBy: userId },
-    orderBy: { createdAt: 'desc' }
+    where,
+    include: {
+      deployer: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      metrics: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 }
 
-export async function createDeployment(data: any) {
+export async function getDeployment(id: string) {
+  return prisma.deployment.findUnique({
+    where: { id },
+    include: {
+      deployer: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      metrics: true,
+      logs: true,
+      feedbacks: true,
+    },
+  });
+}
+
+export async function createDeployment(data: Prisma.DeploymentCreateInput) {
   return prisma.deployment.create({
-    data
+    data,
+    include: {
+      deployer: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      metrics: true,
+      logs: true,
+      feedbacks: true,
+    },
+  });
+}
+
+export async function updateDeployment(id: string, data: Prisma.DeploymentUpdateInput) {
+  return prisma.deployment.update({
+    where: { id },
+    data,
+    include: {
+      deployer: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      metrics: true,
+      logs: true,
+      feedbacks: true,
+    },
+  });
+}
+
+export async function deleteDeployment(id: string) {
+  return prisma.deployment.delete({
+    where: { id },
   });
 }
 
