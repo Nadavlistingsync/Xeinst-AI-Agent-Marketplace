@@ -1,4 +1,7 @@
-import prisma from './prisma';
+import { db } from '@/lib/db';
+import { agentFeedbacks, deployments } from '@/lib/schema';
+import { eq } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 
 interface AgentMetrics {
   requests: number;
@@ -29,30 +32,31 @@ export async function trackAgentRequest(
   const now = new Date();
   
   // Fetch current metrics to calculate new avgResponseTime
-  const currentMetrics = await prisma.agentMetrics.findUnique({
-    where: { agentId },
-    select: { avgResponseTime: true },
-  });
-  const newAvgResponseTime = currentMetrics
-    ? (currentMetrics.avgResponseTime + responseTime) / 2
+  const currentMetrics = await db.select({ avgResponseTime: agentMetrics.avgResponseTime })
+    .from(agentMetrics)
+    .where(eq(agentMetrics.agentId, agentId));
+  const newAvgResponseTime = currentMetrics.length > 0
+    ? (currentMetrics[0].avgResponseTime + responseTime) / 2
     : responseTime;
 
-  await prisma.agentMetrics.upsert({
-    where: { agentId },
-    update: {
+  await db.insert(agentMetrics)
+    .values({
+      id: uuidv4(),
+      agentId,
       requests: { increment: 1 },
       errors: { increment: success ? 0 : 1 },
       avgResponseTime: { set: newAvgResponseTime },
       lastActive: now,
-    },
-    create: {
-      agentId,
-      requests: 1,
-      errors: success ? 0 : 1,
-      avgResponseTime: responseTime,
-      lastActive: now,
-    },
-  });
+    })
+    .onConflictDoUpdate({
+      target: agentMetrics.agentId,
+      set: {
+        requests: { increment: 1 },
+        errors: { increment: success ? 0 : 1 },
+        avgResponseTime: { set: newAvgResponseTime },
+        lastActive: now,
+      },
+    });
 }
 
 export async function logAgentEvent(
@@ -61,29 +65,35 @@ export async function logAgentEvent(
   message: string,
   metadata?: Record<string, any>
 ): Promise<void> {
-  await prisma.agentLog.create({
-    data: {
+  await db.insert(agentLog)
+    .values({
+      id: uuidv4(),
       agentId,
       level,
       message,
       metadata,
       timestamp: new Date(),
-    },
-  });
+    })
+    .returning();
 }
 
 export async function getAgentMetrics(agentId: string): Promise<AgentMetrics | null> {
-  const metrics = await prisma.agentMetrics.findUnique({
-    where: { agentId },
-  });
+  const metrics = await db.select({
+    requests: agentMetrics.requests,
+    errors: agentMetrics.errors,
+    avgResponseTime: agentMetrics.avgResponseTime,
+    lastActive: agentMetrics.lastActive,
+  })
+    .from(agentMetrics)
+    .where(eq(agentMetrics.agentId, agentId));
 
-  if (!metrics) return null;
+  if (metrics.length === 0) return null;
 
   return {
-    requests: metrics.requests,
-    errors: metrics.errors,
-    avgResponseTime: metrics.avgResponseTime,
-    lastActive: metrics.lastActive,
+    requests: metrics[0].requests,
+    errors: metrics[0].errors,
+    avgResponseTime: metrics[0].avgResponseTime,
+    lastActive: metrics[0].lastActive,
   };
 }
 
@@ -98,16 +108,20 @@ export async function getAgentLogs(
 ): Promise<AgentLog[]> {
   const { level, startDate, endDate, limit = 100 } = options;
 
-  const logs = await prisma.agentLog.findMany({
-    where: {
-      agentId,
-      ...(level && { level }),
-      ...(startDate && { timestamp: { gte: startDate } }),
-      ...(endDate && { timestamp: { lte: endDate } }),
-    },
-    orderBy: { timestamp: 'desc' },
-    take: limit,
-  });
+  const logs = await db.select({
+    id: agentLog.id,
+    agentId: agentLog.agentId,
+    level: agentLog.level,
+    message: agentLog.message,
+    metadata: agentLog.metadata,
+    timestamp: agentLog.timestamp,
+  })
+    .from(agentLog)
+    .where(eq(agentLog.agentId, agentId))
+    .and(eq(agentLog.level, level))
+    .and(eq(agentLog.timestamp, { gte: startDate, lte: endDate }))
+    .orderBy(agentLog.timestamp)
+    .limit(limit);
 
   return logs.map(log => ({
     ...log,
@@ -167,24 +181,33 @@ export async function submitAgentFeedback({
   rating: number;
   comment?: string;
 }) {
-  return prisma.agentFeedback.create({
-    data: {
-      agentId,
-      userId,
-      rating,
-      comment,
-    },
-  });
+  return db.insert(agentFeedbacks).values({
+    id: uuidv4(),
+    agentId,
+    userId,
+    rating,
+    comment,
+    created_at: new Date(),
+    updated_at: new Date(),
+  }).returning();
 }
 
 export async function getAgentFeedback(agentId: string) {
-  return prisma.agentFeedback.findMany({
-    where: { agentId },
-    orderBy: { createdAt: 'desc' },
-    include: {
+  return db
+    .select({
+      id: agentFeedbacks.id,
+      agentId: agentFeedbacks.agentId,
+      userId: agentFeedbacks.userId,
+      rating: agentFeedbacks.rating,
+      comment: agentFeedbacks.comment,
+      created_at: agentFeedbacks.created_at,
       user: {
-        select: { id: true, name: true, email: true },
+        id: deployments.deployed_by,
+        name: deployments.name,
       },
-    },
-  });
+    })
+    .from(agentFeedbacks)
+    .leftJoin(deployments, eq(agentFeedbacks.agentId, deployments.id))
+    .where(eq(agentFeedbacks.agentId, agentId))
+    .orderBy(agentFeedbacks.created_at);
 } 

@@ -2,7 +2,9 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { generateFeedbackInsights, analyzeFeedbackTrends } from '@/lib/feedback-analysis';
-import prisma from '@/lib/prisma';
+import { db } from '@/lib/db';
+import { deployments } from '@/lib/schema';
+import { eq } from 'drizzle-orm';
 
 export async function GET(
   request: Request,
@@ -14,20 +16,22 @@ export async function GET(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const agent = await prisma.deployment.findUnique({
-      where: { id: params.id },
-    });
+    const agent = await db
+      .select()
+      .from(deployments)
+      .where(eq(deployments.id, params.id))
+      .limit(1);
 
-    if (!agent) {
+    if (!agent.length) {
       return new NextResponse('Agent not found', { status: 404 });
     }
 
     // Check if user has access to the agent
-    if (agent.deployed_by !== session.user.id && agent.access_level !== 'public') {
-      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
+    if (agent[0].deployed_by !== session.user.id && agent[0].access_level !== 'public') {
+      if (agent[0].access_level === 'premium' && session.user.subscription_tier !== 'premium') {
         return new NextResponse('Forbidden', { status: 403 });
       }
-      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
+      if (agent[0].access_level === 'basic' && session.user.subscription_tier !== 'basic') {
         return new NextResponse('Forbidden', { status: 403 });
       }
     }

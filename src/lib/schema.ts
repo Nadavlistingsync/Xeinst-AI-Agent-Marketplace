@@ -33,10 +33,9 @@ export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name'),
   email: text('email').notNull().unique(),
-  password: text('password'),
   image: text('image'),
-  role: text('role').default('user').notNull(),
-  subscription_tier: text('subscription_tier').default('free').notNull(),
+  role: text('role').notNull().default('user'),
+  subscription_tier: text('subscription_tier').notNull().default('free'),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -67,20 +66,26 @@ export const earnings = pgTable('earnings', {
 export const deployments = pgTable('deployments', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
-  description: text('description'),
-  model_type: text('model_type').notNull(),
+  description: text('description').notNull(),
   framework: text('framework').notNull(),
+  file_url: text('file_url'),
+  deployed_by: uuid('deployed_by').references(() => users.id),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  access_level: text('access_level').notNull().default('public'),
+  license_type: text('license_type').notNull().default('free'),
+  price_cents: integer('price_cents').notNull().default(0),
+  downloads: integer('downloads').notNull().default(0),
+  rating: decimal('rating', { precision: 3, scale: 2 }).notNull().default('0'),
+  rating_count: integer('rating_count').notNull().default(0),
+  download_count: integer('download_count').notNull().default(0),
+  status: text('status').notNull().default('pending'),
+  model_type: text('model_type').notNull(),
   requirements: text('requirements'),
   api_endpoint: text('api_endpoint'),
   environment: text('environment').notNull().default('production'),
   version: text('version').notNull(),
-  file_url: text('file_url').notNull(),
-  status: text('status').notNull().default('pending'),
-  access_level: text('access_level').notNull().default('public'),
-  deployed_by: uuid('deployed_by').references(() => users.id),
   source: text('source').notNull(),
-  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const purchases = pgTable('purchases', {
@@ -125,14 +130,8 @@ export const notifications = pgTable('notifications', {
   type: text('type').notNull(),
   title: text('title').notNull(),
   message: text('message').notNull(),
-  metadata: jsonb('metadata').$type<{
-    actionUrl?: string;
-    actionText?: string;
-    priority?: 'low' | 'medium' | 'high';
-    category?: string;
-    [key: string]: unknown;
-  }>(),
-  is_read: boolean('is_read').default(false).notNull(),
+  metadata: jsonb('metadata').$type<Record<string, any>>(),
+  read: boolean('read').notNull().default(false),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
