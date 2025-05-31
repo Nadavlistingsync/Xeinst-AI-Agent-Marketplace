@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { products } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 export async function GET() {
   try {
-    const allProducts = await db.select().from(products);
+    const allProducts = await prisma.product.findMany();
     return NextResponse.json(allProducts);
   } catch (error) {
     console.error('Error fetching products:', error);
@@ -23,20 +21,18 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json();
-    const newProduct = {
-      ...data,
-      created_by: session.user.id,
-      uploaded_by: session.user.id,
-      created_at: new Date(),
-      updated_at: new Date(),
-      is_public: data.is_public ?? true,
-      is_featured: data.is_featured ?? false,
-      download_count: 0,
-      earnings_split: data.earnings_split ?? '0.70',
-    };
-
-    const result = await db.insert(products).values(newProduct).returning();
-    return NextResponse.json(result[0]);
+    const newProduct = await prisma.product.create({
+      data: {
+        ...data,
+        createdBy: session.user.id,
+        uploadedBy: session.user.id,
+        isPublic: data.isPublic ?? true,
+        isFeatured: data.isFeatured ?? false,
+        downloadCount: 0,
+        earningsSplit: data.earningsSplit ?? 0.70,
+      },
+    });
+    return NextResponse.json(newProduct);
   } catch (error) {
     console.error('Error creating product:', error);
     return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
@@ -53,16 +49,14 @@ export async function PUT(request: Request) {
     const data = await request.json();
     const { id, ...updateData } = data;
 
-    const result = await db
-      .update(products)
-      .set({
+    const updatedProduct = await prisma.product.update({
+      where: { id },
+      data: {
         ...updateData,
-        updated_at: new Date(),
-      })
-      .where(eq(products.id, id))
-      .returning();
-
-    return NextResponse.json(result[0]);
+        updatedAt: new Date(),
+      },
+    });
+    return NextResponse.json(updatedProduct);
   } catch (error) {
     console.error('Error updating product:', error);
     return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
@@ -83,7 +77,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
-    await db.delete(products).where(eq(products.id, id));
+    await prisma.product.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting product:', error);
