@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "prisma generate && next build",
+  "buildCommand": "npm run build",
   "devCommand": "next dev",
   "installCommand": "npm install",
   "framework": "nextjs",
@@ -22,11 +22,6 @@
       "dest": "/$1"
     }
   ],
-  "build": {
-    "env": {
-      "PRISMA_GENERATE_DATAPROXY": "true"
-    }
-  },
   "git": {
     "deploymentEnabled": {
       "main": true
