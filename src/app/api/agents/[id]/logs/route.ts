@@ -38,7 +38,8 @@ export async function GET(
     const logs = await getAgentLogs(params.id, {
       startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
       endDate: new Date(),
-      limit: 100
+      limit: 100,
+      level
     });
 
     return NextResponse.json(logs);
