@@ -8,11 +8,11 @@ export async function POST(request: Request) {
     
     // Store feedback in database using Drizzle
     const feedback = await db.insert(agentFeedbacks).values({
-      agentId: 'system', // Using 'system' for general feedback
-      userId: 'system', // Using 'system' for general feedback
+      agent_id: 'system', // Using 'system' for general feedback
+      user_id: 'system', // Using 'system' for general feedback
       rating: data.type === 'error' ? 1 : data.type === 'warning' ? 2 : 5,
       comment: data.message,
-      createdAt: new Date(),
+      created_at: new Date(),
     }).returning();
 
     // Log to console in development
