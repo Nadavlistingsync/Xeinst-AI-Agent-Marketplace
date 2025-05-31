@@ -172,7 +172,7 @@ const FEEDBACK_CATEGORIES: FeedbackCategory[] = [
   },
 ];
 
-export async function analyzeFeedback(agentId: string): Promise<FeedbackAnalysis> {
+export async function analyzeAgentFeedback(agentId: string): Promise<FeedbackAnalysis> {
   try {
     const feedbacks = await prisma.agentFeedback.findMany({
       where: { agentId },
@@ -355,7 +355,7 @@ export async function getFeedbackInsights(agentId: string) {
 }
 
 export async function updateAgentBasedOnFeedback(agentId: string): Promise<void> {
-  const metrics = await analyzeFeedback(agentId);
+  const metrics = await analyzeAgentFeedback(agentId);
   
   // Get agent details for notification
   const agent = await prisma.agent.findMany({
@@ -416,7 +416,7 @@ async function getPreviousMetrics(agentId: string): Promise<FeedbackMetrics | nu
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   try {
-    return await analyzeFeedback(agentId, {
+    return await analyzeAgentFeedback(agentId, {
       start: thirtyDaysAgo,
       end: new Date(),
     });
