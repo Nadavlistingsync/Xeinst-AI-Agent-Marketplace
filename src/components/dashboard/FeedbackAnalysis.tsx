@@ -51,7 +51,6 @@ export function FeedbackAnalysis({ agentId }: FeedbackAnalysisProps) {
   const { toast } = useToast();
   const [metrics, setMetrics] = useState<FeedbackMetrics | null>(null);
   const [trends, setTrends] = useState<FeedbackTrend[]>([]);
-  const [sentimentTrends, setSentimentTrends] = useState<SentimentTrend[]>([]);
   const [categoryTrends, setCategoryTrends] = useState<CategoryTrend[]>([]);
   const [insights, setInsights] = useState<FeedbackInsights | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +74,6 @@ export function FeedbackAnalysis({ agentId }: FeedbackAnalysisProps) {
 
         setMetrics(analysisData.metrics);
         setTrends(analysisData.trends);
-        setSentimentTrends(insightsData.trends.sentimentTrend);
         setCategoryTrends(insightsData.trends.categoryTrend);
         setInsights(insightsData.insights);
       } catch (error) {
