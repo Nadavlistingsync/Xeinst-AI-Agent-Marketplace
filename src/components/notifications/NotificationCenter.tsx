@@ -22,7 +22,11 @@ interface Notification {
   is_read: boolean;
 }
 
-export function NotificationCenter() {
+interface NotificationCenterProps {
+  agentId: string;
+}
+
+export function NotificationCenter({ agentId }: NotificationCenterProps) {
   const { data: session } = useSession();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -61,7 +65,7 @@ export function NotificationCenter() {
 
   const fetchNotifications = async () => {
     try {
-      const response = await fetch('/api/notifications');
+      const response = await fetch(`/api/notifications?agentId=${agentId}`);
       if (!response.ok) throw new Error('Failed to fetch notifications');
       
       const data = await response.json();
