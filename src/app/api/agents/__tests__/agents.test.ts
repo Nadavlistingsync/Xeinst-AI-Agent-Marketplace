@@ -1,4 +1,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+
+// Mock Prisma Client
+vi.mock('@prisma/client', () => ({
+  PrismaClient: vi.fn().mockImplementation(() => ({
+    agentLog: {
+      create: vi.fn(),
+    },
+    // add other Prisma methods as needed
+  })),
+}));
+
 import { getFeaturedAgents, getTrendingAgents } from '../route';
 import prisma from '@/lib/prisma';
 import { getAgentLogs, getAgentMetrics, logAgentEvent } from '@/lib/agent-monitoring';
