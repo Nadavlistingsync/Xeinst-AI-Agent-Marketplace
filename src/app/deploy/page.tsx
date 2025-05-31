@@ -119,7 +119,7 @@ export default function DeployPage() {
       setDeploymentStatus("Uploading files...");
       const filePath = `uploads/${session?.user?.id}/${Date.now()}-${fileName}`;
       
-      const uploadResult = await uploadToS3(fileToUpload, filePath);
+      const uploadResult = await uploadToS3(filePath, fileToUpload);
 
       setDeploymentStatus("Creating deployment record...");
       
@@ -171,6 +171,20 @@ export default function DeployPage() {
     return new File([blob], `folder-upload-${Date.now()}.zip`, { type: "application/zip" });
   };
 
+  const handleFileUpload = async (file: File) => {
+    try {
+      setUploadProgress(0);
+      const filePath = `agents/${session?.user?.id}/${Date.now()}-${file.name}`;
+      await uploadToS3(filePath, file);
+      setUploadProgress(100);
+      setFormData(prev => ({ ...prev, filePath }));
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      setError('Failed to upload file. Please try again.');
+      setUploadProgress(0);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-gray-800 py-12 px-4">
       <div className="w-full max-w-3xl mx-auto rounded-2xl shadow-2xl bg-white/10 backdrop-blur-md border border-white/20 p-8 md:p-12">
@@ -187,173 +201,222 @@ export default function DeployPage() {
               <div className="mt-2">
                 <div className="w-full bg-gray-700 rounded-full h-2.5">
                   <motion.div
-                    className="bg-blue-600 h-2.5 rounded-full"
+                    className="bg-blue-500 h-2.5 rounded-full"
                     initial={{ width: 0 }}
                     animate={{ width: `${uploadProgress}%` }}
                     transition={{ duration: 0.5 }}
                   />
                 </div>
-                <span className="text-sm">{Math.round(uploadProgress)}%</span>
               </div>
             )}
           </div>
         )}
-        <div className="flex mb-8 space-x-4 justify-center">
-          <button
-            type="button"
-            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400/50 ${uploadType === "file" ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
-            onClick={() => setUploadType("file")}
-          >
-            Upload File
-          </button>
-          <button
-            type="button"
-            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400/50 ${uploadType === "github" ? "bg-blue-600 text-white" : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
-            onClick={() => setUploadType("github")}
-          >
-            Import from GitHub
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="name" className="block text-base font-semibold text-white mb-2">Agent Name</label>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-200">
+                Agent Name
+              </label>
               <input
                 type="text"
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 required
-                className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-900/80 text-white px-4 py-3 shadow-inner focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
               />
             </div>
             <div>
-              <label htmlFor="modelType" className="block text-base font-semibold text-white mb-2">Model Type</label>
+              <label htmlFor="modelType" className="block text-sm font-medium text-gray-200">
+                Model Type
+              </label>
               <input
                 type="text"
                 id="modelType"
                 name="modelType"
                 value={formData.modelType}
                 onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 required
-                placeholder="e.g., GPT-3, BERT, Custom"
-                className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-900/80 text-white px-4 py-3 shadow-inner focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
               />
             </div>
+          </div>
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-200">
+              Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              rows={3}
+              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="framework" className="block text-base font-semibold text-white mb-2">Framework</label>
+              <label htmlFor="framework" className="block text-sm font-medium text-gray-200">
+                Framework
+              </label>
               <input
                 type="text"
                 id="framework"
                 name="framework"
                 value={formData.framework}
                 onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 required
-                placeholder="e.g., TensorFlow, PyTorch, Hugging Face"
-                className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-900/80 text-white px-4 py-3 shadow-inner focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
               />
             </div>
             <div>
-              <label htmlFor="version" className="block text-base font-semibold text-white mb-2">Version</label>
+              <label htmlFor="version" className="block text-sm font-medium text-gray-200">
+                Version
+              </label>
               <input
                 type="text"
                 id="version"
                 name="version"
                 value={formData.version}
                 onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 required
-                placeholder="e.g., 1.0.0"
-                className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-900/80 text-white px-4 py-3 shadow-inner focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
               />
             </div>
           </div>
           <div>
-            <label htmlFor="description" className="block text-base font-semibold text-white mb-2">Description</label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              required
-              rows={3}
-              className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-900/80 text-white px-4 py-3 shadow-inner focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
-            />
-          </div>
-          <div>
-            <label htmlFor="requirements" className="block text-base font-semibold text-white mb-2">Requirements</label>
+            <label htmlFor="requirements" className="block text-sm font-medium text-gray-200">
+              Requirements
+            </label>
             <textarea
               id="requirements"
               name="requirements"
               value={formData.requirements}
               onChange={handleInputChange}
-              required
               rows={3}
-              placeholder="List any specific requirements or dependencies"
-              className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-900/80 text-white px-4 py-3 shadow-inner focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
+              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Enter your requirements.txt content here"
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <label htmlFor="apiEndpoint" className="block text-sm font-medium text-gray-200">
+              API Endpoint
+            </label>
+            <input
+              type="text"
+              id="apiEndpoint"
+              name="apiEndpoint"
+              value={formData.apiEndpoint}
+              onChange={handleInputChange}
+              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="https://api.example.com/endpoint"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="apiEndpoint" className="block text-base font-semibold text-white mb-2">API Endpoint (Optional)</label>
-              <input
-                type="text"
-                id="apiEndpoint"
-                name="apiEndpoint"
-                value={formData.apiEndpoint}
-                onChange={handleInputChange}
-                placeholder="e.g., /api/v1/predict"
-                className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-900/80 text-white px-4 py-3 shadow-inner focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
-              />
-            </div>
-            <div>
-              <label htmlFor="environment" className="block text-base font-semibold text-white mb-2">Environment</label>
+              <label htmlFor="environment" className="block text-sm font-medium text-gray-200">
+                Environment
+              </label>
               <select
                 id="environment"
                 name="environment"
                 value={formData.environment}
                 onChange={handleInputChange}
-                className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-900/80 text-white px-4 py-3 shadow-inner focus:border-blue-500 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
               >
                 <option value="production">Production</option>
                 <option value="staging">Staging</option>
                 <option value="development">Development</option>
               </select>
             </div>
+            <div>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-200">
+                Price (USD)
+              </label>
+              <input
+                type="number"
+                id="price"
+                name="price"
+                value={formData.price}
+                onChange={handleInputChange}
+                step="0.01"
+                min="0"
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-200 mb-4">
+              Upload Type
+            </label>
+            <div className="flex space-x-4">
+              <button
+                type="button"
+                onClick={() => setUploadType("file")}
+                className={`px-4 py-2 rounded-md ${
+                  uploadType === "file"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-700 text-gray-300"
+                }`}
+              >
+                File Upload
+              </button>
+              <button
+                type="button"
+                onClick={() => setUploadType("github")}
+                className={`px-4 py-2 rounded-md ${
+                  uploadType === "github"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-700 text-gray-300"
+                }`}
+              >
+                GitHub Repository
+              </button>
+            </div>
           </div>
           {uploadType === "file" ? (
             <div>
-              <label htmlFor="file" className="block text-base font-semibold text-white mb-2">Deployment Package (File or Folder)</label>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Upload File or Folder
+              </label>
               <input
                 type="file"
-                id="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                required={!folderFiles && !file}
-                className="mt-1 block w-full text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
-                multiple
+                className="block w-full text-sm text-gray-300
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-semibold
+                  file:bg-blue-600 file:text-white
+                  hover:file:bg-blue-700"
               />
-              <p className="text-xs text-gray-300 mt-2">You can select a single file or an entire folder for upload.</p>
             </div>
           ) : (
             <div>
-              <label htmlFor="githubUrl" className="block text-base font-semibold text-white mb-2">GitHub Repository URL</label>
+              <label htmlFor="githubUrl" className="block text-sm font-medium text-gray-200">
+                GitHub Repository URL
+              </label>
               <input
                 type="text"
                 id="githubUrl"
                 value={githubUrl}
                 onChange={handleGithubUrlChange}
-                required
-                placeholder="https://github.com/username/repository"
-                className="mt-1 block w-full rounded-lg border border-gray-600 bg-gray-900/80 text-white px-4 py-3 shadow-inner focus:border-blue-500 focus:ring-blue-500 placeholder-gray-400"
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="https://github.com/username/repo"
               />
             </div>
           )}
-          <div className="flex justify-end mt-8">
+          <div className="flex justify-end">
             <button
               type="submit"
-              disabled={!file || isUploading}
-              className={`px-8 py-3 rounded-xl text-lg font-bold shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400/50 ${isUploading ? "bg-gray-500 text-gray-300" : "bg-gradient-to-r from-blue-600 to-blue-400 text-white hover:from-blue-700 hover:to-blue-500"}`}
+              disabled={isUploading}
+              className={`px-6 py-3 rounded-md text-white font-semibold ${
+                isUploading
+                  ? "bg-gray-600 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
             >
               {isUploading ? "Deploying..." : "Deploy Agent"}
             </button>

@@ -33,6 +33,7 @@ export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name'),
   email: text('email').notNull().unique(),
+  password: text('password').notNull(),
   image: text('image'),
   role: text('role').notNull().default('user'),
   subscription_tier: text('subscription_tier').notNull().default('free'),
@@ -136,6 +137,28 @@ export const notifications = pgTable('notifications', {
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const agentMetrics = pgTable('agent_metrics', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  agentId: uuid('agent_id').notNull().references(() => deployments.id),
+  requests: integer('requests').notNull().default(0),
+  errors: integer('errors').notNull().default(0),
+  avgResponseTime: decimal('avg_response_time', { precision: 10, scale: 2 }).notNull().default('0'),
+  lastActive: timestamp('last_active', { withTimezone: true }).notNull().defaultNow(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const agentLog = pgTable('agent_log', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  agentId: uuid('agent_id').notNull().references(() => deployments.id),
+  level: text('level').notNull(),
+  message: text('message').notNull(),
+  metadata: jsonb('metadata').$type<Record<string, any>>(),
+  timestamp: timestamp('timestamp', { withTimezone: true }).notNull().defaultNow(),
+  created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const schema = {
   products,
   users,
@@ -146,4 +169,6 @@ export const schema = {
   files,
   agentFeedbacks,
   notifications,
+  agentMetrics,
+  agentLog,
 }; 

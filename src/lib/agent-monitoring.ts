@@ -1,132 +1,151 @@
 import { db } from '@/lib/db';
-import { agentFeedbacks, deployments } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { agentFeedbacks, agentMetrics, agentLog } from '@/lib/schema';
+import { eq, gte, lte, desc } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
-interface AgentMetrics {
+export interface AgentMetrics {
+  id?: string;
+  agentId: string;
   requests: number;
   errors: number;
   avgResponseTime: number;
   lastActive: Date;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
-interface AgentLog {
+export interface AgentLog {
+  id?: string;
   agentId: string;
   level: 'info' | 'warning' | 'error';
   message: string;
-  metadata?: {
-    duration?: number;
-    status?: string;
-    errorCode?: string;
-    stackTrace?: string;
-    [key: string]: unknown;
-  };
-  timestamp: Date;
+  metadata?: Record<string, any>;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
-export async function trackAgentRequest(
-  agentId: string,
-  responseTime: number,
-  success: boolean
-): Promise<void> {
-  const now = new Date();
-  
-  // Fetch current metrics to calculate new avgResponseTime
-  const currentMetrics = await db.select({ avgResponseTime: agentMetrics.avgResponseTime })
-    .from(agentMetrics)
-    .where(eq(agentMetrics.agentId, agentId));
-  const newAvgResponseTime = currentMetrics.length > 0
-    ? (currentMetrics[0].avgResponseTime + responseTime) / 2
-    : responseTime;
+export interface GetAgentLogsOptions {
+  startDate?: Date;
+  endDate?: Date;
+  level?: 'info' | 'warning' | 'error';
+  limit?: number;
+}
 
-  await db.insert(agentMetrics)
-    .values({
-      id: uuidv4(),
+export async function updateAgentMetrics(
+  agentId: string,
+  metrics: Partial<AgentMetrics>
+): Promise<void> {
+  const existingMetrics = await db
+    .select()
+    .from(agentMetrics)
+    .where(eq(agentMetrics.agentId, agentId))
+    .limit(1);
+
+  if (existingMetrics.length > 0) {
+    await db
+      .update(agentMetrics)
+      .set({
+        ...metrics,
+        updated_at: new Date()
+      })
+      .where(eq(agentMetrics.agentId, agentId));
+  } else {
+    await db.insert(agentMetrics).values({
       agentId,
-      requests: { increment: 1 },
-      errors: { increment: success ? 0 : 1 },
-      avgResponseTime: { set: newAvgResponseTime },
-      lastActive: now,
-    })
-    .onConflictDoUpdate({
-      target: agentMetrics.agentId,
-      set: {
-        requests: { increment: 1 },
-        errors: { increment: success ? 0 : 1 },
-        avgResponseTime: { set: newAvgResponseTime },
-        lastActive: now,
-      },
+      requests: metrics.requests || 0,
+      errors: metrics.errors || 0,
+      avgResponseTime: metrics.avgResponseTime || 0,
+      lastActive: metrics.lastActive || new Date(),
+      created_at: new Date(),
+      updated_at: new Date()
     });
+  }
 }
 
 export async function logAgentEvent(
   agentId: string,
-  level: AgentLog['level'],
+  level: 'info' | 'warning' | 'error',
   message: string,
   metadata?: Record<string, any>
 ): Promise<void> {
-  await db.insert(agentLog)
-    .values({
-      id: uuidv4(),
-      agentId,
-      level,
-      message,
-      metadata,
-      timestamp: new Date(),
-    })
-    .returning();
+  await db.insert(agentLog).values({
+    agentId,
+    level,
+    message,
+    metadata,
+    created_at: new Date(),
+    updated_at: new Date()
+  });
 }
 
 export async function getAgentMetrics(agentId: string): Promise<AgentMetrics | null> {
-  const metrics = await db.select({
-    requests: agentMetrics.requests,
-    errors: agentMetrics.errors,
-    avgResponseTime: agentMetrics.avgResponseTime,
-    lastActive: agentMetrics.lastActive,
-  })
+  const metrics = await db
+    .select()
     .from(agentMetrics)
-    .where(eq(agentMetrics.agentId, agentId));
+    .where(eq(agentMetrics.agentId, agentId))
+    .limit(1);
 
-  if (metrics.length === 0) return null;
-
-  return {
-    requests: metrics[0].requests,
-    errors: metrics[0].errors,
-    avgResponseTime: metrics[0].avgResponseTime,
-    lastActive: metrics[0].lastActive,
-  };
+  return metrics[0] || null;
 }
 
 export async function getAgentLogs(
   agentId: string,
-  options: {
-    level?: AgentLog['level'];
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
+  options: GetAgentLogsOptions = {}
 ): Promise<AgentLog[]> {
-  const { level, startDate, endDate, limit = 100 } = options;
+  let query = db
+    .select()
+    .from(agentLog)
+    .where(eq(agentLog.agentId, agentId));
 
-  const logs = await db.select({
-    id: agentLog.id,
-    agentId: agentLog.agentId,
-    level: agentLog.level,
-    message: agentLog.message,
-    metadata: agentLog.metadata,
-    timestamp: agentLog.timestamp,
-  })
+  if (options.startDate) {
+    query = query.where(gte(agentLog.created_at, options.startDate));
+  }
+
+  if (options.endDate) {
+    query = query.where(lte(agentLog.created_at, options.endDate));
+  }
+
+  if (options.level) {
+    query = query.where(eq(agentLog.level, options.level));
+  }
+
+  if (options.limit) {
+    query = query.limit(options.limit);
+  }
+
+  query = query.orderBy(desc(agentLog.created_at));
+
+  return query;
+}
+
+export async function getAgentDeploymentHistory(agentId: string): Promise<any[]> {
+  const deploymentHistory = await db
+    .select()
     .from(agentLog)
     .where(eq(agentLog.agentId, agentId))
-    .and(eq(agentLog.level, level))
-    .and(eq(agentLog.timestamp, { gte: startDate, lte: endDate }))
-    .orderBy(agentLog.timestamp)
-    .limit(limit);
+    .where(eq(agentLog.level, 'info'))
+    .where(eq(agentLog.message, 'Deployment completed'))
+    .orderBy(desc(agentLog.created_at));
 
-  return logs.map(log => ({
-    ...log,
-    level: log.level as AgentLog['level'],
-  }));
+  return deploymentHistory;
+}
+
+export async function getAgentPerformanceMetrics(agentId: string): Promise<any> {
+  const metrics = await getAgentMetrics(agentId);
+  const logs = await getAgentLogs(agentId, {
+    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    limit: 100
+  });
+
+  const errorCount = logs.filter(log => log.level === 'error').length;
+  const warningCount = logs.filter(log => log.level === 'warning').length;
+
+  return {
+    metrics,
+    errorCount,
+    warningCount,
+    recentLogs: logs
+  };
 }
 
 export async function getAgentHealth(agentId: string): Promise<{
@@ -170,44 +189,43 @@ export async function getAgentHealth(agentId: string): Promise<{
   return { status, issues };
 }
 
-export async function submitAgentFeedback({
-  agentId,
-  userId,
-  rating,
-  comment,
-}: {
-  agentId: string;
-  userId: string;
-  rating: number;
-  comment?: string;
-}) {
-  return db.insert(agentFeedbacks).values({
+export async function submitAgentFeedback(
+  agentId: string,
+  userId: string,
+  rating: number,
+  comment: string | null = null
+): Promise<void> {
+  await db.insert(agentFeedbacks).values({
     id: uuidv4(),
     agentId,
     userId,
     rating,
     comment,
     created_at: new Date(),
-    updated_at: new Date(),
-  }).returning();
+    updated_at: new Date()
+  });
 }
 
-export async function getAgentFeedback(agentId: string) {
-  return db
-    .select({
-      id: agentFeedbacks.id,
-      agentId: agentFeedbacks.agentId,
-      userId: agentFeedbacks.userId,
-      rating: agentFeedbacks.rating,
-      comment: agentFeedbacks.comment,
-      created_at: agentFeedbacks.created_at,
-      user: {
-        id: deployments.deployed_by,
-        name: deployments.name,
-      },
-    })
+export async function getAgentFeedback(agentId: string, timeRange: { start: Date; end: Date }): Promise<any[]> {
+  const feedback = await db.select()
     .from(agentFeedbacks)
-    .leftJoin(deployments, eq(agentFeedbacks.agentId, deployments.id))
-    .where(eq(agentFeedbacks.agentId, agentId))
-    .orderBy(agentFeedbacks.created_at);
+    .where(
+      and(
+        eq(agentFeedbacks.agentId, agentId),
+        gte(agentFeedbacks.created_at, timeRange.start),
+        lte(agentFeedbacks.created_at, timeRange.end)
+      )
+    )
+    .orderBy(desc(agentFeedbacks.created_at));
+
+  return feedback;
+}
+
+export async function getAgentDeployments(agentId: string): Promise<any[]> {
+  const deployments = await db.select()
+    .from(deployments)
+    .where(eq(deployments.agentId, agentId))
+    .orderBy(desc(deployments.created_at));
+
+  return deployments;
 } 

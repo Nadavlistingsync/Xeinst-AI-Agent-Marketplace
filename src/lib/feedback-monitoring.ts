@@ -1,25 +1,104 @@
 import { db } from '@/lib/db';
-import { agentFeedbacks, deployments } from '@/lib/schema';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { agentFeedbacks, agents } from './schema';
+import { eq, and, gte, lte, desc } from 'drizzle-orm';
+import { analyzeFeedback } from './feedback-analysis';
 import { createNotification } from './notifications';
 
-interface FeedbackMetrics {
-  averageRating: number;
-  totalFeedbacks: number;
-  positiveFeedbacks: number;
-  negativeFeedbacks: number;
-  neutralFeedbacks: number;
+export interface FeedbackMetrics {
   sentimentScore: number;
-  commonIssues: string[];
-  improvementSuggestions: string[];
-  categories: {
-    [key: string]: number;
+  categories: Record<string, number>;
+  positiveFeedback: number;
+  negativeFeedback: number;
+  totalFeedbacks: number;
+  averageRating: number;
+}
+
+export interface FeedbackAnalysis {
+  sentimentScore: number;
+  categories: Record<string, number>;
+  positiveFeedback: number;
+  negativeFeedback: number;
+  totalFeedbacks: number;
+  averageRating: number;
+  trends: {
+    sentiment: number;
+    rating: number;
   };
-  responseMetrics: {
-    totalResponses: number;
-    averageResponseTime: number;
-    responseRate: number;
+}
+
+export interface GetFeedbackOptions {
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+}
+
+export async function getFeedbackMetrics(
+  agentId: string,
+  timeRange: { start: Date; end: Date }
+): Promise<FeedbackMetrics> {
+  const feedback = await db
+    .select()
+    .from(agentFeedbacks)
+    .where(eq(agentFeedbacks.agentId, agentId))
+    .where(gte(agentFeedbacks.created_at, timeRange.start))
+    .where(lte(agentFeedbacks.created_at, timeRange.end))
+    .orderBy(desc(agentFeedbacks.created_at));
+
+  const totalFeedbacks = feedback.length;
+  const positiveFeedback = feedback.filter(f => f.sentiment_score && parseFloat(f.sentiment_score) > 0.3).length;
+  const negativeFeedback = feedback.filter(f => f.sentiment_score && parseFloat(f.sentiment_score) < -0.3).length;
+  const averageRating = feedback.reduce((acc, f) => acc + f.rating, 0) / totalFeedbacks || 0;
+
+  const categories: Record<string, number> = {};
+  feedback.forEach(f => {
+    if (f.categories) {
+      Object.entries(f.categories).forEach(([category, count]) => {
+        categories[category] = (categories[category] || 0) + count;
+      });
+    }
+  });
+
+  const sentimentScore = feedback.reduce((acc, f) => {
+    return acc + (f.sentiment_score ? parseFloat(f.sentiment_score) : 0);
+  }, 0) / totalFeedbacks || 0;
+
+  return {
+    sentimentScore,
+    categories,
+    positiveFeedback,
+    negativeFeedback,
+    totalFeedbacks,
+    averageRating
   };
+}
+
+export async function monitorFeedback(agentId: string): Promise<void> {
+  const timeRange = {
+    start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    end: new Date()
+  };
+
+  const metrics = await analyzeFeedback(agentId, timeRange);
+
+  if (metrics.sentimentScore < -0.3 || metrics.negativeFeedback > metrics.positiveFeedback) {
+    // Send notification for negative feedback
+    console.warn(`Negative feedback detected for agent ${agentId}`);
+  }
+
+  if (metrics.averageRating < 3) {
+    // Send notification for low ratings
+    console.warn(`Low ratings detected for agent ${agentId}`);
+  }
+
+  if (metrics.trends.sentiment < -0.2) {
+    // Send notification for declining sentiment
+    console.warn(`Declining sentiment detected for agent ${agentId}`);
+  }
+
+  if (metrics.trends.rating < -0.5) {
+    // Send notification for declining ratings
+    console.warn(`Declining ratings detected for agent ${agentId}`);
+  }
 }
 
 interface FeedbackCategory {
@@ -56,121 +135,90 @@ const FEEDBACK_CATEGORIES: FeedbackCategory[] = [
   },
 ];
 
-export async function analyzeFeedback(agentId: string, timeRange?: { start: Date; end: Date }): Promise<FeedbackMetrics> {
-  const whereClause = timeRange
-    ? and(
-        eq(agentFeedbacks.agentId, agentId),
-        gte(agentFeedbacks.createdAt, timeRange.start),
-        lte(agentFeedbacks.createdAt, timeRange.end)
-      )
-    : eq(agentFeedbacks.agentId, agentId);
+export async function analyzeFeedback(
+  agentId: string,
+  timeRange: { start: Date; end: Date }
+): Promise<FeedbackAnalysis> {
+  const currentMetrics = await getFeedbackMetrics(agentId, timeRange);
+  const previousTimeRange = {
+    start: new Date(timeRange.start.getTime() - (timeRange.end.getTime() - timeRange.start.getTime())),
+    end: timeRange.start
+  };
+  const previousMetrics = await getFeedbackMetrics(agentId, previousTimeRange);
 
-  const feedbacks = await db
-    .select()
-    .from(agentFeedbacks)
-    .where(whereClause);
-
-  const totalFeedbacks = feedbacks.length;
-  const averageRating = feedbacks.reduce((acc, curr) => acc + curr.rating, 0) / totalFeedbacks || 0;
-  
-  const positiveFeedbacks = feedbacks.filter(f => f.rating >= 4).length;
-  const negativeFeedbacks = feedbacks.filter(f => f.rating <= 2).length;
-  const neutralFeedbacks = feedbacks.filter(f => f.rating === 3).length;
-
-  // Calculate sentiment score (-1 to 1)
-  const sentimentScore = (positiveFeedbacks - negativeFeedbacks) / totalFeedbacks || 0;
-
-  // Extract common issues and suggestions from comments
-  const comments = feedbacks.map(f => f.comment).filter(Boolean) as string[];
-  const commonIssues = extractCommonIssues(comments);
-  const improvementSuggestions = extractImprovementSuggestions(comments);
-
-  // Categorize feedback
-  const categories = categorizeFeedback(comments);
-
-  // Calculate response metrics
-  const respondedFeedbacks = feedbacks.filter(f => f.creator_response);
-  const totalResponses = respondedFeedbacks.length;
-  
-  const responseTimes = respondedFeedbacks
-    .filter(f => f.response_date && f.created_at)
-    .map(f => {
-      const responseTime = new Date(f.response_date!).getTime() - new Date(f.created_at).getTime();
-      return responseTime / (1000 * 60 * 60); // Convert to hours
-    });
-
-  const averageResponseTime = responseTimes.length > 0
-    ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
-    : 0;
-
-  const responseRate = totalFeedbacks > 0
-    ? (totalResponses / totalFeedbacks) * 100
-    : 0;
+  const sentimentTrend = currentMetrics.sentimentScore - previousMetrics.sentimentScore;
+  const ratingTrend = currentMetrics.averageRating - previousMetrics.averageRating;
 
   return {
-    averageRating,
-    totalFeedbacks,
-    positiveFeedbacks,
-    negativeFeedbacks,
-    neutralFeedbacks,
-    sentimentScore,
-    commonIssues,
-    improvementSuggestions,
-    categories,
-    responseMetrics: {
-      totalResponses,
-      averageResponseTime,
-      responseRate,
-    },
+    ...currentMetrics,
+    trends: {
+      sentiment: sentimentTrend,
+      rating: ratingTrend
+    }
   };
 }
 
-function categorizeFeedback(comments: string[]): { [key: string]: number } {
-  const categoryScores: { [key: string]: number } = {};
+export async function notifyAgentCreator(
+  agentId: string,
+  feedback: {
+    type: string;
+    message: string;
+    sentiment_score?: number;
+    categories?: string[];
+  }
+): Promise<void> {
+  const agentDetails = await db
+    .select()
+    .from(agents)
+    .where(eq(agents.id, agentId))
+    .limit(1);
 
-  FEEDBACK_CATEGORIES.forEach(category => {
-    let score = 0;
-    comments.forEach(comment => {
-      category.keywords.forEach(keyword => {
-        if (comment.toLowerCase().includes(keyword)) {
-          score += category.weight;
-        }
-      });
-    });
-    categoryScores[category.name] = score;
+  if (agentDetails.length === 0 || !agentDetails[0].deployed_by) {
+    return;
+  }
+
+  const notificationTitle = `New Feedback for ${agentDetails[0].name}`;
+  const notificationMessage = `Received ${feedback.type} feedback: ${feedback.message}`;
+
+  await createNotification({
+    userId: agentDetails[0].deployed_by,
+    type: 'feedback',
+    title: notificationTitle,
+    message: notificationMessage,
+    metadata: {
+      agentId,
+      feedbackType: feedback.type,
+      sentimentScore: feedback.sentiment_score,
+      categories: feedback.categories,
+    },
   });
-
-  return categoryScores;
 }
 
-function extractCommonIssues(comments: string[]): string[] {
-  const issues: string[] = [];
-  const issueKeywords = ['error', 'bug', 'issue', 'problem', 'fails', 'doesn\'t work', 'broken'];
-  
-  comments.forEach(comment => {
-    issueKeywords.forEach(keyword => {
-      if (comment.toLowerCase().includes(keyword)) {
-        issues.push(comment);
-      }
-    });
-  });
+export async function getFeedbackTrends(
+  agentId: string,
+  timeRange: { start: Date; end: Date }
+): Promise<{
+  sentiment: number[];
+  ratings: number[];
+  dates: Date[];
+}> {
+  const feedback = await db
+    .select()
+    .from(agentFeedbacks)
+    .where(eq(agentFeedbacks.agentId, agentId))
+    .where(gte(agentFeedbacks.created_at, timeRange.start))
+    .where(lte(agentFeedbacks.created_at, timeRange.end))
+    .orderBy(agentFeedbacks.created_at);
 
-  return [...new Set(issues)];
-}
+  const dates = feedback.map(f => f.created_at);
+  const sentiment = feedback.map(f => f.sentiment_score ? parseFloat(f.sentiment_score) : 0);
+  const ratings = feedback.map(f => f.rating);
 
-function extractImprovementSuggestions(comments: string[]): string[] {
-  const suggestions: string[] = [];
-  const suggestionKeywords = ['could', 'should', 'would be better', 'suggest', 'recommend', 'improve'];
-  
-  comments.forEach(comment => {
-    suggestionKeywords.forEach(keyword => {
-      if (comment.toLowerCase().includes(keyword)) {
-        suggestions.push(comment);
-      }
-    });
-  });
-
-  return [...new Set(suggestions)];
+  return {
+    sentiment,
+    ratings,
+    dates
+  };
 }
 
 export async function updateAgentBasedOnFeedback(agentId: string): Promise<void> {
@@ -179,8 +227,8 @@ export async function updateAgentBasedOnFeedback(agentId: string): Promise<void>
   // Get agent details for notification
   const agent = await db
     .select()
-    .from(deployments)
-    .where(eq(deployments.id, agentId))
+    .from(agents)
+    .where(eq(agents.id, agentId))
     .limit(1);
 
   if (!agent.length) return;
@@ -188,14 +236,14 @@ export async function updateAgentBasedOnFeedback(agentId: string): Promise<void>
   const agentDetails = agent[0];
   
   // If sentiment score is low or there are many negative feedbacks, mark for review
-  if (metrics.sentimentScore < -0.3 || metrics.negativeFeedbacks > metrics.positiveFeedbacks) {
+  if (metrics.sentimentScore < -0.3 || metrics.negativeFeedback > metrics.positiveFeedback) {
     await db
-      .update(deployments)
+      .update(agents)
       .set({
         status: 'needs_review',
         updated_at: new Date(),
       })
-      .where(eq(deployments.id, agentId));
+      .where(eq(agents.id, agentId));
 
     // Create notification for agent creator
     await createNotification({
@@ -244,44 +292,4 @@ async function getPreviousMetrics(agentId: string): Promise<FeedbackMetrics | nu
     console.error('Error getting previous metrics:', error);
     return null;
   }
-}
-
-export async function getFeedbackTrends(agentId: string, days: number = 30): Promise<{
-  date: string;
-  averageRating: number;
-  feedbackCount: number;
-}[]> {
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-
-  const feedbacks = await db
-    .select()
-    .from(agentFeedbacks)
-    .where(
-      and(
-        eq(agentFeedbacks.agentId, agentId),
-        gte(agentFeedbacks.createdAt, startDate)
-      )
-    );
-
-  // Group feedbacks by date
-  const feedbacksByDate = feedbacks.reduce((acc, feedback) => {
-    const date = feedback.createdAt.toISOString().split('T')[0];
-    if (!acc[date]) {
-      acc[date] = {
-        ratings: [],
-        count: 0,
-      };
-    }
-    acc[date].ratings.push(feedback.rating);
-    acc[date].count++;
-    return acc;
-  }, {} as Record<string, { ratings: number[]; count: number }>);
-
-  // Calculate daily averages
-  return Object.entries(feedbacksByDate).map(([date, data]) => ({
-    date,
-    averageRating: data.ratings.reduce((a, b) => a + b, 0) / data.ratings.length,
-    feedbackCount: data.count,
-  }));
 } 

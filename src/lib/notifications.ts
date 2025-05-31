@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { notifications } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 
 export type NotificationType = 
   | 'feedback_received'
@@ -8,62 +9,64 @@ export type NotificationType =
   | 'agent_needs_review'
   | 'feedback_trend_alert';
 
-interface CreateNotificationParams {
+export interface CreateNotificationParams {
+  type: string;
   userId: string;
-  type: NotificationType;
   title: string;
   message: string;
   metadata?: Record<string, any>;
 }
 
 export async function createNotification({
-  userId,
   type,
+  userId,
   title,
   message,
-  metadata = {},
+  metadata,
 }: CreateNotificationParams) {
   return db.insert(notifications).values({
-    user_id: userId,
+    id: uuidv4(),
     type,
+    userId,
     title,
     message,
-    metadata: JSON.stringify(metadata),
-    is_read: false,
+    metadata: metadata || {},
+    read: false,
     created_at: new Date(),
+    updated_at: new Date(),
   });
 }
 
-export async function getUnreadNotifications(userId: string) {
+export async function getNotifications(userId: string) {
   return db
     .select()
     .from(notifications)
-    .where(eq(notifications.user_id, userId))
+    .where(eq(notifications.userId, userId))
     .orderBy(notifications.created_at);
 }
 
-export async function markNotificationAsRead(notificationId: string) {
+export async function markNotificationAsRead(id: string) {
   return db
     .update(notifications)
-    .set({ is_read: true })
-    .where(eq(notifications.id, notificationId));
+    .set({ read: true })
+    .where(eq(notifications.id, id));
 }
 
 export async function markAllNotificationsAsRead(userId: string) {
   return db
     .update(notifications)
-    .set({ is_read: true })
-    .where(eq(notifications.user_id, userId));
+    .set({ read: true })
+    .where(eq(notifications.userId, userId));
 }
 
-export async function deleteNotification(notificationId: string) {
+export async function deleteNotification(id: string) {
   return db
     .delete(notifications)
-    .where(eq(notifications.id, notificationId));
+    .where(eq(notifications.id, id));
 }
 
 export async function deleteAllNotifications(userId: string) {
   return db
     .delete(notifications)
-    .where(eq(notifications.user_id, userId));
+    .where(eq(notifications.userId, userId));
 } 

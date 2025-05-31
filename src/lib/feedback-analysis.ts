@@ -1,6 +1,6 @@
-import { db } from '@/lib/db';
-import { agentFeedbacks } from '@/lib/schema';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { db } from './db';
+import { agentFeedbacks } from './schema';
+import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { createNotification } from './notifications';
 
 interface SentimentAnalysis {
@@ -105,8 +105,8 @@ export async function analyzeFeedbackTrends(agentId: string, timeRange?: { start
   const whereClause = timeRange
     ? and(
         eq(agentFeedbacks.agentId, agentId),
-        gte(agentFeedbacks.createdAt, timeRange.start),
-        lte(agentFeedbacks.createdAt, timeRange.end)
+        gte(agentFeedbacks.created_at, timeRange.start),
+        lte(agentFeedbacks.created_at, timeRange.end)
       )
     : eq(agentFeedbacks.agentId, agentId);
 
@@ -114,13 +114,13 @@ export async function analyzeFeedbackTrends(agentId: string, timeRange?: { start
     .select()
     .from(agentFeedbacks)
     .where(whereClause)
-    .orderBy(agentFeedbacks.createdAt);
+    .orderBy(agentFeedbacks.created_at);
 
   const sentimentTrend = await Promise.all(
     feedbacks.map(async feedback => {
       const sentiment = await analyzeSentiment(feedback.comment || '');
       return {
-        date: feedback.createdAt.toISOString(),
+        date: feedback.created_at.toISOString(),
         score: sentiment.score,
       };
     })
@@ -130,7 +130,7 @@ export async function analyzeFeedbackTrends(agentId: string, timeRange?: { start
     feedbacks.map(async feedback => {
       const categories = await categorizeFeedback(feedback.comment || '');
       return {
-        date: feedback.createdAt.toISOString(),
+        date: feedback.created_at.toISOString(),
         categories,
       };
     })
@@ -159,7 +159,7 @@ export async function generateFeedbackInsights(agentId: string): Promise<{
     .where(
       and(
         eq(agentFeedbacks.agentId, agentId),
-        gte(agentFeedbacks.createdAt, thirtyDaysAgo)
+        gte(agentFeedbacks.created_at, thirtyDaysAgo)
       )
     );
 
@@ -198,5 +198,48 @@ export async function generateFeedbackInsights(agentId: string): Promise<{
       overall: overallSentiment,
       trend,
     },
+  };
+}
+
+export interface FeedbackAnalysis {
+  sentimentScore: number;
+  categories: string[];
+  positiveFeedback: number;
+  negativeFeedback: number;
+  totalFeedbacks: number;
+  averageRating: number;
+  positiveFeedbacks: number;
+  negativeFeedbacks: number;
+}
+
+export async function analyzeFeedback(agentId: string, timeRange: { start: Date; end: Date }): Promise<FeedbackAnalysis> {
+  const feedback = await db.select()
+    .from(agentFeedbacks)
+    .where(
+      and(
+        eq(agentFeedbacks.agentId, agentId),
+        gte(agentFeedbacks.created_at, timeRange.start),
+        lte(agentFeedbacks.created_at, timeRange.end)
+      )
+    )
+    .orderBy(desc(agentFeedbacks.created_at));
+
+  const totalFeedbacks = feedback.length;
+  const averageRating = feedback.reduce((sum, f) => sum + f.rating, 0) / (totalFeedbacks || 1);
+  const positiveFeedbacks = feedback.filter(f => f.rating >= 4).length;
+  const negativeFeedbacks = feedback.filter(f => f.rating <= 2).length;
+
+  const sentimentScore = (positiveFeedbacks - negativeFeedbacks) / (totalFeedbacks || 1);
+  const categories = Array.from(new Set(feedback.map(f => f.category).filter(Boolean)));
+
+  return {
+    sentimentScore,
+    categories,
+    positiveFeedback: positiveFeedbacks,
+    negativeFeedback: negativeFeedbacks,
+    totalFeedbacks,
+    averageRating,
+    positiveFeedbacks,
+    negativeFeedbacks
   };
 } 

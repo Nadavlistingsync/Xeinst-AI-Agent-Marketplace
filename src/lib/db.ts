@@ -3,10 +3,10 @@ import { neon } from '@neondatabase/serverless';
 import { schema } from './schema';
 
 if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL environment variable is not set');
+  throw new Error('DATABASE_URL is not set');
 }
 
-const sql = neon(process.env.DATABASE_URL!);
+const sql = neon(process.env.DATABASE_URL);
 export const db = drizzle(sql, { schema });
 
 export type DbClient = typeof db;
@@ -36,24 +36,8 @@ export async function executeQuery(query: string, params: unknown[] = []) {
   }
 }
 
-interface TransactionQuery {
-  query: string;
-  params: unknown[];
-}
-
-export async function executeTransaction(queries: TransactionQuery[]) {
-  try {
-    const result = await sql.transaction(async (tx) => {
-      const results = [];
-      for (const { query, params } of queries) {
-        const result = await tx.query(query, params);
-        results.push(result);
-      }
-      return results;
-    });
-    return result;
-  } catch (error) {
-    console.error('Error executing transaction:', error);
-    throw error;
-  }
+export async function executeTransaction<T>(
+  queries: (tx: typeof db) => Promise<T>
+): Promise<T> {
+  return db.transaction(queries);
 } 

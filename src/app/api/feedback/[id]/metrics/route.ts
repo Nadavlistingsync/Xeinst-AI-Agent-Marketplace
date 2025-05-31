@@ -13,7 +13,8 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const metrics = await analyzeFeedback(params.id);
+    const timeRange = { start: new Date(0), end: new Date() };
+    const metrics = await analyzeFeedback(params.id, timeRange);
     return NextResponse.json(metrics);
   } catch (error) {
     console.error('Error fetching feedback metrics:', error);

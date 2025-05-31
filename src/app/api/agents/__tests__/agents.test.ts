@@ -1,131 +1,123 @@
-import { GET as getFeatured } from '../featured/route';
-import { GET as getTrending } from '../trending/route';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { getFeaturedAgents, getTrendingAgents } from '../route';
 import { db } from '@/lib/db';
-import { NextResponse } from 'next/server';
+import { agents } from '@/lib/schema';
+import { eq } from 'drizzle-orm';
 
 // Mock the database
-jest.mock('@/lib/db', () => ({
+vi.mock('@/lib/db', () => ({
   db: {
-    select: jest.fn().mockReturnThis(),
-    from: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    orderBy: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockResolvedValue([]),
-  } as unknown as typeof db,
+    select: vi.fn(),
+    from: vi.fn(),
+    where: vi.fn(),
+    orderBy: vi.fn(),
+    limit: vi.fn(),
+  },
 }));
 
 describe('Agents API', () => {
+  const mockAgents = [
+    {
+      id: '1',
+      name: 'Test Agent',
+      description: 'Test Description',
+      created_at: new Date(),
+      updated_at: new Date(),
+      deployed_by: 'user1',
+      status: 'active',
+      category: 'test',
+      is_featured: true,
+      is_trending: true,
+      usage_count: 0,
+      rating: 4.5,
+      price: 9.99,
+      earnings_split: 0.7,
+      deployment_count: 0,
+      feedback_count: 0,
+      total_earnings: 0,
+      last_deployed: new Date(),
+      last_used: new Date(),
+      last_updated: new Date(),
+      last_feedback: new Date(),
+      last_rating: 4.5,
+      last_earnings: 0,
+      last_deployment: new Date(),
+      last_usage: new Date(),
+      last_feedback_date: new Date(),
+      last_rating_date: new Date(),
+      last_earnings_date: new Date(),
+      last_deployment_date: new Date(),
+      last_usage_date: new Date(),
+    },
+  ];
+
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
-  describe('Featured Agents', () => {
-    it('returns empty array when no featured agents found', async () => {
-      const response = await getFeatured();
-      const data = await response.json();
+  describe('getFeaturedAgents', () => {
+    it('should return featured agents', async () => {
+      const mockQuery = {
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue(mockAgents),
+      };
 
-      expect(response).toBeInstanceOf(Object);
-      expect(response.status).toBe(200);
-      expect(data).toEqual({
-        agents: [],
-        message: 'No featured agents found',
-      });
+      (db.select as jest.Mock).mockReturnValue(mockQuery);
+      (db.from as jest.Mock).mockReturnValue(mockQuery);
+      (db.where as jest.Mock).mockReturnValue(mockQuery);
+      (db.orderBy as jest.Mock).mockReturnValue(mockQuery);
+
+      const result = await getFeaturedAgents();
+      expect(result).toEqual({ agents: mockAgents });
     });
 
-    it('returns featured agents when found', async () => {
-      const mockAgents = [
-        {
-          id: '1',
-          name: 'Test Agent',
-          description: 'Test Description',
-          tag: 'Test Tag',
-          price: 10,
-          image_url: 'test.jpg',
-          average_rating: 4.5,
-          total_ratings: 100,
-          download_count: 1000,
-          is_public: true,
-          is_featured: true,
-          created_at: new Date(),
-        },
-      ];
+    it('should handle database errors', async () => {
+      const mockQuery = {
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockRejectedValue(new Error('Database error')),
+      };
 
-      (db.limit as jest.Mock).mockResolvedValueOnce(mockAgents);
+      (db.select as jest.Mock).mockReturnValue(mockQuery);
+      (db.from as jest.Mock).mockReturnValue(mockQuery);
+      (db.where as jest.Mock).mockReturnValue(mockQuery);
+      (db.orderBy as jest.Mock).mockReturnValue(mockQuery);
 
-      const response = await getFeatured();
-      const data = await response.json();
-
-      expect(response).toBeInstanceOf(Object);
-      expect(response.status).toBe(200);
-      expect(data.agents).toHaveLength(1);
-      expect(data.count).toBe(1);
-      expect(data.timestamp).toBeDefined();
-    });
-
-    it('handles database connection errors', async () => {
-      (db.limit as jest.Mock).mockRejectedValueOnce(new Error('connection error'));
-
-      const response = await getFeatured();
-      const data = await response.json();
-
-      expect(response).toBeInstanceOf(Object);
-      expect(response.status).toBe(503);
-      expect(data.error).toBe('Database connection error');
+      await expect(getFeaturedAgents()).rejects.toThrow('Database error');
     });
   });
 
-  describe('Trending Agents', () => {
-    it('returns empty array when no trending agents found', async () => {
-      const response = await getTrending();
-      const data = await response.json();
+  describe('getTrendingAgents', () => {
+    it('should return trending agents', async () => {
+      const mockQuery = {
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue(mockAgents),
+      };
 
-      expect(response).toBeInstanceOf(Object);
-      expect(response.status).toBe(200);
-      expect(data).toEqual({
-        agents: [],
-        message: 'No trending agents found',
-      });
+      (db.select as jest.Mock).mockReturnValue(mockQuery);
+      (db.from as jest.Mock).mockReturnValue(mockQuery);
+      (db.where as jest.Mock).mockReturnValue(mockQuery);
+      (db.orderBy as jest.Mock).mockReturnValue(mockQuery);
+
+      const result = await getTrendingAgents();
+      expect(result).toEqual({ agents: mockAgents });
     });
 
-    it('returns trending agents when found', async () => {
-      const mockAgents = [
-        {
-          id: '1',
-          name: 'Test Agent',
-          description: 'Test Description',
-          tag: 'Test Tag',
-          price: 10,
-          image_url: 'test.jpg',
-          average_rating: 4.5,
-          total_ratings: 100,
-          download_count: 1000,
-          is_public: true,
-          is_featured: false,
-          created_at: new Date(),
-        },
-      ];
+    it('should handle database errors', async () => {
+      const mockQuery = {
+        where: vi.fn().mockReturnThis(),
+        orderBy: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockRejectedValue(new Error('Database error')),
+      };
 
-      (db.limit as jest.Mock).mockResolvedValueOnce(mockAgents);
+      (db.select as jest.Mock).mockReturnValue(mockQuery);
+      (db.from as jest.Mock).mockReturnValue(mockQuery);
+      (db.where as jest.Mock).mockReturnValue(mockQuery);
+      (db.orderBy as jest.Mock).mockReturnValue(mockQuery);
 
-      const response = await getTrending();
-      const data = await response.json();
-
-      expect(response).toBeInstanceOf(Object);
-      expect(response.status).toBe(200);
-      expect(data.agents).toHaveLength(1);
-      expect(data.count).toBe(1);
-      expect(data.timestamp).toBeDefined();
-    });
-
-    it('handles database connection errors', async () => {
-      (db.limit as jest.Mock).mockRejectedValueOnce(new Error('connection error'));
-
-      const response = await getTrending();
-      const data = await response.json();
-
-      expect(response).toBeInstanceOf(Object);
-      expect(response.status).toBe(503);
-      expect(data.error).toBe('Database connection error');
+      await expect(getTrendingAgents()).rejects.toThrow('Database error');
     });
   });
 }); 

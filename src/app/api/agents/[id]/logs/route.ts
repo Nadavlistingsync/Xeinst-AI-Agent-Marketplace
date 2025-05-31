@@ -34,15 +34,11 @@ export async function GET(
 
     const { searchParams } = new URL(request.url);
     const level = searchParams.get('level') as 'info' | 'warning' | 'error' | undefined;
-    const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined;
-    const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined;
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined;
 
     const logs = await getAgentLogs(params.id, {
-      level,
-      startDate,
-      endDate,
-      limit,
+      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Last 7 days
+      endDate: new Date(),
+      limit: 100
     });
 
     return NextResponse.json(logs);

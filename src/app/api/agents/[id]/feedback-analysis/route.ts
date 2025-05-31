@@ -33,17 +33,15 @@ export async function GET(
     }
 
     const { searchParams } = new URL(request.url);
-    const days = searchParams.get('days') ? parseInt(searchParams.get('days')!) : 30;
     const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined;
     const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined;
 
-    const [metrics, trends] = await Promise.all([
-      analyzeFeedback(params.id, startDate && endDate ? { start: startDate, end: endDate } : undefined),
-      getFeedbackTrends(params.id, days),
-    ]);
+    const timeRange = startDate && endDate ? { start: startDate, end: endDate } : { start: new Date(0), end: new Date() };
+    const analysis = await analyzeFeedback(params.id, timeRange);
+    const trends = await getFeedbackTrends(params.id, timeRange);
 
     return NextResponse.json({
-      metrics,
+      metrics: analysis,
       trends,
       lastUpdated: new Date().toISOString(),
     });

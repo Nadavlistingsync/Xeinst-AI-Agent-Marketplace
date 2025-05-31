@@ -11,8 +11,20 @@ describe('Home Page', () => {
 
   it('renders the main description', () => {
     render(<Home />)
-    const description = screen.getByText(/We help businesses leverage cutting-edge AI technology/i)
+    const description = screen.getByText(/Unlock the power of custom AI/i)
     expect(description).toBeInTheDocument()
+  })
+
+  it('renders the hero section', () => {
+    render(<Home />)
+    const heading = screen.getByText(/Transform Your Business with/i)
+    expect(heading).toBeInTheDocument()
+  })
+
+  it('renders the features section', () => {
+    render(<Home />)
+    const featuresHeading = screen.getByText(/Why Choose Our Platform?/i)
+    expect(featuresHeading).toBeInTheDocument()
   })
 
   it('renders the featured agents section', () => {

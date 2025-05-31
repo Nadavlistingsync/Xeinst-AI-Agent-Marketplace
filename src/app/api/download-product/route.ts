@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { getProduct, checkProductPurchase } from '@/lib/db-helpers';
-import { getS3SignedUrl } from '@/lib/s3-helpers';
+import { authOptions } from '@/lib/auth';
+import { db } from '@/lib/db';
+import { products } from '@/lib/schema';
+import { eq } from 'drizzle-orm';
+import { getSignedDownloadUrl } from '@/lib/s3-helpers';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -15,23 +18,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
-    // Get product info
-    const product = await getProduct(productId);
-    if (!product) {
+    const product = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+
+    if (!product[0]) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    // Check if user has purchased the product
-    if (!session.user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    const hasPurchased = await checkProductPurchase(session.user.id, productId);
-    if (!hasPurchased) {
-      return NextResponse.json({ error: 'Product not purchased' }, { status: 403 });
+    if (product[0].userId !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Generate signed URL
-    const signedUrl = await getS3SignedUrl(product.file_url);
+    const signedUrl = await getSignedDownloadUrl(
+      process.env.AWS_S3_BUCKET!,
+      product[0].file_url,
+      product[0].file_type || 'application/octet-stream'
+    );
 
     if (!signedUrl) {
       return NextResponse.json({ error: 'Failed to generate download URL' }, { status: 500 });
@@ -48,16 +53,15 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(request: Request) {
-  const session = await getServerSession();
-  
-  if (!session?.user?.id) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
-  }
-
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get('productId');
 
@@ -68,17 +72,31 @@ export async function GET(request: Request) {
       );
     }
 
-    // Get product details
-    const product = await getProduct(productId);
-    if (!product) {
+    const product = await db
+      .select()
+      .from(products)
+      .where(eq(products.id, productId))
+      .limit(1);
+
+    if (!product[0]) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       );
     }
 
-    // Generate signed URL for S3 object
-    const signedUrl = await getS3SignedUrl(product.file_url);
+    if (product[0].userId !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
+
+    const signedUrl = await getSignedDownloadUrl(
+      process.env.AWS_S3_BUCKET!,
+      product[0].file_url,
+      product[0].file_type || 'application/octet-stream'
+    );
 
     if (!signedUrl) {
       return NextResponse.json(
