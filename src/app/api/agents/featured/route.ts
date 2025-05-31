@@ -10,13 +10,13 @@ const ProductSchema = z.object({
   description: z.string(),
   tag: z.string(),
   price: z.number().nullable(),
-  image_url: z.string().nullable(),
-  average_rating: z.number(),
-  total_ratings: z.number(),
-  download_count: z.number(),
-  is_public: z.boolean(),
-  is_featured: z.boolean(),
-  created_at: z.date(),
+  imageUrl: z.string().nullable(),
+  averageRating: z.number(),
+  totalRatings: z.number(),
+  downloadCount: z.number(),
+  isPublic: z.boolean(),
+  isFeatured: z.boolean(),
+  createdAt: z.date(),
 });
 
 export async function GET() {

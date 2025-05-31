@@ -27,11 +27,14 @@ interface AgentLog {
   message: string;
   metadata?: Record<string, any>;
   timestamp: Date;
+  created_at: Date;
+  updated_at: Date;
 }
 
 interface AgentHealth {
   status: 'healthy' | 'degraded' | 'unhealthy';
   issues: string[];
+  last_updated: Date;
 }
 
 interface MonitoringDashboardProps {

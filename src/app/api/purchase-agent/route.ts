@@ -49,8 +49,8 @@ export async function POST(request: Request) {
     // Create purchase record
     const [purchase] = await db.insert(purchases)
       .values({
-        product_id: productId,
-        user_id: session.user.id,
+        productId: productId,
+        userId: session.user.id,
         amount: product.price,
         status: 'completed',
       })

@@ -3,17 +3,17 @@ import prismaClient from './db';
 import { Review } from './schema';
 
 export interface ReviewOptions {
-  productId?: string;
-  userId?: string;
-  minRating?: number;
-  maxRating?: number;
-  startDate?: Date;
-  endDate?: Date;
+  product_id?: string;
+  user_id?: string;
+  min_rating?: number;
+  max_rating?: number;
+  start_date?: Date;
+  end_date?: Date;
 }
 
 export interface CreateReviewInput {
-  productId: string;
-  userId: string;
+  product_id: string;
+  user_id: string;
   rating: number;
   comment?: string;
 }
@@ -22,8 +22,8 @@ export async function createReview(data: CreateReviewInput): Promise<Review> {
   try {
     return await prismaClient.review.create({
       data: {
-        productId: data.productId,
-        userId: data.userId,
+        productId: data.product_id,
+        userId: data.user_id,
         rating: data.rating,
         comment: data.comment,
         createdAt: new Date(),
@@ -54,24 +54,24 @@ export async function updateReview(
 }
 
 export async function getReviews(options: {
-  userId?: string;
-  productId?: string;
+  user_id?: string;
+  product_id?: string;
   rating?: number;
-  startDate?: Date;
-  endDate?: Date;
+  start_date?: Date;
+  end_date?: Date;
 } = {}): Promise<Review[]> {
   try {
     const where: Prisma.ReviewWhereInput = {};
     
-    if (options.userId) where.userId = options.userId;
-    if (options.productId) where.productId = options.productId;
+    if (options.user_id) where.user_id = options.user_id;
+    if (options.product_id) where.product_id = options.product_id;
     if (options.rating) where.rating = options.rating;
-    if (options.startDate) where.createdAt = { gte: options.startDate };
-    if (options.endDate) where.createdAt = { lte: options.endDate };
+    if (options.start_date) where.created_at = { gte: options.start_date };
+    if (options.end_date) where.created_at = { lte: options.end_date };
 
     return await prismaClient.review.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
   } catch (error) {
     console.error('Error getting reviews:', error);
@@ -116,24 +116,24 @@ export async function updateProductRating(productId: string): Promise<void> {
 }
 
 export async function getUserReviews(
-  userId: string,
+  user_id: string,
   options: {
-    startDate?: Date;
-    endDate?: Date;
+    start_date?: Date;
+    end_date?: Date;
     limit?: number;
   } = {}
 ): Promise<Review[]> {
-  const where: Prisma.ReviewWhereInput = { userId };
+  const where: Prisma.ReviewWhereInput = { user_id };
 
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
+  if (options.start_date) where.created_at = { gte: options.start_date };
+  if (options.end_date) where.created_at = { lte: options.end_date };
 
   return await prismaClient.review.findMany({
     where,
     include: {
       product: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
     take: options.limit,
   });
 }

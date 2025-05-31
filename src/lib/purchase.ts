@@ -3,11 +3,11 @@ import prismaClient from './db';
 import { Purchase } from './schema';
 
 export interface PurchaseOptions {
-  userId?: string;
-  productId?: string;
+  user_id?: string;
+  product_id?: string;
   status?: string;
-  startDate?: Date;
-  endDate?: Date;
+  start_date?: Date;
+  end_date?: Date;
 }
 
 export async function createPurchase(data: {
@@ -46,25 +46,19 @@ export async function updatePurchase(id: string, data: Partial<Purchase>): Promi
   }
 }
 
-export async function getPurchases(options: {
-  userId?: string;
-  productId?: string;
-  status?: string;
-  startDate?: Date;
-  endDate?: Date;
-} = {}): Promise<Purchase[]> {
+export async function getPurchases(options: PurchaseOptions = {}): Promise<Purchase[]> {
   try {
     const where: Prisma.PurchaseWhereInput = {};
     
-    if (options.userId) where.userId = options.userId;
-    if (options.productId) where.productId = options.productId;
+    if (options.user_id) where.user_id = options.user_id;
+    if (options.product_id) where.product_id = options.product_id;
     if (options.status) where.status = options.status;
-    if (options.startDate) where.createdAt = { gte: options.startDate };
-    if (options.endDate) where.createdAt = { lte: options.endDate };
+    if (options.start_date) where.created_at = { gte: options.start_date };
+    if (options.end_date) where.created_at = { lte: options.end_date };
 
     return await prismaClient.purchase.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
   } catch (error) {
     console.error('Error getting purchases:', error);

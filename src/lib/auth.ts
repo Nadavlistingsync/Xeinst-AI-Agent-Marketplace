@@ -47,7 +47,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
-          subscriptionTier: user.subscriptionTier,
+          subscription_tier: user.subscription_tier,
         };
       },
     }),
@@ -55,12 +55,12 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ token, session }) {
       if (token) {
-        session.user.id = token.id as string;
-        session.user.name = token.name as string | null;
-        session.user.email = token.email as string;
-        session.user.image = token.picture as string | null;
-        session.user.role = token.role as string;
-        session.user.subscriptionTier = token.subscriptionTier as 'free' | 'basic' | 'premium';
+        session.user.id = token.id;
+        session.user.name = token.name;
+        session.user.email = token.email;
+        session.user.image = token.picture;
+        session.user.role = token.role;
+        session.user.subscription_tier = token.subscription_tier;
       }
       return session;
     },
@@ -84,7 +84,7 @@ export const authOptions: NextAuthOptions = {
         email: dbUser.email,
         picture: dbUser.image,
         role: dbUser.role,
-        subscriptionTier: dbUser.subscriptionTier,
+        subscription_tier: dbUser.subscription_tier,
       };
     },
   },
@@ -99,10 +99,10 @@ export async function getUserById(id: string): Promise<User | null> {
       email: true,
       image: true,
       role: true,
-      subscriptionTier: true,
+      subscription_tier: true,
       emailVerified: true,
-      createdAt: true,
-      updatedAt: true,
+      created_at: true,
+      updated_at: true,
     },
   });
 }
@@ -116,28 +116,30 @@ export async function getUserByEmail(email: string): Promise<User | null> {
       email: true,
       image: true,
       role: true,
-      subscriptionTier: true,
+      subscription_tier: true,
       emailVerified: true,
-      createdAt: true,
-      updatedAt: true,
+      created_at: true,
+      updated_at: true,
     },
   });
 }
 
 export async function createUser(data: {
+  name: string;
   email: string;
   password: string;
-  name?: string;
-  image?: string;
+  role?: string;
+  subscription_tier?: string;
 }): Promise<User> {
   const hashedPassword = await hash(data.password, 10);
 
   return await prismaClient.user.create({
     data: {
-      ...data,
+      name: data.name,
+      email: data.email,
       password: hashedPassword,
-      role: "user",
-      subscriptionTier: "free",
+      role: data.role || "user",
+      subscription_tier: data.subscription_tier || "free",
       emailVerified: null,
     },
     select: {
@@ -146,10 +148,10 @@ export async function createUser(data: {
       email: true,
       image: true,
       role: true,
-      subscriptionTier: true,
+      subscription_tier: true,
       emailVerified: true,
-      createdAt: true,
-      updatedAt: true,
+      created_at: true,
+      updated_at: true,
     },
   });
 }
@@ -161,7 +163,7 @@ export async function updateUser(
     email?: string;
     image?: string;
     role?: string;
-    subscriptionTier?: 'free' | 'basic' | 'premium';
+    subscription_tier?: string;
   }
 ): Promise<User> {
   return await prismaClient.user.update({
@@ -173,10 +175,10 @@ export async function updateUser(
       email: true,
       image: true,
       role: true,
-      subscriptionTier: true,
+      subscription_tier: true,
       emailVerified: true,
-      createdAt: true,
-      updatedAt: true,
+      created_at: true,
+      updated_at: true,
     },
   });
 }
@@ -190,10 +192,10 @@ export async function deleteUser(id: string): Promise<User> {
       email: true,
       image: true,
       role: true,
-      subscriptionTier: true,
+      subscription_tier: true,
       emailVerified: true,
-      createdAt: true,
-      updatedAt: true,
+      created_at: true,
+      updated_at: true,
     },
   });
 } 

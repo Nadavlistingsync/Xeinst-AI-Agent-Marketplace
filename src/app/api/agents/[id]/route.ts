@@ -23,7 +23,7 @@ export async function PUT(
 
     // Check if user owns the agent
     const agent = await getProductById(id);
-    if (!agent || agent.uploaded_by !== session.user.id) {
+    if (!agent || agent.uploadedBy !== session.user.id) {
       return NextResponse.json(
         { error: 'You do not have permission to edit this agent' },
         { status: 403 }
@@ -37,8 +37,8 @@ export async function PUT(
       price: updates.price,
       features: updates.features,
       requirements: updates.requirements,
-      is_public: updates.is_public,
-      updated_at: new Date(),
+      isPublic: updates.isPublic,
+      updatedAt: new Date(),
     });
 
     return NextResponse.json({ agent: updatedAgent });
@@ -65,7 +65,7 @@ export async function DELETE(
 
     // Check if user owns the agent
     const agent = await getProductById(id);
-    if (!agent || agent.uploaded_by !== session.user.id) {
+    if (!agent || agent.uploadedBy !== session.user.id) {
       return NextResponse.json(
         { error: 'You do not have permission to delete this agent' },
         { status: 403 }
@@ -73,9 +73,9 @@ export async function DELETE(
     }
 
     // Delete the file from local storage if it exists
-    if (agent.file_url) {
+    if (agent.fileUrl) {
       try {
-        const filePath = join(UPLOAD_DIR, agent.file_url.split('/').pop() || '');
+        const filePath = join(UPLOAD_DIR, agent.fileUrl.split('/').pop() || '');
         await unlink(filePath);
       } catch (error) {
         console.error('Error deleting file:', error);
@@ -162,7 +162,7 @@ export async function PATCH(
       );
     }
 
-    if (agent.deployed_by !== session.user.id) {
+    if (agent.deployedBy !== session.user.id) {
       return NextResponse.json(
         { error: 'Not authorized to update this agent' },
         { status: 403 }
@@ -175,10 +175,10 @@ export async function PATCH(
       data: {
         name: body.name,
         description: body.description,
-        access_level: body.access_level,
-        license_type: body.license_type,
-        price_cents: body.price_cents,
-        updated_at: new Date(),
+        accessLevel: body.accessLevel,
+        licenseType: body.licenseType,
+        priceCents: body.priceCents,
+        updatedAt: new Date(),
       },
     });
 

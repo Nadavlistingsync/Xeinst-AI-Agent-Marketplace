@@ -17,7 +17,7 @@ export default defineConfig({
       exclude: ['node_modules/', 'src/test/']
     },
     env: {
-      DATABASE_URL: process.env.DATABASE_URL,
+      DATABASE_URL: process.env.DATABASE_URL || '',
     }
   },
   plugins: [react() as any, tsconfigPaths() as any]

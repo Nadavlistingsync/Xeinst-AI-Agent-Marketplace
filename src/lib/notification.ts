@@ -13,7 +13,7 @@ export type NotificationType =
 export type NotificationSeverity = 'info' | 'warning' | 'error' | 'success';
 
 export interface CreateNotificationInput {
-  userId: string;
+  user_id: string;
   type: NotificationType;
   title: string;
   message: string;
@@ -24,7 +24,7 @@ export interface CreateNotificationInput {
 export async function createNotification(data: CreateNotificationInput): Promise<Notification> {
   return await prismaClient.notification.create({
     data: {
-      userId: data.userId,
+      user_id: data.user_id,
       type: data.type,
       title: data.title,
       message: data.message,
@@ -48,20 +48,20 @@ export async function updateNotification(
 }
 
 export async function getNotifications(
-  userId: string,
+  user_id: string,
   options: {
-    unreadOnly?: boolean;
+    unread_only?: boolean;
     type?: NotificationType;
     limit?: number;
   } = {}
 ): Promise<Notification[]> {
-  const where: any = { userId };
-  if (options.unreadOnly) where.read = false;
+  const where: any = { user_id };
+  if (options.unread_only) where.read = false;
   if (options.type) where.type = options.type;
 
   return await prismaClient.notification.findMany({
     where,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
     take: options.limit,
   });
 }
@@ -79,9 +79,9 @@ export async function markNotificationAsRead(id: string): Promise<Notification> 
   });
 }
 
-export async function markAllNotificationsAsRead(userId: string): Promise<void> {
+export async function markAllNotificationsAsRead(user_id: string): Promise<void> {
   await prismaClient.notification.updateMany({
-    where: { userId, read: false },
+    where: { user_id, read: false },
     data: { read: true },
   });
 }
@@ -92,37 +92,37 @@ export async function deleteNotification(id: string): Promise<void> {
   });
 }
 
-export async function deleteAllNotifications(userId: string): Promise<void> {
+export async function deleteAllNotifications(user_id: string): Promise<void> {
   await prismaClient.notification.deleteMany({
-    where: { userId },
+    where: { user_id },
   });
 }
 
 export async function getNotificationCount(
-  userId: string,
+  user_id: string,
   options: {
-    unreadOnly?: boolean;
+    unread_only?: boolean;
     type?: NotificationType;
   } = {}
 ): Promise<number> {
-  const where: any = { userId };
-  if (options.unreadOnly) where.read = false;
+  const where: any = { user_id };
+  if (options.unread_only) where.read = false;
   if (options.type) where.type = options.type;
 
   return await prismaClient.notification.count({ where });
 }
 
-export async function getNotificationStats(userId: string): Promise<{
+export async function getNotificationStats(user_id: string): Promise<{
   total: number;
   unread: number;
-  byType: Record<NotificationType, number>;
+  by_type: Record<NotificationType, number>;
 }> {
   const [total, unread, byType] = await Promise.all([
-    prismaClient.notification.count({ where: { userId } }),
-    prismaClient.notification.count({ where: { userId, read: false } }),
+    prismaClient.notification.count({ where: { user_id } }),
+    prismaClient.notification.count({ where: { user_id, read: false } }),
     prismaClient.notification.groupBy({
       by: ['type'],
-      where: { userId },
+      where: { user_id },
       _count: true,
     }),
   ]);
@@ -130,19 +130,19 @@ export async function getNotificationStats(userId: string): Promise<{
   return {
     total,
     unread,
-    byType: byType.reduce((acc, { type, _count }) => {
+    by_type: byType.reduce((acc, { type, _count }) => {
       acc[type as NotificationType] = _count;
       return acc;
     }, {} as Record<NotificationType, number>),
   };
 }
 
-export async function getNotificationHistory(userId: string) {
+export async function getNotificationHistory(user_id: string) {
   try {
-    const notifications = await getNotifications({ userId });
+    const notifications = await getNotifications(user_id);
 
-    const monthlyNotifications = notifications.reduce((acc, notification) => {
-      const month = notification.createdAt.toISOString().slice(0, 7);
+    const monthly_notifications = notifications.reduce((acc, notification) => {
+      const month = notification.created_at.toISOString().slice(0, 7);
       if (!acc[month]) {
         acc[month] = { total: 0, unread: 0 };
       }
@@ -154,8 +154,8 @@ export async function getNotificationHistory(userId: string) {
     }, {} as Record<string, { total: number; unread: number }>);
 
     return {
-      monthlyNotifications,
-      recentNotifications: notifications.slice(0, 10),
+      monthly_notifications,
+      recent_notifications: notifications.slice(0, 10),
     };
   } catch (error) {
     console.error('Error getting notification history:', error);

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { getProductReviews, createReview, getUserReview } from '@/lib/db-helpers';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -55,11 +58,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const review = await createReview({
-      product_id: productId,
-      user_id: session.user.id,
-      rating,
-      comment,
+    const review = await prisma.review.create({
+      data: {
+        productId: productId,
+        userId: session.user.id,
+        rating: rating,
+        comment: comment,
+      },
     });
 
     return NextResponse.json(review);

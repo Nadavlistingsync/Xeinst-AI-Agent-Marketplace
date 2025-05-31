@@ -8,17 +8,17 @@ const ProductSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  long_description: z.string().nullable(),
+  longDescription: z.string().nullable(),
   category: z.string(),
   price: z.number().nullable(),
-  image_url: z.string().nullable(),
+  imageUrl: z.string().nullable(),
   rating: z.number().nullable(),
   features: z.array(z.string()).nullable(),
   requirements: z.array(z.string()).nullable(),
-  created_by: z.string(),
-  average_rating: z.number(),
-  total_ratings: z.number(),
-  created_at: z.date(),
+  createdBy: z.string(),
+  averageRating: z.number(),
+  totalRatings: z.number(),
+  createdAt: z.date(),
 });
 
 export async function GET(

@@ -107,15 +107,15 @@ export async function getProductsByCategory(category: string) {
   });
 }
 
-export async function getProductsByUser(userId: string) {
+export async function getProductsByUser(user_id: string) {
   return prisma.product.findMany({
     where: { 
       OR: [
-        { createdBy: userId },
-        { uploadedBy: userId }
+        { created_by: user_id },
+        { uploaded_by: user_id }
       ]
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { created_at: 'desc' }
   });
 }
 
@@ -198,11 +198,11 @@ export async function createReview(data: Prisma.ReviewCreateInput) {
   });
 }
 
-export async function getUserReview(productId: string, userId: string) {
+export async function getUserReview(product_id: string, user_id: string) {
   return prisma.review.findFirst({
     where: {
-      productId,
-      userId,
+      product_id,
+      user_id,
     },
     include: {
       user: {
@@ -243,12 +243,12 @@ export async function getUserPurchases(userId: string) {
   });
 }
 
-export async function getUserProducts(userId: string) {
+export async function getUserProducts(user_id: string) {
   return prisma.product.findMany({
     where: {
       OR: [
-        { createdBy: userId },
-        { uploadedBy: userId },
+        { created_by: user_id },
+        { uploaded_by: user_id },
       ],
     },
     include: {
@@ -266,7 +266,7 @@ export async function getUserProducts(userId: string) {
       },
     },
     orderBy: {
-      createdAt: "desc",
+      created_at: "desc",
     },
   });
 }
@@ -394,10 +394,10 @@ export async function createAgentFeedback(data: any) {
 }
 
 // Notification operations
-export async function getUserNotifications(userId: string) {
+export async function getUserNotifications(user_id: string) {
   return prisma.notification.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' }
+    where: { user_id },
+    orderBy: { created_at: 'desc' }
   });
 }
 

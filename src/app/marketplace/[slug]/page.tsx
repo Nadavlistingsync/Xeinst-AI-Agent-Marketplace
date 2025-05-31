@@ -11,16 +11,16 @@ interface Product {
   id: string;
   name: string;
   description: string;
-  long_description?: string;
+  longDescription?: string;
   category: string;
   price?: number;
-  image_url?: string;
+  imageUrl?: string;
   rating?: number;
   features?: string[];
   requirements?: string[];
-  created_by: string;
-  average_rating: number;
-  total_ratings: number;
+  createdBy: string;
+  averageRating: number;
+  totalRatings: number;
 }
 
 export default function ProductPage({ params }: { params: { slug: string } }) {
@@ -84,10 +84,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {product.image_url && (
+          {product.imageUrl && (
             <div className="w-full h-64 md:h-96 relative">
               <Image
-                src={product.image_url}
+                src={product.imageUrl}
                 alt={product.name}
                 fill
                 className="object-cover"
@@ -120,10 +120,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
             <p className="text-gray-600 text-lg mb-8">{product.description}</p>
 
-            {product.long_description && (
+            {product.longDescription && (
               <div className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">About this Product</h2>
-                <p className="text-gray-600">{product.long_description}</p>
+                <p className="text-gray-600">{product.longDescription}</p>
               </div>
             )}
 
@@ -150,7 +150,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
             )}
 
             <div className="flex justify-end space-x-4">
-              {session?.user?.email === product.created_by ? (
+              {session?.user?.email === product.createdBy ? (
                 <>
                   <button
                     onClick={() => window.location.href = `/agent/${product.id}/edit`}
@@ -184,8 +184,8 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           <h2 className="text-2xl font-semibold mb-6">Reviews & Ratings</h2>
           <AgentReviews
             productId={product.id}
-            averageRating={product.average_rating}
-            totalRatings={product.total_ratings}
+            averageRating={product.averageRating}
+            totalRatings={product.totalRatings}
           />
         </div>
       </div>

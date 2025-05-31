@@ -351,15 +351,15 @@ interface DeploymentUpdateInput {
 }
 
 export interface DeploymentOptions {
-  userId?: string;
-  agentId?: string;
+  user_id?: string;
+  agent_id?: string;
   status?: string;
-  startDate?: Date;
-  endDate?: Date;
+  start_date?: Date;
+  end_date?: Date;
   query?: string;
   framework?: string;
-  accessLevel?: string;
-  licenseType?: string;
+  access_level?: string;
+  license_type?: string;
 }
 
 export async function createDeployment(data: DeploymentSchema): Promise<Deployment> {
@@ -402,13 +402,13 @@ export async function getDeployment(id: string): Promise<Deployment | null> {
 export async function getDeployments(options: DeploymentOptions = {}): Promise<Deployment[]> {
   const where: any = {};
   
-  if (options.agentId) where.agentId = options.agentId;
+  if (options.agent_id) where.agent_id = options.agent_id;
   if (options.status) where.status = options.status;
-  if (options.startDate) where.startDate = { gte: options.startDate };
-  if (options.endDate) where.endDate = { lte: options.endDate };
+  if (options.start_date) where.start_date = { gte: options.start_date };
+  if (options.end_date) where.end_date = { lte: options.end_date };
   if (options.framework) where.framework = options.framework;
-  if (options.accessLevel) where.accessLevel = options.accessLevel;
-  if (options.licenseType) where.licenseType = options.licenseType;
+  if (options.access_level) where.access_level = options.access_level;
+  if (options.license_type) where.license_type = options.license_type;
 
   return await prismaClient.deployment.findMany({
     where,

@@ -14,9 +14,9 @@ model User {
   password        String
   image           String?
   role            String    @default("user")
-  subscriptionTier String   @default("free")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  subscription_tier String   @default("free") @map("subscription_tier")
+  created_at      DateTime  @default(now()) @map("created_at")
+  updated_at      DateTime  @updatedAt @map("updated_at")
   createdProducts Product[] @relation("ProductCreator")
   uploadedProducts Product[] @relation("ProductUploader")
   purchases       Purchase[]

@@ -3,11 +3,11 @@ import prismaClient from './db';
 import { Earning } from './schema';
 
 export interface EarningOptions {
-  userId?: string;
-  productId?: string;
+  user_id?: string;
+  product_id?: string;
   status?: string;
-  startDate?: Date;
-  endDate?: Date;
+  start_date?: Date;
+  end_date?: Date;
 }
 
 export async function createEarning(data: {
@@ -62,25 +62,19 @@ export async function updateEarning(
   }
 }
 
-export async function getEarnings(options: {
-  userId?: string;
-  productId?: string;
-  status?: string;
-  startDate?: Date;
-  endDate?: Date;
-} = {}): Promise<Earning[]> {
+export async function getEarnings(options: EarningOptions = {}): Promise<Earning[]> {
   try {
     const where: Prisma.EarningWhereInput = {};
     
-    if (options.userId) where.userId = options.userId;
-    if (options.productId) where.productId = options.productId;
+    if (options.user_id) where.user_id = options.user_id;
+    if (options.product_id) where.product_id = options.product_id;
     if (options.status) where.status = options.status;
-    if (options.startDate) where.createdAt = { gte: options.startDate };
-    if (options.endDate) where.createdAt = { lte: options.endDate };
+    if (options.start_date) where.created_at = { gte: options.start_date };
+    if (options.end_date) where.created_at = { lte: options.end_date };
 
     return await prismaClient.earning.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
   } catch (error) {
     console.error('Error getting earnings:', error);

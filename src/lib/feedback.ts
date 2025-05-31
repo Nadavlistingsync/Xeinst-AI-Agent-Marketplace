@@ -3,27 +3,27 @@ import prismaClient from './db';
 import { Feedback } from './schema';
 
 export interface CreateFeedbackInput {
-  agentId: string;
-  userId: string;
+  agent_id: string;
+  user_id: string;
   rating: number;
   comment?: string;
-  sentimentScore?: number;
+  sentiment_score?: number;
   categories?: Record<string, any>;
-  creatorResponse?: string;
+  creator_response?: string;
 }
 
 export async function createFeedback(data: CreateFeedbackInput): Promise<Feedback> {
   try {
     return await prismaClient.feedback.create({
       data: {
-        agentId: data.agentId,
-        userId: data.userId,
+        agentId: data.agent_id,
+        userId: data.user_id,
         rating: data.rating,
         comment: data.comment,
-        sentimentScore: data.sentimentScore ? new Prisma.Decimal(data.sentimentScore) : null,
+        sentimentScore: data.sentiment_score ? new Prisma.Decimal(data.sentiment_score) : null,
         categories: data.categories || {},
-        creatorResponse: data.creatorResponse,
-        responseDate: data.creatorResponse ? new Date() : null,
+        creatorResponse: data.creator_response,
+        responseDate: data.creator_response ? new Date() : null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -39,17 +39,17 @@ export async function updateFeedback(
   data: {
     rating?: number;
     comment?: string;
-    sentimentScore?: number;
+    sentiment_score?: number;
     categories?: Record<string, any>;
-    creatorResponse?: string;
+    creator_response?: string;
   }
 ): Promise<Feedback> {
   try {
     const updateData: any = { ...data };
-    if (data.sentimentScore !== undefined) {
-      updateData.sentimentScore = new Prisma.Decimal(data.sentimentScore);
+    if (data.sentiment_score !== undefined) {
+      updateData.sentimentScore = new Prisma.Decimal(data.sentiment_score);
     }
-    if (data.creatorResponse) {
+    if (data.creator_response) {
       updateData.responseDate = new Date();
     }
     updateData.updatedAt = new Date();
@@ -65,24 +65,24 @@ export async function updateFeedback(
 }
 
 export async function getFeedbacks(options: {
-  userId?: string;
-  productId?: string;
+  user_id?: string;
+  product_id?: string;
   rating?: number;
-  startDate?: Date;
-  endDate?: Date;
+  start_date?: Date;
+  end_date?: Date;
 } = {}): Promise<Feedback[]> {
   try {
     const where: Prisma.FeedbackWhereInput = {};
     
-    if (options.userId) where.userId = options.userId;
-    if (options.productId) where.productId = options.productId;
+    if (options.user_id) where.user_id = options.user_id;
+    if (options.product_id) where.product_id = options.product_id;
     if (options.rating) where.rating = options.rating;
-    if (options.startDate) where.createdAt = { gte: options.startDate };
-    if (options.endDate) where.createdAt = { lte: options.endDate };
+    if (options.start_date) where.created_at = { gte: options.start_date };
+    if (options.end_date) where.created_at = { lte: options.end_date };
 
     return await prismaClient.feedback.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
   } catch (error) {
     console.error('Error getting feedbacks:', error);
@@ -114,7 +114,7 @@ export async function deleteFeedback(id: string): Promise<void> {
 
 export async function getFeedbackStats(productId: string) {
   try {
-    const feedbacks = await getFeedbacks({ productId });
+    const feedbacks = await getFeedbacks({ product_id: productId });
 
     const totalRatings = feedbacks.length;
     const averageRating = totalRatings > 0
@@ -142,10 +142,10 @@ export async function getFeedbackStats(productId: string) {
 
 export async function getFeedbackHistory(productId: string) {
   try {
-    const feedbacks = await getFeedbacks({ productId });
+    const feedbacks = await getFeedbacks({ product_id: productId });
 
     const monthlyRatings = feedbacks.reduce((acc, feedback) => {
-      const month = feedback.createdAt.toISOString().slice(0, 7);
+      const month = feedback.created_at.toISOString().slice(0, 7);
       if (!acc[month]) {
         acc[month] = { total: 0, count: 0 };
       }

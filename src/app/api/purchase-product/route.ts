@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { products, users, earnings } from '@/lib/schema';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { Product, User, Earning } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
-import { getServerSession } from '@/lib/auth';
+import { db } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    if (!product.uploaded_by) {
+    if (!product.uploadedBy) {
       return NextResponse.json({ error: 'Product creator not found' }, { status: 404 });
     }
 
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     const [creator] = await db
       .select()
       .from(users)
-      .where(eq(users.id, product.uploaded_by))
+      .where(eq(users.id, product.uploadedBy))
       .limit(1);
 
     if (!creator) {
@@ -43,12 +44,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate earnings
-    const earningsAmount = (Number(product.price) * Number(product.earnings_split)).toFixed(2);
+    const earningsAmount = (Number(product.price) * Number(product.earningsSplit)).toFixed(2);
 
     // Create earnings record
     await db.insert(earnings).values({
-      user_id: creator.id,
-      product_id: product.id,
+      userId: creator.id,
+      productId: product.id,
       amount: earningsAmount,
       status: 'pending',
     });
@@ -56,14 +57,14 @@ export async function POST(req: NextRequest) {
     // Update product download count
     await db
       .update(products)
-      .set({ download_count: (product.download_count ?? 0) + 1 })
+      .set({ downloadCount: (product.downloadCount ?? 0) + 1 })
       .where(eq(products.id, product.id));
 
     return NextResponse.json({
       success: true,
       product: {
         ...product,
-        download_url: `/api/download-agent?id=${product.id}`,
+        downloadUrl: `/api/download-agent?id=${product.id}`,
       },
     });
   } catch (error) {

@@ -37,7 +37,7 @@ export async function GET(req: Request) {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { created_at: 'desc' },
+        orderBy: { createdAt: 'desc' },
         include: {
           users: {
             select: {

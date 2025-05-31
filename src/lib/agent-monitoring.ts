@@ -11,30 +11,34 @@ export interface LogEntry {
 }
 
 export interface MetricsData {
-  totalRequests: number;
-  averageResponseTime: number;
-  errorRate: number;
-  successRate: number;
-  activeUsers: number;
-  cpuUsage: number;
-  memoryUsage: number;
+  total_requests: number;
+  average_response_time: number;
+  error_rate: number;
+  success_rate: number;
+  active_users: number;
+  requests_per_minute: number;
+  average_tokens_used: number;
+  cost_per_request: number;
+  total_cost: number;
 }
 
 export interface GetAgentLogsOptions {
-  startDate?: Date;
-  endDate?: Date;
+  start_date?: Date;
+  end_date?: Date;
   level?: 'info' | 'warning' | 'error';
   limit?: number;
 }
 
 export interface MetricsUpdate {
-  totalRequests?: number;
-  averageResponseTime?: number;
-  errorRate?: number;
-  successRate?: number;
-  activeUsers?: number;
-  cpuUsage?: number;
-  memoryUsage?: number;
+  total_requests?: number;
+  average_response_time?: number;
+  error_rate?: number;
+  success_rate?: number;
+  active_users?: number;
+  requests_per_minute?: number;
+  average_tokens_used?: number;
+  cost_per_request?: number;
+  total_cost?: number;
 }
 
 export async function logAgentEvent(entry: LogEntry): Promise<void> {

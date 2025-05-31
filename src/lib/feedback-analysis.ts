@@ -21,6 +21,13 @@ export interface FeedbackAnalysis {
     sentiment: number;
     volume: number;
   };
+  sentiment_score: number;
+  positive_feedback: number;
+  negative_feedback: number;
+  total_feedbacks: number;
+  average_rating: number;
+  positive_feedbacks: number;
+  negative_feedbacks: number;
 }
 
 export async function analyzeSentiment(text: string): Promise<SentimentAnalysis> {
@@ -106,10 +113,24 @@ export async function analyzeAgentFeedback(
     volume: feedbacks.length,
   };
 
+  const totalFeedbacks = feedbacks.length;
+  const averageRating = feedbacks.reduce((sum, f) => sum + f.rating, 0) / (totalFeedbacks || 1);
+  const positiveFeedbacks = feedbacks.filter(f => f.rating >= 4).length;
+  const negativeFeedbacks = feedbacks.filter(f => f.rating <= 2).length;
+
+  const sentimentScore = (positiveFeedbacks - negativeFeedbacks) / (totalFeedbacks || 1);
+
   return {
     sentiment,
     categories,
     trends,
+    sentiment_score: sentimentScore,
+    positive_feedback: positiveFeedbacks,
+    negative_feedback: negativeFeedbacks,
+    total_feedbacks: totalFeedbacks,
+    average_rating: averageRating,
+    positive_feedbacks: positiveFeedbacks,
+    negative_feedbacks: negativeFeedbacks
   };
 }
 
@@ -244,17 +265,6 @@ export async function generateFeedbackInsights(agentId: string): Promise<{
   };
 }
 
-export interface FeedbackAnalysis {
-  sentimentScore: number;
-  categories: string[];
-  positiveFeedback: number;
-  negativeFeedback: number;
-  totalFeedbacks: number;
-  averageRating: number;
-  positiveFeedbacks: number;
-  negativeFeedbacks: number;
-}
-
 export async function analyzeFeedback(agentId: string, timeRange: { start: Date; end: Date }): Promise<FeedbackAnalysis> {
   const feedback = await prismaClient.agentFeedback.findMany({
     where: {
@@ -278,13 +288,13 @@ export async function analyzeFeedback(agentId: string, timeRange: { start: Date;
   const categories = Array.from(new Set(feedback.map(f => f.category).filter(Boolean)));
 
   return {
-    sentimentScore,
+    sentiment_score: sentimentScore,
     categories,
-    positiveFeedback: positiveFeedbacks,
-    negativeFeedback: negativeFeedbacks,
-    totalFeedbacks,
-    averageRating,
-    positiveFeedbacks,
-    negativeFeedbacks
+    positive_feedback: positiveFeedbacks,
+    negative_feedback: negativeFeedbacks,
+    total_feedbacks: totalFeedbacks,
+    average_rating: averageRating,
+    positive_feedbacks: positiveFeedbacks,
+    negative_feedbacks: negativeFeedbacks
   };
 } 

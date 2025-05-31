@@ -4,6 +4,7 @@ import { Star } from 'lucide-react';
 import Image from 'next/image';
 import { AgentReviews } from '@/components/AgentReviews';
 import { Product } from '@/lib/schema';
+import { Decimal } from '@prisma/client/runtime/library';
 
 interface AgentPageClientProps {
   product: Product;
@@ -11,13 +12,19 @@ interface AgentPageClientProps {
 }
 
 export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
+  // Helper function to convert Decimal to number
+  const formatDecimal = (value: Decimal | number | null): number => {
+    if (value === null) return 0;
+    return typeof value === 'number' ? value : Number(value);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="relative h-96 w-full">
-          {product.image_url && (
+          {product.imageUrl && (
             <Image
-              src={product.image_url}
+              src={product.imageUrl}
               alt={product.name}
               fill
               className="object-cover"
@@ -30,25 +37,25 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
               <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
               <div className="flex items-center mb-4">
                 <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                <span className="ml-1">{product.average_rating || 0}</span>
+                <span className="ml-1">{formatDecimal(product.averageRating)}</span>
                 <span className="ml-2 text-gray-500">
-                  ({product.total_ratings || 0} reviews)
+                  ({product.totalRatings} reviews)
                 </span>
               </div>
             </div>
-            <div className="text-2xl font-bold text-blue-600">${product.price}</div>
+            <div className="text-2xl font-bold text-blue-600">${formatDecimal(product.price)}</div>
           </div>
 
           <div className="mb-6">
             <h2 className="text-xl font-semibold mb-2">Description</h2>
-            <p className="text-gray-600">{product.long_description || product.description}</p>
+            <p className="text-gray-600">{product.longDescription || product.description}</p>
           </div>
 
           {product.features && product.features.length > 0 && (
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-2">Features</h2>
               <ul className="list-disc list-inside text-gray-600">
-                {product.features.map((feature, index) => (
+                {product.features.map((feature: string, index: number) => (
                   <li key={index}>{feature}</li>
                 ))}
               </ul>
@@ -59,7 +66,7 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-2">Requirements</h2>
               <ul className="list-disc list-inside text-gray-600">
-                {product.requirements.map((requirement, index) => (
+                {product.requirements.map((requirement: string, index: number) => (
                   <li key={index}>{requirement}</li>
                 ))}
               </ul>
@@ -93,8 +100,8 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
       <div className="mt-8">
         <AgentReviews
           productId={product.id}
-          averageRating={Number(product.average_rating) || 0}
-          totalRatings={product.total_ratings || 0}
+          averageRating={formatDecimal(product.averageRating)}
+          totalRatings={product.totalRatings}
         />
       </div>
     </div>

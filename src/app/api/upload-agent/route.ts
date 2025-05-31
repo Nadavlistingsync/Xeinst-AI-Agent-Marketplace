@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { deployments } from '@/lib/schema';
+import db from '@/lib/db';
+import { Deployment } from '@/lib/schema';
+import { eq } from 'drizzle-orm';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
-import { getServerSession } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -40,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     // Create deployment record
     const [deployment] = await db
-      .insert(deployments)
+      .insert(Deployment)
       .values({
         name,
         description,

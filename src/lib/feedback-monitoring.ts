@@ -16,8 +16,8 @@ export interface FeedbackMetrics {
 }
 
 export interface FeedbackTimeRange {
-  startDate: Date;
-  endDate: Date;
+  start_date: Date;
+  end_date: Date;
 }
 
 export interface FeedbackAnalysis {
@@ -43,8 +43,8 @@ export interface FeedbackAnalysis {
 }
 
 export interface GetFeedbackOptions {
-  startDate?: Date;
-  endDate?: Date;
+  start_date?: Date;
+  end_date?: Date;
   limit?: number;
 }
 
@@ -55,8 +55,8 @@ export async function getFeedbackMetrics(
   const where: any = { agentId };
   if (timeRange) {
     where.createdAt = {
-      gte: timeRange.startDate,
-      lte: timeRange.endDate,
+      gte: timeRange.start_date,
+      lte: timeRange.end_date,
     };
   }
 
@@ -220,8 +220,8 @@ export async function analyzeAgentFeedback(
   const metrics = await getFeedbackMetrics(agentId, timeRange);
   const previousMetrics = timeRange
     ? await getFeedbackMetrics(agentId, {
-        startDate: new Date(timeRange.startDate.getTime() - (timeRange.endDate.getTime() - timeRange.startDate.getTime())),
-        endDate: timeRange.startDate,
+        start_date: new Date(timeRange.start_date.getTime() - (timeRange.end_date.getTime() - timeRange.start_date.getTime())),
+        end_date: timeRange.start_date,
       })
     : null;
 
@@ -293,8 +293,8 @@ export async function getFeedbackTrends(
     where: {
       agentId,
       createdAt: {
-        gte: timeRange.startDate,
-        lte: timeRange.endDate,
+        gte: timeRange.start_date,
+        lte: timeRange.end_date,
       },
     },
     orderBy: { createdAt: 'asc' },
@@ -439,8 +439,8 @@ export async function updateAgentBasedOnFeedback(
 
 async function getPreviousMetrics(agentId: string): Promise<FeedbackMetrics | null> {
   const timeRange = {
-    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-    endDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
+    start_date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+    end_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000)
   };
 
   return await getFeedbackMetrics(agentId, timeRange);
