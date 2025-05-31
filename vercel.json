@@ -8,10 +8,7 @@
   "env": {
     "DATABASE_URL": "@database_url",
     "NEXTAUTH_URL": "@nextauth_url",
-    "NEXTAUTH_SECRET": "@nextauth_secret",
-    "STRIPE_SECRET_KEY": "@stripe_secret_key",
-    "STRIPE_WEBHOOK_SECRET": "@stripe_webhook_secret",
-    "STRIPE_PRICE_ID": "@stripe_price_id"
+    "NEXTAUTH_SECRET": "@nextauth_secret"
   },
   "builds": [
     {

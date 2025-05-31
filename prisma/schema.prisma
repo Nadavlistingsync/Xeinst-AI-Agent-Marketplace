@@ -123,16 +123,15 @@ model Deployment {
 }
 
 model Purchase {
-  id                    String    @id @default(uuid())
-  userId               String    @map("user_id")
-  productId            String    @map("product_id")
-  amount               Decimal   @db.Decimal(10, 2)
-  status               String    @default("pending")
-  stripePaymentIntentId String?  @map("stripe_payment_intent_id")
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @updatedAt @map("updated_at")
-  user                 User      @relation(fields: [userId], references: [id])
-  product              Product   @relation(fields: [productId], references: [id])
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  productId String    @map("product_id")
+  amount    Decimal   @db.Decimal(10, 2)
+  status    String    @default("pending")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  user      User      @relation(fields: [userId], references: [id])
+  product   Product   @relation(fields: [productId], references: [id])
 
   @@map("purchases")
 }
