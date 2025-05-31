@@ -143,4 +143,153 @@ export type ProductUpdateInput = Prisma.ProductUpdateInput;
 export type ProductWhereInput = Prisma.ProductWhereInput;
 export type ProductWhereUniqueInput = Prisma.ProductWhereUniqueInput;
 export type ProductOrderByWithRelationInput = Prisma.ProductOrderByWithRelationInput;
-export type ProductInclude = Prisma.ProductInclude; 
+export type ProductInclude = Prisma.ProductInclude;
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  password: string;
+  role: string;
+  subscriptionTier: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Agent {
+  id: string;
+  name: string;
+  description: string;
+  longDescription?: string;
+  documentation?: string;
+  category: string;
+  framework: string;
+  requirements: string[];
+  source: string;
+  version: string;
+  createdBy: string;
+  accessLevel: string;
+  licenseType: string;
+  environment: string;
+  fileUrl: string;
+  imageUrl?: string;
+  status: string;
+  rating?: number;
+  downloadCount?: number;
+  isPublic?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Deployment {
+  id: string;
+  name: string;
+  description: string;
+  framework: string;
+  requirements: string[];
+  source: string;
+  version: string;
+  deployedBy: string;
+  accessLevel: string;
+  licenseType: string;
+  environment: string;
+  fileUrl: string;
+  status: string;
+  startDate: Date;
+  endDate?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AgentLog {
+  id: string;
+  deploymentId: string;
+  level: string;
+  message: string;
+  metadata: Record<string, any>;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AgentMetrics {
+  id: string;
+  deploymentId: string;
+  totalRequests: number;
+  averageResponseTime: number;
+  errorRate: number;
+  cpuUsage: number;
+  memoryUsage: number;
+  lastUpdated: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AgentFeedback {
+  id: string;
+  agentId: string;
+  userId: string;
+  rating: number;
+  comment?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  images: string[];
+  category: string;
+  seller: string;
+  stock: number;
+  rating?: number;
+  downloadCount?: number;
+  isPublic?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Review {
+  id: string;
+  productId: string;
+  userId: string;
+  rating: number;
+  comment?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Purchase {
+  id: string;
+  userId: string;
+  productId: string;
+  amount: number;
+  status: string;
+  paymentMethod?: string;
+  transactionId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Earning {
+  id: string;
+  userId: string;
+  productId: string;
+  amount: number;
+  status: string;
+  type?: string;
+  description?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  parentId?: string;
+  imageUrl?: string;
+  createdAt: Date;
+  updatedAt: Date;
+} 

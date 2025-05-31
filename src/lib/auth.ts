@@ -1,16 +1,18 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
-import { prisma } from "./db";
 import CredentialsProvider from "next-auth/providers/credentials";
+import prismaClient from "./db";
+import { User } from "./schema";
 import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prismaClient),
   session: {
     strategy: "jwt",
   },
   pages: {
-    signIn: "/login",
+    signIn: "/auth/signin",
+    error: "/auth/error",
   },
   providers: [
     CredentialsProvider({
@@ -21,17 +23,17 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null;
+          throw new Error("Invalid credentials");
         }
 
-        const user = await prisma.user.findUnique({
+        const user = await prismaClient.user.findUnique({
           where: {
             email: credentials.email,
           },
         });
 
         if (!user || !user.password) {
-          return null;
+          throw new Error("Invalid credentials");
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -40,7 +42,7 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isPasswordValid) {
-          return null;
+          throw new Error("Invalid credentials");
         }
 
         return {
@@ -49,46 +51,79 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
-          subscription_tier: user.subscription_tier,
+          subscriptionTier: user.subscriptionTier,
         };
       },
     }),
   ],
   callbacks: {
-    async session({ token, session }) {
+    async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
-        session.user.name = token.name;
-        session.user.email = token.email;
-        session.user.image = token.picture;
         session.user.role = token.role as string;
-        session.user.subscription_tier = token.subscription_tier as "free" | "basic" | "premium";
+        session.user.subscriptionTier = token.subscriptionTier as string;
       }
-
       return session;
     },
     async jwt({ token, user }) {
-      const dbUser = await prisma.user.findFirst({
-        where: {
-          email: token.email!,
-        },
-      });
-
-      if (!dbUser) {
-        if (user) {
-          token.id = user?.id;
-        }
-        return token;
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+        token.subscriptionTier = user.subscriptionTier;
       }
-
-      return {
-        id: dbUser.id,
-        name: dbUser.name,
-        email: dbUser.email,
-        picture: dbUser.image,
-        role: dbUser.role,
-        subscription_tier: dbUser.subscription_tier,
-      };
+      return token;
     },
   },
-}; 
+};
+
+export async function getUserById(id: string): Promise<User | null> {
+  return await prismaClient.user.findUnique({
+    where: { id },
+  });
+}
+
+export async function getUserByEmail(email: string): Promise<User | null> {
+  return await prismaClient.user.findUnique({
+    where: { email },
+  });
+}
+
+export async function createUser(data: {
+  email: string;
+  password: string;
+  name?: string;
+  image?: string;
+}): Promise<User> {
+  const hashedPassword = await bcrypt.hash(data.password, 10);
+
+  return await prismaClient.user.create({
+    data: {
+      ...data,
+      password: hashedPassword,
+      role: "user",
+      subscriptionTier: "free",
+    },
+  });
+}
+
+export async function updateUser(
+  id: string,
+  data: {
+    name?: string;
+    email?: string;
+    image?: string;
+    role?: string;
+    subscriptionTier?: string;
+  }
+): Promise<User> {
+  return await prismaClient.user.update({
+    where: { id },
+    data,
+  });
+}
+
+export async function deleteUser(id: string): Promise<User> {
+  return await prismaClient.user.delete({
+    where: { id },
+  });
+} 

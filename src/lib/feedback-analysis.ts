@@ -1,145 +1,141 @@
-import { prisma } from './db';
-import { AgentFeedback } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import prismaClient from './db';
+import { AgentFeedback } from './schema';
 import { createNotification } from './notifications';
 
-interface SentimentAnalysis {
+export interface SentimentAnalysis {
   score: number;
   label: 'positive' | 'negative' | 'neutral';
+  confidence: number;
 }
 
-interface FeedbackAnalysis {
-  totalFeedbacks: number;
-  averageRating: number;
-  sentimentScore: number;
-  positiveFeedbacks: number;
-  negativeFeedbacks: number;
-  neutralFeedbacks: number;
+export interface FeedbackAnalysis {
+  sentiment: {
+    positive: number;
+    negative: number;
+    neutral: number;
+    average: number;
+  };
   categories: Record<string, number>;
-  recentTrends: {
-    rating: number;
+  trends: {
     sentiment: number;
+    volume: number;
   };
 }
 
 export async function analyzeSentiment(text: string): Promise<SentimentAnalysis> {
-  // Simple sentiment analysis based on keyword matching
+  // Simple sentiment analysis implementation
   const positiveWords = ['good', 'great', 'excellent', 'amazing', 'love', 'best', 'perfect', 'awesome'];
   const negativeWords = ['bad', 'poor', 'terrible', 'awful', 'hate', 'worst', 'useless', 'disappointing'];
-  
+
   const words = text.toLowerCase().split(/\s+/);
-  let score = 0;
-  
+  let positiveCount = 0;
+  let negativeCount = 0;
+
   words.forEach(word => {
-    if (positiveWords.includes(word)) score += 1;
-    if (negativeWords.includes(word)) score -= 1;
+    if (positiveWords.includes(word)) positiveCount++;
+    if (negativeWords.includes(word)) negativeCount++;
   });
-  
-  const normalizedScore = words.length > 0 ? score / words.length : 0;
-  
+
+  const total = words.length;
+  const score = (positiveCount - negativeCount) / total;
+  const confidence = Math.abs(score);
+
   return {
-    score: normalizedScore,
-    label: normalizedScore > 0.1 ? 'positive' : normalizedScore < -0.1 ? 'negative' : 'neutral'
+    score,
+    label: score > 0.1 ? 'positive' : score < -0.1 ? 'negative' : 'neutral',
+    confidence,
   };
 }
 
 export async function categorizeFeedback(text: string): Promise<Record<string, number>> {
   const categories = {
-    performance: ['fast', 'slow', 'speed', 'performance', 'efficient', 'lag', 'response'],
-    usability: ['easy', 'hard', 'intuitive', 'complicated', 'user-friendly', 'interface'],
-    reliability: ['stable', 'crash', 'error', 'bug', 'reliable', 'unstable'],
-    features: ['feature', 'functionality', 'capability', 'option', 'tool'],
-    support: ['support', 'help', 'assistance', 'documentation', 'guide'],
-    documentation: ['documentation', 'guide', 'manual', 'tutorial', 'example']
+    performance: ['slow', 'fast', 'performance', 'speed', 'efficient', 'lag', 'responsive'],
+    reliability: ['stable', 'reliable', 'crash', 'error', 'bug', 'issue', 'problem'],
+    usability: ['easy', 'difficult', 'intuitive', 'complicated', 'user-friendly', 'confusing'],
+    features: ['feature', 'functionality', 'capability', 'option', 'tool', 'missing'],
+    support: ['support', 'help', 'documentation', 'guide', 'tutorial', 'assistance'],
   };
 
   const words = text.toLowerCase().split(/\s+/);
-  const result: Record<string, number> = {};
+  const scores: Record<string, number> = {};
 
   Object.entries(categories).forEach(([category, keywords]) => {
-    result[category] = keywords.filter(keyword => 
-      words.some(word => word.includes(keyword))
-    ).length;
+    scores[category] = keywords.reduce((count, keyword) => {
+      return count + (words.includes(keyword) ? 1 : 0);
+    }, 0);
   });
 
-  return result;
+  return scores;
 }
 
-export async function analyzeAgentFeedback(deploymentId: string): Promise<FeedbackAnalysis> {
-  const feedbacks = await prisma.agentFeedback.findMany({
-    where: { deploymentId },
-    orderBy: { createdAt: 'desc' }
-  });
-  
-  if (feedbacks.length === 0) {
-    return {
-      totalFeedbacks: 0,
-      averageRating: 0,
-      sentimentScore: 0,
-      positiveFeedbacks: 0,
-      negativeFeedbacks: 0,
-      neutralFeedbacks: 0,
-      categories: {},
-      recentTrends: { rating: 0, sentiment: 0 }
-    };
-  }
-  
-  const sentimentAnalyses = await Promise.all(
-    feedbacks.map(f => analyzeSentiment(f.comment || ''))
+export async function analyzeAgentFeedback(
+  feedbacks: AgentFeedback[]
+): Promise<FeedbackAnalysis> {
+  const sentimentScores = await Promise.all(
+    feedbacks.map(async feedback => {
+      if (!feedback.comment) return 0;
+      const analysis = await analyzeSentiment(feedback.comment);
+      return analysis.score;
+    })
   );
-  
-  const categoryAnalyses = await Promise.all(
-    feedbacks.map(f => categorizeFeedback(f.comment || ''))
+
+  const categoryScores = await Promise.all(
+    feedbacks.map(async feedback => {
+      if (!feedback.comment) return {};
+      return await categorizeFeedback(feedback.comment);
+    })
   );
-  
-  const totalSentiment = sentimentAnalyses.reduce((sum, analysis) => sum + analysis.score, 0);
-  const averageSentiment = totalSentiment / feedbacks.length;
-  
-  const sentimentCounts = sentimentAnalyses.reduce((counts, analysis) => {
-    counts[analysis.label]++;
-    return counts;
-  }, { positive: 0, negative: 0, neutral: 0 });
-  
-  const categoryCounts = categoryAnalyses.reduce((counts, analysis) => {
-    Object.entries(analysis).forEach(([category, count]) => {
-      counts[category] = (counts[category] || 0) + count;
-    });
-    return counts;
-  }, {} as Record<string, number>);
-  
-  // Calculate recent trends (last 2 weeks)
-  const twoWeeksAgo = new Date();
-  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
-  
-  const recentFeedbacks = feedbacks.filter(f => f.createdAt >= twoWeeksAgo);
-  const olderFeedbacks = feedbacks.filter(f => f.createdAt < twoWeeksAgo);
-  
-  const recentSentiment = recentFeedbacks.length > 0
-    ? recentFeedbacks.reduce((sum, f) => sum + (f.sentimentScore ? Number(f.sentimentScore) : 0), 0) / recentFeedbacks.length
-    : 0;
-  const olderSentiment = olderFeedbacks.length > 0
-    ? olderFeedbacks.reduce((sum, f) => sum + (f.sentimentScore ? Number(f.sentimentScore) : 0), 0) / olderFeedbacks.length
-    : 0;
-  
-  const recentRating = recentFeedbacks.length > 0
-    ? recentFeedbacks.reduce((sum, f) => sum + f.rating, 0) / recentFeedbacks.length
-    : 0;
-  const olderRating = olderFeedbacks.length > 0
-    ? olderFeedbacks.reduce((sum, f) => sum + f.rating, 0) / olderFeedbacks.length
-    : 0;
-  
-  return {
-    totalFeedbacks: feedbacks.length,
-    averageRating: feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length,
-    sentimentScore: averageSentiment,
-    positiveFeedbacks: sentimentCounts.positive,
-    negativeFeedbacks: sentimentCounts.negative,
-    neutralFeedbacks: sentimentCounts.neutral,
-    categories: categoryCounts,
-    recentTrends: {
-      rating: recentRating - olderRating,
-      sentiment: recentSentiment - olderSentiment
-    }
+
+  const sentiment = {
+    positive: sentimentScores.filter(score => score > 0.1).length,
+    negative: sentimentScores.filter(score => score < -0.1).length,
+    neutral: sentimentScores.filter(score => score >= -0.1 && score <= 0.1).length,
+    average: sentimentScores.reduce((sum, score) => sum + score, 0) / sentimentScores.length,
   };
+
+  const categories = categoryScores.reduce((acc, scores) => {
+    Object.entries(scores).forEach(([category, count]) => {
+      acc[category] = (acc[category] || 0) + count;
+    });
+    return acc;
+  }, {} as Record<string, number>);
+
+  const trends = {
+    sentiment: sentiment.average,
+    volume: feedbacks.length,
+  };
+
+  return {
+    sentiment,
+    categories,
+    trends,
+  };
+}
+
+export async function getFeedbackAnalysis(deploymentId: string): Promise<FeedbackAnalysis> {
+  const feedbacks = await prismaClient.agentFeedback.findMany({
+    where: { deploymentId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return await analyzeAgentFeedback(feedbacks);
+}
+
+export async function updateFeedbackAnalysis(
+  feedbackId: string,
+  analysis: {
+    sentimentScore: number;
+    categories: Record<string, number>;
+  }
+): Promise<void> {
+  await prismaClient.agentFeedback.update({
+    where: { id: feedbackId },
+    data: {
+      sentimentScore: analysis.sentimentScore,
+      categories: analysis.categories,
+    },
+  });
 }
 
 export async function analyzeFeedbackTrends(
@@ -149,7 +145,7 @@ export async function analyzeFeedbackTrends(
   sentimentTrend: { date: string; score: number }[];
   categoryTrend: { date: string; categories: { [key: string]: number } }[];
 }> {
-  const feedbacks = await prisma.agentFeedback.findMany({
+  const feedbacks = await prismaClient.agentFeedback.findMany({
     where: {
       agentId,
       ...(timeRange ? {
@@ -201,7 +197,7 @@ export async function generateFeedbackInsights(agentId: string): Promise<{
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const feedbacks = await prisma.agentFeedback.findMany({
+  const feedbacks = await prismaClient.agentFeedback.findMany({
     where: {
       agentId,
       createdAt: {
@@ -260,7 +256,7 @@ export interface FeedbackAnalysis {
 }
 
 export async function analyzeFeedback(agentId: string, timeRange: { start: Date; end: Date }): Promise<FeedbackAnalysis> {
-  const feedback = await prisma.agentFeedback.findMany({
+  const feedback = await prismaClient.agentFeedback.findMany({
     where: {
       agentId,
       createdAt: {
