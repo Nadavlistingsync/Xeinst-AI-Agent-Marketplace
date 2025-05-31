@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getProductById, updateProduct, deleteProduct } from '@/lib/db-helpers';
-import { deleteFileFromS3 } from '@/lib/s3-helpers';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 import prisma from '@/lib/prisma';
+
+const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
 
 export async function PUT(
   request: NextRequest,
@@ -69,12 +72,13 @@ export async function DELETE(
       );
     }
 
-    // Delete the file from S3 if it exists
+    // Delete the file from local storage if it exists
     if (agent.file_url) {
       try {
-        await deleteFileFromS3(agent.file_url);
+        const filePath = join(UPLOAD_DIR, agent.file_url.split('/').pop() || '');
+        await unlink(filePath);
       } catch (error) {
-        console.error('Error deleting file from S3:', error);
+        console.error('Error deleting file:', error);
       }
     }
 

@@ -49,13 +49,13 @@ export async function POST(
 
     // Create notification for the user who provided the feedback
     await createNotification({
-      userId: feedback[0].user_id,
+      userId: feedback[0].userId,
       type: 'feedback_received',
       title: 'Feedback Response Received',
       message: `The creator has responded to your feedback.`,
       metadata: {
         feedbackId: params.id,
-        agentId: feedback[0].agent_id,
+        agentId: feedback[0].agentId,
       },
     });
 
