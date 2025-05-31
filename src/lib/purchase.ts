@@ -15,66 +15,83 @@ export async function createPurchase(data: {
   productId: string;
   amount: number;
   status?: string;
-  paymentMethod?: string;
-  transactionId?: string;
 }): Promise<Purchase> {
-  const purchase = await prismaClient.purchase.create({
-    data: {
-      ...data,
-      status: data.status || 'pending',
-    },
-  });
-
-  await updateProductDownloadCount(data.productId);
-
-  return purchase;
+  try {
+    return await prismaClient.purchase.create({
+      data: {
+        ...data,
+        status: data.status || 'pending',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error('Error creating purchase:', error);
+    throw new Error('Failed to create purchase');
+  }
 }
 
-export async function updatePurchase(
-  id: string,
-  data: Partial<Purchase>
-): Promise<Purchase> {
-  return await prismaClient.purchase.update({
-    where: { id },
-    data,
-  });
+export async function updatePurchase(id: string, data: Partial<Purchase>): Promise<Purchase> {
+  try {
+    return await prismaClient.purchase.update({
+      where: { id },
+      data: {
+        ...data,
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error('Error updating purchase:', error);
+    throw new Error('Failed to update purchase');
+  }
 }
 
-export async function getPurchases(
-  options: PurchaseOptions = {}
-): Promise<Purchase[]> {
-  const where: Prisma.PurchaseWhereInput = {};
+export async function getPurchases(options: {
+  userId?: string;
+  productId?: string;
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+} = {}): Promise<Purchase[]> {
+  try {
+    const where: Prisma.PurchaseWhereInput = {};
+    
+    if (options.userId) where.userId = options.userId;
+    if (options.productId) where.productId = options.productId;
+    if (options.status) where.status = options.status;
+    if (options.startDate) where.createdAt = { gte: options.startDate };
+    if (options.endDate) where.createdAt = { lte: options.endDate };
 
-  if (options.userId) where.userId = options.userId;
-  if (options.productId) where.productId = options.productId;
-  if (options.status) where.status = options.status;
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
-
-  return await prismaClient.purchase.findMany({
-    where,
-    include: {
-      user: true,
-      product: true,
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+    return await prismaClient.purchase.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+  } catch (error) {
+    console.error('Error getting purchases:', error);
+    throw new Error('Failed to get purchases');
+  }
 }
 
 export async function getPurchase(id: string): Promise<Purchase | null> {
-  return await prismaClient.purchase.findUnique({
-    where: { id },
-    include: {
-      user: true,
-      product: true,
-    },
-  });
+  try {
+    return await prismaClient.purchase.findUnique({
+      where: { id },
+    });
+  } catch (error) {
+    console.error('Error getting purchase:', error);
+    throw new Error('Failed to get purchase');
+  }
 }
 
 export async function deletePurchase(id: string): Promise<void> {
-  await prismaClient.purchase.delete({
-    where: { id },
-  });
+  try {
+    await prismaClient.purchase.delete({
+      where: { id },
+    });
+  } catch (error) {
+    console.error('Error deleting purchase:', error);
+    throw new Error('Failed to delete purchase');
+  }
 }
 
 export async function getUserPurchases(
@@ -127,32 +144,51 @@ export async function getProductPurchases(
   });
 }
 
-export async function getPurchaseStats(productId: string): Promise<{
-  totalPurchases: number;
-  totalRevenue: number;
-  averagePurchaseAmount: number;
-  purchaseDistribution: Record<string, number>;
-}> {
-  const purchases = await prismaClient.purchase.findMany({
-    where: { productId },
-  });
+export async function getPurchaseStats() {
+  try {
+    const purchases = await getPurchases();
 
-  const totalPurchases = purchases.length;
-  const totalRevenue = purchases.reduce((sum, purchase) => sum + purchase.amount, 0);
-  const averagePurchaseAmount = totalRevenue / totalPurchases;
+    const totalPurchases = purchases.length;
+    const totalRevenue = purchases.reduce((sum, purchase) => sum + purchase.amount, 0);
+    const statusDistribution = purchases.reduce((acc, purchase) => {
+      acc[purchase.status] = (acc[purchase.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
 
-  const purchaseDistribution = purchases.reduce((acc, purchase) => {
-    const date = purchase.createdAt.toISOString().split('T')[0];
-    acc[date] = (acc[date] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+    return {
+      totalPurchases,
+      totalRevenue,
+      statusDistribution,
+      recentPurchases: purchases.slice(0, 5),
+    };
+  } catch (error) {
+    console.error('Error getting purchase stats:', error);
+    throw new Error('Failed to get purchase stats');
+  }
+}
 
-  return {
-    totalPurchases,
-    totalRevenue,
-    averagePurchaseAmount,
-    purchaseDistribution,
-  };
+export async function getPurchaseHistory() {
+  try {
+    const purchases = await getPurchases();
+
+    const monthlyPurchases = purchases.reduce((acc, purchase) => {
+      const month = purchase.createdAt.toISOString().slice(0, 7);
+      if (!acc[month]) {
+        acc[month] = { total: 0, revenue: 0 };
+      }
+      acc[month].total += 1;
+      acc[month].revenue += purchase.amount;
+      return acc;
+    }, {} as Record<string, { total: number; revenue: number }>);
+
+    return {
+      monthlyPurchases,
+      recentPurchases: purchases.slice(0, 10),
+    };
+  } catch (error) {
+    console.error('Error getting purchase history:', error);
+    throw new Error('Failed to get purchase history');
+  }
 }
 
 export async function updateProductDownloadCount(

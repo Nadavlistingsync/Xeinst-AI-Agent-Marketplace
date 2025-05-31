@@ -1,9 +1,9 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { compare, hash } from "bcrypt";
 import prismaClient from "./db";
 import { User } from "./schema";
-import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prismaClient),
@@ -11,8 +11,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
+    signIn: "/login",
   },
   providers: [
     CredentialsProvider({
@@ -23,7 +22,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials");
+          return null;
         }
 
         const user = await prismaClient.user.findUnique({
@@ -32,17 +31,14 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        if (!user || !user.password) {
-          throw new Error("Invalid credentials");
+        if (!user) {
+          return null;
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        const isPasswordValid = await compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
-          throw new Error("Invalid credentials");
+          return null;
         }
 
         return {
@@ -57,21 +53,39 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async session({ session, token }) {
+    async session({ token, session }) {
       if (token) {
         session.user.id = token.id as string;
+        session.user.name = token.name as string | null;
+        session.user.email = token.email as string;
+        session.user.image = token.picture as string | null;
         session.user.role = token.role as string;
-        session.user.subscriptionTier = token.subscriptionTier as string;
+        session.user.subscriptionTier = token.subscriptionTier as 'free' | 'basic' | 'premium';
       }
       return session;
     },
     async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.subscriptionTier = user.subscriptionTier;
+      const dbUser = await prismaClient.user.findFirst({
+        where: {
+          email: token.email!,
+        },
+      });
+
+      if (!dbUser) {
+        if (user) {
+          token.id = user.id;
+        }
+        return token;
       }
-      return token;
+
+      return {
+        id: dbUser.id,
+        name: dbUser.name,
+        email: dbUser.email,
+        picture: dbUser.image,
+        role: dbUser.role,
+        subscriptionTier: dbUser.subscriptionTier,
+      };
     },
   },
 };
@@ -79,12 +93,34 @@ export const authOptions: NextAuthOptions = {
 export async function getUserById(id: string): Promise<User | null> {
   return await prismaClient.user.findUnique({
     where: { id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      role: true,
+      subscriptionTier: true,
+      emailVerified: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   return await prismaClient.user.findUnique({
     where: { email },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      role: true,
+      subscriptionTier: true,
+      emailVerified: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 }
 
@@ -94,7 +130,7 @@ export async function createUser(data: {
   name?: string;
   image?: string;
 }): Promise<User> {
-  const hashedPassword = await bcrypt.hash(data.password, 10);
+  const hashedPassword = await hash(data.password, 10);
 
   return await prismaClient.user.create({
     data: {
@@ -102,6 +138,18 @@ export async function createUser(data: {
       password: hashedPassword,
       role: "user",
       subscriptionTier: "free",
+      emailVerified: null,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      role: true,
+      subscriptionTier: true,
+      emailVerified: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 }
@@ -113,17 +161,39 @@ export async function updateUser(
     email?: string;
     image?: string;
     role?: string;
-    subscriptionTier?: string;
+    subscriptionTier?: 'free' | 'basic' | 'premium';
   }
 ): Promise<User> {
   return await prismaClient.user.update({
     where: { id },
     data,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      role: true,
+      subscriptionTier: true,
+      emailVerified: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 }
 
 export async function deleteUser(id: string): Promise<User> {
   return await prismaClient.user.delete({
     where: { id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      role: true,
+      subscriptionTier: true,
+      emailVerified: true,
+      createdAt: true,
+      updatedAt: true,
+    },
   });
 } 

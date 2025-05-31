@@ -1,34 +1,32 @@
-import { prisma } from './db';
+import prismaClient from './db';
 import { Notification } from '@prisma/client';
 
 export type NotificationType = 
-  | 'feedback_received'
-  | 'negative_feedback'
-  | 'agent_needs_review'
-  | 'feedback_trend_alert';
+  | 'feedback_alert'
+  | 'rating_alert'
+  | 'sentiment_alert'
+  | 'rating_trend_alert'
+  | 'agent_improvement_needed'
+  | 'system_alert'
+  | 'user_alert';
 
 export interface CreateNotificationParams {
-  type: string;
+  type: NotificationType;
   userId: string;
   title: string;
   message: string;
   metadata?: Record<string, any>;
 }
 
-export async function createNotification(data: {
-  userId: string;
-  type: string;
-  title: string;
-  message: string;
-  metadata?: Record<string, any>;
-}): Promise<Notification> {
-  return prisma.notification.create({
+export async function createNotification(data: CreateNotificationParams): Promise<Notification> {
+  return prismaClient.notification.create({
     data: {
       userId: data.userId,
       type: data.type,
       title: data.title,
       message: data.message,
       metadata: data.metadata || {},
+      read: false,
     },
   });
 }
@@ -42,7 +40,7 @@ export async function getNotifications(
 ): Promise<Notification[]> {
   const { unreadOnly, limit } = options;
 
-  return prisma.notification.findMany({
+  return prismaClient.notification.findMany({
     where: {
       userId,
       ...(unreadOnly ? { read: false } : {}),
@@ -57,7 +55,7 @@ export async function getNotifications(
 export async function markNotificationAsRead(
   id: string
 ): Promise<Notification> {
-  return prisma.notification.update({
+  return prismaClient.notification.update({
     where: { id },
     data: { read: true },
   });
@@ -66,7 +64,7 @@ export async function markNotificationAsRead(
 export async function markAllNotificationsAsRead(
   userId: string
 ): Promise<void> {
-  await prisma.notification.updateMany({
+  await prismaClient.notification.updateMany({
     where: {
       userId,
       read: false,
@@ -76,7 +74,7 @@ export async function markAllNotificationsAsRead(
 }
 
 export async function deleteNotification(id: string): Promise<Notification> {
-  return prisma.notification.delete({
+  return prismaClient.notification.delete({
     where: { id },
   });
 }
@@ -84,7 +82,7 @@ export async function deleteNotification(id: string): Promise<Notification> {
 export async function getUnreadNotificationCount(
   userId: string
 ): Promise<number> {
-  return prisma.notification.count({
+  return prismaClient.notification.count({
     where: {
       userId,
       read: false,

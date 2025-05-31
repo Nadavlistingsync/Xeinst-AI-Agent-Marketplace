@@ -11,75 +11,94 @@ export interface ReviewOptions {
   endDate?: Date;
 }
 
-export async function createReview(data: {
+export interface CreateReviewInput {
   productId: string;
   userId: string;
   rating: number;
   comment?: string;
-}): Promise<Review> {
-  const review = await prismaClient.review.create({
-    data,
-  });
+}
 
-  await updateProductRating(data.productId);
-
-  return review;
+export async function createReview(data: CreateReviewInput): Promise<Review> {
+  try {
+    return await prismaClient.review.create({
+      data: {
+        productId: data.productId,
+        userId: data.userId,
+        rating: data.rating,
+        comment: data.comment,
+        createdAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error('Error creating review:', error);
+    throw new Error('Failed to create review');
+  }
 }
 
 export async function updateReview(
   id: string,
-  data: Partial<Review>
-): Promise<Review> {
-  const review = await prismaClient.review.update({
-    where: { id },
-    data,
-  });
-
-  if (data.rating) {
-    await updateProductRating(review.productId);
+  data: {
+    rating?: number;
+    comment?: string;
   }
-
-  return review;
+): Promise<Review> {
+  try {
+    return await prismaClient.review.update({
+      where: { id },
+      data,
+    });
+  } catch (error) {
+    console.error('Error updating review:', error);
+    throw new Error('Failed to update review');
+  }
 }
 
-export async function getReviews(
-  options: ReviewOptions = {}
-): Promise<Review[]> {
-  const where: Prisma.ReviewWhereInput = {};
+export async function getReviews(options: {
+  userId?: string;
+  productId?: string;
+  rating?: number;
+  startDate?: Date;
+  endDate?: Date;
+} = {}): Promise<Review[]> {
+  try {
+    const where: Prisma.ReviewWhereInput = {};
+    
+    if (options.userId) where.userId = options.userId;
+    if (options.productId) where.productId = options.productId;
+    if (options.rating) where.rating = options.rating;
+    if (options.startDate) where.createdAt = { gte: options.startDate };
+    if (options.endDate) where.createdAt = { lte: options.endDate };
 
-  if (options.productId) where.productId = options.productId;
-  if (options.userId) where.userId = options.userId;
-  if (options.minRating) where.rating = { gte: options.minRating };
-  if (options.maxRating) where.rating = { lte: options.maxRating };
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
-
-  return await prismaClient.review.findMany({
-    where,
-    include: {
-      user: true,
-      product: true,
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+    return await prismaClient.review.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+  } catch (error) {
+    console.error('Error getting reviews:', error);
+    throw new Error('Failed to get reviews');
+  }
 }
 
 export async function getReview(id: string): Promise<Review | null> {
-  return await prismaClient.review.findUnique({
-    where: { id },
-    include: {
-      user: true,
-      product: true,
-    },
-  });
+  try {
+    return await prismaClient.review.findUnique({
+      where: { id },
+    });
+  } catch (error) {
+    console.error('Error getting review:', error);
+    throw new Error('Failed to get review');
+  }
 }
 
 export async function deleteReview(id: string): Promise<void> {
-  const review = await prismaClient.review.delete({
-    where: { id },
-  });
-
-  await updateProductRating(review.productId);
+  try {
+    await prismaClient.review.delete({
+      where: { id },
+    });
+  } catch (error) {
+    console.error('Error deleting review:', error);
+    throw new Error('Failed to delete review');
+  }
 }
 
 export async function updateProductRating(productId: string): Promise<void> {
@@ -142,27 +161,49 @@ export async function getProductReviews(
   });
 }
 
-export async function getReviewStats(productId: string): Promise<{
-  totalReviews: number;
-  averageRating: number;
-  ratingDistribution: Record<number, number>;
-}> {
-  const reviews = await prismaClient.review.findMany({
-    where: { productId },
-  });
+export async function getReviewStats(productId: string) {
+  try {
+    const reviews = await getReviews({ productId });
 
-  const totalReviews = reviews.length;
-  const averageRating =
-    reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews;
+    const totalReviews = reviews.length;
+    const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews;
+    const ratingDistribution = reviews.reduce((acc, review) => {
+      acc[review.rating] = (acc[review.rating] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>);
 
-  const ratingDistribution = reviews.reduce((acc, review) => {
-    acc[review.rating] = (acc[review.rating] || 0) + 1;
-    return acc;
-  }, {} as Record<number, number>);
+    return {
+      totalReviews,
+      averageRating,
+      ratingDistribution,
+      recentReviews: reviews.slice(0, 5),
+    };
+  } catch (error) {
+    console.error('Error getting review stats:', error);
+    throw new Error('Failed to get review stats');
+  }
+}
 
-  return {
-    totalReviews,
-    averageRating,
-    ratingDistribution,
-  };
+export async function getReviewHistory(productId: string) {
+  try {
+    const reviews = await getReviews({ productId });
+
+    const monthlyReviews = reviews.reduce((acc, review) => {
+      const month = review.createdAt.toISOString().slice(0, 7);
+      if (!acc[month]) {
+        acc[month] = { total: 0, averageRating: 0 };
+      }
+      acc[month].total += 1;
+      acc[month].averageRating = (acc[month].averageRating * (acc[month].total - 1) + review.rating) / acc[month].total;
+      return acc;
+    }, {} as Record<string, { total: number; averageRating: number }>);
+
+    return {
+      monthlyReviews,
+      recentReviews: reviews.slice(0, 10),
+    };
+  } catch (error) {
+    console.error('Error getting review history:', error);
+    throw new Error('Failed to get review history');
+  }
 } 

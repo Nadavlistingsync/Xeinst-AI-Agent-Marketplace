@@ -2,69 +2,137 @@ import { Prisma } from '@prisma/client';
 import prismaClient from './db';
 import { Category } from './schema';
 
-export interface CategoryOptions {
-  parentId?: string;
-  query?: string;
-}
-
 export async function createCategory(data: {
   name: string;
-  description?: string;
+  description: string;
   parentId?: string;
-  imageUrl?: string;
 }): Promise<Category> {
-  return await prismaClient.category.create({
-    data,
-  });
-}
-
-export async function updateCategory(
-  id: string,
-  data: Partial<Category>
-): Promise<Category> {
-  return await prismaClient.category.update({
-    where: { id },
-    data,
-  });
-}
-
-export async function getCategories(
-  options: CategoryOptions = {}
-): Promise<Category[]> {
-  const where: Prisma.CategoryWhereInput = {};
-
-  if (options.parentId) where.parentId = options.parentId;
-  if (options.query) {
-    where.OR = [
-      { name: { contains: options.query, mode: 'insensitive' } },
-      { description: { contains: options.query, mode: 'insensitive' } },
-    ];
+  try {
+    return await prismaClient.category.create({
+      data: {
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error('Error creating category:', error);
+    throw new Error('Failed to create category');
   }
+}
 
-  return await prismaClient.category.findMany({
-    where,
-    include: {
-      parent: true,
-      children: true,
-    },
-    orderBy: { name: 'asc' },
-  });
+export async function updateCategory(id: string, data: Partial<Category>): Promise<Category> {
+  try {
+    return await prismaClient.category.update({
+      where: { id },
+      data: {
+        ...data,
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error('Error updating category:', error);
+    throw new Error('Failed to update category');
+  }
+}
+
+export async function getCategories(options: {
+  parentId?: string;
+  search?: string;
+} = {}): Promise<Category[]> {
+  try {
+    const where: Prisma.CategoryWhereInput = {};
+    
+    if (options.parentId) where.parentId = options.parentId;
+    if (options.search) {
+      where.OR = [
+        { name: { contains: options.search, mode: 'insensitive' } },
+        { description: { contains: options.search, mode: 'insensitive' } },
+      ];
+    }
+
+    return await prismaClient.category.findMany({
+      where,
+      orderBy: { name: 'asc' },
+    });
+  } catch (error) {
+    console.error('Error getting categories:', error);
+    throw new Error('Failed to get categories');
+  }
 }
 
 export async function getCategory(id: string): Promise<Category | null> {
-  return await prismaClient.category.findUnique({
-    where: { id },
-    include: {
-      parent: true,
-      children: true,
-    },
-  });
+  try {
+    return await prismaClient.category.findUnique({
+      where: { id },
+    });
+  } catch (error) {
+    console.error('Error getting category:', error);
+    throw new Error('Failed to get category');
+  }
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  await prismaClient.category.delete({
-    where: { id },
-  });
+  try {
+    await prismaClient.category.delete({
+      where: { id },
+    });
+  } catch (error) {
+    console.error('Error deleting category:', error);
+    throw new Error('Failed to delete category');
+  }
+}
+
+export async function getCategoryStats(categoryId: string) {
+  try {
+    const products = await prismaClient.product.findMany({
+      where: { category: categoryId },
+    });
+
+    const totalProducts = products.length;
+    const totalValue = products.reduce((sum, product) => sum + product.price, 0);
+    const averagePrice = totalProducts > 0 ? totalValue / totalProducts : 0;
+
+    return {
+      totalProducts,
+      totalValue,
+      averagePrice,
+      recentProducts: products.slice(0, 5),
+    };
+  } catch (error) {
+    console.error('Error getting category stats:', error);
+    throw new Error('Failed to get category stats');
+  }
+}
+
+export async function getCategoryHierarchy() {
+  try {
+    const categories = await getCategories();
+    const hierarchy: Record<string, { category: Category; children: Category[] }> = {};
+
+    // First, create entries for all categories
+    categories.forEach(category => {
+      hierarchy[category.id] = {
+        category,
+        children: [],
+      };
+    });
+
+    // Then, build the hierarchy
+    categories.forEach(category => {
+      if (category.parentId && hierarchy[category.parentId]) {
+        hierarchy[category.parentId].children.push(category);
+      }
+    });
+
+    // Return only root categories with their children
+    return Object.values(hierarchy).filter(
+      ({ category }) => !category.parentId
+    );
+  } catch (error) {
+    console.error('Error getting category hierarchy:', error);
+    throw new Error('Failed to get category hierarchy');
+  }
 }
 
 export async function getCategoryProducts(
@@ -84,58 +152,6 @@ export async function getCategoryProducts(
     where,
     orderBy: { createdAt: 'desc' },
     take: options.limit,
-  });
-}
-
-export async function getCategoryStats(categoryId: string): Promise<{
-  totalProducts: number;
-  averagePrice: number;
-  totalSales: number;
-  productDistribution: Record<string, number>;
-}> {
-  const products = await prismaClient.product.findMany({
-    where: { category: categoryId },
-  });
-
-  const totalProducts = products.length;
-  const averagePrice =
-    products.reduce((sum, product) => sum + product.price, 0) / totalProducts;
-
-  const purchases = await prismaClient.purchase.findMany({
-    where: {
-      product: {
-        category: categoryId,
-      },
-    },
-  });
-
-  const totalSales = purchases.reduce((sum, purchase) => sum + purchase.amount, 0);
-
-  const productDistribution = products.reduce((acc, product) => {
-    const date = product.createdAt.toISOString().split('T')[0];
-    acc[date] = (acc[date] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  return {
-    totalProducts,
-    averagePrice,
-    totalSales,
-    productDistribution,
-  };
-}
-
-export async function getCategoryTree(): Promise<Category[]> {
-  return await prismaClient.category.findMany({
-    where: { parentId: null },
-    include: {
-      children: {
-        include: {
-          children: true,
-        },
-      },
-    },
-    orderBy: { name: 'asc' },
   });
 }
 

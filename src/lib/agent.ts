@@ -15,119 +15,155 @@ export interface AgentOptions {
 export async function createAgent(data: {
   name: string;
   description: string;
-  longDescription?: string;
-  documentation?: string;
-  category: string;
-  framework: string;
-  requirements: string[];
-  source: string;
-  version: string;
-  createdBy: string;
-  accessLevel: string;
-  licenseType: string;
-  environment: string;
-  fileUrl: string;
-  imageUrl?: string;
+  type: string;
+  capabilities: string[];
+  configuration: Record<string, any>;
 }): Promise<Agent> {
-  return await prismaClient.agent.create({
-    data: {
-      ...data,
-      status: 'active',
-    },
-  });
-}
-
-export async function updateAgent(
-  id: string,
-  data: Partial<Agent>
-): Promise<Agent> {
-  return await prismaClient.agent.update({
-    where: { id },
-    data,
-  });
-}
-
-export async function getAgents(
-  options: AgentOptions = {}
-): Promise<Agent[]> {
-  const where: Prisma.AgentWhereInput = {};
-
-  if (options.userId) where.createdBy = options.userId;
-  if (options.category) where.category = options.category;
-  if (options.status) where.status = options.status;
-  if (options.framework) where.framework = options.framework;
-  if (options.accessLevel) where.accessLevel = options.accessLevel;
-  if (options.licenseType) where.licenseType = options.licenseType;
-  if (options.query) {
-    where.OR = [
-      { name: { contains: options.query, mode: 'insensitive' } },
-      { description: { contains: options.query, mode: 'insensitive' } },
-    ];
+  try {
+    return await prismaClient.agent.create({
+      data: {
+        ...data,
+        status: 'active',
+      },
+    });
+  } catch (error) {
+    console.error('Error creating agent:', error);
+    throw new Error('Failed to create agent');
   }
+}
 
-  return await prismaClient.agent.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-  });
+export async function updateAgent(id: string, data: Partial<Agent>): Promise<Agent> {
+  try {
+    return await prismaClient.agent.update({
+      where: { id },
+      data: {
+        ...data,
+        updatedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error('Error updating agent:', error);
+    throw new Error('Failed to update agent');
+  }
+}
+
+export async function getAgents(options: {
+  type?: string;
+  status?: string;
+} = {}): Promise<Agent[]> {
+  try {
+    const where: Prisma.AgentWhereInput = {};
+    
+    if (options.type) where.type = options.type;
+    if (options.status) where.status = options.status;
+
+    return await prismaClient.agent.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+  } catch (error) {
+    console.error('Error getting agents:', error);
+    throw new Error('Failed to get agents');
+  }
 }
 
 export async function getAgent(id: string): Promise<Agent | null> {
-  return await prismaClient.agent.findUnique({
-    where: { id },
-  });
+  try {
+    return await prismaClient.agent.findUnique({
+      where: { id },
+    });
+  } catch (error) {
+    console.error('Error getting agent:', error);
+    throw new Error('Failed to get agent');
+  }
 }
 
 export async function deleteAgent(id: string): Promise<void> {
-  await prismaClient.agent.delete({
-    where: { id },
-  });
+  try {
+    await prismaClient.agent.delete({
+      where: { id },
+    });
+  } catch (error) {
+    console.error('Error deleting agent:', error);
+    throw new Error('Failed to delete agent');
+  }
 }
 
-export async function getAgentDeployments(
-  agentId: string,
-  options: {
-    status?: string;
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const where: Prisma.DeploymentWhereInput = { agentId };
-
-  if (options.status) where.status = options.status;
-  if (options.startDate) where.startDate = { gte: options.startDate };
-  if (options.endDate) where.endDate = { lte: options.endDate };
-
-  return await prismaClient.deployment.findMany({
-    where,
-    orderBy: { startDate: 'desc' },
-    take: options.limit,
-  });
+export async function getAgentDeployments(agentId: string) {
+  try {
+    return await prismaClient.deployment.findMany({
+      where: { agentId },
+      orderBy: { startDate: 'desc' },
+    });
+  } catch (error) {
+    console.error('Error getting agent deployments:', error);
+    throw new Error('Failed to get agent deployments');
+  }
 }
 
-export async function getAgentMetrics(
-  agentId: string,
-  options: {
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const deployments = await getAgentDeployments(agentId, options);
-  const deploymentIds = deployments.map(d => d.id);
+export async function getAgentMetrics(agentId: string) {
+  try {
+    const deployments = await getAgentDeployments(agentId);
+    const deploymentIds = deployments.map(d => d.id);
 
-  const where: Prisma.AgentMetricsWhereInput = {
-    deploymentId: { in: deploymentIds },
-  };
+    const metrics = await prismaClient.agentMetrics.findMany({
+      where: {
+        agentId: { in: deploymentIds },
+      },
+    });
 
-  if (options.startDate) where.lastUpdated = { gte: options.startDate };
-  if (options.endDate) where.lastUpdated = { lte: options.endDate };
+    return metrics;
+  } catch (error) {
+    console.error('Error getting agent metrics:', error);
+    throw new Error('Failed to get agent metrics');
+  }
+}
 
-  return await prismaClient.agentMetrics.findMany({
-    where,
-    orderBy: { lastUpdated: 'desc' },
-    take: options.limit,
-  });
+export async function getAgentLogs(agentId: string) {
+  try {
+    const deployments = await getAgentDeployments(agentId);
+    const deploymentIds = deployments.map(d => d.id);
+
+    return await prismaClient.agentLog.findMany({
+      where: {
+        agentId: { in: deploymentIds },
+      },
+      orderBy: { timestamp: 'desc' },
+    });
+  } catch (error) {
+    console.error('Error getting agent logs:', error);
+    throw new Error('Failed to get agent logs');
+  }
+}
+
+export async function getAgentAnalytics(agentId: string) {
+  try {
+    const [deployments, metrics, logs] = await Promise.all([
+      getAgentDeployments(agentId),
+      getAgentMetrics(agentId),
+      getAgentLogs(agentId),
+    ]);
+
+    return {
+      deployments,
+      metrics,
+      logs,
+      summary: {
+        totalDeployments: deployments.length,
+        activeDeployments: deployments.filter(d => d.status === 'active').length,
+        totalRequests: metrics.reduce((sum, m) => sum + m.totalRequests, 0),
+        averageResponseTime: metrics.reduce((sum, m) => sum + m.averageResponseTime, 0) / metrics.length || 0,
+        errorRate: metrics.reduce((sum, m) => sum + m.errorRate, 0) / metrics.length || 0,
+        successRate: metrics.reduce((sum, m) => sum + m.successRate, 0) / metrics.length || 0,
+        activeUsers: metrics.reduce((sum, m) => sum + m.activeUsers, 0),
+        cpuUsage: metrics.reduce((sum, m) => sum + m.cpuUsage, 0) / metrics.length || 0,
+        memoryUsage: metrics.reduce((sum, m) => sum + m.memoryUsage, 0) / metrics.length || 0,
+      },
+    };
+  } catch (error) {
+    console.error('Error getting agent analytics:', error);
+    throw new Error('Failed to get agent analytics');
+  }
 }
 
 export async function getAgentFeedbacks(
@@ -144,33 +180,6 @@ export async function getAgentFeedbacks(
   if (options.endDate) where.createdAt = { lte: options.endDate };
 
   return await prismaClient.agentFeedback.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: options.limit,
-  });
-}
-
-export async function getAgentLogs(
-  agentId: string,
-  options: {
-    level?: string;
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const deployments = await getAgentDeployments(agentId, options);
-  const deploymentIds = deployments.map(d => d.id);
-
-  const where: Prisma.AgentLogWhereInput = {
-    deploymentId: { in: deploymentIds },
-  };
-
-  if (options.level) where.level = options.level;
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
-
-  return await prismaClient.agentLog.findMany({
     where,
     orderBy: { createdAt: 'desc' },
     take: options.limit,

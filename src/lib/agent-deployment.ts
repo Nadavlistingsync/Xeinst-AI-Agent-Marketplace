@@ -3,7 +3,7 @@ import { prisma } from "./db";
 import { Deployment, AgentLog, AgentMetrics, AgentFeedback, Agent } from "@prisma/client";
 import { Deployment as DeploymentSchema } from './schema';
 import JSZip from 'jszip';
-import { logAgentRequest } from './agent-monitoring';
+import { logAgentEvent } from './agent-monitoring';
 import { Prisma } from '@prisma/client';
 import prismaClient from './db';
 
@@ -12,10 +12,10 @@ const prismaClient = prisma;
 export const agentValidationSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().optional(),
-  model_type: z.string(),
+  modelType: z.string(),
   framework: z.string(),
   requirements: z.string().optional(),
-  file_url: z.string().url(),
+  fileUrl: z.string().url(),
   source: z.string(),
   version: z.string(),
 });
@@ -44,15 +44,21 @@ export async function deployAgent(agentId: string, userId: string) {
     // Create deployment record
     const deployment = await prismaClient.deployment.create({
       data: {
-        agentId,
-        userId,
+        name: 'New Deployment',
+        description: 'Initial deployment',
+        framework: 'nodejs',
+        requirements: null,
+        source: 'local',
+        version: '1.0.0',
+        deployedBy: userId,
         status: 'pending',
-        startedAt: new Date()
+        startDate: new Date(),
+        config: {},
       }
     });
 
     // Log deployment start
-    await logAgentRequest(agentId, {
+    await logAgentEvent({
       level: 'info',
       message: 'Deployment started',
       metadata: { deploymentId: deployment.id }
@@ -63,7 +69,6 @@ export async function deployAgent(agentId: string, userId: string) {
       where: { id: agentId },
       data: {
         status: 'deploying',
-        lastDeployedAt: new Date()
       }
     });
 
@@ -75,7 +80,7 @@ export async function deployAgent(agentId: string, userId: string) {
       where: { id: deployment.id },
       data: {
         status: 'completed',
-        completedAt: new Date()
+        endDate: new Date()
       }
     });
 
@@ -84,12 +89,11 @@ export async function deployAgent(agentId: string, userId: string) {
       where: { id: agentId },
       data: {
         status: 'active',
-        lastDeployedAt: new Date()
       }
     });
 
     // Log successful deployment
-    await logAgentRequest(agentId, {
+    await logAgentEvent({
       level: 'info',
       message: 'Deployment completed',
       metadata: { deploymentId: deployment.id }
@@ -98,10 +102,10 @@ export async function deployAgent(agentId: string, userId: string) {
     return deployment;
   } catch (error) {
     // Log deployment failure
-    await logAgentRequest(agentId, {
+    await logAgentEvent({
       level: 'error',
       message: 'Deployment failed',
-      metadata: { error: error.message }
+      metadata: { error: error instanceof Error ? error.message : 'Unknown error' }
     });
 
     // Update agent status
@@ -119,7 +123,7 @@ export async function deployAgent(agentId: string, userId: string) {
 export async function getAgentDeployments(agentId: string) {
   return prismaClient.deployment.findMany({
     where: { agentId },
-    orderBy: { startedAt: 'desc' },
+    orderBy: { startDate: 'desc' },
     include: {
       user: {
         select: {
@@ -162,11 +166,11 @@ export async function cancelDeployment(deploymentId: string) {
     where: { id: deploymentId },
     data: {
       status: 'cancelled',
-      completedAt: new Date()
+      endDate: new Date()
     }
   });
 
-  await logAgentRequest(deployment.agentId, {
+  await logAgentEvent({
     level: 'info',
     message: 'Deployment cancelled',
     metadata: { deploymentId }
@@ -180,7 +184,7 @@ export async function getActiveDeployments() {
     where: {
       status: 'pending'
     },
-    orderBy: { startedAt: 'desc' },
+    orderBy: { startDate: 'desc' },
     include: {
       user: {
         select: {
@@ -201,7 +205,7 @@ export async function getActiveDeployments() {
 export async function getDeploymentHistory(agentId: string, limit = 10) {
   return prismaClient.deployment.findMany({
     where: { agentId },
-    orderBy: { startedAt: 'desc' },
+    orderBy: { startDate: 'desc' },
     take: limit,
     include: {
       user: {
@@ -358,44 +362,46 @@ export interface DeploymentOptions {
   licenseType?: string;
 }
 
-export async function createDeployment(data: {
-  name: string;
-  description: string;
-  framework: string;
-  requirements: string[];
-  source: string;
-  version: string;
-  deployedBy: string;
-  accessLevel: string;
-  licenseType: string;
-  environment: string;
-  fileUrl: string;
-}): Promise<Deployment> {
+export async function createDeployment(data: DeploymentSchema): Promise<Deployment> {
   return await prismaClient.deployment.create({
     data: {
-      ...data,
+      name: data.name,
+      description: data.description,
+      framework: data.framework,
+      requirements: data.requirements,
+      source: data.source,
+      version: data.version,
+      deployedBy: data.deployedBy,
+      fileUrl: data.fileUrl,
       status: 'pending',
       startDate: new Date(),
-    },
+      config: data.config || {},
+      accessLevel: data.accessLevel,
+      licenseType: data.licenseType,
+      environment: data.environment,
+    }
+  });
+}
+
+export async function updateDeployment(id: string, data: Partial<DeploymentSchema>): Promise<Deployment> {
+  return await prismaClient.deployment.update({
+    where: { id },
+    data: {
+      ...data,
+      updatedAt: new Date()
+    }
   });
 }
 
 export async function getDeployment(id: string): Promise<Deployment | null> {
-  return prismaClient.deployment.findUnique({
-    where: { id },
-    include: {
-      agent: true,
-      deployedBy: true,
-    },
+  return await prismaClient.deployment.findUnique({
+    where: { id }
   });
 }
 
-export async function getDeployments(
-  options: DeploymentOptions = {}
-): Promise<Deployment[]> {
-  const where: Prisma.DeploymentWhereInput = {};
-
-  if (options.userId) where.deployedBy = options.userId;
+export async function getDeployments(options: DeploymentOptions = {}): Promise<Deployment[]> {
+  const where: any = {};
+  
   if (options.agentId) where.agentId = options.agentId;
   if (options.status) where.status = options.status;
   if (options.startDate) where.startDate = { gte: options.startDate };
@@ -406,133 +412,77 @@ export async function getDeployments(
 
   return await prismaClient.deployment.findMany({
     where,
-    orderBy: { startDate: 'desc' },
+    orderBy: { startDate: 'desc' }
   });
 }
 
-export async function getDeploymentLogs(
-  deploymentId: string,
-  options: {
-    level?: string;
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const where: Prisma.AgentLogWhereInput = { deploymentId };
-
-  if (options.level) where.level = options.level;
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
-
+export async function getDeploymentLogs(deploymentId: string): Promise<AgentLog[]> {
   return await prismaClient.agentLog.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: options.limit,
+    where: { deploymentId },
+    orderBy: { timestamp: 'desc' }
   });
 }
 
-export async function getDeploymentMetrics(
-  deploymentId: string
-): Promise<any | null> {
+export async function getDeploymentMetrics(deploymentId: string): Promise<AgentMetrics | null> {
   return await prismaClient.agentMetrics.findUnique({
+    where: { deploymentId }
+  });
+}
+
+export async function getDeploymentFeedbacks(deploymentId: string): Promise<AgentFeedback[]> {
+  const feedbacks = await prismaClient.agentFeedback.findMany({
     where: { deploymentId },
+    orderBy: { createdAt: 'desc' }
   });
+  // Ensure categories and sentimentScore are correct types
+  return feedbacks.map(fb => ({
+    ...fb,
+    sentimentScore: typeof fb.sentimentScore === 'object' && fb.sentimentScore !== null && 'toNumber' in fb.sentimentScore
+      ? fb.sentimentScore.toNumber()
+      : fb.sentimentScore || 0,
+    categories: Array.isArray(fb.categories)
+      ? fb.categories
+      : typeof fb.categories === 'string'
+        ? [fb.categories]
+        : [],
+  }));
 }
 
-export async function logDeploymentEvent(data: {
-  deploymentId: string;
-  level: string;
-  message: string;
-  metadata?: Record<string, any>;
-}): Promise<void> {
-  await prismaClient.agentLog.create({
+export async function updateDeploymentStatus(id: string, status: string): Promise<Deployment> {
+  return await prismaClient.deployment.update({
+    where: { id },
     data: {
-      ...data,
-      metadata: data.metadata || {},
-    },
+      status,
+      ...(status === 'completed' || status === 'failed' ? { endDate: new Date() } : {})
+    }
   });
 }
 
-export async function updateDeploymentMetrics(
-  deploymentId: string,
-  metrics: {
-    totalRequests: number;
-    averageResponseTime: number;
-    errorRate: number;
-    cpuUsage: number;
-    memoryUsage: number;
+export async function getDeploymentAnalytics(deploymentId: string) {
+  try {
+    const [metrics, logs, feedbacks] = await Promise.all([
+      getDeploymentMetrics(deploymentId),
+      getDeploymentLogs(deploymentId),
+      getDeploymentFeedbacks(deploymentId),
+    ]);
+
+    return {
+      metrics: metrics || {
+        totalRequests: 0,
+        averageResponseTime: 0,
+        errorRate: 0,
+        successRate: 0,
+        activeUsers: 0,
+        cpuUsage: 0,
+        memoryUsage: 0,
+      },
+      logs,
+      feedbacks,
+    };
+  } catch (error) {
+    console.error('Error getting deployment analytics:', error);
+    throw new Error('Failed to get deployment analytics');
   }
-): Promise<void> {
-  await prismaClient.agentMetrics.upsert({
-    where: { deploymentId },
-    create: {
-      deploymentId,
-      ...metrics,
-      lastUpdated: new Date(),
-    },
-    update: {
-      ...metrics,
-      lastUpdated: new Date(),
-    },
-  });
-}
-
-export async function getDeploymentFeedbacks(
-  deploymentId: string,
-  options: {
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const where: Prisma.AgentFeedbackWhereInput = { deploymentId };
-
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
-
-  return await prismaClient.agentFeedback.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: options.limit,
-  });
-}
-
-export async function completeDeployment(id: string): Promise<Deployment> {
-  const deployment = await prismaClient.deployment.update({
-    where: { id },
-    data: {
-      status: "completed",
-      completedAt: new Date(),
-    },
-  });
-
-  await logAgentRequest(deployment.agentId, {
-    level: "info",
-    message: "Deployment completed",
-    metadata: { deploymentId: id },
-  });
-
-  return deployment;
-}
-
-export async function failDeployment(id: string, error: Error): Promise<Deployment> {
-  const deployment = await prismaClient.deployment.update({
-    where: { id },
-    data: {
-      status: "failed",
-      completedAt: new Date(),
-      error: error.message,
-    },
-  });
-
-  await logAgentRequest(deployment.agentId, {
-    level: "error",
-    message: "Deployment failed",
-    metadata: { error: error.message },
-  });
-
-  return deployment;
 }
 
 export async function getDeploymentVersions(deploymentId: string): Promise<any[]> {
@@ -560,19 +510,6 @@ export async function getDeploymentVersion(id: string): Promise<any | null> {
 export async function deleteDeployment(id: string): Promise<void> {
   await prismaClient.deployment.delete({
     where: { id }
-  });
-}
-
-export async function updateDeploymentStatus(
-  id: string,
-  status: string
-): Promise<Deployment> {
-  return await prismaClient.deployment.update({
-    where: { id },
-    data: {
-      status,
-      ...(status === 'completed' && { endDate: new Date() }),
-    },
   });
 }
 
