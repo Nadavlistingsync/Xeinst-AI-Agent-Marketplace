@@ -83,7 +83,7 @@ export function NotificationCenter({ agentId }: NotificationCenterProps) {
 
   useEffect(() => {
     fetchNotifications();
-  }, [toast]);
+  }, [toast, agentId]);
 
   const markAsRead = async (notificationId: string) => {
     try {

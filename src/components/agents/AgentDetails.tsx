@@ -11,8 +11,17 @@ interface AgentDetailsProps {
   agentId: string;
 }
 
+interface Agent {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+  access_level: string;
+  deployed_by: string;
+}
+
 export function AgentDetails({ agentId }: AgentDetailsProps) {
-  const [agent, setAgent] = useState<any>(null);
+  const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchAgent = async () => {

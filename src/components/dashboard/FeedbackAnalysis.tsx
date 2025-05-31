@@ -22,11 +22,7 @@ interface FeedbackTrend {
   date: string;
   averageRating: number;
   feedbackCount: number;
-}
-
-interface SentimentTrend {
-  date: string;
-  score: number;
+  sentimentScore: number;
 }
 
 interface CategoryTrend {
