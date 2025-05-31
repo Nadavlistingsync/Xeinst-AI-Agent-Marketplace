@@ -11,7 +11,13 @@ interface AgentLog {
   agentId: string;
   level: 'info' | 'warning' | 'error';
   message: string;
-  metadata?: Record<string, any>;
+  metadata?: {
+    duration?: number;
+    status?: string;
+    errorCode?: string;
+    stackTrace?: string;
+    [key: string]: unknown;
+  };
   timestamp: Date;
 }
 
@@ -22,20 +28,21 @@ export async function trackAgentRequest(
 ): Promise<void> {
   const now = new Date();
   
+  // Fetch current metrics to calculate new avgResponseTime
+  const currentMetrics = await prisma.agentMetrics.findUnique({
+    where: { agentId },
+    select: { avgResponseTime: true },
+  });
+  const newAvgResponseTime = currentMetrics
+    ? (currentMetrics.avgResponseTime + responseTime) / 2
+    : responseTime;
+
   await prisma.agentMetrics.upsert({
     where: { agentId },
     update: {
       requests: { increment: 1 },
       errors: { increment: success ? 0 : 1 },
-      avgResponseTime: {
-        set: prisma.agentMetrics.findUnique({
-          where: { agentId },
-          select: { avgResponseTime: true },
-        }).then((metrics) => {
-          if (!metrics) return responseTime;
-          return (metrics.avgResponseTime + responseTime) / 2;
-        }),
-      },
+      avgResponseTime: { set: newAvgResponseTime },
       lastActive: now,
     },
     create: {
@@ -102,7 +109,10 @@ export async function getAgentLogs(
     take: limit,
   });
 
-  return logs;
+  return logs.map(log => ({
+    ...log,
+    level: log.level as AgentLog['level'],
+  }));
 }
 
 export async function getAgentHealth(agentId: string): Promise<{

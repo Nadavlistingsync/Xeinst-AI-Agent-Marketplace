@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FeedbackAnalysis } from '@/components/dashboard/FeedbackAnalysis';
 import { FeedbackResponse } from '@/components/feedback/FeedbackResponse';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { toast } from 'react-hot-toast';
 
 interface AgentDetailsProps {
   agentId: string;
@@ -24,21 +25,28 @@ export function AgentDetails({ agentId }: AgentDetailsProps) {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchAgent = async () => {
+  const fetchAgent = useCallback(async () => {
     try {
+      setLoading(true);
       const response = await fetch(`/api/agents/${agentId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch agent');
+      }
       const data = await response.json();
       setAgent(data);
     } catch (error) {
       console.error('Error fetching agent:', error);
+      toast.error('Failed to load agent details');
     } finally {
       setLoading(false);
     }
-  };
+  }, [agentId]);
 
   useEffect(() => {
-    fetchAgent();
-  }, [agentId]);
+    if (agentId) {
+      fetchAgent();
+    }
+  }, [agentId, fetchAgent]);
 
   if (loading) {
     return <div>Loading...</div>;

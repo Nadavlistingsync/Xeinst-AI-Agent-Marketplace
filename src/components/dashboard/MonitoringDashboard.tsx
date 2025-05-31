@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -45,14 +45,9 @@ export function MonitoringDashboard({ agentId }: MonitoringDashboardProps) {
   const [health, setHealth] = useState<AgentHealth | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchMonitoringData();
-    const interval = setInterval(fetchMonitoringData, 30000); // Refresh every 30 seconds
-    return () => clearInterval(interval);
-  }, [agentId]);
-
-  const fetchMonitoringData = async () => {
+  const fetchMonitoringData = useCallback(async () => {
     try {
+      setLoading(true);
       const [metricsRes, logsRes, healthRes] = await Promise.all([
         fetch(`/api/agents/${agentId}/metrics`),
         fetch(`/api/agents/${agentId}/logs`),
@@ -78,7 +73,13 @@ export function MonitoringDashboard({ agentId }: MonitoringDashboardProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [agentId, toast]);
+
+  useEffect(() => {
+    fetchMonitoringData();
+    const interval = setInterval(fetchMonitoringData, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, [fetchMonitoringData]);
 
   if (loading) {
     return <div>Loading monitoring data...</div>;

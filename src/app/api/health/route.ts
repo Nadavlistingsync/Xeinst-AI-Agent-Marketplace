@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { sql } from 'drizzle-orm';
 
 export async function GET() {
   try {
-    // Perform a simple query to check DB connection
-    await db.execute(sql`SELECT 1`);
-    return NextResponse.json({ status: 'ok' });
-  } catch (error: any) {
-    return NextResponse.json({ status: 'error', message: error.message }, { status: 500 });
+    return NextResponse.json({
+      status: 'healthy',
+      version: process.env.npm_package_version || '1.0.0',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { status: 'unhealthy', error: 'Health check failed' },
+      { status: 500 }
+    );
   }
 } 

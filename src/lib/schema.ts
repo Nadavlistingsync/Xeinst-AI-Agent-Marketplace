@@ -125,7 +125,13 @@ export const notifications = pgTable('notifications', {
   type: text('type').notNull(),
   title: text('title').notNull(),
   message: text('message').notNull(),
-  metadata: jsonb('metadata').$type<Record<string, any>>(),
+  metadata: jsonb('metadata').$type<{
+    actionUrl?: string;
+    actionText?: string;
+    priority?: 'low' | 'medium' | 'high';
+    category?: string;
+    [key: string]: unknown;
+  }>(),
   is_read: boolean('is_read').default(false).notNull(),
   created_at: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updated_at: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

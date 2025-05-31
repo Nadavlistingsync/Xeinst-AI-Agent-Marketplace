@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -16,6 +16,7 @@ import {
   Cell,
 } from 'recharts';
 import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'react-hot-toast';
 
 interface FeedbackTrend {
   date: string;
@@ -39,32 +40,27 @@ export function FeedbackAnalytics({ agentId }: FeedbackAnalyticsProps) {
   const [categories, setCategories] = useState<CategoryData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const [trendsRes, categoriesRes] = await Promise.all([
-        fetch(`/api/feedback/${agentId}/trends`),
-        fetch(`/api/feedback/${agentId}/categories`),
-      ]);
-
-      if (!trendsRes.ok || !categoriesRes.ok) throw new Error('Failed to fetch data');
-
-      const [trendsData, categoriesData] = await Promise.all([
-        trendsRes.json(),
-        categoriesRes.json(),
-      ]);
-
-      setTrends(trendsData);
-      setCategories(categoriesData);
+      setIsLoading(true);
+      const response = await fetch(`/api/feedback/analytics/${agentId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch feedback analytics');
+      }
+      const data = await response.json();
+      setTrends(data.trends);
+      setCategories(data.categories);
     } catch (error) {
-      console.error('Error fetching analytics data:', error);
+      console.error('Error fetching feedback analytics:', error);
+      toast.error('Failed to load feedback analytics');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [agentId]);
 
   useEffect(() => {
     fetchData();
-  }, [agentId]);
+  }, [fetchData]);
 
   if (isLoading) {
     return <div>Loading analytics data...</div>;

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { formatDistanceToNow } from 'date-fns';
 
 interface FeedbackResponseProps {
   feedbackId: string;
@@ -21,11 +20,7 @@ export function FeedbackResponse({
 
   const handleSubmit = async () => {
     if (!response.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please enter a response',
-        variant: 'destructive',
-      });
+      toast.error('Please enter a response');
       return;
     }
 
@@ -39,18 +34,11 @@ export function FeedbackResponse({
 
       if (!res.ok) throw new Error('Failed to submit response');
 
-      toast({
-        title: 'Success',
-        description: 'Response submitted successfully',
-      });
+      toast.success('Response submitted successfully');
       onResponseSubmitted();
     } catch (error) {
       console.error('Error submitting response:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to submit response',
-        variant: 'destructive',
-      });
+      toast.error('Failed to submit response');
     } finally {
       setIsSubmitting(false);
     }

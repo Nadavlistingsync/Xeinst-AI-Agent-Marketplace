@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,7 +32,6 @@ export function NotificationCenter({ agentId }: NotificationCenterProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const [socket, setSocket] = useState<any>(null);
 
   useEffect(() => {
     if (session?.user?.id) {
@@ -49,41 +48,33 @@ export function NotificationCenter({ agentId }: NotificationCenterProps) {
       socketInstance.on('notification', (newNotification: Notification) => {
         setNotifications(prev => [newNotification, ...prev]);
         setUnreadCount(prev => prev + 1);
-        toast({
-          title: newNotification.title,
-          description: newNotification.message,
-        });
+        toast(newNotification.message);
       });
-
-      setSocket(socketInstance);
 
       return () => {
         socketInstance.disconnect();
       };
     }
+    return undefined;
   }, [session?.user?.id, toast]);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
-      const response = await fetch(`/api/notifications?agentId=${agentId}`);
-      if (!response.ok) throw new Error('Failed to fetch notifications');
-      
+      const response = await fetch(`/api/notifications/${agentId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch notifications');
+      }
       const data = await response.json();
-      setNotifications(data.notifications);
-      setUnreadCount(data.notifications.filter((n: Notification) => !n.is_read).length);
+      setNotifications(data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to load notifications',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load notifications');
     }
-  };
+  }, [agentId, toast]);
 
   useEffect(() => {
     fetchNotifications();
-  }, [toast, agentId]);
+  }, [fetchNotifications]);
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -98,11 +89,7 @@ export function NotificationCenter({ agentId }: NotificationCenterProps) {
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error marking notification as read:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to mark notification as read',
-        variant: 'destructive',
-      });
+      toast.error('Failed to mark notification as read');
     }
   };
 
@@ -117,11 +104,7 @@ export function NotificationCenter({ agentId }: NotificationCenterProps) {
       setUnreadCount(0);
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to mark all notifications as read',
-        variant: 'destructive',
-      });
+      toast.error('Failed to mark all notifications as read');
     }
   };
 
@@ -145,7 +128,6 @@ export function NotificationCenter({ agentId }: NotificationCenterProps) {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          size="icon"
           className="relative"
           aria-label="Notifications"
         >

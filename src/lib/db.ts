@@ -17,7 +17,7 @@ export async function query<T>(queryString: string, params?: any[]): Promise<T[]
   return result as T[];
 }
 
-export async function queryOne<T>(queryString: string, params?: any[]): Promise<T | null> {
+export async function queryOne<T>(queryString: string, params?: unknown[]): Promise<T | null> {
   const result = await sql.query(queryString, params);
   return (result as T[])[0] || null;
 }
@@ -26,7 +26,7 @@ export async function execute(queryString: string, params?: any[]): Promise<void
   await sql.query(queryString, params);
 }
 
-export async function executeQuery(query: string, params: any[] = []) {
+export async function executeQuery(query: string, params: unknown[] = []) {
   try {
     const result = await sql.query(query, params);
     return result;
@@ -36,9 +36,14 @@ export async function executeQuery(query: string, params: any[] = []) {
   }
 }
 
-export async function executeTransaction(queries: { query: string; params: any[] }[]) {
+interface TransactionQuery {
+  query: string;
+  params: unknown[];
+}
+
+export async function executeTransaction(queries: TransactionQuery[]) {
   try {
-    const result = await (sql.transaction as any)(async (tx: any) => {
+    const result = await sql.transaction(async (tx) => {
       const results = [];
       for (const { query, params } of queries) {
         const result = await tx.query(query, params);

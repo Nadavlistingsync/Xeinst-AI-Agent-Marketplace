@@ -49,6 +49,10 @@ export async function deployAgent(
       return { success: false, error: 'Not authorized to deploy this agent' };
     }
 
+    if (!agent.file_url) {
+      return { success: false, error: 'Agent file URL is missing' };
+    }
+
     // Update status to deploying
     await prisma.deployment.update({
       where: { id: agentId },
@@ -74,7 +78,7 @@ export async function deployAgent(
       name: functionName,
       code,
       framework: agent.framework,
-      requirements: agent.requirements,
+      requirements: agent.requirements ?? undefined,
     });
 
     // Update agent status and endpoint

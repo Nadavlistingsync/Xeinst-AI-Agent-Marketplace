@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FeedbackResponse } from './FeedbackResponse';
 import { formatDistanceToNow } from 'date-fns';
 import { Star, TrendingUp, Clock, MessageSquare } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 interface FeedbackMetrics {
   averageRating: number;
@@ -43,36 +44,30 @@ interface FeedbackDashboardProps {
 }
 
 export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
-  const [metrics, setMetrics] = useState<FeedbackMetrics | null>(null);
+  const [metrics] = useState<FeedbackMetrics | null>(null);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const [metricsRes, feedbacksRes] = await Promise.all([
-        fetch(`/api/feedback/${agentId}/metrics`),
-        fetch(`/api/feedback/${agentId}`),
-      ]);
-
-      if (!metricsRes.ok || !feedbacksRes.ok) throw new Error('Failed to fetch data');
-
-      const [metricsData, feedbacksData] = await Promise.all([
-        metricsRes.json(),
-        feedbacksRes.json(),
-      ]);
-
-      setMetrics(metricsData);
-      setFeedbacks(feedbacksData);
+      setIsLoading(true);
+      const response = await fetch(`/api/feedback/${agentId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch feedback data');
+      }
+      const data = await response.json();
+      setFeedbacks(data);
     } catch (error) {
       console.error('Error fetching feedback data:', error);
+      toast.error('Failed to load feedback data');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [agentId]);
 
   useEffect(() => {
     fetchData();
-  }, [agentId]);
+  }, [fetchData]);
 
   if (isLoading) {
     return <div>Loading feedback data...</div>;
