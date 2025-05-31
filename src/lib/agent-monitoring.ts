@@ -1,7 +1,9 @@
-import { prisma } from './prisma';
-import { agentFeedbacks, agentMetrics, agentLogs } from '@/lib/schema';
+import { PrismaClient } from '@prisma/client';
+import { AgentFeedback, AgentLog, AgentMetric } from './schema';
 import { eq, gte, lte, desc, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+
+const prisma = new PrismaClient();
 
 export interface AgentMetrics {
   totalRequests: number;
@@ -59,111 +61,162 @@ export async function updateAgentMetrics(agentId: string, data: {
   });
 }
 
-export async function logAgentRequest(agentId: string, data: {
-  level: string;
-  message: string;
-  metadata?: any;
-}) {
+export async function logAgentRequest(
+  agentId: string,
+  request: any,
+  response?: any,
+  metadata?: Record<string, any>
+) {
   return prisma.agentLog.create({
     data: {
       agentId,
-      ...data,
-      timestamp: new Date()
-    }
+      level: 'info',
+      message: 'Agent request processed',
+      metadata: {
+        request,
+        response,
+        ...metadata,
+      },
+      timestamp: new Date(),
+    },
   });
 }
 
-export async function getAgentMetrics(agentId: string) {
-  const metrics = await prisma.agentMetrics.findUnique({
-    where: { agentId }
+export async function getAgentMetrics(agentId: string, timeRange?: { start: Date; end: Date }) {
+  const logs = await prisma.agentLog.findMany({
+    where: {
+      agentId,
+      timestamp: timeRange
+        ? {
+            gte: timeRange.start,
+            lte: timeRange.end,
+          }
+        : undefined,
+    },
+    orderBy: {
+      timestamp: 'desc',
+    },
   });
 
-  if (!metrics) {
-    return {
-      totalRequests: 0,
-      averageResponseTime: 0,
-      errorRate: 0,
-      successRate: 0,
-      activeUsers: 0,
-      requestsPerMinute: 0,
-      averageTokensUsed: 0,
-      costPerRequest: 0,
-      totalCost: 0
-    };
-  }
+  const metrics = {
+    totalRequests: logs.length,
+    averageResponseTime: 0,
+    totalTokens: 0,
+    successRate: 0,
+    errorRate: 0,
+    dailyStats: {} as Record<string, {
+      requests: number;
+      averageResponseTime: number;
+      totalTokens: number;
+      successRate: number;
+      errorRate: number;
+    }>,
+  };
+
+  let totalResponseTime = 0;
+  let totalTokens = 0;
+  let successCount = 0;
+  let errorCount = 0;
+
+  logs.forEach(log => {
+    const date = log.timestamp.toISOString().split('T')[0];
+    if (!metrics.dailyStats[date]) {
+      metrics.dailyStats[date] = {
+        requests: 0,
+        averageResponseTime: 0,
+        totalTokens: 0,
+        successRate: 0,
+        errorRate: 0,
+      };
+    }
+
+    metrics.dailyStats[date].requests++;
+
+    if (log.metadata?.responseTime) {
+      totalResponseTime += log.metadata.responseTime;
+      metrics.dailyStats[date].averageResponseTime += log.metadata.responseTime;
+    }
+
+    if (log.metadata?.tokensUsed) {
+      totalTokens += log.metadata.tokensUsed;
+      metrics.dailyStats[date].totalTokens += log.metadata.tokensUsed;
+    }
+
+    if (log.level === 'error') {
+      errorCount++;
+      metrics.dailyStats[date].errorRate++;
+    } else {
+      successCount++;
+      metrics.dailyStats[date].successRate++;
+    }
+  });
+
+  metrics.averageResponseTime = totalResponseTime / logs.length || 0;
+  metrics.totalTokens = totalTokens;
+  metrics.successRate = (successCount / logs.length) * 100 || 0;
+  metrics.errorRate = (errorCount / logs.length) * 100 || 0;
+
+  Object.values(metrics.dailyStats).forEach(stats => {
+    stats.averageResponseTime = stats.averageResponseTime / stats.requests || 0;
+    stats.successRate = (stats.successRate / stats.requests) * 100 || 0;
+    stats.errorRate = (stats.errorRate / stats.requests) * 100 || 0;
+  });
 
   return metrics;
 }
 
-export async function getAgentLogs(agentId: string, limit: number = 100) {
+export async function getAgentLogs(
+  agentId: string,
+  options?: {
+    level?: string;
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }
+) {
   return prisma.agentLog.findMany({
-    where: { agentId },
-    orderBy: { timestamp: 'desc' },
-    take: limit
+    where: {
+      agentId,
+      level: options?.level,
+      timestamp: {
+        gte: options?.startDate,
+        lte: options?.endDate,
+      },
+    },
+    orderBy: {
+      timestamp: 'desc',
+    },
+    take: options?.limit,
   });
 }
 
-export async function getAgentPerformance(agentId: string, days: number = 30) {
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - days);
-
+export async function getAgentPerformance(agentId: string) {
   const logs = await prisma.agentLog.findMany({
     where: {
       agentId,
-      timestamp: {
-        gte: startDate
-      }
+      level: 'info',
+      message: 'Deployment completed',
     },
     orderBy: {
-      timestamp: 'asc'
-    }
+      timestamp: 'desc',
+    },
   });
 
-  const dailyStats = logs.reduce((acc, log) => {
-    const date = log.timestamp.toISOString().split('T')[0];
-    if (!acc[date]) {
-      acc[date] = {
-        requests: 0,
-        errors: 0,
-        totalResponseTime: 0,
-        totalTokens: 0
-      };
-    }
-
-    acc[date].requests++;
-    if (log.level === 'error') {
-      acc[date].errors++;
-    }
-
-    if (log.metadata) {
-      if (log.metadata.responseTime) {
-        acc[date].totalResponseTime += log.metadata.responseTime;
-      }
-      if (log.metadata.tokensUsed) {
-        acc[date].totalTokens += log.metadata.tokensUsed;
-      }
-    }
-
-    return acc;
-  }, {} as Record<string, {
-    requests: number;
-    errors: number;
-    totalResponseTime: number;
-    totalTokens: number;
-  }>);
-
-  return Object.entries(dailyStats).map(([date, stats]) => ({
-    date,
-    requests: stats.requests,
-    errorRate: stats.errors / stats.requests,
-    averageResponseTime: stats.totalResponseTime / stats.requests,
-    averageTokensUsed: stats.totalTokens / stats.requests
+  return logs.map(log => ({
+    timestamp: log.timestamp,
+    responseTime: log.metadata?.responseTime || 0,
+    tokensUsed: log.metadata?.tokensUsed || 0,
   }));
 }
 
 export async function getAgentHealth(agentId: string) {
-  const metrics = await getAgentMetrics(agentId);
-  const recentLogs = await getAgentLogs(agentId, 100);
+  const metrics = await getAgentMetrics(agentId, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), new Date());
+  const recentLogs = await getAgentLogs(agentId, {
+    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    endDate: new Date(),
+    level: 'info',
+    limit: 100
+  });
 
   const errorRate = metrics.errorRate;
   const responseTime = metrics.averageResponseTime;
@@ -205,16 +258,16 @@ export async function getAgentHealth(agentId: string) {
   };
 }
 
-export async function getAgentErrors(agentId: string, limit = 50) {
-  const logs = await prisma.agentLog.findMany({
-    where: and(
-      eq(agentLogs.agentId, agentId),
-      eq(agentLogs.level, 'error')
-    ),
-    orderBy: [desc(agentLogs.timestamp)],
-    limit
+export async function getAgentErrors(agentId: string) {
+  return prisma.agentLog.findMany({
+    where: {
+      agentId,
+      level: 'error',
+    },
+    orderBy: {
+      timestamp: 'desc',
+    },
   });
-  return logs as AgentLog[];
 }
 
 export async function getAgentWarnings(agentId: string, limit = 50) {
@@ -251,7 +304,7 @@ export async function getAgentDeploymentHistory(agentId: string): Promise<any[]>
 }
 
 export async function getAgentPerformanceMetrics(agentId: string): Promise<any> {
-  const metrics = await getAgentMetrics(agentId);
+  const metrics = await getAgentMetrics(agentId, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), new Date());
   const logs = await getAgentLogs(agentId, {
     startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     limit: 100
@@ -287,15 +340,80 @@ export async function submitAgentFeedback(
   });
 }
 
-export async function getAgentFeedback(agentId: string, timeRange: { start: Date; end: Date }): Promise<any[]> {
+export async function getAgentFeedbacks(
+  agentId: string,
+  options?: {
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  }
+) {
   return prisma.agentFeedback.findMany({
-    where: and(
-      eq(agentFeedbacks.agentId, agentId),
-      gte(agentFeedbacks.created_at, timeRange.start),
-      lte(agentFeedbacks.created_at, timeRange.end)
-    ),
-    orderBy: [desc(agentFeedbacks.created_at)]
+    where: {
+      agentId,
+      createdAt: {
+        gte: options?.startDate,
+        lte: options?.endDate,
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    take: options?.limit,
   });
+}
+
+export async function getAgentFeedbackStats(agentId: string) {
+  const feedbacks = await prisma.agentFeedback.findMany({
+    where: { agentId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const stats = {
+    totalFeedbacks: feedbacks.length,
+    averageRating: 0,
+    sentimentDistribution: {
+      positive: 0,
+      neutral: 0,
+      negative: 0,
+    },
+    categoryDistribution: {} as Record<string, number>,
+  };
+
+  if (feedbacks.length === 0) {
+    return stats;
+  }
+
+  let totalRating = 0;
+  let totalSentiment = 0;
+
+  feedbacks.forEach(feedback => {
+    totalRating += feedback.rating;
+    totalSentiment += feedback.sentimentScore || 0;
+
+    if (feedback.sentimentScore) {
+      if (feedback.sentimentScore > 0.5) {
+        stats.sentimentDistribution.positive++;
+      } else if (feedback.sentimentScore < -0.5) {
+        stats.sentimentDistribution.negative++;
+      } else {
+        stats.sentimentDistribution.neutral++;
+      }
+    }
+
+    if (feedback.categories) {
+      feedback.categories.forEach(category => {
+        stats.categoryDistribution[category] = (stats.categoryDistribution[category] || 0) + 1;
+      });
+    }
+  });
+
+  stats.averageRating = totalRating / feedbacks.length;
+  stats.sentimentDistribution.positive = (stats.sentimentDistribution.positive / feedbacks.length) * 100;
+  stats.sentimentDistribution.neutral = (stats.sentimentDistribution.neutral / feedbacks.length) * 100;
+  stats.sentimentDistribution.negative = (stats.sentimentDistribution.negative / feedbacks.length) * 100;
+
+  return stats;
 }
 
 export async function getAgentDeployments(agentId: string): Promise<any[]> {

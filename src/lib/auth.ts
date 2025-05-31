@@ -1,38 +1,43 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { prisma } from "./prisma";
-import bcrypt from "bcryptjs";
+import { prisma } from "./db";
+import { compare } from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: "jwt",
+  },
+  pages: {
+    signIn: "/login",
+  },
   providers: [
     CredentialsProvider({
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials");
+          return null;
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: {
+            email: credentials.email,
+          },
         });
 
         if (!user || !user.password) {
-          throw new Error("Invalid credentials");
+          return null;
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        );
+        const isPasswordValid = await compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
-          throw new Error("Invalid credentials");
+          return null;
         }
 
         return {
@@ -41,34 +46,28 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
-          subscriptionTier: user.subscriptionTier
+          subscription_tier: user.subscriptionTier,
         };
-      }
-    })
+      },
+    }),
   ],
-  session: {
-    strategy: "jwt"
-  },
-  pages: {
-    signIn: "/login"
-  },
   callbacks: {
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id;
+        session.user.id = token.id as string;
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.image = token.picture;
-        session.user.role = token.role;
-        session.user.subscriptionTier = token.subscriptionTier;
+        session.user.role = token.role as string;
+        session.user.subscription_tier = token.subscription_tier as string;
       }
       return session;
     },
     async jwt({ token, user }) {
       const dbUser = await prisma.user.findFirst({
         where: {
-          email: token.email!
-        }
+          email: token.email!,
+        },
       });
 
       if (!dbUser) {
@@ -84,8 +83,8 @@ export const authOptions: NextAuthOptions = {
         email: dbUser.email,
         picture: dbUser.image,
         role: dbUser.role,
-        subscriptionTier: dbUser.subscriptionTier
+        subscription_tier: dbUser.subscriptionTier,
       };
-    }
-  }
+    },
+  },
 }; 

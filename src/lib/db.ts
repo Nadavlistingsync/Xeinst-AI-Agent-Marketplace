@@ -1,40 +1,63 @@
 import { PrismaClient } from '@prisma/client';
 
+const prismaClientSingleton = () => {
+  return new PrismaClient();
+};
+
 declare global {
-  var prisma: PrismaClient | undefined;
+  var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
 }
 
-export const prisma = global.prisma || new PrismaClient();
+const prisma = globalThis.prisma ?? prismaClientSingleton();
 
 if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma;
+  globalThis.prisma = prisma;
 }
 
-export type DbClient = typeof prisma;
+export { prisma };
 
-// Helper functions for common database operations
 export async function query<T>(queryString: string, params?: any[]): Promise<T[]> {
-  return prisma.$queryRaw<T[]>(queryString, ...(params || []));
+  return await prisma.$queryRaw<T[]>(Prisma.sql([queryString], params || []))
 }
 
-export async function queryOne<T>(queryString: string, params?: unknown[]): Promise<T | null> {
-  const result = await prisma.$queryRaw<T[]>(queryString, ...(params || []));
-  return result[0] || null;
+export async function queryOne<T>(queryString: string, params?: any[]): Promise<T | null> {
+  const results = await query<T>(queryString, params)
+  return results[0] || null
 }
 
-export async function execute(queryString: string, params?: any[]): Promise<void> {
-  await prisma.$executeRaw(queryString, ...(params || []));
+export async function execute(queryString: string, params?: any[]): Promise<number> {
+  const result = await prisma.$executeRaw(Prisma.sql([queryString], params || []))
+  return result
 }
 
-export async function executeQuery(query: string, params: unknown[] = []) {
-  try {
-    return await prisma.$queryRaw(query, ...params);
-  } catch (error) {
-    console.error('Error executing query:', error);
-    throw error;
-  }
+export async function transaction<T>(
+  queries: (tx: PrismaClient) => Promise<T>
+): Promise<T> {
+  return await prisma.$transaction(async (tx) => {
+    return await queries(tx);
+  });
 }
 
-export async function transaction<T>(queries: (tx: PrismaClient) => Promise<T>): Promise<T> {
-  return await prisma.$transaction(queries);
+export async function transactionWithIsolation<T>(
+  queries: (tx: PrismaClient) => Promise<T>,
+  isolationLevel: 'ReadUncommitted' | 'ReadCommitted' | 'RepeatableRead' | 'Serializable'
+): Promise<T> {
+  return await prisma.$transaction(async (tx) => {
+    return await queries(tx);
+  }, {
+    isolationLevel,
+  });
+}
+
+export async function rawQuery<T>(queryString: string, params?: any[]): Promise<T[]> {
+  return await prisma.$queryRaw<T[]>(Prisma.sql([queryString], params || []))
+}
+
+export async function rawExecute(queryString: string, params?: any[]): Promise<number> {
+  const result = await prisma.$executeRaw(Prisma.sql([queryString], params || []))
+  return result
+}
+
+export async function rawTransaction<T>(queries: (tx: PrismaClient) => Promise<T>): Promise<T> {
+  return await prisma.$transaction(queries)
 } 
