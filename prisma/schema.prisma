@@ -14,9 +14,9 @@ model User {
   password        String
   image           String?
   role            String    @default("user")
-  subscription_tier String   @default("free") @map("subscription_tier")
-  created_at      DateTime  @default(now()) @map("created_at")
-  updated_at      DateTime  @updatedAt @map("updated_at")
+  subscriptionTier String   @default("free") @map("subscription_tier")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
   createdProducts Product[] @relation("ProductCreator")
   uploadedProducts Product[] @relation("ProductUploader")
   purchases       Purchase[]
@@ -44,8 +44,8 @@ model Product {
   features        String[]
   requirements    String[]
   rating          Int       @default(0)
-  averageRating   Decimal   @default(0) @db.Decimal(3, 2)
-  totalRatings    Int       @default(0)
+  averageRating   Decimal   @default(0) @db.Decimal(3, 2) @map("average_rating")
+  totalRatings    Int       @default(0) @map("total_ratings")
   createdBy       String    @map("created_by")
   uploadedBy      String    @map("uploaded_by")
   createdAt       DateTime  @default(now()) @map("created_at")
@@ -53,7 +53,7 @@ model Product {
   isPublic        Boolean   @default(true) @map("is_public")
   isFeatured      Boolean   @default(false) @map("is_featured")
   downloadCount   Int       @default(0) @map("download_count")
-  earningsSplit   Decimal   @default(0.70) @db.Decimal(3, 2)
+  earningsSplit   Decimal   @default(0.70) @db.Decimal(3, 2) @map("earnings_split")
   creator         User      @relation("ProductCreator", fields: [createdBy], references: [id])
   uploader        User      @relation("ProductUploader", fields: [uploadedBy], references: [id])
   purchases       Purchase[]
@@ -77,16 +77,16 @@ model Review {
 }
 
 model Earning {
-  id                String    @id @default(uuid())
-  userId           String    @map("user_id")
-  productId        String    @map("product_id")
-  amount           Decimal   @db.Decimal(10, 2)
-  status           String    @default("pending")
-  stripeTransferId String?   @map("stripe_transfer_id")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  paidAt           DateTime? @map("paid_at")
-  user             User      @relation("UserEarnings", fields: [userId], references: [id])
-  product          Product   @relation(fields: [productId], references: [id])
+  id              String    @id @default(uuid())
+  userId          String    @map("user_id")
+  productId       String    @map("product_id")
+  amount          Decimal   @db.Decimal(10, 2)
+  status          String    @default("pending")
+  stripeTransferId String?  @map("stripe_transfer_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  paidAt          DateTime? @map("paid_at")
+  user            User      @relation("UserEarnings", fields: [userId], references: [id])
+  product         Product   @relation(fields: [productId], references: [id])
 
   @@map("earnings")
 }

@@ -5,10 +5,10 @@ import { Review } from './schema';
 export interface ReviewOptions {
   product_id?: string;
   user_id?: string;
-  min_rating?: number;
-  max_rating?: number;
-  start_date?: Date;
-  end_date?: Date;
+  minRating?: number;
+  maxRating?: number;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export interface CreateReviewInput {
@@ -22,11 +22,11 @@ export async function createReview(data: CreateReviewInput): Promise<Review> {
   try {
     return await prismaClient.review.create({
       data: {
-        productId: data.product_id,
-        userId: data.user_id,
+        product_id: data.product_id,
+        user_id: data.user_id,
         rating: data.rating,
         comment: data.comment,
-        createdAt: new Date(),
+        created_at: new Date(),
       },
     });
   } catch (error) {
@@ -57,8 +57,8 @@ export async function getReviews(options: {
   user_id?: string;
   product_id?: string;
   rating?: number;
-  start_date?: Date;
-  end_date?: Date;
+  startDate?: Date;
+  endDate?: Date;
 } = {}): Promise<Review[]> {
   try {
     const where: Prisma.ReviewWhereInput = {};
@@ -66,8 +66,8 @@ export async function getReviews(options: {
     if (options.user_id) where.user_id = options.user_id;
     if (options.product_id) where.product_id = options.product_id;
     if (options.rating) where.rating = options.rating;
-    if (options.start_date) where.created_at = { gte: options.start_date };
-    if (options.end_date) where.created_at = { lte: options.end_date };
+    if (options.startDate) where.created_at = { gte: options.startDate };
+    if (options.endDate) where.created_at = { lte: options.endDate };
 
     return await prismaClient.review.findMany({
       where,
@@ -101,32 +101,32 @@ export async function deleteReview(id: string): Promise<void> {
   }
 }
 
-export async function updateProductRating(productId: string): Promise<void> {
+export async function updateProductRating(product_id: string): Promise<void> {
   const reviews = await prismaClient.review.findMany({
-    where: { productId },
+    where: { product_id },
   });
 
-  const averageRating =
+  const average_rating =
     reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
 
   await prismaClient.product.update({
-    where: { id: productId },
-    data: { rating: averageRating },
+    where: { id: product_id },
+    data: { rating: average_rating },
   });
 }
 
 export async function getUserReviews(
   user_id: string,
   options: {
-    start_date?: Date;
-    end_date?: Date;
+    startDate?: Date;
+    endDate?: Date;
     limit?: number;
   } = {}
 ): Promise<Review[]> {
   const where: Prisma.ReviewWhereInput = { user_id };
 
-  if (options.start_date) where.created_at = { gte: options.start_date };
-  if (options.end_date) where.created_at = { lte: options.end_date };
+  if (options.startDate) where.created_at = { gte: options.startDate };
+  if (options.endDate) where.created_at = { lte: options.endDate };
 
   return await prismaClient.review.findMany({
     where,
@@ -139,34 +139,34 @@ export async function getUserReviews(
 }
 
 export async function getProductReviews(
-  productId: string,
+  product_id: string,
   options: {
     startDate?: Date;
     endDate?: Date;
     limit?: number;
   } = {}
 ): Promise<Review[]> {
-  const where: Prisma.ReviewWhereInput = { productId };
+  const where: Prisma.ReviewWhereInput = { product_id };
 
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
+  if (options.startDate) where.created_at = { gte: options.startDate };
+  if (options.endDate) where.created_at = { lte: options.endDate };
 
   return await prismaClient.review.findMany({
     where,
     include: {
       user: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
     take: options.limit,
   });
 }
 
-export async function getReviewStats(productId: string) {
+export async function getReviewStats(product_id: string) {
   try {
-    const reviews = await getReviews({ productId });
+    const reviews = await getReviews({ product_id });
 
     const totalReviews = reviews.length;
-    const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews;
+    const average_rating = reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews;
     const ratingDistribution = reviews.reduce((acc, review) => {
       acc[review.rating] = (acc[review.rating] || 0) + 1;
       return acc;
@@ -174,7 +174,7 @@ export async function getReviewStats(productId: string) {
 
     return {
       totalReviews,
-      averageRating,
+      average_rating,
       ratingDistribution,
       recentReviews: reviews.slice(0, 5),
     };
@@ -184,19 +184,19 @@ export async function getReviewStats(productId: string) {
   }
 }
 
-export async function getReviewHistory(productId: string) {
+export async function getReviewHistory(product_id: string) {
   try {
-    const reviews = await getReviews({ productId });
+    const reviews = await getReviews({ product_id });
 
     const monthlyReviews = reviews.reduce((acc, review) => {
-      const month = review.createdAt.toISOString().slice(0, 7);
+      const month = review.created_at.toISOString().slice(0, 7);
       if (!acc[month]) {
-        acc[month] = { total: 0, averageRating: 0 };
+        acc[month] = { total: 0, average_rating: 0 };
       }
       acc[month].total += 1;
-      acc[month].averageRating = (acc[month].averageRating * (acc[month].total - 1) + review.rating) / acc[month].total;
+      acc[month].average_rating = (acc[month].average_rating * (acc[month].total - 1) + review.rating) / acc[month].total;
       return acc;
-    }, {} as Record<string, { total: number; averageRating: number }>);
+    }, {} as Record<string, { total: number; average_rating: number }>);
 
     return {
       monthlyReviews,

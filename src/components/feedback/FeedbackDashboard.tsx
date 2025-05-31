@@ -8,7 +8,7 @@ import { Star, TrendingUp, Clock, MessageSquare } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface FeedbackMetrics {
-  averageRating: number;
+  average_rating: number;
   totalFeedbacks: number;
   positiveFeedbacks: number;
   negativeFeedbacks: number;
@@ -86,7 +86,7 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.averageRating.toFixed(1)}</div>
+            <div className="text-2xl font-bold">{metrics.average_rating.toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">
               Based on {metrics.totalFeedbacks} reviews
             </p>
@@ -132,7 +132,6 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
           </CardContent>
         </Card>
       </div>
-
       <Tabs defaultValue="all" className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All Feedback</TabsTrigger>

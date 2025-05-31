@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import db from '@/lib/db';
 import { agentFeedbacks } from '@/lib/schema';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const feedback = await db.insert(agentFeedbacks).values({
       id: uuidv4(),
       agentId: 'system', // Using 'system' for general feedback
-      userId: 'system', // Using 'system' for general feedback
+      user_id: 'system', // Using 'system' for general feedback
       rating,
       comment: data.message,
       created_at: new Date(),

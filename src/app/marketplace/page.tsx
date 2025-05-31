@@ -14,7 +14,7 @@ interface MarketplacePageProps {
   searchParams: {
     query?: string;
     framework?: string;
-    accessLevel?: string;
+    access_level?: string;
   };
 }
 
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export default async function MarketplacePage({ searchParams }: MarketplacePageProps) {
-  const { query, framework, accessLevel } = searchParams;
+  const { query, framework, access_level } = searchParams;
 
   const deployments = await getDeployments({
     where: {
@@ -34,10 +34,10 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
             { description: { contains: query, mode: "insensitive" } },
           ]
         : undefined,
-      accessLevel: accessLevel || "public",
+      access_level: access_level || "public",
       framework: framework,
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: { created_at: "desc" },
     include: {
       deployer: {
         select: {
@@ -59,11 +59,11 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
     status: agent.status,
     rating: Number(agent.rating),
     ratingCount: agent.ratingCount || 0,
-    downloadCount: agent.downloadCount,
+    download_count: agent.download_count,
     priceCents: agent.priceCents,
-    accessLevel: agent.accessLevel,
+    access_level: agent.access_level,
     licenseType: agent.licenseType,
-    accessLevel: agent.accessLevel as "public" | "basic" | "premium",
+    access_level: agent.access_level as "public" | "basic" | "premium",
     licenseType: agent.licenseType as "full-access" | "limited-use" | "view-only" | "non-commercial",
     deployer: {
       id: agent.deployer.id,
@@ -71,8 +71,8 @@ export default async function MarketplacePage({ searchParams }: MarketplacePageP
       email: agent.deployer.email,
       image: agent.deployer.image,
     },
-    createdAt: agent.createdAt,
-    updatedAt: agent.updatedAt,
+    created_at: agent.created_at,
+    updated_at: agent.updated_at,
     apiEndpoint: agent.apiEndpoint,
   }));
 

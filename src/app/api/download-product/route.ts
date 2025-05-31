@@ -12,13 +12,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { productId } = await req.json();
-    if (!productId) {
+    const { product_id } = await req.json();
+    if (!product_id) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
     const product = await prisma.product.findUnique({
-      where: { id: productId }
+      where: { id: product_id }
     });
 
     if (!product) {
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Read file from local storage
-    const filePath = join(process.cwd(), 'public', product.fileUrl);
+    const filePath = join(process.cwd(), 'public', product.file_url);
     const fileBuffer = await readFile(filePath);
 
     // Return file as download
@@ -57,14 +57,14 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const productId = searchParams.get('productId');
+    const product_id = searchParams.get('productId');
 
-    if (!productId) {
+    if (!product_id) {
       return new NextResponse('Product ID is required', { status: 400 });
     }
 
     const product = await prisma.product.findUnique({
-      where: { id: productId }
+      where: { id: product_id }
     });
 
     if (!product) {
@@ -73,7 +73,7 @@ export async function GET(request: Request) {
 
     // Check if user has purchased the product
     const purchase = await prisma.purchase.findFirst({
-      where: { productId: productId }
+      where: { product_id: product_id }
     });
 
     if (!purchase) {
@@ -81,7 +81,7 @@ export async function GET(request: Request) {
     }
 
     // Read file from local storage
-    const filePath = join(process.cwd(), 'public', product.fileUrl);
+    const filePath = join(process.cwd(), 'public', product.file_url);
     const fileBuffer = await readFile(filePath);
 
     // Return file as download

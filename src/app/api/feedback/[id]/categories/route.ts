@@ -46,7 +46,7 @@ export async function GET(
     const feedbacks = await prisma.agentFeedback.findMany({
       where: {
         agentId: params.id,
-        createdAt: {
+        created_at: {
           gte: startDate,
         },
       },

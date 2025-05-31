@@ -2,6 +2,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import FeaturedAgents from '@/components/FeaturedAgents';
 import { useRouter } from 'next/navigation';
 import { vi } from 'vitest';
+import { prisma } from '@/test/setup';
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -178,5 +179,41 @@ describe('FeaturedAgents', () => {
     await waitFor(() => {
       expect(screen.getByText('No featured agents found')).toBeInTheDocument();
     }, { timeout: 5000 });
+  });
+
+  it('renders featured agents section', async () => {
+    // Mock the getFeaturedAgents function
+    const mockAgents = [
+      {
+        id: '1',
+        name: 'Test Agent',
+        description: 'Test Description',
+        price: 100,
+        rating: 4.5,
+        image_url: '/test-image.jpg',
+        created_at: new Date(),
+        updated_at: new Date(),
+        user_id: 'user1',
+        category: 'AI',
+        status: 'active',
+        is_featured: true,
+        total_sales: 10,
+        total_revenue: 1000,
+      },
+    ];
+
+    // Mock the prisma client
+    vi.spyOn(prisma.agent, 'findMany').mockResolvedValue(mockAgents);
+
+    render(<FeaturedAgents />);
+
+    // Check if the section title is rendered
+    expect(screen.getByText('Featured AI Agents')).toBeInTheDocument();
+
+    // Check if the agent name is rendered
+    expect(await screen.findByText('Test Agent')).toBeInTheDocument();
+
+    // Check if the agent description is rendered
+    expect(screen.getByText('Test Description')).toBeInTheDocument();
   });
 }); 

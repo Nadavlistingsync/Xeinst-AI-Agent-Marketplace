@@ -20,7 +20,7 @@ import { toast } from 'react-hot-toast';
 
 interface FeedbackTrend {
   date: string;
-  averageRating: number;
+  average_rating: number;
   feedbackCount: number;
 }
 
@@ -166,7 +166,6 @@ export function FeedbackAnalytics({ agentId }: FeedbackAnalyticsProps) {
           </Card>
         </TabsContent>
       </Tabs>
-
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -177,7 +176,7 @@ export function FeedbackAnalytics({ agentId }: FeedbackAnalyticsProps) {
               {trends.length > 0 && (
                 <li className="text-sm">
                   <span className="font-medium">Trend: </span>
-                  {trends[trends.length - 1].averageRating > trends[0].averageRating
+                  {trends[trends.length - 1].average_rating > trends[0].average_rating
                     ? 'Ratings are improving'
                     : 'Ratings are declining'}
                 </li>
@@ -209,7 +208,7 @@ export function FeedbackAnalytics({ agentId }: FeedbackAnalyticsProps) {
                   Focus on improving {categories[0].name.toLowerCase()} as it's the most mentioned category
                 </li>
               )}
-              {trends.length > 0 && trends[trends.length - 1].averageRating < 4 && (
+              {trends.length > 0 && trends[trends.length - 1].average_rating < 4 && (
                 <li className="text-sm">
                   Consider addressing recent negative feedback to improve ratings
                 </li>

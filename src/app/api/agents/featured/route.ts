@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import db from '@/lib/db';
 import { products } from '@/lib/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
@@ -10,13 +10,13 @@ const ProductSchema = z.object({
   description: z.string(),
   tag: z.string(),
   price: z.number().nullable(),
-  imageUrl: z.string().nullable(),
-  averageRating: z.number(),
-  totalRatings: z.number(),
-  downloadCount: z.number(),
+  image_url: z.string().nullable(),
+  average_rating: z.number(),
+  total_ratings: z.number(),
+  download_count: z.number(),
   isPublic: z.boolean(),
   isFeatured: z.boolean(),
-  createdAt: z.date(),
+  created_at: z.date(),
 });
 
 export async function GET() {

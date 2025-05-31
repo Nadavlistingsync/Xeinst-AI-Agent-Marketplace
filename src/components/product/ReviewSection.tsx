@@ -2,11 +2,11 @@ import { getProductReviews } from '@/lib/product-helpers';
 import { formatDate } from '@/lib/utils';
 
 interface ReviewSectionProps {
-  productId: string;
+  product_id: string;
 }
 
-export async function ReviewSection({ productId }: ReviewSectionProps) {
-  const reviews = await getProductReviews(productId);
+export async function ReviewSection({ product_id }: ReviewSectionProps) {
+  const reviews = await getProductReviews(product_id);
 
   return (
     <div className="mt-12">
@@ -21,7 +21,7 @@ export async function ReviewSection({ productId }: ReviewSectionProps) {
                 <div className="flex items-center space-x-2">
                   <span className="font-semibold">{review.user.name}</span>
                   <span className="text-gray-500">•</span>
-                  <span className="text-gray-500">{formatDate(review.createdAt)}</span>
+                  <span className="text-gray-500">{formatDate(review.created_at)}</span>
                 </div>
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (

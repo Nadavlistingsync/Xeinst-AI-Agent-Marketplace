@@ -8,7 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
 interface FeedbackMetrics {
-  averageRating: number;
+  average_rating: number;
   totalFeedbacks: number;
   positiveFeedbacks: number;
   negativeFeedbacks: number;
@@ -20,7 +20,7 @@ interface FeedbackMetrics {
 
 interface FeedbackTrend {
   date: string;
-  averageRating: number;
+  average_rating: number;
   feedbackCount: number;
   sentimentScore: number;
 }
@@ -100,7 +100,7 @@ export function FeedbackAnalysis({ agentId }: FeedbackAnalysisProps) {
             <Star className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{metrics.averageRating.toFixed(1)}</div>
+            <div className="text-2xl font-bold">{metrics.average_rating.toFixed(1)}</div>
             <p className="text-xs text-muted-foreground">
               {metrics.totalFeedbacks} total feedbacks
             </p>
@@ -156,7 +156,6 @@ export function FeedbackAnalysis({ agentId }: FeedbackAnalysisProps) {
           </CardContent>
         </Card>
       </div>
-
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>

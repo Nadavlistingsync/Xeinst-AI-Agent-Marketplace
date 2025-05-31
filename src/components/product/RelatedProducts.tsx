@@ -4,11 +4,11 @@ import { getRelatedProducts } from '@/lib/product-helpers';
 import { formatCurrency } from '@/lib/utils';
 
 interface RelatedProductsProps {
-  productId: string;
+  product_id: string;
 }
 
-export async function RelatedProducts({ productId }: RelatedProductsProps) {
-  const relatedProducts = await getRelatedProducts(productId, ''); // TODO: Pass categoryId
+export async function RelatedProducts({ product_id }: RelatedProductsProps) {
+  const relatedProducts = await getRelatedProducts(product_id, ''); // TODO: Pass categoryId
 
   if (relatedProducts.length === 0) {
     return null;

@@ -4,7 +4,7 @@ import { createNotification, NotificationType, NotificationSeverity } from './no
 
 export interface FeedbackMetrics {
   totalFeedbacks: number;
-  averageRating: number;
+  average_rating: number;
   sentimentDistribution: {
     positive: number;
     neutral: number;
@@ -54,7 +54,7 @@ export async function getFeedbackMetrics(
 ): Promise<FeedbackMetrics> {
   const where: any = { agentId };
   if (timeRange) {
-    where.createdAt = {
+    where.created_at = {
       gte: timeRange.start_date,
       lte: timeRange.end_date,
     };
@@ -65,7 +65,7 @@ export async function getFeedbackMetrics(
   });
 
   const totalFeedbacks = feedbacks.length;
-  const averageRating = feedbacks.reduce((sum, f) => sum + (f.rating || 0), 0) / totalFeedbacks || 0;
+  const average_rating = feedbacks.reduce((sum, f) => sum + (f.rating || 0), 0) / totalFeedbacks || 0;
 
   const sentimentDistribution = {
     positive: 0,
@@ -99,14 +99,14 @@ export async function getFeedbackMetrics(
 
   const averageResponseTime = feedbacks.reduce((sum, f) => {
     if (f.creatorResponse && f.responseDate) {
-      return sum + (f.responseDate.getTime() - f.createdAt.getTime());
+      return sum + (f.responseDate.getTime() - f.created_at.getTime());
     }
     return sum;
   }, 0) / feedbacks.filter((f) => f.creatorResponse && f.responseDate).length || 0;
 
   return {
     totalFeedbacks,
-    averageRating,
+    average_rating,
     sentimentDistribution,
     responseRate,
     averageResponseTime,
@@ -143,12 +143,12 @@ export async function monitorFeedback(agentId: string): Promise<void> {
   }
 
   // Check ratings
-  if (metrics.averageRating < 3) {
+  if (metrics.average_rating < 3) {
     notifications.push({
       type: 'rating_alert',
       severity: 'error',
       title: 'Low Rating Alert',
-      message: `Agent ${agent.name} has an average rating of ${metrics.averageRating.toFixed(1)}.`,
+      message: `Agent ${agent.name} has an average rating of ${metrics.average_rating.toFixed(1)}.`,
     });
   }
 
@@ -168,7 +168,7 @@ export async function monitorFeedback(agentId: string): Promise<void> {
   await Promise.all(
     notifications.map((notification) =>
       createNotification({
-        userId: agent.userId,
+        user_id: agent.user_id,
         ...notification,
         metadata: {
           agentId,
@@ -238,7 +238,7 @@ export async function analyzeAgentFeedback(
 
   const trends = {
     rating: previousMetrics
-      ? metrics.averageRating - previousMetrics.averageRating
+      ? metrics.average_rating - previousMetrics.average_rating
       : 0,
     sentiment: previousMetrics
       ? sentimentScore - (previousMetrics.sentimentDistribution.positive - previousMetrics.sentimentDistribution.negative)
@@ -277,7 +277,7 @@ export async function notifyAgentCreator(
       categories: feedback.categories
     },
     severity: 'info',
-    userId: agentId // or the correct userId if available
+    user_id: agentId // or the correct userId if available
   });
 }
 
@@ -292,12 +292,12 @@ export async function getFeedbackTrends(
   const feedbacks = await prismaClient.agentFeedback.findMany({
     where: {
       agentId,
-      createdAt: {
+      created_at: {
         gte: timeRange.start_date,
         lte: timeRange.end_date,
       },
     },
-    orderBy: { createdAt: 'asc' },
+    orderBy: { created_at: 'asc' },
   });
 
   const dailyData = new Map<string, {
@@ -307,7 +307,7 @@ export async function getFeedbackTrends(
   }>();
 
   feedbacks.forEach((feedback) => {
-    const date = feedback.createdAt.toISOString().split('T')[0];
+    const date = feedback.created_at.toISOString().split('T')[0];
     if (!dailyData.has(date)) {
       dailyData.set(date, {
         ratings: [],
@@ -326,7 +326,7 @@ export async function getFeedbackTrends(
     }
     if (feedback.creatorResponse && feedback.responseDate) {
       dayData.responseTime.push(
-        feedback.responseDate.getTime() - feedback.createdAt.getTime()
+        feedback.responseDate.getTime() - feedback.created_at.getTime()
       );
     }
   });
@@ -366,7 +366,7 @@ export async function getFeedbackInsights(
   if (analysis.sentimentScore > 0.5) {
     strengths.push('High positive sentiment in feedback');
   }
-  if (metrics.averageRating >= 4) {
+  if (metrics.average_rating >= 4) {
     strengths.push('High average rating');
   }
   if (metrics.responseRate >= 0.8) {
@@ -377,7 +377,7 @@ export async function getFeedbackInsights(
   if (analysis.sentimentScore < -0.3) {
     weaknesses.push('Negative sentiment in feedback');
   }
-  if (metrics.averageRating < 3) {
+  if (metrics.average_rating < 3) {
     weaknesses.push('Low average rating');
   }
   if (metrics.responseRate < 0.5) {
@@ -417,9 +417,9 @@ export async function updateAgentBasedOnFeedback(
   // Update rating
   if (feedback.rating) {
     const currentRating = agent.rating || 0;
-    const currentCount = agent.downloadCount || 0;
+    const currentCount = agent.download_count || 0;
     updates.rating = (currentRating * currentCount + feedback.rating) / (currentCount + 1);
-    updates.downloadCount = currentCount + 1;
+    updates.download_count = currentCount + 1;
   }
 
   // Update status based on sentiment

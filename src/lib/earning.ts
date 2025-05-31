@@ -6,13 +6,13 @@ export interface EarningOptions {
   user_id?: string;
   product_id?: string;
   status?: string;
-  start_date?: Date;
-  end_date?: Date;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export async function createEarning(data: {
-  userId: string;
-  productId: string;
+  user_id: string;
+  product_id: string;
   amount: number;
   status?: string;
   stripeTransferId?: string;
@@ -20,12 +20,12 @@ export async function createEarning(data: {
   try {
     return await prismaClient.earning.create({
       data: {
-        userId: data.userId,
-        productId: data.productId,
+        user_id: data.user_id,
+        product_id: data.product_id,
         amount: new Prisma.Decimal(data.amount),
         status: data.status || 'pending',
         stripeTransferId: data.stripeTransferId,
-        createdAt: new Date(),
+        created_at: new Date(),
       },
     });
   } catch (error) {
@@ -69,8 +69,8 @@ export async function getEarnings(options: EarningOptions = {}): Promise<Earning
     if (options.user_id) where.user_id = options.user_id;
     if (options.product_id) where.product_id = options.product_id;
     if (options.status) where.status = options.status;
-    if (options.start_date) where.created_at = { gte: options.start_date };
-    if (options.end_date) where.created_at = { lte: options.end_date };
+    if (options.startDate) where.created_at = { gte: options.startDate };
+    if (options.endDate) where.created_at = { lte: options.endDate };
 
     return await prismaClient.earning.findMany({
       where,
@@ -105,7 +105,7 @@ export async function deleteEarning(id: string): Promise<void> {
 }
 
 export async function getUserEarnings(
-  userId: string,
+  user_id: string,
   options: {
     status?: string;
     startDate?: Date;
@@ -113,24 +113,24 @@ export async function getUserEarnings(
     limit?: number;
   } = {}
 ): Promise<Earning[]> {
-  const where: Prisma.EarningWhereInput = { userId };
+  const where: Prisma.EarningWhereInput = { user_id };
 
   if (options.status) where.status = options.status;
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
+  if (options.startDate) where.created_at = { gte: options.startDate };
+  if (options.endDate) where.created_at = { lte: options.endDate };
 
   return await prismaClient.earning.findMany({
     where,
     include: {
       product: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
     take: options.limit,
   });
 }
 
 export async function getProductEarnings(
-  productId: string,
+  product_id: string,
   options: {
     status?: string;
     startDate?: Date;
@@ -138,18 +138,18 @@ export async function getProductEarnings(
     limit?: number;
   } = {}
 ): Promise<Earning[]> {
-  const where: Prisma.EarningWhereInput = { productId };
+  const where: Prisma.EarningWhereInput = { product_id };
 
   if (options.status) where.status = options.status;
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
+  if (options.startDate) where.created_at = { gte: options.startDate };
+  if (options.endDate) where.created_at = { lte: options.endDate };
 
   return await prismaClient.earning.findMany({
     where,
     include: {
       user: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
     take: options.limit,
   });
 }
@@ -158,16 +158,16 @@ export async function getEarningStats() {
   try {
     const earnings = await getEarnings();
 
-    const totalEarnings = earnings.reduce((sum, earning) => sum + earning.amount, 0);
+    const totalEarnings = earnings.reduce((sum, earning) => sum + Number(earning.amount), 0);
     const pendingEarnings = earnings
       .filter(earning => earning.status === 'pending')
-      .reduce((sum, earning) => sum + earning.amount, 0);
+      .reduce((sum, earning) => sum + Number(earning.amount), 0);
     const paidEarnings = earnings
       .filter(earning => earning.status === 'paid')
-      .reduce((sum, earning) => sum + earning.amount, 0);
+      .reduce((sum, earning) => sum + Number(earning.amount), 0);
 
     const earningsByProduct = earnings.reduce((acc, earning) => {
-      acc[earning.productId] = (acc[earning.productId] || 0) + earning.amount;
+      acc[earning.product_id] = (acc[earning.product_id] || 0) + Number(earning.amount);
       return acc;
     }, {} as Record<string, number>);
 
@@ -189,15 +189,15 @@ export async function getEarningHistory() {
     const earnings = await getEarnings();
 
     const monthlyEarnings = earnings.reduce((acc, earning) => {
-      const month = earning.createdAt.toISOString().slice(0, 7);
+      const month = earning.created_at.toISOString().slice(0, 7);
       if (!acc[month]) {
         acc[month] = { total: 0, pending: 0, paid: 0 };
       }
-      acc[month].total += earning.amount;
+      acc[month].total += Number(earning.amount);
       if (earning.status === 'pending') {
-        acc[month].pending += earning.amount;
+        acc[month].pending += Number(earning.amount);
       } else if (earning.status === 'paid') {
-        acc[month].paid += earning.amount;
+        acc[month].paid += Number(earning.amount);
       }
       return acc;
     }, {} as Record<string, { total: number; pending: number; paid: number }>);
@@ -212,27 +212,27 @@ export async function getEarningHistory() {
   }
 }
 
-export async function getProductEarningStats(productId: string): Promise<{
+export async function getProductEarningStats(product_id: string): Promise<{
   totalEarnings: number;
   totalPending: number;
   totalPaid: number;
   earningDistribution: Record<string, number>;
 }> {
   const earnings = await prismaClient.earning.findMany({
-    where: { productId },
+    where: { product_id },
   });
 
-  const totalEarnings = earnings.reduce((sum, earning) => sum + earning.amount, 0);
+  const totalEarnings = earnings.reduce((sum, earning) => sum + Number(earning.amount), 0);
   const totalPending = earnings
     .filter(earning => earning.status === 'pending')
-    .reduce((sum, earning) => sum + earning.amount, 0);
+    .reduce((sum, earning) => sum + Number(earning.amount), 0);
   const totalPaid = earnings
     .filter(earning => earning.status === 'paid')
-    .reduce((sum, earning) => sum + earning.amount, 0);
+    .reduce((sum, earning) => sum + Number(earning.amount), 0);
 
   const earningDistribution = earnings.reduce((acc, earning) => {
-    const date = earning.createdAt.toISOString().split('T')[0];
-    acc[date] = (acc[date] || 0) + earning.amount;
+    const date = earning.created_at.toISOString().split('T')[0];
+    acc[date] = (acc[date] || 0) + Number(earning.amount);
     return acc;
   }, {} as Record<string, number>);
 

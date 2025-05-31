@@ -63,14 +63,14 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
         throw new Error('Failed to upload agent');
       }
 
-      const { fileUrl } = await uploadResponse.json();
+      const { file_url } = await uploadResponse.json();
 
       // Save the agent metadata
       const agentData = {
         name,
         description,
         framework,
-        file_url: fileUrl,
+        file_url: file_url,
         requirements,
         code,
       };

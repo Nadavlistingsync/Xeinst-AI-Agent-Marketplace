@@ -28,8 +28,8 @@ export async function POST(request: Request) {
         uploadedBy: session.user.id,
         isPublic: data.isPublic ?? true,
         isFeatured: data.isFeatured ?? false,
-        downloadCount: 0,
-        earningsSplit: data.earningsSplit ?? 0.70,
+        download_count: 0,
+        earnings_split: data.earnings_split ?? 0.70,
       },
     });
     return NextResponse.json(newProduct);
@@ -53,7 +53,7 @@ export async function PUT(request: Request) {
       where: { id },
       data: {
         ...updateData,
-        updatedAt: new Date(),
+        updated_at: new Date(),
       },
     });
     return NextResponse.json(updatedProduct);

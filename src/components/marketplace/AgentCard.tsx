@@ -9,13 +9,13 @@ interface Agent {
   name: string;
   description: string;
   framework: string;
-  accessLevel: string;
+  access_level: string;
   licenseType: string;
   priceCents: number;
   rating: number;
   ratingCount: number;
-  downloadCount: number;
-  createdAt: Date;
+  download_count: number;
+  created_at: Date;
   deployer: {
     name: string | null;
     image: string | null;
@@ -38,8 +38,8 @@ export function AgentCard({ agent, onSelect }: AgentCardProps) {
               by {agent.deployer.name || "Anonymous"}
             </CardDescription>
           </div>
-          <Badge variant={agent.accessLevel === "public" ? "default" : "secondary"}>
-            {agent.accessLevel}
+          <Badge variant={agent.access_level === "public" ? "default" : "secondary"}>
+            {agent.access_level}
           </Badge>
         </div>
       </CardHeader>
@@ -53,10 +53,10 @@ export function AgentCard({ agent, onSelect }: AgentCardProps) {
           <span className="text-gray-500">({agent.ratingCount} reviews)</span>
         </div>
         <div className="mt-2 text-sm text-gray-500">
-          {agent.downloadCount} downloads
+          {agent.download_count} downloads
         </div>
         <div className="mt-2 text-sm text-gray-500">
-          Created {formatDistanceToNow(new Date(agent.createdAt), { addSuffix: true })}
+          Created {formatDistanceToNow(new Date(agent.created_at), { addSuffix: true })}
         </div>
       </CardContent>
       <CardFooter className="flex justify-between items-center">

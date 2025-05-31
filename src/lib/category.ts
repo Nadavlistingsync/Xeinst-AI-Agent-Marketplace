@@ -11,8 +11,8 @@ export async function createCategory(data: {
     return await prismaClient.category.create({
       data: {
         ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
       },
     });
   } catch (error) {
@@ -27,7 +27,7 @@ export async function updateCategory(id: string, data: Partial<Category>): Promi
       where: { id },
       data: {
         ...data,
-        updatedAt: new Date(),
+        updated_at: new Date(),
       },
     });
   } catch (error) {
@@ -150,7 +150,7 @@ export async function getCategoryProducts(
 
   return await prismaClient.product.findMany({
     where,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
     take: options.limit,
   });
 }

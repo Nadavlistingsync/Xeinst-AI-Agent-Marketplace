@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { db } from "@/lib/db";
+import db from '@/lib/db';
 import { products } from "@/lib/schema";
 import { uploadFile } from '@/lib/file-helpers';
 import { toast } from "react-hot-toast";
@@ -73,7 +73,7 @@ export default function UploadPage() {
       }
 
       // Upload file
-      const fileUrl = await uploadFile(uploadFile, session?.user?.id!);
+      const file_url = await uploadFile(uploadFile, session?.user?.id!);
 
       // Insert product into database
       const slug = formData.name
@@ -87,7 +87,7 @@ export default function UploadPage() {
         description: formData.description,
         price: formData.price,
         documentation: formData.documentation,
-        file_url: fileUrl,
+        file_url: file_url,
         uploaded_by: session.user.id,
         is_public: true,
       }).returning();

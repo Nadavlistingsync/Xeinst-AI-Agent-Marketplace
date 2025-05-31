@@ -27,8 +27,8 @@ export function initSocket(res: NextApiResponseWithSocket) {
   return res.socket.server.io;
 }
 
-export const emitNotification = (io: SocketIOServer, userId: string, notification: any) => {
-  io.to(`user:${userId}`).emit('notification', notification);
+export const emitNotification = (io: SocketIOServer, user_id: string, notification: any) => {
+  io.to(`user:${user_id}`).emit('notification', notification);
 };
 
 export const emitFeedbackUpdate = (io: SocketIOServer, agentId: string, feedback: any) => {

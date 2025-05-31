@@ -10,9 +10,10 @@ vi.mock('@prisma/client', () => ({
   })),
 }));
 
-import { getFeaturedAgents, getTrendingAgents } from '../route';
+import { getFeaturedAgents, getTrendingAgents, GET } from '../route';
 import prisma from '@/lib/prisma';
 import { getAgentLogs, getAgentMetrics, logAgentEvent } from '@/lib/agent-monitoring';
+import { prisma as testPrisma } from '@/test/setup';
 
 // Mock Prisma
 vi.mock('@/lib/prisma', () => ({
@@ -79,6 +80,11 @@ describe('Agents API', () => {
     vi.clearAllMocks();
   });
 
+  beforeEach(async () => {
+    // Clear the agents table before each test
+    await testPrisma.agent.deleteMany();
+  });
+
   describe('getFeaturedAgents', () => {
     it('should return featured agents', async () => {
       (prisma.deployment.findMany as any).mockResolvedValue(mockAgents);
@@ -124,6 +130,50 @@ describe('Agents API', () => {
       (prisma.deployment.findMany as any).mockRejectedValue(new Error('Database error'));
 
       await expect(getTrendingAgents()).rejects.toThrow('Database error');
+    });
+  });
+
+  it('returns empty array when no agents exist', async () => {
+    const response = await GET();
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(data)).toBe(true);
+    expect(data).toHaveLength(0);
+  });
+
+  it('returns all agents when they exist', async () => {
+    // Create a test agent
+    const testAgent = await testPrisma.agent.create({
+      data: {
+        name: 'Test Agent',
+        description: 'Test Description',
+        price: 100,
+        rating: 4.5,
+        image_url: '/test-image.jpg',
+        user_id: 'user1',
+        category: 'AI',
+        status: 'active',
+        is_featured: true,
+      },
+    });
+
+    const response = await GET();
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(Array.isArray(data)).toBe(true);
+    expect(data).toHaveLength(1);
+    expect(data[0]).toMatchObject({
+      id: testAgent.id,
+      name: testAgent.name,
+      description: testAgent.description,
+      price: testAgent.price,
+      rating: testAgent.rating,
+      image_url: testAgent.image_url,
+      category: testAgent.category,
+      status: testAgent.status,
+      is_featured: testAgent.is_featured,
     });
   });
 });

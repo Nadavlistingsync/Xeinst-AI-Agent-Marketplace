@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { Product, User, Earning } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
-import { db } from '@/lib/db';
+import db from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { productId } = await req.json();
-    if (!productId) {
+    const { product_id } = await req.json();
+    if (!product_id) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     const [product] = await db
       .select()
       .from(products)
-      .where(eq(products.id, productId))
+      .where(eq(products.id, product_id))
       .limit(1);
 
     if (!product) {
@@ -44,12 +44,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate earnings
-    const earningsAmount = (Number(product.price) * Number(product.earningsSplit)).toFixed(2);
+    const earningsAmount = (Number(product.price) * Number(product.earnings_split)).toFixed(2);
 
     // Create earnings record
     await db.insert(earnings).values({
-      userId: creator.id,
-      productId: product.id,
+      user_id: creator.id,
+      product_id: product.id,
       amount: earningsAmount,
       status: 'pending',
     });
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     // Update product download count
     await db
       .update(products)
-      .set({ downloadCount: (product.downloadCount ?? 0) + 1 })
+      .set({ download_count: (product.download_count ?? 0) + 1 })
       .where(eq(products.id, product.id));
 
     return NextResponse.json({

@@ -56,7 +56,7 @@ export default function ProductDetails({ product, isPurchased }: ProductDetailsP
       const res = await fetch(`/api/download-product`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id }),
+        body: JSON.stringify({ product_id: product.id }),
       });
       const data = await res.json();
       if (data.url) {

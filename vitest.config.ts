@@ -7,18 +7,30 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export default defineConfig({
+  plugins: [react(), tsconfigPaths()],
   test: {
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
-    include: ['**/*.test.ts', '**/*.test.tsx'],
+    include: ['**/*.test.{ts,tsx}'],
     coverage: {
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'src/test/']
+      exclude: [
+        'node_modules/',
+        'src/test/',
+      ],
     },
     env: {
-      DATABASE_URL: process.env.DATABASE_URL || '',
-    }
+      DATABASE_URL: process.env.DATABASE_URL || 'file:./test.db',
+      NODE_ENV: 'test',
+    },
   },
-  plugins: [react() as any, tsconfigPaths() as any]
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
+  deps: {
+    inline: ['@prisma/client'],
+  },
 }); 

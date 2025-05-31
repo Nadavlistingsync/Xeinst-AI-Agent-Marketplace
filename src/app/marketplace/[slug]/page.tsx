@@ -14,13 +14,13 @@ interface Product {
   longDescription?: string;
   category: string;
   price?: number;
-  imageUrl?: string;
+  image_url?: string;
   rating?: number;
   features?: string[];
   requirements?: string[];
   createdBy: string;
-  averageRating: number;
-  totalRatings: number;
+  average_rating: number;
+  total_ratings: number;
 }
 
 export default function ProductPage({ params }: { params: { slug: string } }) {
@@ -84,10 +84,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {product.imageUrl && (
+          {product.image_url && (
             <div className="w-full h-64 md:h-96 relative">
               <Image
-                src={product.imageUrl}
+                src={product.image_url}
                 alt={product.name}
                 fill
                 className="object-cover"
@@ -183,9 +183,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         <div className="mt-8 bg-white rounded-xl shadow-lg p-8">
           <h2 className="text-2xl font-semibold mb-6">Reviews & Ratings</h2>
           <AgentReviews
-            productId={product.id}
-            averageRating={product.averageRating}
-            totalRatings={product.totalRatings}
+            product_id={product.id}
+            average_rating={product.average_rating}
+            total_ratings={product.total_ratings}
           />
         </div>
       </div>

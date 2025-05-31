@@ -21,27 +21,27 @@ export async function GET(
     const feedbacks = await prisma.agentFeedback.findMany({
       where: {
         agentId: params.id,
-        createdAt: {
+        created_at: {
           gte: startDate,
         },
       },
       orderBy: {
-        createdAt: 'asc',
+        created_at: 'asc',
       },
     });
 
     // Group feedbacks by date and calculate averages
     const trends = feedbacks.reduce((acc: any[], feedback) => {
-      const date = feedback.createdAt.toISOString().split('T')[0];
+      const date = feedback.created_at.toISOString().split('T')[0];
       const existing = acc.find(item => item.date === date);
       
       if (existing) {
-        existing.averageRating = (existing.averageRating * existing.feedbackCount + feedback.rating) / (existing.feedbackCount + 1);
+        existing.average_rating = (existing.average_rating * existing.feedbackCount + feedback.rating) / (existing.feedbackCount + 1);
         existing.feedbackCount++;
       } else {
         acc.push({
           date,
-          averageRating: feedback.rating,
+          average_rating: feedback.rating,
           feedbackCount: 1,
         });
       }

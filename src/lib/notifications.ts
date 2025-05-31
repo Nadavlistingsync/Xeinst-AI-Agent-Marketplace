@@ -12,7 +12,7 @@ export type NotificationType =
 
 export interface CreateNotificationParams {
   type: NotificationType;
-  userId: string;
+  user_id: string;
   title: string;
   message: string;
   metadata?: Record<string, any>;
@@ -21,7 +21,7 @@ export interface CreateNotificationParams {
 export async function createNotification(data: CreateNotificationParams): Promise<Notification> {
   return prismaClient.notification.create({
     data: {
-      userId: data.userId,
+      user_id: data.user_id,
       type: data.type,
       title: data.title,
       message: data.message,
@@ -32,7 +32,7 @@ export async function createNotification(data: CreateNotificationParams): Promis
 }
 
 export async function getNotifications(
-  userId: string,
+  user_id: string,
   options: {
     unreadOnly?: boolean;
     limit?: number;
@@ -42,11 +42,11 @@ export async function getNotifications(
 
   return prismaClient.notification.findMany({
     where: {
-      userId,
+      user_id,
       ...(unreadOnly ? { read: false } : {}),
     },
     orderBy: {
-      createdAt: 'desc',
+      created_at: 'desc',
     },
     ...(limit ? { take: limit } : {}),
   });
@@ -62,11 +62,11 @@ export async function markNotificationAsRead(
 }
 
 export async function markAllNotificationsAsRead(
-  userId: string
+  user_id: string
 ): Promise<void> {
   await prismaClient.notification.updateMany({
     where: {
-      userId,
+      user_id,
       read: false,
     },
     data: { read: true },
@@ -80,11 +80,11 @@ export async function deleteNotification(id: string): Promise<Notification> {
 }
 
 export async function getUnreadNotificationCount(
-  userId: string
+  user_id: string
 ): Promise<number> {
   return prismaClient.notification.count({
     where: {
-      userId,
+      user_id,
       read: false,
     },
   });

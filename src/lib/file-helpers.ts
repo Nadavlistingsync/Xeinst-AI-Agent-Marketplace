@@ -3,29 +3,29 @@ import { File } from '@prisma/client';
 
 export async function uploadFile(
   file: File,
-  userId: string
+  user_id: string
 ): Promise<string> {
   const fileRecord = await prisma.file.create({
     data: {
       name: file.name,
       type: file.type,
       size: file.size,
-      uploadedBy: userId,
+      uploadedBy: user_id,
       path: '', // This will be updated after actual upload
     },
   });
 
   // Here you would implement the actual file upload logic
   // For example, using AWS S3, Google Cloud Storage, etc.
-  const fileUrl = `/api/files/${fileRecord.id}`;
+  const file_url = `/api/files/${fileRecord.id}`;
 
   // Update the file record with the URL
   await prisma.file.update({
     where: { id: fileRecord.id },
-    data: { path: fileUrl },
+    data: { path: file_url },
   });
 
-  return fileUrl;
+  return file_url;
 }
 
 export async function getFile(id: string): Promise<File | null> {
@@ -51,11 +51,11 @@ export async function deleteFile(id: string): Promise<File> {
   });
 }
 
-export async function listFiles(userId: string): Promise<File[]> {
+export async function listFiles(user_id: string): Promise<File[]> {
   return prisma.file.findMany({
-    where: { uploadedBy: userId },
+    where: { uploadedBy: user_id },
     orderBy: {
-      createdAt: 'desc',
+      created_at: 'desc',
     },
   });
 }

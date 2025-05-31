@@ -20,12 +20,12 @@ interface Review {
 }
 
 interface AgentReviewsProps {
-  productId: string;
-  averageRating: number;
-  totalRatings: number;
+  product_id: string;
+  average_rating: number;
+  total_ratings: number;
 }
 
-const AgentReviews = ({ productId, averageRating, totalRatings }: AgentReviewsProps) => {
+const AgentReviews = ({ product_id, average_rating, total_ratings }: AgentReviewsProps) => {
   const { data: session } = useSession();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [rating, setRating] = useState(0);
@@ -37,7 +37,7 @@ const AgentReviews = ({ productId, averageRating, totalRatings }: AgentReviewsPr
   const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await fetchApi<{ reviews: Review[] }>(`/api/reviews?productId=${productId}`);
+      const { data, error } = await fetchApi<{ reviews: Review[] }>(`/api/reviews?productId=${product_id}`);
       
       if (error) {
         throw new Error(error);
@@ -54,7 +54,7 @@ const AgentReviews = ({ productId, averageRating, totalRatings }: AgentReviewsPr
     } finally {
       setLoading(false);
     }
-  }, [productId]);
+  }, [product_id]);
 
   useEffect(() => {
     fetchReviews();
@@ -74,7 +74,7 @@ const AgentReviews = ({ productId, averageRating, totalRatings }: AgentReviewsPr
     setIsSubmitting(true);
     try {
       const { error } = await postApi('/api/reviews', {
-        productId,
+        product_id,
         rating,
         review,
       });
@@ -103,9 +103,9 @@ const AgentReviews = ({ productId, averageRating, totalRatings }: AgentReviewsPr
         <div className="flex items-center mb-8">
           <div className="flex items-center">
             <Star className="w-8 h-8 text-yellow-400 fill-current" />
-            <span className="text-3xl font-bold ml-2">{averageRating.toFixed(1)}</span>
+            <span className="text-3xl font-bold ml-2">{average_rating.toFixed(1)}</span>
           </div>
-          <span className="text-gray-500 ml-2">({totalRatings} reviews)</span>
+          <span className="text-gray-500 ml-2">({total_ratings} reviews)</span>
         </div>
 
         {session && (

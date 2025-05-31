@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import Home from '../page'
 import { vi } from 'vitest'
+import { prisma } from '@/test/setup'
 
 // Mock the FeaturedAgents component
 vi.mock('@/components/FeaturedAgents', () => ({
@@ -50,4 +51,37 @@ describe('Home Page', () => {
     expect(screen.getByText('98%')).toBeInTheDocument()
     expect(screen.getByText('Client Satisfaction')).toBeInTheDocument()
   })
+
+  it('renders home page with main sections', async () => {
+    // Mock the getFeaturedAgents function
+    const mockAgents = [
+      {
+        id: '1',
+        name: 'Test Agent',
+        description: 'Test Description',
+        price: 100,
+        rating: 4.5,
+        image_url: '/test-image.jpg',
+        created_at: new Date(),
+        updated_at: new Date(),
+        user_id: 'user1',
+        category: 'AI',
+        status: 'active',
+        is_featured: true,
+        total_sales: 10,
+        total_revenue: 1000,
+      },
+    ];
+
+    // Mock the prisma client
+    vi.spyOn(prisma.agent, 'findMany').mockResolvedValue(mockAgents);
+
+    render(<Home />);
+
+    // Check if main sections are rendered
+    expect(screen.getByText(/Welcome to AI Agency/i)).toBeInTheDocument();
+    expect(screen.getByText(/Featured AI Agents/i)).toBeInTheDocument();
+    expect(screen.getByText(/How It Works/i)).toBeInTheDocument();
+    expect(screen.getByText(/Why Choose Us/i)).toBeInTheDocument();
+  });
 }) 

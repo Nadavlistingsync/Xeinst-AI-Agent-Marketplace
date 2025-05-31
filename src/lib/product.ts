@@ -17,8 +17,8 @@ export interface CreateProductInput {
   longDescription?: string;
   category: string;
   price: number;
-  imageUrl?: string;
-  fileUrl: string;
+  image_url?: string;
+  file_url: string;
   documentation?: string;
   features: string[];
   requirements: string[];
@@ -26,7 +26,7 @@ export interface CreateProductInput {
   uploadedBy: string;
   isPublic?: boolean;
   isFeatured?: boolean;
-  earningsSplit?: number;
+  earnings_split?: number;
 }
 
 export async function createProduct(data: CreateProductInput): Promise<Product> {
@@ -39,8 +39,8 @@ export async function createProduct(data: CreateProductInput): Promise<Product> 
         longDescription: data.longDescription,
         category: data.category,
         price: new Prisma.Decimal(data.price),
-        imageUrl: data.imageUrl,
-        fileUrl: data.fileUrl,
+        image_url: data.image_url,
+        file_url: data.file_url,
         documentation: data.documentation,
         features: data.features,
         requirements: data.requirements,
@@ -48,11 +48,11 @@ export async function createProduct(data: CreateProductInput): Promise<Product> 
         uploadedBy: data.uploadedBy,
         isPublic: data.isPublic ?? true,
         isFeatured: data.isFeatured ?? false,
-        earningsSplit: new Prisma.Decimal(data.earningsSplit ?? 0.70),
+        earnings_split: new Prisma.Decimal(data.earnings_split ?? 0.70),
         rating: 0,
-        averageRating: new Prisma.Decimal(0),
-        totalRatings: 0,
-        downloadCount: 0,
+        average_rating: new Prisma.Decimal(0),
+        total_ratings: 0,
+        download_count: 0,
       },
     });
   } catch (error) {
@@ -70,8 +70,8 @@ export async function updateProduct(
     if (data.price !== undefined) {
       updateData.price = new Prisma.Decimal(data.price);
     }
-    if (data.earningsSplit !== undefined) {
-      updateData.earningsSplit = new Prisma.Decimal(data.earningsSplit);
+    if (data.earnings_split !== undefined) {
+      updateData.earnings_split = new Prisma.Decimal(data.earnings_split);
     }
 
     return await prismaClient.product.update({
@@ -109,7 +109,7 @@ export async function getProducts(options: {
 
     return await prismaClient.product.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
     });
   } catch (error) {
     console.error('Error getting products:', error);
@@ -169,7 +169,7 @@ export async function getProductHistory() {
     const products = await getProducts();
 
     const monthlyProducts = products.reduce((acc, product) => {
-      const month = product.createdAt.toISOString().slice(0, 7);
+      const month = product.created_at.toISOString().slice(0, 7);
       if (!acc[month]) {
         acc[month] = { total: 0, categories: {} as Record<string, number> };
       }
@@ -189,31 +189,31 @@ export async function getProductHistory() {
 }
 
 export async function getProductReviews(
-  productId: string,
+  product_id: string,
   options: {
     startDate?: Date;
     endDate?: Date;
     limit?: number;
   } = {}
 ): Promise<any[]> {
-  const where: Prisma.ReviewWhereInput = { productId };
+  const where: Prisma.ReviewWhereInput = { product_id };
 
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
+  if (options.startDate) where.created_at = { gte: options.startDate };
+  if (options.endDate) where.created_at = { lte: options.endDate };
 
   return await prismaClient.review.findMany({
     where,
     include: {
       user: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
     take: options.limit,
   });
 }
 
 export async function createProductReview(data: {
-  productId: string;
-  userId: string;
+  product_id: string;
+  user_id: string;
   rating: number;
   comment?: string;
 }): Promise<any> {
@@ -221,71 +221,71 @@ export async function createProductReview(data: {
     data,
   });
 
-  await updateProductRating(data.productId);
+  await updateProductRating(data.product_id);
 
   return review;
 }
 
-export async function updateProductRating(productId: string): Promise<void> {
+export async function updateProductRating(product_id: string): Promise<void> {
   const reviews = await prismaClient.review.findMany({
-    where: { productId },
+    where: { product_id },
   });
 
-  const averageRating =
+  const average_rating =
     reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
 
   await prismaClient.product.update({
-    where: { id: productId },
-    data: { rating: averageRating },
+    where: { id: product_id },
+    data: { rating: average_rating },
   });
 }
 
 export async function getRelatedProducts(
-  productId: string,
+  product_id: string,
   limit: number = 4
 ): Promise<Product[]> {
-  const product = await getProduct(productId);
+  const product = await getProduct(product_id);
   if (!product) return [];
 
   return await prismaClient.product.findMany({
     where: {
       category: product.category,
-      id: { not: productId },
+      id: { not: product_id },
     },
     take: limit,
   });
 }
 
 export async function getProductPurchases(
-  productId: string,
+  product_id: string,
   options: {
     startDate?: Date;
     endDate?: Date;
     limit?: number;
   } = {}
 ): Promise<any[]> {
-  const where: Prisma.PurchaseWhereInput = { productId };
+  const where: Prisma.PurchaseWhereInput = { product_id };
 
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
+  if (options.startDate) where.created_at = { gte: options.startDate };
+  if (options.endDate) where.created_at = { lte: options.endDate };
 
   return await prismaClient.purchase.findMany({
     where,
     include: {
       user: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
     take: options.limit,
   });
 }
 
 export async function updateProductDownloadCount(
-  productId: string
+  product_id: string
 ): Promise<void> {
   await prismaClient.product.update({
-    where: { id: productId },
+    where: { id: product_id },
     data: {
-      downloadCount: {
+      download_count: {
         increment: 1,
       },
     },

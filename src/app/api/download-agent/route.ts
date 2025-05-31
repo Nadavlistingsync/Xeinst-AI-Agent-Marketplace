@@ -27,12 +27,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
     }
 
-    if (agent.deployedBy !== session.user.id) {
+    if (agent.deployed_by !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Read file from local storage
-    const filePath = join(process.cwd(), 'public', agent.fileUrl!);
+    const filePath = join(process.cwd(), 'public', agent.file_url!);
     const fileBuffer = await readFile(filePath);
 
     // Return file as download

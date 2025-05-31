@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { db } from '@/lib/db';
+import db from '@/lib/db';
 import { agentFeedbacks } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
 import { createNotification } from '@/lib/notifications';
@@ -49,7 +49,7 @@ export async function POST(
 
     // Create notification for the user who provided the feedback
     await createNotification({
-      userId: feedback[0].userId,
+      user_id: feedback[0].user_id,
       type: 'feedback_received',
       title: 'Feedback Response Received',
       message: `The creator has responded to your feedback.`,

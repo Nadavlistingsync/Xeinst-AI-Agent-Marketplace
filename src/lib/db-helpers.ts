@@ -82,7 +82,7 @@ export async function getProducts(params: {
       },
     },
     orderBy: {
-      createdAt: "desc",
+      created_at: "desc",
     },
   });
 }
@@ -93,7 +93,7 @@ export async function getFeaturedProducts() {
       isPublic: true,
       isFeatured: true 
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { created_at: 'desc' }
   });
 }
 
@@ -103,7 +103,7 @@ export async function getProductsByCategory(category: string) {
       isPublic: true,
       category 
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { created_at: 'desc' }
   });
 }
 
@@ -167,9 +167,9 @@ export async function deleteProduct(id: string) {
 }
 
 // Review operations
-export async function getProductReviews(productId: string) {
+export async function getProductReviews(product_id: string) {
   return prisma.review.findMany({
-    where: { productId },
+    where: { product_id },
     include: {
       user: {
         select: {
@@ -179,7 +179,7 @@ export async function getProductReviews(productId: string) {
       },
     },
     orderBy: {
-      createdAt: "desc",
+      created_at: "desc",
     },
   });
 }
@@ -216,9 +216,9 @@ export async function getUserReview(product_id: string, user_id: string) {
 }
 
 // Purchase operations
-export async function getUserPurchases(userId: string) {
+export async function getUserPurchases(user_id: string) {
   return prisma.purchase.findMany({
-    where: { userId },
+    where: { user_id },
     include: {
       product: {
         include: {
@@ -238,7 +238,7 @@ export async function getUserPurchases(userId: string) {
       },
     },
     orderBy: {
-      createdAt: "desc",
+      created_at: "desc",
     },
   });
 }
@@ -275,10 +275,10 @@ export async function getUserProducts(user_id: string) {
 export async function getDeployments(params: {
   query?: string;
   framework?: string;
-  accessLevel?: string;
+  access_level?: string;
   licenseType?: string;
 }) {
-  const { query, framework, accessLevel, licenseType } = params;
+  const { query, framework, access_level, licenseType } = params;
 
   const where: Prisma.DeploymentWhereInput = {
     status: "active",
@@ -295,8 +295,8 @@ export async function getDeployments(params: {
     where.framework = framework;
   }
 
-  if (accessLevel) {
-    where.accessLevel = accessLevel;
+  if (access_level) {
+    where.access_level = access_level;
   }
 
   if (licenseType) {
@@ -315,7 +315,7 @@ export async function getDeployments(params: {
       metrics: true,
     },
     orderBy: {
-      createdAt: "desc",
+      created_at: "desc",
     },
   });
 }
@@ -383,7 +383,7 @@ export async function getAgentFeedback(agentId: string) {
   return prisma.agentFeedback.findMany({
     where: { agentId },
     include: { user: true },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { created_at: 'desc' }
   });
 }
 

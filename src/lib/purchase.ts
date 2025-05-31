@@ -6,13 +6,13 @@ export interface PurchaseOptions {
   user_id?: string;
   product_id?: string;
   status?: string;
-  start_date?: Date;
-  end_date?: Date;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export async function createPurchase(data: {
-  userId: string;
-  productId: string;
+  user_id: string;
+  product_id: string;
   amount: number;
   status?: string;
 }): Promise<Purchase> {
@@ -21,8 +21,8 @@ export async function createPurchase(data: {
       data: {
         ...data,
         status: data.status || 'pending',
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
       },
     });
   } catch (error) {
@@ -37,7 +37,7 @@ export async function updatePurchase(id: string, data: Partial<Purchase>): Promi
       where: { id },
       data: {
         ...data,
-        updatedAt: new Date(),
+        updated_at: new Date(),
       },
     });
   } catch (error) {
@@ -53,8 +53,8 @@ export async function getPurchases(options: PurchaseOptions = {}): Promise<Purch
     if (options.user_id) where.user_id = options.user_id;
     if (options.product_id) where.product_id = options.product_id;
     if (options.status) where.status = options.status;
-    if (options.start_date) where.created_at = { gte: options.start_date };
-    if (options.end_date) where.created_at = { lte: options.end_date };
+    if (options.startDate) where.created_at = { gte: options.startDate };
+    if (options.endDate) where.created_at = { lte: options.endDate };
 
     return await prismaClient.purchase.findMany({
       where,
@@ -89,7 +89,7 @@ export async function deletePurchase(id: string): Promise<void> {
 }
 
 export async function getUserPurchases(
-  userId: string,
+  user_id: string,
   options: {
     status?: string;
     startDate?: Date;
@@ -97,24 +97,24 @@ export async function getUserPurchases(
     limit?: number;
   } = {}
 ): Promise<Purchase[]> {
-  const where: Prisma.PurchaseWhereInput = { userId };
+  const where: Prisma.PurchaseWhereInput = { user_id };
 
   if (options.status) where.status = options.status;
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
+  if (options.startDate) where.created_at = { gte: options.startDate };
+  if (options.endDate) where.created_at = { lte: options.endDate };
 
   return await prismaClient.purchase.findMany({
     where,
     include: {
       product: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
     take: options.limit,
   });
 }
 
 export async function getProductPurchases(
-  productId: string,
+  product_id: string,
   options: {
     status?: string;
     startDate?: Date;
@@ -122,18 +122,18 @@ export async function getProductPurchases(
     limit?: number;
   } = {}
 ): Promise<Purchase[]> {
-  const where: Prisma.PurchaseWhereInput = { productId };
+  const where: Prisma.PurchaseWhereInput = { product_id };
 
   if (options.status) where.status = options.status;
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
+  if (options.startDate) where.created_at = { gte: options.startDate };
+  if (options.endDate) where.created_at = { lte: options.endDate };
 
   return await prismaClient.purchase.findMany({
     where,
     include: {
       user: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
     take: options.limit,
   });
 }
@@ -143,7 +143,7 @@ export async function getPurchaseStats() {
     const purchases = await getPurchases();
 
     const totalPurchases = purchases.length;
-    const totalRevenue = purchases.reduce((sum, purchase) => sum + purchase.amount, 0);
+    const totalRevenue = purchases.reduce((sum, purchase) => sum + Number(purchase.amount), 0);
     const statusDistribution = purchases.reduce((acc, purchase) => {
       acc[purchase.status] = (acc[purchase.status] || 0) + 1;
       return acc;
@@ -166,12 +166,12 @@ export async function getPurchaseHistory() {
     const purchases = await getPurchases();
 
     const monthlyPurchases = purchases.reduce((acc, purchase) => {
-      const month = purchase.createdAt.toISOString().slice(0, 7);
+      const month = purchase.created_at.toISOString().slice(0, 7);
       if (!acc[month]) {
         acc[month] = { total: 0, revenue: 0 };
       }
       acc[month].total += 1;
-      acc[month].revenue += purchase.amount;
+      acc[month].revenue += Number(purchase.amount);
       return acc;
     }, {} as Record<string, { total: number; revenue: number }>);
 
@@ -186,12 +186,12 @@ export async function getPurchaseHistory() {
 }
 
 export async function updateProductDownloadCount(
-  productId: string
+  product_id: string
 ): Promise<void> {
   await prismaClient.product.update({
-    where: { id: productId },
+    where: { id: product_id },
     data: {
-      downloadCount: {
+      download_count: {
         increment: 1,
       },
     },

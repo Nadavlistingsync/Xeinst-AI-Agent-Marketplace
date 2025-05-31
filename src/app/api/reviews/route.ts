@@ -7,9 +7,9 @@ const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const productId = searchParams.get('productId');
+  const product_id = searchParams.get('productId');
 
-  if (!productId) {
+  if (!product_id) {
     return NextResponse.json(
       { error: 'Product ID is required' },
       { status: 400 }
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const reviews = await getProductReviews(productId);
+    const reviews = await getProductReviews(product_id);
     return NextResponse.json(reviews);
   } catch (error) {
     console.error('Error fetching reviews:', error);
@@ -40,9 +40,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { productId, rating, comment } = body;
+    const { product_id, rating, comment } = body;
 
-    if (!productId || !rating || !comment) {
+    if (!product_id || !rating || !comment) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has already reviewed this product
-    const existingReview = await getUserReview(session.user.id, productId);
+    const existingReview = await getUserReview(session.user.id, product_id);
     if (existingReview) {
       return NextResponse.json(
         { error: 'You have already reviewed this product' },
@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
 
     const review = await prisma.review.create({
       data: {
-        productId: productId,
-        userId: session.user.id,
+        product_id: product_id,
+        user_id: session.user.id,
         rating: rating,
         comment: comment,
       },

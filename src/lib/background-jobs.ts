@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import db from '@/lib/db';
 import { deployments } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';

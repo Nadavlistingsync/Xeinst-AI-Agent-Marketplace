@@ -8,7 +8,7 @@ export async function createUser(data: {
   email: string;
   image: string | null;
   role: string;
-  subscription_tier: string;
+  subscriptionTier: string;
   password: string;
 }): Promise<User> {
   try {
@@ -18,8 +18,8 @@ export async function createUser(data: {
         ...data,
         password: hashedPassword,
         emailVerified: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
       },
     });
   } catch (error) {
@@ -38,7 +38,7 @@ export async function updateUser(id: string, data: Partial<User>): Promise<User>
       where: { id },
       data: {
         ...updateData,
-        updatedAt: new Date(),
+        updated_at: new Date(),
       },
     });
   } catch (error) {
@@ -49,18 +49,18 @@ export async function updateUser(id: string, data: Partial<User>): Promise<User>
 
 export async function getUsers(options: {
   role?: string;
-  subscription_tier?: string;
-  start_date?: Date;
-  end_date?: Date;
+  subscriptionTier?: string;
+  startDate?: Date;
+  endDate?: Date;
   search?: string;
 } = {}): Promise<User[]> {
   try {
     const where: Prisma.UserWhereInput = {};
     
     if (options.role) where.role = options.role;
-    if (options.subscription_tier) where.subscription_tier = options.subscription_tier;
-    if (options.start_date) where.created_at = { gte: options.start_date };
-    if (options.end_date) where.created_at = { lte: options.end_date };
+    if (options.subscriptionTier) where.subscriptionTier = options.subscriptionTier;
+    if (options.startDate) where.created_at = { gte: options.startDate };
+    if (options.endDate) where.created_at = { lte: options.endDate };
     if (options.search) {
       where.OR = [
         { name: { contains: options.search, mode: 'insensitive' } },
@@ -114,7 +114,7 @@ export async function getUserAgents(
     limit?: number;
   } = {}
 ): Promise<any[]> {
-  const where: Prisma.AgentWhereInput = { created_by: user_id };
+  const where: Prisma.AgentWhereInput = { createdBy: user_id };
 
   if (options.status) where.status = options.status;
   if (options.category) where.category = options.category;
@@ -130,20 +130,20 @@ export async function getUserDeployments(
   user_id: string,
   options: {
     status?: string;
-    start_date?: Date;
-    end_date?: Date;
+    startDate?: Date;
+    endDate?: Date;
     limit?: number;
   } = {}
 ): Promise<any[]> {
   const where: Prisma.DeploymentWhereInput = { deployed_by: user_id };
 
   if (options.status) where.status = options.status;
-  if (options.start_date) where.start_date = { gte: options.start_date };
-  if (options.end_date) where.end_date = { lte: options.end_date };
+  if (options.startDate) where.startDate = { gte: options.startDate };
+  if (options.endDate) where.endDate = { lte: options.endDate };
 
   return await prismaClient.deployment.findMany({
     where,
-    orderBy: { start_date: 'desc' },
+    orderBy: { startDate: 'desc' },
     take: options.limit,
   });
 }
@@ -151,15 +151,15 @@ export async function getUserDeployments(
 export async function getUserFeedbacks(
   user_id: string,
   options: {
-    start_date?: Date;
-    end_date?: Date;
+    startDate?: Date;
+    endDate?: Date;
     limit?: number;
   } = {}
 ): Promise<any[]> {
-  const where: Prisma.AgentFeedbackWhereInput = { user_id };
+  const where: Prisma.AgentFeedbackWhereInput = { user_id: user_id };
 
-  if (options.start_date) where.created_at = { gte: options.start_date };
-  if (options.end_date) where.created_at = { lte: options.end_date };
+  if (options.startDate) where.created_at = { gte: options.startDate };
+  if (options.endDate) where.created_at = { lte: options.endDate };
 
   return await prismaClient.agentFeedback.findMany({
     where,
@@ -169,21 +169,21 @@ export async function getUserFeedbacks(
 }
 
 export async function getUserEarnings(
-  userId: string,
+  user_id: string,
   options: {
     startDate?: Date;
     endDate?: Date;
     limit?: number;
   } = {}
 ): Promise<any[]> {
-  const where: Prisma.EarningWhereInput = { userId };
+  const where: Prisma.EarningWhereInput = { user_id };
 
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
+  if (options.startDate) where.created_at = { gte: options.startDate };
+  if (options.endDate) where.created_at = { lte: options.endDate };
 
   return await prismaClient.earning.findMany({
     where,
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
     take: options.limit,
   });
 }
@@ -191,15 +191,15 @@ export async function getUserEarnings(
 export async function getUserPurchases(
   user_id: string,
   options: {
-    start_date?: Date;
-    end_date?: Date;
+    startDate?: Date;
+    endDate?: Date;
     limit?: number;
   } = {}
 ): Promise<any[]> {
-  const where: Prisma.PurchaseWhereInput = { user_id };
+  const where: Prisma.PurchaseWhereInput = { user_id: user_id };
 
-  if (options.start_date) where.created_at = { gte: options.start_date };
-  if (options.end_date) where.created_at = { lte: options.end_date };
+  if (options.startDate) where.created_at = { gte: options.startDate };
+  if (options.endDate) where.created_at = { lte: options.endDate };
 
   return await prismaClient.purchase.findMany({
     where,
@@ -217,7 +217,7 @@ export async function getUserStats() {
       return acc;
     }, {} as Record<string, number>);
     const subscriptionDistribution = users.reduce((acc, user) => {
-      acc[user.subscription_tier] = (acc[user.subscription_tier] || 0) + 1;
+      acc[user.subscriptionTier] = (acc[user.subscriptionTier] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
 
@@ -237,7 +237,7 @@ export async function getUserHistory() {
   try {
     const users = await getUsers();
     const monthlyData = users.reduce((acc, user) => {
-      const month = user.createdAt.toISOString().slice(0, 7);
+      const month = user.created_at.toISOString().slice(0, 7);
       acc[month] = (acc[month] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);

@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { startBackgroundJobs } from '@/lib/background-jobs';
-import { db } from '@/lib/db';
+import db from '@/lib/db';
 
 // Start background jobs when the module is loaded
 startBackgroundJobs();
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
         where,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { created_at: 'desc' },
         include: {
           users: {
             select: {

@@ -93,7 +93,7 @@ export default function DeployPage() {
 
     try {
       // Upload file
-      const fileUrl = await uploadFile(uploadFile, session?.user?.id!);
+      const file_url = await uploadFile(uploadFile, session?.user?.id!);
 
       // Create deployment
       const response = await fetch('/api/deployments', {
@@ -105,7 +105,7 @@ export default function DeployPage() {
           name: formData.name,
           description: formData.description,
           framework: formData.framework,
-          fileUrl,
+          file_url,
           modelType: formData.modelType,
           requirements: formData.requirements,
           version: formData.version,

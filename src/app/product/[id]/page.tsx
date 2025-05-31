@@ -30,21 +30,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <ProductDetails
         product={product}
         isCreator={isCreator}
-        userId={session?.user?.id}
+        user_id={session?.user?.id}
       />
-
       <div className="mt-12">
         <ReviewSection
-          productId={product.id}
-          userId={session?.user?.id}
-          averageRating={Number(product.averageRating) || 0}
-          totalRatings={product.totalRatings || 0}
+          product_id={product.id}
+          user_id={session?.user?.id}
+          average_rating={Number(product.average_rating) || 0}
+          total_ratings={product.total_ratings || 0}
         />
       </div>
-
       <div className="mt-12">
         <RelatedProducts
-          productId={product.id}
+          product_id={product.id}
           category={product.category}
         />
       </div>

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { getProduct } from '@/lib/db-helpers';
-import { db } from '@/lib/db';
+import db from '@/lib/db';
 import { purchases } from '@/lib/schema';
 import { eq, and } from 'drizzle-orm';
 
@@ -16,9 +16,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { productId } = await request.json();
+    const { product_id } = await request.json();
 
-    if (!productId) {
+    if (!product_id) {
       return NextResponse.json(
         { error: 'Product ID is required' },
         { status: 400 }
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     // Check if product exists
-    const product = await getProduct(productId);
+    const product = await getProduct(product_id);
     if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     // Check if user has already purchased this product
     const [existing] = await db.select()
       .from(purchases)
-      .where(and(eq(purchases.product_id, productId), eq(purchases.user_id, session.user.id)));
+      .where(and(eq(purchases.product_id, product_id), eq(purchases.user_id, session.user.id)));
 
     if (existing) {
       return NextResponse.json(
@@ -49,8 +49,8 @@ export async function POST(request: Request) {
     // Create purchase record
     const [purchase] = await db.insert(purchases)
       .values({
-        productId: productId,
-        userId: session.user.id,
+        product_id: product_id,
+        user_id: session.user.id,
         amount: product.price,
         status: 'completed',
       })

@@ -114,7 +114,7 @@ export async function analyzeAgentFeedback(
   };
 
   const totalFeedbacks = feedbacks.length;
-  const averageRating = feedbacks.reduce((sum, f) => sum + f.rating, 0) / (totalFeedbacks || 1);
+  const average_rating = feedbacks.reduce((sum, f) => sum + f.rating, 0) / (totalFeedbacks || 1);
   const positiveFeedbacks = feedbacks.filter(f => f.rating >= 4).length;
   const negativeFeedbacks = feedbacks.filter(f => f.rating <= 2).length;
 
@@ -128,7 +128,7 @@ export async function analyzeAgentFeedback(
     positive_feedback: positiveFeedbacks,
     negative_feedback: negativeFeedbacks,
     total_feedbacks: totalFeedbacks,
-    average_rating: averageRating,
+    average_rating: average_rating,
     positive_feedbacks: positiveFeedbacks,
     negative_feedbacks: negativeFeedbacks
   };
@@ -137,7 +137,7 @@ export async function analyzeAgentFeedback(
 export async function getFeedbackAnalysis(deploymentId: string): Promise<FeedbackAnalysis> {
   const feedbacks = await prismaClient.agentFeedback.findMany({
     where: { deploymentId },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { created_at: 'desc' },
   });
 
   return await analyzeAgentFeedback(feedbacks);
@@ -170,14 +170,14 @@ export async function analyzeFeedbackTrends(
     where: {
       agentId,
       ...(timeRange ? {
-        createdAt: {
+        created_at: {
           gte: timeRange.start,
           lte: timeRange.end
         }
       } : {})
     },
     orderBy: {
-      createdAt: 'asc'
+      created_at: 'asc'
     }
   });
 
@@ -185,7 +185,7 @@ export async function analyzeFeedbackTrends(
     feedbacks.map(async feedback => {
       const sentiment = await analyzeSentiment(feedback.comment || '');
       return {
-        date: feedback.createdAt.toISOString(),
+        date: feedback.created_at.toISOString(),
         score: sentiment.score,
       };
     })
@@ -195,7 +195,7 @@ export async function analyzeFeedbackTrends(
     feedbacks.map(async feedback => {
       const categories = await categorizeFeedback(feedback.comment || '');
       return {
-        date: feedback.createdAt.toISOString(),
+        date: feedback.created_at.toISOString(),
         categories,
       };
     })
@@ -221,7 +221,7 @@ export async function generateFeedbackInsights(agentId: string): Promise<{
   const feedbacks = await prismaClient.agentFeedback.findMany({
     where: {
       agentId,
-      createdAt: {
+      created_at: {
         gte: thirtyDaysAgo
       }
     }
@@ -269,18 +269,18 @@ export async function analyzeFeedback(agentId: string, timeRange: { start: Date;
   const feedback = await prismaClient.agentFeedback.findMany({
     where: {
       agentId,
-      createdAt: {
+      created_at: {
         gte: timeRange.start,
         lte: timeRange.end
       }
     },
     orderBy: {
-      createdAt: 'desc'
+      created_at: 'desc'
     }
   });
 
   const totalFeedbacks = feedback.length;
-  const averageRating = feedback.reduce((sum, f) => sum + f.rating, 0) / (totalFeedbacks || 1);
+  const average_rating = feedback.reduce((sum, f) => sum + f.rating, 0) / (totalFeedbacks || 1);
   const positiveFeedbacks = feedback.filter(f => f.rating >= 4).length;
   const negativeFeedbacks = feedback.filter(f => f.rating <= 2).length;
 
@@ -293,7 +293,7 @@ export async function analyzeFeedback(agentId: string, timeRange: { start: Date;
     positive_feedback: positiveFeedbacks,
     negative_feedback: negativeFeedbacks,
     total_feedbacks: totalFeedbacks,
-    average_rating: averageRating,
+    average_rating: average_rating,
     positive_feedbacks: positiveFeedbacks,
     negative_feedbacks: negativeFeedbacks
   };

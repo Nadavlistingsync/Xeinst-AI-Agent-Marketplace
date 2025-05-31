@@ -1,12 +1,61 @@
 import 'dotenv/config';
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { vi, beforeAll, afterAll, afterEach } from 'vitest';
 import React from 'react';
+import { PrismaClient } from '@prisma/client';
+import { execSync } from 'child_process';
 
-// Ensure DATABASE_URL is available
-if (!process.env.DATABASE_URL) {
-  throw new Error('DATABASE_URL is not set in environment variables');
-}
+// Set default test database URL if not provided
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./test.db';
+
+// Use Object.defineProperty to set NODE_ENV
+Object.defineProperty(process.env, 'NODE_ENV', {
+  value: 'test',
+  writable: true
+});
+
+// Create a new Prisma client instance for testing
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+});
+
+// Reset database before all tests
+beforeAll(async () => {
+  try {
+    // Push schema to test database
+    execSync('npx prisma db push --force-reset', {
+      env: {
+        ...process.env,
+        DATABASE_URL: process.env.DATABASE_URL,
+      },
+    });
+  } catch (error) {
+    console.error('Failed to reset database:', error);
+    throw error;
+  }
+});
+
+// Clean up after all tests
+afterAll(async () => {
+  await prisma.$disconnect();
+});
+
+// Clean up after each test
+afterEach(async () => {
+  const tables = await prisma.$queryRaw<
+    Array<{ tablename: string }>
+  >`SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename != '_prisma_migrations'`;
+  
+  for (const { tablename } of tables) {
+    await prisma.$executeRawUnsafe(
+      `TRUNCATE TABLE "public"."${tablename}" CASCADE;`
+    );
+  }
+});
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
@@ -14,25 +63,29 @@ vi.mock('next/navigation', () => ({
     push: vi.fn(),
     replace: vi.fn(),
     prefetch: vi.fn(),
+    back: vi.fn(),
   }),
-  useSearchParams: () => ({
-    get: vi.fn(),
-  }),
+  usePathname: () => '',
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 // Mock next-auth
 vi.mock('next-auth', () => ({
   getServerSession: vi.fn(() => Promise.resolve(null)),
+  useSession: vi.fn(() => ({
+    data: null,
+    status: 'unauthenticated',
+  })),
 }));
 
 // Mock fetch
 global.fetch = vi.fn();
 
-// Mock Image component
+// Mock next/image
 vi.mock('next/image', () => ({
-  default: (props: any) => {
+  default: function Image(props: React.ComponentProps<'img'>) {
     // eslint-disable-next-line @next/next/no-img-element
-    return React.createElement('img', { ...props, alt: props.alt || '' });
+    return React.createElement('img', props);
   },
 }));
 
@@ -59,4 +112,7 @@ Object.defineProperty(window, 'matchMedia', {
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
-}); 
+});
+
+// Export prisma instance for tests
+export { prisma }; 

@@ -22,9 +22,9 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="relative h-96 w-full">
-          {product.imageUrl && (
+          {product.image_url && (
             <Image
-              src={product.imageUrl}
+              src={product.image_url}
               alt={product.name}
               fill
               className="object-cover"
@@ -37,9 +37,9 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
               <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
               <div className="flex items-center mb-4">
                 <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                <span className="ml-1">{formatDecimal(product.averageRating)}</span>
+                <span className="ml-1">{formatDecimal(product.average_rating)}</span>
                 <span className="ml-2 text-gray-500">
-                  ({product.totalRatings} reviews)
+                  ({product.total_ratings} reviews)
                 </span>
               </div>
             </div>
@@ -96,12 +96,11 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
           </div>
         </div>
       </div>
-
       <div className="mt-8">
         <AgentReviews
-          productId={product.id}
-          averageRating={formatDecimal(product.averageRating)}
-          totalRatings={product.totalRatings}
+          product_id={product.id}
+          average_rating={formatDecimal(product.average_rating)}
+          total_ratings={product.total_ratings}
         />
       </div>
     </div>
