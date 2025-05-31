@@ -1,6 +1,12 @@
+import 'dotenv/config';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import React from 'react';
+
+// Ensure DATABASE_URL is available
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is not set in environment variables');
+}
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
