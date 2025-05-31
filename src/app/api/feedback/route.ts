@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { AgentFeedback } from '@/prisma/schema';
 
 export async function POST(request: Request) {
   try {
@@ -9,10 +8,11 @@ export async function POST(request: Request) {
     // Store feedback in database
     const feedback = await db.agentFeedback.create({
       data: {
-        type: data.type,
-        message: data.message,
-        details: data.details || {},
-        timestamp: new Date(),
+        agentId: 'system', // Using 'system' for general feedback
+        userId: 'system', // Using 'system' for general feedback
+        rating: data.type === 'error' ? 1 : data.type === 'warning' ? 2 : 5,
+        comment: data.message,
+        createdAt: new Date(),
       },
     });
 
