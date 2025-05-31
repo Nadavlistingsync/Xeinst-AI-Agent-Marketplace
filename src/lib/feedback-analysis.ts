@@ -21,10 +21,10 @@ interface FeedbackAnalysis {
   };
 }
 
-function analyzeSentiment(text: string): SentimentAnalysis {
-  // Simple sentiment analysis implementation
-  const positiveWords = ['good', 'great', 'excellent', 'amazing', 'love', 'best'];
-  const negativeWords = ['bad', 'poor', 'terrible', 'awful', 'hate', 'worst'];
+export async function analyzeSentiment(text: string): Promise<SentimentAnalysis> {
+  // Simple sentiment analysis based on keyword matching
+  const positiveWords = ['good', 'great', 'excellent', 'amazing', 'love', 'best', 'perfect', 'awesome'];
+  const negativeWords = ['bad', 'poor', 'terrible', 'awful', 'hate', 'worst', 'useless', 'disappointing'];
   
   const words = text.toLowerCase().split(/\s+/);
   let score = 0;
@@ -34,24 +34,34 @@ function analyzeSentiment(text: string): SentimentAnalysis {
     if (negativeWords.includes(word)) score -= 1;
   });
   
-  const label = score > 0 ? 'positive' : score < 0 ? 'negative' : 'neutral';
-  return { score, label };
+  const normalizedScore = words.length > 0 ? score / words.length : 0;
+  
+  return {
+    score: normalizedScore,
+    label: normalizedScore > 0.1 ? 'positive' : normalizedScore < -0.1 ? 'negative' : 'neutral'
+  };
 }
 
-function categorizeFeedback(text: string): string[] {
-  const categories = [
-    'performance',
-    'usability',
-    'reliability',
-    'features',
-    'support',
-    'documentation'
-  ];
-  
+export async function categorizeFeedback(text: string): Promise<Record<string, number>> {
+  const categories = {
+    performance: ['fast', 'slow', 'speed', 'performance', 'efficient', 'lag', 'response'],
+    usability: ['easy', 'hard', 'intuitive', 'complicated', 'user-friendly', 'interface'],
+    reliability: ['stable', 'crash', 'error', 'bug', 'reliable', 'unstable'],
+    features: ['feature', 'functionality', 'capability', 'option', 'tool'],
+    support: ['support', 'help', 'assistance', 'documentation', 'guide'],
+    documentation: ['documentation', 'guide', 'manual', 'tutorial', 'example']
+  };
+
   const words = text.toLowerCase().split(/\s+/);
-  return categories.filter(category => 
-    words.some(word => word.includes(category))
-  );
+  const result: Record<string, number> = {};
+
+  Object.entries(categories).forEach(([category, keywords]) => {
+    result[category] = keywords.filter(keyword => 
+      words.some(word => word.includes(keyword))
+    ).length;
+  });
+
+  return result;
 }
 
 export async function analyzeAgentFeedback(deploymentId: string): Promise<FeedbackAnalysis> {
@@ -103,11 +113,19 @@ export async function analyzeAgentFeedback(deploymentId: string): Promise<Feedba
   const recentFeedbacks = feedbacks.filter(f => f.createdAt >= twoWeeksAgo);
   const olderFeedbacks = feedbacks.filter(f => f.createdAt < twoWeeksAgo);
   
-  const recentSentiment = recentFeedbacks.reduce((sum, f) => sum + (f.sentimentScore ? Number(f.sentimentScore) : 0), 0) / recentFeedbacks.length;
-  const olderSentiment = olderFeedbacks.reduce((sum, f) => sum + (f.sentimentScore ? Number(f.sentimentScore) : 0), 0) / olderFeedbacks.length;
+  const recentSentiment = recentFeedbacks.length > 0
+    ? recentFeedbacks.reduce((sum, f) => sum + (f.sentimentScore ? Number(f.sentimentScore) : 0), 0) / recentFeedbacks.length
+    : 0;
+  const olderSentiment = olderFeedbacks.length > 0
+    ? olderFeedbacks.reduce((sum, f) => sum + (f.sentimentScore ? Number(f.sentimentScore) : 0), 0) / olderFeedbacks.length
+    : 0;
   
-  const recentRating = recentFeedbacks.reduce((sum, f) => sum + f.rating, 0) / recentFeedbacks.length;
-  const olderRating = olderFeedbacks.reduce((sum, f) => sum + f.rating, 0) / olderFeedbacks.length;
+  const recentRating = recentFeedbacks.length > 0
+    ? recentFeedbacks.reduce((sum, f) => sum + f.rating, 0) / recentFeedbacks.length
+    : 0;
+  const olderRating = olderFeedbacks.length > 0
+    ? olderFeedbacks.reduce((sum, f) => sum + f.rating, 0) / olderFeedbacks.length
+    : 0;
   
   return {
     totalFeedbacks: feedbacks.length,
@@ -122,46 +140,6 @@ export async function analyzeAgentFeedback(deploymentId: string): Promise<Feedba
       sentiment: recentSentiment - olderSentiment
     }
   };
-}
-
-export async function analyzeSentiment(text: string): Promise<SentimentAnalysis> {
-  // Simple sentiment analysis based on keyword matching
-  const positiveWords = ['good', 'great', 'excellent', 'amazing', 'love', 'best', 'perfect', 'awesome'];
-  const negativeWords = ['bad', 'poor', 'terrible', 'awful', 'hate', 'worst', 'useless', 'disappointing'];
-  
-  const words = text.toLowerCase().split(/\s+/);
-  let score = 0;
-  
-  words.forEach(word => {
-    if (positiveWords.includes(word)) score += 1;
-    if (negativeWords.includes(word)) score -= 1;
-  });
-  
-  const normalizedScore = score / words.length;
-  
-  return {
-    score: normalizedScore,
-    label: normalizedScore > 0.1 ? 'positive' : normalizedScore < -0.1 ? 'negative' : 'neutral'
-  };
-}
-
-export async function categorizeFeedback(text: string): Promise<Record<string, number>> {
-  const categories = {
-    performance: ['fast', 'slow', 'speed', 'performance', 'efficient', 'lag', 'response'],
-    usability: ['easy', 'hard', 'intuitive', 'complicated', 'user-friendly', 'interface'],
-    reliability: ['stable', 'crash', 'error', 'reliable', 'unstable', 'bug'],
-    features: ['feature', 'functionality', 'capability', 'missing', 'needs'],
-    support: ['support', 'help', 'documentation', 'guide', 'tutorial']
-  };
-  
-  const words = text.toLowerCase().split(/\s+/);
-  const categoryCounts: Record<string, number> = {};
-  
-  Object.entries(categories).forEach(([category, keywords]) => {
-    categoryCounts[category] = keywords.filter(keyword => words.includes(keyword)).length;
-  });
-  
-  return categoryCounts;
 }
 
 export async function analyzeFeedbackTrends(

@@ -26,7 +26,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const isCreator = session?.user?.id === product.createdBy;
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto px-4 py-8">
       <ProductDetails
         product={product}
         isCreator={isCreator}
