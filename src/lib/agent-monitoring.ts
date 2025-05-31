@@ -1,6 +1,6 @@
 import { db } from '@/lib/db';
 import { agentFeedbacks, agentMetrics, agentLog } from '@/lib/schema';
-import { eq, gte, lte, desc } from 'drizzle-orm';
+import { eq, gte, lte, desc, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface AgentMetrics {
@@ -8,7 +8,7 @@ export interface AgentMetrics {
   agentId: string;
   requests: number;
   errors: number;
-  avgResponseTime: number;
+  avgResponseTime: string;
   lastActive: Date;
   created_at?: Date;
   updated_at?: Date;
@@ -20,6 +20,7 @@ export interface AgentLog {
   level: 'info' | 'warning' | 'error';
   message: string;
   metadata?: Record<string, any>;
+  timestamp: Date;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -54,7 +55,7 @@ export async function updateAgentMetrics(
       agentId,
       requests: metrics.requests || 0,
       errors: metrics.errors || 0,
-      avgResponseTime: metrics.avgResponseTime || 0,
+      avgResponseTime: metrics.avgResponseTime || '0',
       lastActive: metrics.lastActive || new Date(),
       created_at: new Date(),
       updated_at: new Date()
@@ -73,6 +74,7 @@ export async function logAgentEvent(
     level,
     message,
     metadata,
+    timestamp: new Date(),
     created_at: new Date(),
     updated_at: new Date()
   });
@@ -98,11 +100,11 @@ export async function getAgentLogs(
     .where(eq(agentLog.agentId, agentId));
 
   if (options.startDate) {
-    query = query.where(gte(agentLog.created_at, options.startDate));
+    query = query.where(gte(agentLog.timestamp, options.startDate));
   }
 
   if (options.endDate) {
-    query = query.where(lte(agentLog.created_at, options.endDate));
+    query = query.where(lte(agentLog.timestamp, options.endDate));
   }
 
   if (options.level) {
@@ -113,19 +115,25 @@ export async function getAgentLogs(
     query = query.limit(options.limit);
   }
 
-  query = query.orderBy(desc(agentLog.created_at));
+  query = query.orderBy(desc(agentLog.timestamp));
 
-  return query;
+  const logs = await query;
+  return logs.map(log => ({
+    ...log,
+    level: log.level as 'info' | 'warning' | 'error'
+  }));
 }
 
 export async function getAgentDeploymentHistory(agentId: string): Promise<any[]> {
   const deploymentHistory = await db
     .select()
     .from(agentLog)
-    .where(eq(agentLog.agentId, agentId))
-    .where(eq(agentLog.level, 'info'))
-    .where(eq(agentLog.message, 'Deployment completed'))
-    .orderBy(desc(agentLog.created_at));
+    .where(and(
+      eq(agentLog.agentId, agentId),
+      eq(agentLog.level, 'info'),
+      eq(agentLog.message, 'Deployment completed')
+    ))
+    .orderBy(desc(agentLog.timestamp));
 
   return deploymentHistory;
 }
@@ -174,8 +182,9 @@ export async function getAgentHealth(agentId: string): Promise<{
   }
 
   // Check response time
-  if (metrics.avgResponseTime > 1000) {
-    issues.push(`Slow response time: ${metrics.avgResponseTime.toFixed(0)}ms`);
+  const avgResponseTime = parseFloat(metrics.avgResponseTime);
+  if (avgResponseTime > 1000) {
+    issues.push(`Slow response time: ${avgResponseTime.toFixed(0)}ms`);
     status = status === 'healthy' ? 'degraded' : status;
   }
 
@@ -207,25 +216,25 @@ export async function submitAgentFeedback(
 }
 
 export async function getAgentFeedback(agentId: string, timeRange: { start: Date; end: Date }): Promise<any[]> {
-  const feedback = await db.select()
+  return db
+    .select()
     .from(agentFeedbacks)
-    .where(
-      and(
-        eq(agentFeedbacks.agentId, agentId),
-        gte(agentFeedbacks.created_at, timeRange.start),
-        lte(agentFeedbacks.created_at, timeRange.end)
-      )
-    )
+    .where(and(
+      eq(agentFeedbacks.agentId, agentId),
+      gte(agentFeedbacks.created_at, timeRange.start),
+      lte(agentFeedbacks.created_at, timeRange.end)
+    ))
     .orderBy(desc(agentFeedbacks.created_at));
-
-  return feedback;
 }
 
 export async function getAgentDeployments(agentId: string): Promise<any[]> {
-  const deployments = await db.select()
-    .from(deployments)
-    .where(eq(deployments.agentId, agentId))
-    .orderBy(desc(deployments.created_at));
-
-  return deployments;
+  return db
+    .select()
+    .from(agentLog)
+    .where(and(
+      eq(agentLog.agentId, agentId),
+      eq(agentLog.level, 'info'),
+      eq(agentLog.message, 'Deployment completed')
+    ))
+    .orderBy(desc(agentLog.timestamp));
 } 

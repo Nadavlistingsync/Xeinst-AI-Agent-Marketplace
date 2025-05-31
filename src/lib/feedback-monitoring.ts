@@ -5,12 +5,23 @@ import { analyzeFeedback } from './feedback-analysis';
 import { createNotification } from './notifications';
 
 export interface FeedbackMetrics {
-  sentimentScore: number;
-  categories: Record<string, number>;
-  positiveFeedback: number;
-  negativeFeedback: number;
   totalFeedbacks: number;
   averageRating: number;
+  sentimentDistribution: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  categoryDistribution: {
+    [key: string]: number;
+  };
+  responseRate: number;
+  averageResponseTime: number;
+}
+
+export interface FeedbackTimeRange {
+  start: Date;
+  end: Date;
 }
 
 export interface FeedbackAnalysis {
@@ -34,41 +45,54 @@ export interface GetFeedbackOptions {
 
 export async function getFeedbackMetrics(
   agentId: string,
-  timeRange: { start: Date; end: Date }
+  timeRange: FeedbackTimeRange
 ): Promise<FeedbackMetrics> {
-  const feedback = await db
+  const feedbacks = await db
     .select()
     .from(agentFeedbacks)
-    .where(eq(agentFeedbacks.agentId, agentId))
-    .where(gte(agentFeedbacks.created_at, timeRange.start))
-    .where(lte(agentFeedbacks.created_at, timeRange.end))
-    .orderBy(desc(agentFeedbacks.created_at));
+    .where(and(
+      eq(agentFeedbacks.agentId, agentId),
+      gte(agentFeedbacks.created_at, timeRange.start),
+      lte(agentFeedbacks.created_at, timeRange.end)
+    ));
 
-  const totalFeedbacks = feedback.length;
-  const positiveFeedback = feedback.filter(f => f.sentiment_score && parseFloat(f.sentiment_score) > 0.3).length;
-  const negativeFeedback = feedback.filter(f => f.sentiment_score && parseFloat(f.sentiment_score) < -0.3).length;
-  const averageRating = feedback.reduce((acc, f) => acc + f.rating, 0) / totalFeedbacks || 0;
+  const totalFeedbacks = feedbacks.length;
+  const averageRating = feedbacks.reduce((acc, f) => acc + f.rating, 0) / totalFeedbacks || 0;
 
-  const categories: Record<string, number> = {};
-  feedback.forEach(f => {
+  const sentimentDistribution = feedbacks.reduce((acc, f) => {
+    const sentiment = f.sentiment_score ? parseFloat(f.sentiment_score) : 0;
+    if (sentiment > 0.3) acc.positive++;
+    else if (sentiment < -0.3) acc.negative++;
+    else acc.neutral++;
+    return acc;
+  }, { positive: 0, neutral: 0, negative: 0 });
+
+  const categoryDistribution = feedbacks.reduce((acc, f) => {
     if (f.categories) {
-      Object.entries(f.categories).forEach(([category, count]) => {
-        categories[category] = (categories[category] || 0) + count;
+      Object.entries(f.categories).forEach(([category, score]) => {
+        acc[category] = (acc[category] || 0) + score;
       });
     }
-  });
+    return acc;
+  }, {} as Record<string, number>);
 
-  const sentimentScore = feedback.reduce((acc, f) => {
-    return acc + (f.sentiment_score ? parseFloat(f.sentiment_score) : 0);
-  }, 0) / totalFeedbacks || 0;
+  const respondedFeedbacks = feedbacks.filter(f => f.creator_response !== null);
+  const responseRate = (respondedFeedbacks.length / totalFeedbacks) * 100 || 0;
+
+  const averageResponseTime = respondedFeedbacks.reduce((acc, f) => {
+    if (f.response_date && f.created_at) {
+      return acc + (f.response_date.getTime() - f.created_at.getTime());
+    }
+    return acc;
+  }, 0) / respondedFeedbacks.length || 0;
 
   return {
-    sentimentScore,
-    categories,
-    positiveFeedback,
-    negativeFeedback,
     totalFeedbacks,
-    averageRating
+    averageRating,
+    sentimentDistribution,
+    categoryDistribution,
+    responseRate,
+    averageResponseTime
   };
 }
 
@@ -139,14 +163,17 @@ export async function analyzeFeedback(
   agentId: string,
   timeRange: { start: Date; end: Date }
 ): Promise<FeedbackAnalysis> {
-  const currentMetrics = await getFeedbackMetrics(agentId, timeRange);
+  const currentMetrics = await getFeedbackMetrics(agentId, {
+    start: timeRange.start,
+    end: timeRange.end
+  });
   const previousTimeRange = {
     start: new Date(timeRange.start.getTime() - (timeRange.end.getTime() - timeRange.start.getTime())),
     end: timeRange.start
   };
   const previousMetrics = await getFeedbackMetrics(agentId, previousTimeRange);
 
-  const sentimentTrend = currentMetrics.sentimentScore - previousMetrics.sentimentScore;
+  const sentimentTrend = currentMetrics.sentimentDistribution.positive - previousMetrics.sentimentDistribution.positive;
   const ratingTrend = currentMetrics.averageRating - previousMetrics.averageRating;
 
   return {
@@ -196,29 +223,120 @@ export async function notifyAgentCreator(
 
 export async function getFeedbackTrends(
   agentId: string,
-  timeRange: { start: Date; end: Date }
-): Promise<{
-  sentiment: number[];
-  ratings: number[];
-  dates: Date[];
-}> {
-  const feedback = await db
+  timeRange: FeedbackTimeRange
+): Promise<any> {
+  const feedbacks = await db
     .select()
     .from(agentFeedbacks)
-    .where(eq(agentFeedbacks.agentId, agentId))
-    .where(gte(agentFeedbacks.created_at, timeRange.start))
-    .where(lte(agentFeedbacks.created_at, timeRange.end))
-    .orderBy(agentFeedbacks.created_at);
+    .where(and(
+      eq(agentFeedbacks.agentId, agentId),
+      gte(agentFeedbacks.created_at, timeRange.start),
+      lte(agentFeedbacks.created_at, timeRange.end)
+    ))
+    .orderBy(desc(agentFeedbacks.created_at));
 
-  const dates = feedback.map(f => f.created_at);
-  const sentiment = feedback.map(f => f.sentiment_score ? parseFloat(f.sentiment_score) : 0);
-  const ratings = feedback.map(f => f.rating);
-
-  return {
-    sentiment,
-    ratings,
-    dates
+  const trends = {
+    ratingTrend: [] as { date: Date; rating: number }[],
+    sentimentTrend: [] as { date: Date; sentiment: number }[],
+    categoryTrends: {} as Record<string, { date: Date; score: number }[]>
   };
+
+  feedbacks.forEach(f => {
+    const date = f.created_at;
+    trends.ratingTrend.push({ date, rating: f.rating });
+
+    if (f.sentiment_score) {
+      trends.sentimentTrend.push({
+        date,
+        sentiment: parseFloat(f.sentiment_score)
+      });
+    }
+
+    if (f.categories) {
+      Object.entries(f.categories).forEach(([category, score]) => {
+        if (!trends.categoryTrends[category]) {
+          trends.categoryTrends[category] = [];
+        }
+        trends.categoryTrends[category].push({ date, score });
+      });
+    }
+  });
+
+  return trends;
+}
+
+export async function getFeedbackInsights(
+  agentId: string,
+  timeRange: FeedbackTimeRange
+): Promise<any> {
+  const feedbacks = await db
+    .select()
+    .from(agentFeedbacks)
+    .where(and(
+      eq(agentFeedbacks.agentId, agentId),
+      gte(agentFeedbacks.created_at, timeRange.start),
+      lte(agentFeedbacks.created_at, timeRange.end)
+    ))
+    .orderBy(desc(agentFeedbacks.created_at));
+
+  const insights = {
+    topIssues: [] as { category: string; count: number }[],
+    sentimentInsights: {
+      positive: [] as string[],
+      negative: [] as string[],
+      neutral: [] as string[]
+    },
+    responseInsights: {
+      averageResponseTime: 0,
+      responseRate: 0,
+      commonResponses: [] as string[]
+    }
+  };
+
+  // Process feedbacks for insights
+  feedbacks.forEach(f => {
+    if (f.categories) {
+      Object.entries(f.categories).forEach(([category, score]) => {
+        const existingIssue = insights.topIssues.find(i => i.category === category);
+        if (existingIssue) {
+          existingIssue.count++;
+        } else {
+          insights.topIssues.push({ category, count: 1 });
+        }
+      });
+    }
+
+    if (f.sentiment_score) {
+      const sentiment = parseFloat(f.sentiment_score);
+      if (sentiment > 0.3 && f.comment) {
+        insights.sentimentInsights.positive.push(f.comment);
+      } else if (sentiment < -0.3 && f.comment) {
+        insights.sentimentInsights.negative.push(f.comment);
+      } else if (f.comment) {
+        insights.sentimentInsights.neutral.push(f.comment);
+      }
+    }
+
+    if (f.creator_response) {
+      insights.responseInsights.commonResponses.push(f.creator_response);
+    }
+  });
+
+  // Sort and limit top issues
+  insights.topIssues.sort((a, b) => b.count - a.count);
+  insights.topIssues = insights.topIssues.slice(0, 5);
+
+  // Calculate response metrics
+  const respondedFeedbacks = feedbacks.filter(f => f.creator_response !== null);
+  insights.responseInsights.responseRate = (respondedFeedbacks.length / feedbacks.length) * 100;
+  insights.responseInsights.averageResponseTime = respondedFeedbacks.reduce((acc, f) => {
+    if (f.response_date && f.created_at) {
+      return acc + (f.response_date.getTime() - f.created_at.getTime());
+    }
+    return acc;
+  }, 0) / respondedFeedbacks.length || 0;
+
+  return insights;
 }
 
 export async function updateAgentBasedOnFeedback(agentId: string): Promise<void> {
@@ -236,7 +354,7 @@ export async function updateAgentBasedOnFeedback(agentId: string): Promise<void>
   const agentDetails = agent[0];
   
   // If sentiment score is low or there are many negative feedbacks, mark for review
-  if (metrics.sentimentScore < -0.3 || metrics.negativeFeedback > metrics.positiveFeedback) {
+  if (metrics.sentimentDistribution.negative > metrics.sentimentDistribution.positive) {
     await db
       .update(agents)
       .set({
