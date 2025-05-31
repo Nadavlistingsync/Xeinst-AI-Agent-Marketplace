@@ -15,19 +15,19 @@ export function AgentDetails({ agentId }: AgentDetailsProps) {
   const [agent, setAgent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAgent = async () => {
-      try {
-        const response = await fetch(`/api/agents/${agentId}`);
-        const data = await response.json();
-        setAgent(data);
-      } catch (error) {
-        console.error('Error fetching agent:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchAgent = async () => {
+    try {
+      const response = await fetch(`/api/agents/${agentId}`);
+      const data = await response.json();
+      setAgent(data);
+    } catch (error) {
+      console.error('Error fetching agent:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchAgent();
   }, [agentId]);
 
@@ -60,7 +60,13 @@ export function AgentDetails({ agentId }: AgentDetailsProps) {
           <FeedbackAnalysis agentId={agentId} />
         </TabsContent>
         <TabsContent value="responses">
-          <FeedbackResponse agentId={agentId} />
+          <FeedbackResponse 
+            feedbackId={agentId}
+            onResponseSubmitted={() => {
+              // Refresh the agent data after response is submitted
+              fetchAgent();
+            }}
+          />
         </TabsContent>
         <TabsContent value="notifications">
           <NotificationCenter agentId={agentId} />
