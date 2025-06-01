@@ -1,14 +1,12 @@
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
-// Enable multiSchema preview feature
-previewFeatures = ["multiSchema"]
 
 model User {
   id              String    @id @default(uuid())
