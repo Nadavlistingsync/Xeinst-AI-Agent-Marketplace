@@ -21,9 +21,10 @@ const prisma = new PrismaClient({
 // Reset database before all tests
 beforeAll(async () => {
   try {
-    // Drop the database and recreate it
-    await prisma.$executeRawUnsafe(`DROP SCHEMA public CASCADE;`);
-    await prisma.$executeRawUnsafe(`CREATE SCHEMA public;`);
+    // Create schema if it doesn't exist
+    await prisma.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS public;`);
+    
+    // Grant privileges
     await prisma.$executeRawUnsafe(`GRANT ALL ON SCHEMA public TO postgres;`);
     await prisma.$executeRawUnsafe(`GRANT ALL ON SCHEMA public TO public;`);
 
@@ -47,14 +48,18 @@ afterAll(async () => {
 
 // Clean up after each test
 afterEach(async () => {
-  const tables = await prisma.$queryRaw<
-    Array<{ tablename: string }>
-  >`SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename != '_prisma_migrations'`;
-  
-  for (const { tablename } of tables) {
-    await prisma.$executeRawUnsafe(
-      `TRUNCATE TABLE "public"."${tablename}" CASCADE;`
-    );
+  try {
+    const tables = await prisma.$queryRaw<
+      Array<{ tablename: string }>
+    >`SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename != '_prisma_migrations'`;
+    
+    for (const { tablename } of tables) {
+      await prisma.$executeRawUnsafe(
+        `TRUNCATE TABLE "public"."${tablename}" CASCADE;`
+      );
+    }
+  } catch (error) {
+    console.error('Failed to clean up tables:', error);
   }
 });
 

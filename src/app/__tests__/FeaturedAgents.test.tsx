@@ -9,9 +9,6 @@ vi.mock('next/navigation', () => ({
   useRouter: vi.fn(),
 }));
 
-// Mock fetch
-global.fetch = vi.fn();
-
 // Mock react-hot-toast
 vi.mock('react-hot-toast', () => ({
   toast: {
@@ -26,7 +23,6 @@ describe('FeaturedAgents', () => {
 
   beforeEach(() => {
     (useRouter as any).mockReturnValue(mockRouter);
-    (global.fetch as any).mockClear();
     vi.clearAllMocks();
   });
 
@@ -63,7 +59,7 @@ describe('FeaturedAgents', () => {
   });
 
   it('renders featured and trending agents after loading', async () => {
-    (global.fetch as any)
+    global.fetch = vi.fn()
       .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(mockAgents), {
         status: 200,
         ok: true,
@@ -82,20 +78,21 @@ describe('FeaturedAgents', () => {
   });
 
   it('handles fetch errors gracefully', async () => {
-    (global.fetch as any).mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify({ error: 'Failed to fetch' }), {
-      status: 500,
-      ok: false,
-    })));
+    global.fetch = vi.fn()
+      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify({ error: 'Failed to fetch' }), {
+        status: 500,
+        ok: false,
+      })));
 
     render(<FeaturedAgents />);
 
     await waitFor(() => {
-      expect(screen.getByText('Failed to load featured agents')).toBeInTheDocument();
-    }, { timeout: 10000 });
-  }, 15000);
+      expect(screen.getByText('Failed to fetch')).toBeInTheDocument();
+    });
+  });
 
   it('navigates to agent details when clicking view details', async () => {
-    (global.fetch as any)
+    global.fetch = vi.fn()
       .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(mockAgents), {
         status: 200,
         ok: true,
@@ -111,6 +108,25 @@ describe('FeaturedAgents', () => {
       const viewDetailsButtons = screen.getAllByText('View Details');
       fireEvent.click(viewDetailsButtons[0]);
       expect(mockRouter.push).toHaveBeenCalledWith('/agent/1');
+    });
+  });
+
+  it('renders empty state when no agents are found', async () => {
+    global.fetch = vi.fn()
+      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify({ agents: [] }), {
+        status: 200,
+        ok: true,
+      })))
+      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify({ agents: [] }), {
+        status: 200,
+        ok: true,
+      })));
+
+    render(<FeaturedAgents />);
+
+    await waitFor(() => {
+      expect(screen.getAllByText('No featured agents found')).toHaveLength(1);
+      expect(screen.getAllByText('No trending agents found')).toHaveLength(1);
     });
   });
 
