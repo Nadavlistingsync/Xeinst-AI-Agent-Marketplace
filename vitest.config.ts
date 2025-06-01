@@ -33,4 +33,7 @@ export default defineConfig({
   deps: {
     inline: ['@prisma/client'],
   },
+  build: {
+    target: 'esnext',
+  },
 }); 

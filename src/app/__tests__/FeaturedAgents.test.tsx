@@ -64,14 +64,14 @@ describe('FeaturedAgents', () => {
 
   it('renders featured and trending agents after loading', async () => {
     (global.fetch as any)
-      .mockImplementationOnce(() => Promise.resolve({
+      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(mockAgents), {
+        status: 200,
         ok: true,
-        json: () => Promise.resolve(mockAgents),
-      }))
-      .mockImplementationOnce(() => Promise.resolve({
+      })))
+      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(mockAgents), {
+        status: 200,
         ok: true,
-        json: () => Promise.resolve(mockAgents),
-      }));
+      })));
 
     render(<FeaturedAgents />);
 
@@ -82,24 +82,28 @@ describe('FeaturedAgents', () => {
   });
 
   it('handles fetch errors gracefully', async () => {
-    const errorMessage = 'Cannot read properties of undefined (reading \'ok\')';
+    (global.fetch as any).mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify({ error: 'Failed to fetch' }), {
+      status: 500,
+      ok: false,
+    })));
+
     render(<FeaturedAgents />);
 
     await waitFor(() => {
-      expect(screen.getByText(errorMessage)).toBeInTheDocument();
+      expect(screen.getByText('Failed to load featured agents')).toBeInTheDocument();
     }, { timeout: 10000 });
   }, 15000);
 
   it('navigates to agent details when clicking view details', async () => {
     (global.fetch as any)
-      .mockImplementationOnce(() => Promise.resolve({
+      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(mockAgents), {
+        status: 200,
         ok: true,
-        json: () => Promise.resolve(mockAgents),
-      }))
-      .mockImplementationOnce(() => Promise.resolve({
+      })))
+      .mockImplementationOnce(() => Promise.resolve(new Response(JSON.stringify(mockAgents), {
+        status: 200,
         ok: true,
-        json: () => Promise.resolve(mockAgents),
-      }));
+      })));
 
     render(<FeaturedAgents />);
 
