@@ -7,41 +7,70 @@ import { execSync } from 'child_process';
 
 // Set test environment
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test';
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test';
 
-// Create a new Prisma client instance for testing
+// Mock Sentry in tests
+vi.mock('@sentry/nextjs', () => ({
+  captureException: vi.fn(),
+  init: vi.fn(),
+}));
+
+// Mock window.matchMedia
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+}
+
+// Create a test database client
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: process.env.DATABASE_URL,
+      url: process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test',
     },
   },
 });
 
-// Reset database before all tests
+// Global setup
 beforeAll(async () => {
   try {
-    // Create schema if it doesn't exist
-    await prisma.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS public;`);
-    
-    // Grant privileges
-    await prisma.$executeRawUnsafe(`GRANT ALL ON SCHEMA public TO postgres;`);
-    await prisma.$executeRawUnsafe(`GRANT ALL ON SCHEMA public TO public;`);
-
-    // Push schema to test database
-    execSync('npx prisma db push --force-reset', {
+    // Run migrations for test database
+    execSync('npx prisma migrate deploy', {
       env: {
         ...process.env,
-        DATABASE_URL: process.env.DATABASE_URL,
+        DATABASE_URL: process.env.TEST_DATABASE_URL,
       },
     });
+
+    // Clean up the database before tests
+    const tables = await prisma.$queryRaw<
+      Array<{ tablename: string }>
+    >`SELECT tablename FROM pg_tables WHERE schemaname='public'`;
+
+    for (const { tablename } of tables) {
+      if (tablename !== '_prisma_migrations') {
+        await prisma.$executeRawUnsafe(
+          `TRUNCATE TABLE "public"."${tablename}" CASCADE;`
+        );
+      }
+    }
   } catch (error) {
-    console.error('Failed to reset database:', error);
-    throw error;
+    console.error('Failed to set up test database:', error);
+    throw error; // Fail fast if database setup fails
   }
 });
 
-// Clean up after all tests
+// Global teardown
 afterAll(async () => {
   await prisma.$disconnect();
 });
@@ -60,6 +89,7 @@ afterEach(async () => {
     }
   } catch (error) {
     console.error('Failed to clean up tables:', error);
+    throw error; // Fail fast if cleanup fails
   }
 });
 
@@ -84,44 +114,6 @@ vi.mock('next-auth', () => ({
   })),
 }));
 
-// Mock Prisma client
-vi.mock('@/lib/prisma', () => ({
-  default: {
-    agentLog: {
-      findMany: vi.fn(),
-      create: vi.fn(),
-      findUnique: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    deployment: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    agentMetrics: {
-      findUnique: vi.fn(),
-      upsert: vi.fn(),
-    },
-    agentFeedback: {
-      findMany: vi.fn(),
-      create: vi.fn(),
-      findUnique: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-    user: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    },
-  },
-}));
-
 // Mock fetch
 global.fetch = vi.fn();
 
@@ -143,20 +135,5 @@ vi.mock('react-hot-toast', () => ({
   },
 }));
 
-// Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: vi.fn().mockImplementation(query => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
-  })),
-});
-
-// Export prisma instance for tests
+// Export test utilities
 export { prisma }; 

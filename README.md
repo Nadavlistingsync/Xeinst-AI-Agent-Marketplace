@@ -1,119 +1,106 @@
-# Xeinst AI Marketplace
+# AI Agency Website
 
-A modern AI marketplace platform built with Next.js, TypeScript, and Tailwind CSS.
+A Next.js application for managing and showcasing AI agents.
 
 ## Features
 
-- 🤖 AI Agent Marketplace
-- 💳 Secure Payment Processing with Stripe
-- 🔐 Authentication with NextAuth.js
-- 📊 Advanced Analytics Dashboard
-- 💬 Real-time Feedback System
-- 🎯 Sentiment Analysis
-- 📈 Performance Monitoring
-- 🔔 Smart Notifications
+- Featured and trending AI agents showcase
+- Comprehensive error handling and monitoring
+- Type-safe API routes
+- Automated testing and deployment
+- Sentry integration for error tracking
 
-## Tech Stack
+## Prerequisites
 
-- **Framework:** Next.js 14
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **Database:** PostgreSQL with Prisma
-- **Authentication:** NextAuth.js
-- **Payment:** Stripe
-- **Deployment:** Vercel
-- **Storage:** AWS S3
-- **Analytics:** Custom implementation
+- Node.js 18 or later
+- PostgreSQL 14 or later
+- GitHub account
+- Vercel account
+- Sentry account
 
-## Getting Started
+## Environment Setup
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/Nadavlistingsync/AI-agency-Website-.git
-   cd AI-agency-Website-
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env.local
-   ```
-   Fill in the required environment variables in `.env.local`
-
-4. Set up the database:
-   ```bash
-   npm run db:generate
-   npm run db:push
-   ```
-
-5. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-## Environment Variables
-
-Required environment variables:
-
-```env
-# App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NODE_ENV=development
-
-# Database
-DATABASE_URL=your_database_url
-
-# Authentication
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_nextauth_secret
-
-# Stripe
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-STRIPE_SECRET_KEY=your_stripe_secret_key
-STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
-
-# AWS
-AWS_ACCESS_KEY_ID=your_aws_access_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-AWS_REGION=your_aws_region
-AWS_BUCKET_NAME=your_bucket_name
+1. Copy `.env.example` to `.env` and fill in the required values:
+```bash
+cp .env.example .env
 ```
 
-## Project Structure
+2. Required environment variables:
+- `DATABASE_URL`: Your PostgreSQL database URL
+- `TEST_DATABASE_URL`: Your test database URL
+- `NEXTAUTH_URL`: Your application URL
+- `NEXTAUTH_SECRET`: A random string for NextAuth
+- `GITHUB_ID`: GitHub OAuth client ID
+- `GITHUB_SECRET`: GitHub OAuth client secret
+- `NEXT_PUBLIC_SENTRY_DSN`: Sentry DSN
+- `SENTRY_AUTH_TOKEN`: Sentry auth token
+- `SENTRY_ORG`: Your Sentry organization
+- `SENTRY_PROJECT`: Your Sentry project name
 
+## Development
+
+1. Install dependencies:
+```bash
+npm install
 ```
-├── src/
-│   ├── app/              # App router pages
-│   ├── components/       # React components
-│   ├── lib/             # Utility functions and configurations
-│   ├── types/           # TypeScript type definitions
-│   └── hooks/           # Custom React hooks
-├── prisma/              # Database schema and migrations
-├── public/              # Static assets
-└── tests/              # Test files
+
+2. Run database migrations:
+```bash
+npx prisma migrate dev
 ```
 
-## Available Scripts
+3. Start the development server:
+```bash
+npm run dev
+```
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run db:generate` - Generate Prisma client
-- `npm run db:push` - Push database changes
-- `npm run test` - Run tests
+## Testing
+
+Run the test suite:
+```bash
+npm test
+```
 
 ## Deployment
 
-The project is configured for deployment on Vercel. The deployment process is automated through GitHub integration.
+The application is configured for automatic deployment to Vercel. The deployment process includes:
 
-1. Push changes to the main branch
-2. Vercel automatically deploys the changes
-3. Environment variables are managed through Vercel's dashboard
+1. Running tests
+2. Building the application
+3. Deploying to Vercel
+
+### Manual Deployment
+
+1. Build the application:
+```bash
+npm run build
+```
+
+2. Deploy to Vercel:
+```bash
+vercel --prod
+```
+
+## GitHub Actions
+
+The repository includes GitHub Actions workflows for:
+- Running tests
+- Building the application
+- Deploying to Vercel
+
+Required secrets:
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+
+## Error Monitoring
+
+The application uses Sentry for error monitoring. To set up Sentry:
+
+1. Create a Sentry account
+2. Create a new project
+3. Add the Sentry DSN to your environment variables
+4. Configure the Sentry auth token and project details
 
 ## Contributing
 
@@ -125,8 +112,4 @@ The project is configured for deployment on Vercel. The deployment process is au
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-For support, email support@xeinst.ai or join our Discord community.
+MIT

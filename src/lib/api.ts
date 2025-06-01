@@ -1,13 +1,86 @@
 import { type ApiError, type ApiResponse, type ApiSuccess, type ValidationError } from '@/types/api';
+import { Prisma } from '@prisma/client';
+import { ZodError } from 'zod';
+import * as Sentry from '@sentry/nextjs';
 
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000;
+const INITIAL_RETRY_DELAY = 1000;
+const MAX_RETRY_DELAY = 10000;
 
 async function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function getRetryDelay(retryCount: number): number {
+  return Math.min(INITIAL_RETRY_DELAY * Math.pow(2, retryCount), MAX_RETRY_DELAY);
+}
+
+function isRetryableError(error: unknown): boolean {
+  if (error instanceof Error) {
+    // Network errors
+    if (error.name === 'NetworkError' || error.name === 'AbortError') return true;
+    
+    // Prisma errors that might be transient
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return error.code === 'P1001' || // Connection error
+             error.code === 'P1002' || // Connection timed out
+             error.code === 'P1008' || // Operations timed out
+             error.code === 'P1017';   // Server closed the connection
+    }
+  }
+  return false;
+}
+
 export function createErrorResponse(error: unknown, defaultMessage: string): ApiError {
+  // Log the error
+  console.error('API Error:', error);
+  
+  // Report to Sentry in production
+  if (process.env.NODE_ENV === 'production') {
+    Sentry.captureException(error);
+  }
+
+  // Handle Zod validation errors
+  if (error instanceof ZodError) {
+    const validationErrors: ValidationError[] = error.errors.map(err => ({
+      field: err.path.join('.'),
+      message: err.message,
+      code: 'VALIDATION_ERROR'
+    }));
+    
+    return {
+      success: false,
+      error: 'Validation error',
+      details: validationErrors,
+      status: 400
+    };
+  }
+
+  // Handle Prisma errors
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    switch (error.code) {
+      case 'P2002':
+        return {
+          success: false,
+          error: 'Unique constraint violation',
+          status: 409
+        };
+      case 'P2025':
+        return {
+          success: false,
+          error: 'Record not found',
+          status: 404
+        };
+      default:
+        return {
+          success: false,
+          error: 'Database error',
+          status: 500
+        };
+    }
+  }
+
+  // Handle other errors
   if (error instanceof Error) {
     return {
       success: false,
@@ -69,8 +142,10 @@ export async function fetchApi<T>(
 
     return createSuccessResponse(data);
   } catch (error) {
-    if (retries > 0) {
-      await delay(RETRY_DELAY);
+    if (retries > 0 && isRetryableError(error)) {
+      const delayMs = getRetryDelay(MAX_RETRIES - retries);
+      console.log(`Retrying request to ${endpoint} after ${delayMs}ms. Attempts remaining: ${retries - 1}`);
+      await delay(delayMs);
       return fetchApi(endpoint, options, retries - 1);
     }
     return createErrorResponse(error, 'An unexpected error occurred');

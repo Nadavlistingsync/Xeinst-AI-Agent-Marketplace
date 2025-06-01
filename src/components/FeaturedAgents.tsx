@@ -1,233 +1,111 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Star, TrendingUp, Award, RefreshCw } from 'lucide-react';
-import Image from 'next/image';
-import { toast } from 'react-hot-toast';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Agent } from '@/types/agent';
 
-interface Agent {
-  id: string;
-  name: string;
-  description: string;
-  tag: string;
-  price?: number;
-  image_url?: string;
-  average_rating: number;
-  total_ratings: number;
-  download_count: number;
-}
-
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000;
-
-export default function FeaturedAgents() {
-  const router = useRouter();
+export function FeaturedAgents() {
   const [featuredAgents, setFeaturedAgents] = useState<Agent[]>([]);
   const [trendingAgents, setTrendingAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchWithRetry = useCallback(async (url: string, retries = MAX_RETRIES): Promise<any> => {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const response = await fetch('/api/agents');
+        if (!response.ok) {
+          throw new Error('Failed to load featured agents');
+        }
+        const data = await response.json();
+        setFeaturedAgents(data.data.filter((agent: Agent) => agent.isFeatured));
+        setTrendingAgents(data.data.filter((agent: Agent) => agent.isTrending));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch');
+      } finally {
+        setLoading(false);
       }
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error);
-      }
-      return data;
-    } catch (error) {
-      if (retries > 0) {
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-        return fetchWithRetry(url, retries - 1);
-      }
-      // Ensure we always throw an Error object with a message
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error('Failed to fetch data');
-    }
+    };
+
+    fetchAgents();
   }, []);
 
-  const fetchAgents = useCallback(async () => {
-    try {
-      setError(null);
-      setLoading(true);
-
-      const [featuredData, trendingData] = await Promise.all([
-        fetchWithRetry('/api/agents/featured'),
-        fetchWithRetry('/api/agents/trending')
-      ]);
-
-      setFeaturedAgents(featuredData.agents);
-      setTrendingAgents(trendingData.agents);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load agents';
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchWithRetry]);
-
-  useEffect(() => {
-    fetchAgents();
-  }, [fetchAgents]);
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-600 mb-4">{error}</p>
-        <button
-          onClick={() => {
-            fetchAgents();
-          }}
-          className="flex items-center gap-2 mx-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          <RefreshCw className="w-4 h-4" />
-          Retry
-        </button>
-      </div>
-    );
+  if (loading) {
+    return <div role="status">Loading...</div>;
   }
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div role="status" className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
+  if (error) {
+    return <div>{error}</div>;
   }
 
   return (
-    <div className="space-y-20">
-      {/* Featured Agents */}
-      <section className="pb-12 border-b border-[#00b4ff]/10">
-        <div className="flex items-center mb-8">
-          <Award className="w-7 h-7 text-[#00b4ff] mr-3" />
-          <h2 className="text-4xl font-extrabold text-white tracking-tight glow-text">Featured Agents</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {featuredAgents.length === 0 ? (
-            <div className="col-span-full text-center text-gray-400">No featured agents found.</div>
-          ) : (
-            featuredAgents.map((agent) => (
-              <div
-                key={agent.id}
-                className="glass-card rounded-2xl shadow-2xl overflow-hidden hover:shadow-[#00b4ff]/40 transition-all duration-300 border border-[#00b4ff]/10 flex flex-col hover:scale-[1.025] cursor-pointer"
-              >
-                {agent.image_url && (
-                  <div className="relative h-52 w-full">
-                    <Image
-                      src={agent.image_url}
-                      alt={agent.name}
-                      fill
-                      className="object-cover rounded-t-2xl"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      priority={false}
-                    />
+    <div className="space-y-8">
+      <section>
+        <h2 className="text-2xl font-bold mb-4">Featured Agents</h2>
+        {featuredAgents.length === 0 ? (
+          <p>No featured agents found</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {featuredAgents.map((agent) => (
+              <div key={agent.id} className="border rounded-lg p-4">
+                <img
+                  src={agent.image}
+                  alt={agent.name}
+                  className="w-full h-48 object-cover rounded-lg mb-4"
+                />
+                <h3 className="text-xl font-semibold mb-2">{agent.name}</h3>
+                <p className="text-gray-600 mb-4">{agent.description}</p>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="text-yellow-500">★</span>
+                    <span className="ml-1">{agent.rating}</span>
+                    <span className="text-gray-500 ml-1">({agent.reviews} reviews)</span>
                   </div>
-                )}
-                <div className="p-8 flex flex-col flex-1">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="px-4 py-1 bg-[#00b4ff]/10 text-[#00b4ff] rounded-full text-base font-semibold border border-[#00b4ff]/30">
-                      {agent.tag}
-                    </span>
-                    <div className="flex items-center">
-                      <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                      <span className="ml-1 text-white font-bold text-lg">
-                        {agent.average_rating.toFixed(1)}
-                      </span>
-                      <span className="ml-1 text-gray-400 text-base">
-                        ({agent.total_ratings})
-                      </span>
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-bold mb-2 text-white glow-text">{agent.name}</h3>
-                  <p className="text-gray-300 mb-4 line-clamp-2 flex-1 text-lg">{agent.description}</p>
-                  <div className="flex items-center justify-between mt-auto pt-4">
-                    {agent.price ? (
-                      <span className="text-2xl font-bold text-[#00b4ff]">
-                        ${agent.price}
-                      </span>
-                    ) : (
-                      <span className="text-green-400 font-semibold text-lg">Free</span>
-                    )}
-                    <button
-                      onClick={() => router.push(`/agent/${agent.id}`)}
-                      className="btn-primary px-7 py-3 text-lg font-bold shadow hover:shadow-[#00b4ff]/30"
-                    >
-                      View Details
-                    </button>
-                  </div>
+                  <Link
+                    href={`/agent/${agent.id}`}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  >
+                    View Details
+                  </Link>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
-      {/* Trending Agents */}
-      <section className="pt-12">
-        <div className="flex items-center mb-8">
-          <TrendingUp className="w-7 h-7 text-purple-400 mr-3" />
-          <h2 className="text-4xl font-extrabold text-white tracking-tight glow-text">Trending Now</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-          {trendingAgents.length === 0 ? (
-            <div className="col-span-full text-center text-gray-400">No trending agents found.</div>
-          ) : (
-            trendingAgents.map((agent) => (
-              <div
-                key={agent.id}
-                className="glass-card rounded-2xl shadow-2xl overflow-hidden hover:shadow-purple-400/30 transition-all duration-300 border border-purple-400/10 flex flex-col hover:scale-[1.025] cursor-pointer"
-              >
-                {agent.image_url && (
-                  <div className="relative h-52 w-full">
-                    <Image
-                      src={agent.image_url}
-                      alt={agent.name}
-                      fill
-                      className="object-cover rounded-t-2xl"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                      priority={false}
-                    />
+
+      <section>
+        <h2 className="text-2xl font-bold mb-4">Trending Agents</h2>
+        {trendingAgents.length === 0 ? (
+          <p>No trending agents found</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {trendingAgents.map((agent) => (
+              <div key={agent.id} className="border rounded-lg p-4">
+                <img
+                  src={agent.image}
+                  alt={agent.name}
+                  className="w-full h-48 object-cover rounded-lg mb-4"
+                />
+                <h3 className="text-xl font-semibold mb-2">{agent.name}</h3>
+                <p className="text-gray-600 mb-4">{agent.description}</p>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <span className="text-yellow-500">★</span>
+                    <span className="ml-1">{agent.rating}</span>
+                    <span className="text-gray-500 ml-1">({agent.reviews} reviews)</span>
                   </div>
-                )}
-                <div className="p-8 flex flex-col flex-1">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="px-4 py-1 bg-purple-400/10 text-purple-400 rounded-full text-base font-semibold border border-purple-400/30">
-                      {agent.tag}
-                    </span>
-                    <div className="flex items-center text-gray-400">
-                      <TrendingUp className="w-4 h-4 mr-1" />
-                      <span>{agent.download_count} downloads</span>
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-bold mb-2 text-white glow-text">{agent.name}</h3>
-                  <p className="text-gray-300 mb-4 line-clamp-2 flex-1 text-lg">{agent.description}</p>
-                  <div className="flex items-center justify-between mt-auto pt-4">
-                    {agent.price ? (
-                      <span className="text-2xl font-bold text-purple-400">
-                        ${agent.price}
-                      </span>
-                    ) : (
-                      <span className="text-green-400 font-semibold text-lg">Free</span>
-                    )}
-                    <button
-                      onClick={() => router.push(`/agent/${agent.id}`)}
-                      className="btn-primary px-7 py-3 text-lg font-bold shadow hover:shadow-purple-400/30"
-                    >
-                      View Details
-                    </button>
-                  </div>
+                  <Link
+                    href={`/agent/${agent.id}`}
+                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                  >
+                    View Details
+                  </Link>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
