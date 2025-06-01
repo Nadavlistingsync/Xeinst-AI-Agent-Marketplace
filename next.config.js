@@ -24,7 +24,7 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {
-      allowedOrigins: ['localhost:3000', 'your-production-domain.com'],
+      allowedOrigins: ['localhost:3000', '*.vercel.app', '*.ai-agency.com'],
     },
   },
   // Add webpack configuration for better error handling

@@ -1,12 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import FeaturedAgents from '@/components/FeaturedAgents';
+import { FeaturedAgents } from '@/components/FeaturedAgents';
 import * as Sentry from '@sentry/nextjs';
 
 export default function Home() {
-  // Sentry test error removed after verification
-
   return (
     <main className="bg-[#0B0C10] text-white font-sans">
       {/* Hero Section */}

@@ -2,11 +2,11 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare, hash } from "bcrypt";
-import prismaClient from "./db";
-import { User } from "./schema";
+import prisma from "./prisma";
+import { User } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prismaClient),
+  adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
   },
@@ -25,7 +25,7 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        const user = await prismaClient.user.findUnique({
+        const user = await prisma.user.findUnique({
           where: {
             email: credentials.email,
           },
@@ -65,7 +65,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async jwt({ token, user }) {
-      const dbUser = await prismaClient.user.findFirst({
+      const dbUser = await prisma.user.findFirst({
         where: {
           email: token.email!,
         },
@@ -91,7 +91,7 @@ export const authOptions: NextAuthOptions = {
 };
 
 export async function getUserById(id: string): Promise<User | null> {
-  return await prismaClient.user.findUnique({
+  return await prisma.user.findUnique({
     where: { id },
     select: {
       id: true,
@@ -101,14 +101,14 @@ export async function getUserById(id: string): Promise<User | null> {
       role: true,
       subscriptionTier: true,
       emailVerified: true,
-      created_at: true,
-      updated_at: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  return await prismaClient.user.findUnique({
+  return await prisma.user.findUnique({
     where: { email },
     select: {
       id: true,
@@ -118,8 +118,8 @@ export async function getUserByEmail(email: string): Promise<User | null> {
       role: true,
       subscriptionTier: true,
       emailVerified: true,
-      created_at: true,
-      updated_at: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 }
@@ -133,7 +133,7 @@ export async function createUser(data: {
 }): Promise<User> {
   const hashedPassword = await hash(data.password, 10);
 
-  return await prismaClient.user.create({
+  return await prisma.user.create({
     data: {
       name: data.name,
       email: data.email,
@@ -150,8 +150,8 @@ export async function createUser(data: {
       role: true,
       subscriptionTier: true,
       emailVerified: true,
-      created_at: true,
-      updated_at: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 }
@@ -166,7 +166,7 @@ export async function updateUser(
     subscriptionTier?: string;
   }
 ): Promise<User> {
-  return await prismaClient.user.update({
+  return await prisma.user.update({
     where: { id },
     data,
     select: {
@@ -177,14 +177,14 @@ export async function updateUser(
       role: true,
       subscriptionTier: true,
       emailVerified: true,
-      created_at: true,
-      updated_at: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 }
 
 export async function deleteUser(id: string): Promise<User> {
-  return await prismaClient.user.delete({
+  return await prisma.user.delete({
     where: { id },
     select: {
       id: true,
@@ -194,8 +194,8 @@ export async function deleteUser(id: string): Promise<User> {
       role: true,
       subscriptionTier: true,
       emailVerified: true,
-      created_at: true,
-      updated_at: true,
+      createdAt: true,
+      updatedAt: true,
     },
   });
 } 

@@ -12,13 +12,13 @@ model User {
   id              String    @id @default(uuid())
   name            String?
   email           String    @unique
-  emailVerified   DateTime? @map("email_verified")
+  emailVerified   DateTime?
   password        String
   image           String?
   role            String    @default("user")
-  subscriptionTier String   @default("free") @map("subscription_tier")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  subscriptionTier String   @default("free")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
   createdProducts Product[] @relation("ProductCreator")
   uploadedProducts Product[] @relation("ProductUploader")
   purchases       Purchase[]
@@ -37,25 +37,25 @@ model Product {
   name            String
   slug            String    @unique
   description     String
-  longDescription String?   @map("long_description")
+  longDescription String?
   category        String
   price           Decimal   @db.Decimal(10, 2)
-  imageUrl        String?   @map("image_url")
-  fileUrl         String    @map("file_url")
+  imageUrl        String?
+  fileUrl         String
   documentation   String?
   features        String[]
   requirements    String[]
   rating          Int       @default(0)
-  averageRating   Decimal   @default(0) @db.Decimal(3, 2) @map("average_rating")
-  totalRatings    Int       @default(0) @map("total_ratings")
-  createdBy       String    @map("created_by")
-  uploadedBy      String    @map("uploaded_by")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
-  isPublic        Boolean   @default(true) @map("is_public")
-  isFeatured      Boolean   @default(false) @map("is_featured")
-  downloadCount   Int       @default(0) @map("download_count")
-  earningsSplit   Decimal   @default(0.70) @db.Decimal(3, 2) @map("earnings_split")
+  averageRating   Decimal   @default(0) @db.Decimal(3, 2)
+  totalRatings    Int       @default(0)
+  createdBy       String
+  uploadedBy      String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  isPublic        Boolean   @default(true)
+  isFeatured      Boolean   @default(false)
+  downloadCount   Int       @default(0)
+  earningsSplit   Decimal   @default(0.70) @db.Decimal(3, 2)
   creator         User      @relation("ProductCreator", fields: [createdBy], references: [id])
   uploader        User      @relation("ProductUploader", fields: [uploadedBy], references: [id])
   purchases       Purchase[]
@@ -67,11 +67,11 @@ model Product {
 
 model Review {
   id        String   @id @default(uuid())
-  productId String   @map("product_id")
-  userId    String   @map("user_id")
+  productId String
+  userId    String
   rating    Int
   comment   String?
-  createdAt DateTime @default(now()) @map("created_at")
+  createdAt DateTime @default(now())
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   user      User     @relation("UserReviews", fields: [userId], references: [id], onDelete: Cascade)
 
@@ -80,13 +80,13 @@ model Review {
 
 model Earning {
   id              String    @id @default(uuid())
-  userId          String    @map("user_id")
-  productId       String    @map("product_id")
+  userId          String
+  productId       String
   amount          Decimal   @db.Decimal(10, 2)
   status          String    @default("pending")
-  stripeTransferId String?  @map("stripe_transfer_id")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  paidAt          DateTime? @map("paid_at")
+  stripeTransferId String?
+  createdAt       DateTime  @default(now())
+  paidAt          DateTime?
   user            User      @relation("UserEarnings", fields: [userId], references: [id])
   product         Product   @relation(fields: [productId], references: [id])
 
@@ -98,21 +98,21 @@ model Deployment {
   name          String
   description   String
   framework     String
-  fileUrl       String?   @map("file_url")
-  deployedBy    String    @map("deployed_by")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
-  accessLevel   String    @default("public") @map("access_level")
-  licenseType   String    @default("free") @map("license_type")
-  priceCents    Int       @default(0) @map("price_cents")
+  fileUrl       String?
+  deployedBy    String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accessLevel   String    @default("public")
+  licenseType   String    @default("free")
+  priceCents    Int       @default(0)
   downloads     Int       @default(0)
   rating        Decimal   @default(0) @db.Decimal(3, 2)
-  ratingCount   Int       @default(0) @map("rating_count")
-  downloadCount Int       @default(0) @map("download_count")
+  ratingCount   Int       @default(0)
+  downloadCount Int       @default(0)
   status        String    @default("pending")
-  modelType     String    @map("model_type")
+  modelType     String
   requirements  String?
-  apiEndpoint   String?   @map("api_endpoint")
+  apiEndpoint   String?
   environment   String    @default("production")
   version       String
   source        String
@@ -126,12 +126,12 @@ model Deployment {
 
 model Purchase {
   id        String    @id @default(uuid())
-  userId    String    @map("user_id")
-  productId String    @map("product_id")
+  userId    String
+  productId String
   amount    Decimal   @db.Decimal(10, 2)
   status    String    @default("pending")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   user      User      @relation(fields: [userId], references: [id])
   product   Product   @relation(fields: [productId], references: [id])
 
@@ -140,16 +140,16 @@ model Purchase {
 
 model AgentFeedback {
   id             String    @id @default(uuid())
-  agentId        String    @map("agent_id")
-  userId         String    @map("user_id")
+  agentId        String
+  userId         String
   rating         Int
   comment        String?
-  sentimentScore Decimal?  @map("sentiment_score") @db.Decimal(3, 2)
+  sentimentScore Decimal?  @db.Decimal(3, 2)
   categories     Json?
-  creatorResponse String?  @map("creator_response")
-  responseDate   DateTime? @map("response_date")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
+  creatorResponse String?
+  responseDate   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   agent          Deployment @relation(fields: [agentId], references: [id])
   user           User      @relation(fields: [userId], references: [id])
 
@@ -158,14 +158,14 @@ model AgentFeedback {
 
 model Notification {
   id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  userId    String
   type      String
   title     String
   message   String
   metadata  Json?
   read      Boolean  @default(false)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id])
 
   @@map("notifications")
@@ -173,19 +173,19 @@ model Notification {
 
 model AgentMetrics {
   id                String    @id @default(uuid())
-  agentId          String    @unique @map("agent_id")
-  totalRequests    Int       @default(0) @map("total_requests")
-  averageResponseTime Int     @default(0) @map("average_response_time")
-  errorRate        Float     @default(0) @map("error_rate")
-  successRate      Float     @default(0) @map("success_rate")
-  activeUsers      Int       @default(0) @map("active_users")
-  requestsPerMinute Float    @default(0) @map("requests_per_minute")
-  averageTokensUsed Int      @default(0) @map("average_tokens_used")
-  costPerRequest   Float     @default(0) @map("cost_per_request")
-  totalCost        Float     @default(0) @map("total_cost")
-  lastUpdated      DateTime  @default(now()) @map("last_updated")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  agentId          String    @unique
+  totalRequests    Int       @default(0)
+  averageResponseTime Int     @default(0)
+  errorRate        Float     @default(0)
+  successRate      Float     @default(0)
+  activeUsers      Int       @default(0)
+  requestsPerMinute Float    @default(0)
+  averageTokensUsed Int      @default(0)
+  costPerRequest   Float     @default(0)
+  totalCost        Float     @default(0)
+  lastUpdated      DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
   agent            Deployment @relation(fields: [agentId], references: [id])
 
   @@map("agent_metrics")
@@ -193,13 +193,13 @@ model AgentMetrics {
 
 model AgentLog {
   id        String   @id @default(uuid())
-  agentId   String   @map("agent_id")
+  agentId   String
   level     String
   message   String
   metadata  Json?
   timestamp DateTime @default(now())
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   agent     Deployment @relation(fields: [agentId], references: [id])
 
   @@map("agent_logs")
@@ -211,9 +211,9 @@ model File {
   type        String
   size        Int
   path        String
-  uploadedBy  String   @map("uploaded_by")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  uploadedBy  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   user        User     @relation("UserFiles", fields: [uploadedBy], references: [id])
 
   @@map("files")

@@ -18,8 +18,19 @@ export function FeaturedAgents() {
           throw new Error('Failed to load featured agents');
         }
         const data = await response.json();
-        setFeaturedAgents(data.data.filter((agent: Agent) => agent.isFeatured));
-        setTrendingAgents(data.data.filter((agent: Agent) => agent.isTrending));
+        if (data.success) {
+          // Filter agents based on metadata
+          const featured = data.agents.filter((agent: Agent) => 
+            agent.metadata?.isFeatured || agent.status === 'active'
+          );
+          const trending = data.agents.filter((agent: Agent) => 
+            agent.metadata?.isTrending || agent.status === 'active'
+          );
+          setFeaturedAgents(featured);
+          setTrendingAgents(trending);
+        } else {
+          throw new Error(data.error || 'Failed to fetch agents');
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch');
       } finally {
@@ -31,79 +42,72 @@ export function FeaturedAgents() {
   }, []);
 
   if (loading) {
-    return <div role="status">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00AFFF]"></div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div>{error}</div>;
+    return (
+      <div className="text-red-500 text-center p-4">
+        {error}
+      </div>
+    );
   }
 
+  const renderAgentCard = (agent: Agent) => (
+    <div key={agent.id} className="bg-white/5 rounded-xl p-6 hover:bg-white/10 transition-all duration-300">
+      <div className="aspect-video relative mb-4 rounded-lg overflow-hidden">
+        <img
+          src={agent.metadata?.image || '/agent-placeholder.png'}
+          alt={agent.name}
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <h3 className="text-xl font-semibold mb-2">{agent.name}</h3>
+      <p className="text-gray-300 mb-4 line-clamp-2">{agent.description}</p>
+      <div className="flex justify-between items-center">
+        <div className="flex items-center">
+          <span className="text-yellow-500">★</span>
+          <span className="ml-1 text-gray-300">
+            {agent.metadata?.rating || 0}
+          </span>
+          <span className="text-gray-400 ml-1">
+            ({agent.metadata?.reviews || 0} reviews)
+          </span>
+        </div>
+        <Link
+          href={`/agent/${agent.id}`}
+          className="bg-[#00AFFF] text-white px-4 py-2 rounded-lg hover:bg-[#0090cc] transition-all duration-300"
+        >
+          View Details
+        </Link>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-12">
       <section>
-        <h2 className="text-2xl font-bold mb-4">Featured Agents</h2>
+        <h2 className="text-3xl font-bold mb-8">Featured Agents</h2>
         {featuredAgents.length === 0 ? (
-          <p>No featured agents found</p>
+          <p className="text-gray-400 text-center">No featured agents found</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {featuredAgents.map((agent) => (
-              <div key={agent.id} className="border rounded-lg p-4">
-                <img
-                  src={agent.image}
-                  alt={agent.name}
-                  className="w-full h-48 object-cover rounded-lg mb-4"
-                />
-                <h3 className="text-xl font-semibold mb-2">{agent.name}</h3>
-                <p className="text-gray-600 mb-4">{agent.description}</p>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <span className="text-yellow-500">★</span>
-                    <span className="ml-1">{agent.rating}</span>
-                    <span className="text-gray-500 ml-1">({agent.reviews} reviews)</span>
-                  </div>
-                  <Link
-                    href={`/agent/${agent.id}`}
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredAgents.map(renderAgentCard)}
           </div>
         )}
       </section>
 
       <section>
-        <h2 className="text-2xl font-bold mb-4">Trending Agents</h2>
+        <h2 className="text-3xl font-bold mb-8">Trending Agents</h2>
         {trendingAgents.length === 0 ? (
-          <p>No trending agents found</p>
+          <p className="text-gray-400 text-center">No trending agents found</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {trendingAgents.map((agent) => (
-              <div key={agent.id} className="border rounded-lg p-4">
-                <img
-                  src={agent.image}
-                  alt={agent.name}
-                  className="w-full h-48 object-cover rounded-lg mb-4"
-                />
-                <h3 className="text-xl font-semibold mb-2">{agent.name}</h3>
-                <p className="text-gray-600 mb-4">{agent.description}</p>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <span className="text-yellow-500">★</span>
-                    <span className="ml-1">{agent.rating}</span>
-                    <span className="text-gray-500 ml-1">({agent.reviews} reviews)</span>
-                  </div>
-                  <Link
-                    href={`/agent/${agent.id}`}
-                    className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                  >
-                    View Details
-                  </Link>
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {trendingAgents.map(renderAgentCard)}
           </div>
         )}
       </section>

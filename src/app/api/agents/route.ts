@@ -11,74 +11,92 @@ import {
   agentQuerySchema,
   type Agent
 } from '@/types/agents';
+import { z } from 'zod';
 
 // Start background jobs when the module is loaded
 startBackgroundJobs();
 
-export async function GET(req: Request): Promise<NextResponse<AgentsApiResponse>> {
+const agentQuerySchema = z.object({
+  page: z.string().optional(),
+  limit: z.string().optional(),
+  status: z.enum(['active', 'inactive', 'pending']).optional(),
+  search: z.string().optional(),
+});
+
+export async function GET(request: Request): Promise<NextResponse<AgentsApiResponse>> {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { searchParams } = new URL(req.url);
+    const { searchParams } = new URL(request.url);
     const query = {
-      page: parseInt(searchParams.get('page') || '1'),
-      limit: parseInt(searchParams.get('limit') || '10'),
+      page: searchParams.get('page'),
+      limit: searchParams.get('limit'),
       status: searchParams.get('status'),
       search: searchParams.get('search'),
     };
 
     const validatedQuery = agentQuerySchema.parse(query);
+    const page = parseInt(validatedQuery.page || '1');
+    const limit = parseInt(validatedQuery.limit || '10');
+    const skip = (page - 1) * limit;
 
-    const where: Prisma.DeploymentWhereInput = {
+    const where = {
       ...(validatedQuery.status && { status: validatedQuery.status }),
       ...(validatedQuery.search && {
         OR: [
-          { name: { contains: validatedQuery.search, mode: Prisma.QueryMode.insensitive } },
-          { description: { contains: validatedQuery.search, mode: Prisma.QueryMode.insensitive } },
+          { name: { contains: validatedQuery.search, mode: 'insensitive' } },
+          { description: { contains: validatedQuery.search, mode: 'insensitive' } },
         ],
       }),
     };
 
     const [agents, total] = await Promise.all([
-      prisma.deployment.findMany({
+      prisma.agent.findMany({
         where,
-        skip: (validatedQuery.page - 1) * validatedQuery.limit,
-        take: validatedQuery.limit,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          status: true,
-          metadata: true,
-          createdAt: true,
-          updatedAt: true,
+        skip,
+        take: limit,
+        include: {
           user: {
             select: {
               id: true,
-              email: true,
               name: true,
+              email: true,
+              image: true,
             },
           },
         },
-      }) as Promise<Agent[]>,
-      prisma.deployment.count({ where }),
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.agent.count({ where }),
     ]);
+
+    const formattedAgents = agents.map(agent => ({
+      ...agent,
+      metadata: {
+        isFeatured: agent.metadata?.isFeatured || false,
+        isTrending: agent.metadata?.isTrending || false,
+        rating: agent.metadata?.rating || 0,
+        reviews: agent.metadata?.reviews || 0,
+        image: agent.metadata?.image || '/agent-placeholder.png',
+      },
+    }));
 
     return NextResponse.json({
       success: true,
-      agents,
+      agents: formattedAgents,
       pagination: {
         total,
-        pages: Math.ceil(total / validatedQuery.limit),
-        page: validatedQuery.page,
-        limit: validatedQuery.limit,
+        pages: Math.ceil(total / limit),
+        currentPage: page,
+        limit,
       },
     });
   } catch (error) {
@@ -90,38 +108,29 @@ export async function GET(req: Request): Promise<NextResponse<AgentsApiResponse>
   }
 }
 
-export async function DELETE(req: Request): Promise<NextResponse<AgentApiResponse>> {
+export async function DELETE(request: Request): Promise<NextResponse<AgentApiResponse>> {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { searchParams } = new URL(req.url);
-    const agentId = searchParams.get('id');
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
 
-    if (!agentId) {
+    if (!id) {
       return NextResponse.json(
         { success: false, error: 'Agent ID is required' },
         { status: 400 }
       );
     }
 
-    const agent = await prisma.deployment.findUnique({
-      where: { id: agentId },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        status: true,
-        metadata: true,
-        createdAt: true,
-        updatedAt: true,
-        userId: true,
-      },
+    const agent = await prisma.agent.findUnique({
+      where: { id },
+      include: { user: true },
     });
 
     if (!agent) {
@@ -138,21 +147,13 @@ export async function DELETE(req: Request): Promise<NextResponse<AgentApiRespons
       );
     }
 
-    await prisma.deployment.delete({
-      where: { id: agentId },
+    await prisma.agent.delete({
+      where: { id },
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      agent: {
-        id: agent.id,
-        name: agent.name,
-        description: agent.description,
-        status: agent.status,
-        metadata: agent.metadata,
-        createdAt: agent.createdAt,
-        updatedAt: agent.updatedAt,
-      }
+    return NextResponse.json({
+      success: true,
+      message: 'Agent deleted successfully',
     });
   } catch (error) {
     console.error('Error deleting agent:', error);
@@ -207,4 +208,5 @@ export async function getTrendingAgents(): Promise<Agent[]> {
     console.error('Error fetching trending agents:', error);
     return [];
   }
+} 
 } 

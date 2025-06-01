@@ -1,4 +1,6 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.test' });
+console.log('Loaded DATABASE_URL:', process.env.DATABASE_URL);
 import '@testing-library/jest-dom';
 import { vi, beforeAll, afterAll, afterEach } from 'vitest';
 import React from 'react';
