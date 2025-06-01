@@ -5,28 +5,28 @@ import { vi } from 'vitest';
 import { prisma } from '@/test/setup';
 
 // Mock next/navigation
-jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(),
 }));
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock react-hot-toast
-jest.mock('react-hot-toast', () => ({
+vi.mock('react-hot-toast', () => ({
   toast: {
-    error: jest.fn(),
+    error: vi.fn(),
   },
 }));
 
 describe('FeaturedAgents', () => {
   const mockRouter = {
-    push: jest.fn(),
+    push: vi.fn(),
   };
 
   beforeEach(() => {
-    (useRouter as jest.Mock).mockReturnValue(mockRouter);
-    (global.fetch as jest.Mock).mockClear();
+    (useRouter as any).mockReturnValue(mockRouter);
+    (global.fetch as any).mockClear();
     vi.clearAllMocks();
   });
 
@@ -63,7 +63,7 @@ describe('FeaturedAgents', () => {
   });
 
   it('renders featured and trending agents after loading', async () => {
-    (global.fetch as jest.Mock)
+    (global.fetch as any)
       .mockImplementationOnce(() => Promise.resolve({
         ok: true,
         json: () => Promise.resolve(mockAgents),
@@ -91,7 +91,7 @@ describe('FeaturedAgents', () => {
   }, 15000);
 
   it('navigates to agent details when clicking view details', async () => {
-    (global.fetch as jest.Mock)
+    (global.fetch as any)
       .mockImplementationOnce(() => Promise.resolve({
         ok: true,
         json: () => Promise.resolve(mockAgents),

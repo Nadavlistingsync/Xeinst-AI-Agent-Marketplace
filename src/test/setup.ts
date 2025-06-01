@@ -22,12 +22,10 @@ const prisma = new PrismaClient({
 beforeAll(async () => {
   try {
     // Drop the database and recreate it
-    await prisma.$executeRawUnsafe(`
-      DROP SCHEMA public CASCADE;
-      CREATE SCHEMA public;
-      GRANT ALL ON SCHEMA public TO postgres;
-      GRANT ALL ON SCHEMA public TO public;
-    `);
+    await prisma.$executeRawUnsafe(`DROP SCHEMA public CASCADE;`);
+    await prisma.$executeRawUnsafe(`CREATE SCHEMA public;`);
+    await prisma.$executeRawUnsafe(`GRANT ALL ON SCHEMA public TO postgres;`);
+    await prisma.$executeRawUnsafe(`GRANT ALL ON SCHEMA public TO public;`);
 
     // Push schema to test database
     execSync('npx prisma db push --force-reset', {
