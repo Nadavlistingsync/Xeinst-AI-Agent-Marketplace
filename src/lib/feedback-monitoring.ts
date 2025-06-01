@@ -1,4 +1,4 @@
-import { prismaClient } from './db';
+import prisma from '@/lib/prisma';
 import { AgentFeedback } from './schema';
 import { createNotification, NotificationType, NotificationSeverity } from './notification';
 
@@ -60,7 +60,7 @@ export async function getFeedbackMetrics(
     };
   }
 
-  const feedbacks = await prismaClient.agentFeedback.findMany({
+  const feedbacks = await prisma.agentFeedback.findMany({
     where,
   });
 
@@ -115,68 +115,77 @@ export async function getFeedbackMetrics(
 }
 
 export async function monitorFeedback(agentId: string): Promise<void> {
-  const metrics = await getFeedbackMetrics(agentId);
-  const agent = await prismaClient.agent.findUnique({
-    where: { id: agentId },
-    include: { user: true },
-  });
-
-  if (!agent) return;
-
-  const notifications: Array<{
-    type: NotificationType;
-    severity: NotificationSeverity;
-    title: string;
-    message: string;
-  }> = [];
-
-  // Check sentiment
-  if (metrics.sentimentDistribution.negative > metrics.totalFeedbacks * 0.3) {
-    notifications.push({
-      type: 'sentiment_alert',
-      severity: 'warning',
-      title: 'Negative Feedback Alert',
-      message: `Agent ${agent.name} has received ${Math.round(
-        (metrics.sentimentDistribution.negative / metrics.totalFeedbacks) * 100
-      )}% negative feedback.`,
+  try {
+    const metrics = await getFeedbackMetrics(agentId);
+    const agent = await prisma.deployment.findUnique({
+      where: { id: agentId },
+      include: { user: true },
     });
-  }
 
-  // Check ratings
-  if (metrics.average_rating < 3) {
-    notifications.push({
-      type: 'rating_alert',
-      severity: 'error',
-      title: 'Low Rating Alert',
-      message: `Agent ${agent.name} has an average rating of ${metrics.average_rating.toFixed(1)}.`,
-    });
-  }
+    if (!agent) {
+      console.warn(`Agent ${agentId} not found during feedback monitoring`);
+      return;
+    }
 
-  // Check response rate
-  if (metrics.responseRate < 0.5) {
-    notifications.push({
-      type: 'feedback_alert',
-      severity: 'warning',
-      title: 'Low Response Rate',
-      message: `Agent ${agent.name} has a response rate of ${Math.round(
-        metrics.responseRate * 100
-      )}%.`,
-    });
-  }
+    const notifications: Array<{
+      type: NotificationType;
+      severity: NotificationSeverity;
+      title: string;
+      message: string;
+    }> = [];
 
-  // Send notifications
-  await Promise.all(
-    notifications.map((notification) =>
-      createNotification({
-        user_id: agent.user_id,
-        ...notification,
-        metadata: {
-          agentId,
-          metrics,
-        },
-      })
-    )
-  );
+    // Check sentiment
+    if (metrics.sentimentDistribution.negative > metrics.totalFeedbacks * 0.3) {
+      notifications.push({
+        type: 'sentiment_alert',
+        severity: 'warning',
+        title: 'Negative Feedback Alert',
+        message: `Agent ${agent.name} has received ${Math.round(
+          (metrics.sentimentDistribution.negative / metrics.totalFeedbacks) * 100
+        )}% negative feedback.`,
+      });
+    }
+
+    // Check ratings
+    if (metrics.average_rating < 3) {
+      notifications.push({
+        type: 'rating_alert',
+        severity: 'error',
+        title: 'Low Rating Alert',
+        message: `Agent ${agent.name} has an average rating of ${metrics.average_rating.toFixed(1)}.`,
+      });
+    }
+
+    // Check response rate
+    if (metrics.responseRate < 0.5) {
+      notifications.push({
+        type: 'feedback_alert',
+        severity: 'warning',
+        title: 'Low Response Rate',
+        message: `Agent ${agent.name} has a response rate of ${Math.round(
+          metrics.responseRate * 100
+        )}%.`,
+      });
+    }
+
+    // Send notifications
+    if (notifications.length > 0) {
+      await Promise.all(
+        notifications.map((notification) =>
+          createNotification({
+            user_id: agent.user.id,
+            ...notification,
+            metadata: {
+              agentId,
+              metrics,
+            },
+          })
+        )
+      );
+    }
+  } catch (error) {
+    console.error(`Error monitoring feedback for agent ${agentId}:`, error);
+  }
 }
 
 interface FeedbackCategory {
@@ -289,7 +298,7 @@ export async function getFeedbackTrends(
   sentiment: Array<{ date: Date; value: number }>;
   responseTime: Array<{ date: Date; value: number }>;
 }> {
-  const feedbacks = await prismaClient.agentFeedback.findMany({
+  const feedbacks = await prisma.agentFeedback.findMany({
     where: {
       agentId,
       created_at: {
@@ -406,34 +415,44 @@ export async function updateAgentBasedOnFeedback(
   agentId: string,
   feedback: AgentFeedback
 ): Promise<void> {
-  const agent = await prismaClient.agent.findUnique({
+  const agent = await prisma.deployment.findUnique({
     where: { id: agentId },
   });
 
-  if (!agent) return;
+  if (!agent) {
+    throw new Error(`Agent ${agentId} not found`);
+  }
 
   const updates: any = {};
 
-  // Update rating
+  // Update rating if provided
   if (feedback.rating) {
     const currentRating = agent.rating || 0;
-    const currentCount = agent.download_count || 0;
-    updates.rating = (currentRating * currentCount + feedback.rating) / (currentCount + 1);
-    updates.download_count = currentCount + 1;
+    const currentRatingCount = agent.ratingCount || 0;
+    const newRatingCount = currentRatingCount + 1;
+    const newRating = ((currentRating * currentRatingCount) + feedback.rating) / newRatingCount;
+
+    updates.rating = newRating;
+    updates.ratingCount = newRatingCount;
   }
 
-  // Update status based on sentiment
-  if (feedback.sentimentScore !== null) {
-    if (feedback.sentimentScore < -0.5) {
-      updates.status = 'needs_improvement';
-    } else if (feedback.sentimentScore > 0.5) {
-      updates.status = 'stable';
-    }
+  // Update status based on feedback
+  if (feedback.rating && feedback.rating < 2) {
+    updates.status = 'needs_attention';
   }
 
-  await prismaClient.agent.update({
+  // Apply updates
+  await prisma.deployment.update({
     where: { id: agentId },
     data: updates,
+  });
+
+  // Create notification for agent creator
+  await notifyAgentCreator(agentId, {
+    type: 'feedback_received',
+    message: `New feedback received for agent ${agent.name}`,
+    sentimentScore: feedback.sentimentScore,
+    categories: feedback.categories as string[],
   });
 }
 

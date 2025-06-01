@@ -1,4 +1,3 @@
-import { analyzeAgentFeedback } from '@/lib/feedback-monitoring';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -6,10 +5,11 @@ import prisma from '@/lib/prisma';
 import { createErrorResponse } from '@/lib/api';
 import { z } from 'zod';
 
-const metricsQuerySchema = z.object({
+const exportQuerySchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-  includeDetails: z.boolean().optional(),
+  format: z.enum(['csv', 'json']).default('csv'),
+  includeMetadata: z.boolean().optional()
 });
 
 export async function GET(
@@ -73,37 +73,79 @@ export async function GET(
     const queryParams = {
       startDate: searchParams.get('startDate'),
       endDate: searchParams.get('endDate'),
-      includeDetails: searchParams.get('includeDetails') === 'true'
+      format: searchParams.get('format') as 'csv' | 'json' | null,
+      includeMetadata: searchParams.get('includeMetadata') === 'true'
     };
 
-    const validatedParams = metricsQuerySchema.parse(queryParams);
+    const validatedParams = exportQuerySchema.parse(queryParams);
 
-    const metrics = await analyzeAgentFeedback(params.id, {
-      startDate: validatedParams.startDate ? new Date(validatedParams.startDate) : undefined,
-      endDate: validatedParams.endDate ? new Date(validatedParams.endDate) : undefined,
-      includeDetails: validatedParams.includeDetails
-    });
-
-    if (!metrics) {
-      return NextResponse.json(
-        { error: 'No metrics available' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      ...metrics,
-      metadata: {
+    // Get feedback entries
+    const feedback = await prisma.feedback.findMany({
+      where: {
         agentId: params.id,
-        timeRange: {
-          start: validatedParams.startDate,
-          end: validatedParams.endDate
-        },
-        lastUpdated: new Date().toISOString()
+        ...(validatedParams.startDate && validatedParams.endDate ? {
+          createdAt: {
+            gte: new Date(validatedParams.startDate),
+            lte: new Date(validatedParams.endDate)
+          }
+        } : {})
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     });
+
+    // Prepare export data
+    const exportData = feedback.map(item => ({
+      id: item.id,
+      rating: item.rating,
+      comment: item.comment,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString()
+    }));
+
+    // Add metadata if requested
+    const metadata = validatedParams.includeMetadata ? {
+      agentId: params.id,
+      timeRange: {
+        start: validatedParams.startDate,
+        end: validatedParams.endDate
+      },
+      totalFeedback: feedback.length,
+      exportDate: new Date().toISOString(),
+      format: validatedParams.format
+    } : undefined;
+
+    // Generate response based on format
+    if (validatedParams.format === 'csv') {
+      const headers = ['ID', 'Rating', 'Comment', 'Created At', 'Updated At'];
+      const rows = exportData.map(item => [
+        item.id,
+        item.rating,
+        item.comment,
+        item.createdAt,
+        item.updatedAt
+      ]);
+
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ].join('\n');
+
+      return new NextResponse(csvContent, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="feedback-export-${params.id}.csv"`
+        }
+      });
+    } else {
+      return NextResponse.json({
+        data: exportData,
+        ...(metadata && { metadata })
+      });
+    }
   } catch (error) {
-    console.error('Error analyzing feedback:', error);
+    console.error('Error exporting feedback:', error);
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -115,7 +157,7 @@ export async function GET(
       );
     }
 
-    const errorResponse = createErrorResponse(error, 'Failed to analyze feedback');
+    const errorResponse = createErrorResponse(error, 'Failed to export feedback');
     return NextResponse.json(
       { error: errorResponse.message },
       { status: errorResponse.status }

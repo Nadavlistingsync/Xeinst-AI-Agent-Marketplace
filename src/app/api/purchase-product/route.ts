@@ -1,74 +1,79 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { Product, User, Earning } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
-import db from '@/lib/db';
+import prisma from '@/lib/prisma';
+import { z } from 'zod';
+
+const purchaseSchema = z.object({
+  productId: z.string().uuid(),
+});
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { product_id } = await req.json();
-    if (!product_id) {
-      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
-    }
+    const body = await req.json();
+    const { productId } = purchaseSchema.parse(body);
 
-    // Get product details
-    const [product] = await db
-      .select()
-      .from(products)
-      .where(eq(products.id, product_id))
-      .limit(1);
+    // Get product details with creator
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        user: true,
+      },
+    });
 
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    if (!product.uploadedBy) {
+    if (!product.user) {
       return NextResponse.json({ error: 'Product creator not found' }, { status: 404 });
     }
 
-    // Get creator details
-    const [creator] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, product.uploadedBy))
-      .limit(1);
-
-    if (!creator) {
-      return NextResponse.json({ error: 'Creator not found' }, { status: 404 });
-    }
-
     // Calculate earnings
-    const earningsAmount = (Number(product.price) * Number(product.earnings_split)).toFixed(2);
+    const earningsAmount = (Number(product.price) * Number(product.earningsSplit)).toFixed(2);
 
-    // Create earnings record
-    await db.insert(earnings).values({
-      user_id: creator.id,
-      product_id: product.id,
-      amount: earningsAmount,
-      status: 'pending',
-    });
-
-    // Update product download count
-    await db
-      .update(products)
-      .set({ download_count: (product.download_count ?? 0) + 1 })
-      .where(eq(products.id, product.id));
+    // Create earnings record and update product in a transaction
+    const result = await prisma.$transaction([
+      prisma.earning.create({
+        data: {
+          userId: product.user.id,
+          productId: product.id,
+          amount: parseFloat(earningsAmount),
+          status: 'pending',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      }),
+      prisma.product.update({
+        where: { id: product.id },
+        data: {
+          downloadCount: {
+            increment: 1,
+          },
+        },
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,
       product: {
         ...product,
-        downloadUrl: `/api/download-agent?id=${product.id}`,
+        downloadUrl: `/api/download-product?id=${product.id}`,
       },
     });
   } catch (error) {
     console.error('Error purchasing product:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.errors },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: 'Failed to purchase product' },
       { status: 500 }

@@ -2,61 +2,50 @@ import { NextRequest, NextResponse } from 'next/server';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { uploadFile, deleteFile } from '@/lib/upload';
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request): Promise<NextResponse> {
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    
-    if (!file) {
-      return NextResponse.json(
-        { error: 'No file provided' },
-        { status: 400 }
-      );
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Ensure upload directory exists
-    await mkdir(UPLOAD_DIR, { recursive: true });
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    if (!file) {
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+    }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const fileName = `${uuidv4()}-${file.name}`;
-    const filePath = join(UPLOAD_DIR, fileName);
-
-    await writeFile(filePath, buffer);
-    
-    return NextResponse.json({ url: `/uploads/${fileName}` });
+    const fileUrl = await uploadFile(file, session.user.id);
+    return NextResponse.json({ fileUrl });
   } catch (error) {
     console.error('Error uploading file:', error);
-    return NextResponse.json(
-      { error: 'Failed to upload file' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 });
   }
 }
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: Request): Promise<NextResponse> {
   try {
-    const key = request.nextUrl.searchParams.get('key');
-    
-    if (!key) {
-      return NextResponse.json(
-        { error: 'No file key provided' },
-        { status: 400 }
-      );
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const filePath = join(UPLOAD_DIR, key);
-    await unlink(filePath);
-    
+    const { searchParams } = new URL(request.url);
+    const fileKey = searchParams.get('fileKey');
+    if (!fileKey) {
+      return NextResponse.json({ error: 'No file key provided' }, { status: 400 });
+    }
+
+    await deleteFile(fileKey);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting file:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete file' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to delete file' }, { status: 500 });
   }
 } 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { join } from 'path';
 import { readFile } from 'fs/promises';
 
@@ -27,12 +27,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
     }
 
-    if (agent.deployed_by !== session.user.id) {
+    if (agent.userId !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Read file from local storage
-    const filePath = join(process.cwd(), 'public', agent.file_url!);
+    const filePath = join(process.cwd(), 'public', agent.fileUrl!);
     const fileBuffer = await readFile(filePath);
 
     // Return file as download

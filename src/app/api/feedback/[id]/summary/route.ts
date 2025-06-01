@@ -1,4 +1,3 @@
-import { analyzeAgentFeedback } from '@/lib/feedback-monitoring';
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -6,10 +5,10 @@ import prisma from '@/lib/prisma';
 import { createErrorResponse } from '@/lib/api';
 import { z } from 'zod';
 
-const metricsQuerySchema = z.object({
+const summaryQuerySchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-  includeDetails: z.boolean().optional(),
+  includeDetails: z.boolean().optional()
 });
 
 export async function GET(
@@ -76,23 +75,50 @@ export async function GET(
       includeDetails: searchParams.get('includeDetails') === 'true'
     };
 
-    const validatedParams = metricsQuerySchema.parse(queryParams);
+    const validatedParams = summaryQuerySchema.parse(queryParams);
 
-    const metrics = await analyzeAgentFeedback(params.id, {
-      startDate: validatedParams.startDate ? new Date(validatedParams.startDate) : undefined,
-      endDate: validatedParams.endDate ? new Date(validatedParams.endDate) : undefined,
-      includeDetails: validatedParams.includeDetails
+    // Get feedback entries
+    const feedback = await prisma.feedback.findMany({
+      where: {
+        agentId: params.id,
+        ...(validatedParams.startDate && validatedParams.endDate ? {
+          createdAt: {
+            gte: new Date(validatedParams.startDate),
+            lte: new Date(validatedParams.endDate)
+          }
+        } : {})
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
 
-    if (!metrics) {
-      return NextResponse.json(
-        { error: 'No metrics available' },
-        { status: 404 }
-      );
-    }
+    // Calculate summary statistics
+    const totalFeedback = feedback.length;
+    const averageRating = feedback.reduce((sum, item) => sum + item.rating, 0) / totalFeedback;
+    
+    const ratingDistribution = feedback.reduce((acc, item) => {
+      const rating = Math.round(item.rating);
+      acc[rating] = (acc[rating] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>);
+
+    const sentimentDistribution = feedback.reduce((acc, item) => {
+      const sentiment = item.rating >= 4 ? 'positive' : item.rating >= 3 ? 'neutral' : 'negative';
+      acc[sentiment] = (acc[sentiment] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const recentFeedback = validatedParams.includeDetails ? feedback.slice(0, 5) : undefined;
 
     return NextResponse.json({
-      ...metrics,
+      summary: {
+        totalFeedback,
+        averageRating,
+        ratingDistribution,
+        sentimentDistribution,
+        ...(recentFeedback && { recentFeedback })
+      },
       metadata: {
         agentId: params.id,
         timeRange: {
@@ -103,7 +129,7 @@ export async function GET(
       }
     });
   } catch (error) {
-    console.error('Error analyzing feedback:', error);
+    console.error('Error generating feedback summary:', error);
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -115,7 +141,7 @@ export async function GET(
       );
     }
 
-    const errorResponse = createErrorResponse(error, 'Failed to analyze feedback');
+    const errorResponse = createErrorResponse(error, 'Failed to generate feedback summary');
     return NextResponse.json(
       { error: errorResponse.message },
       { status: errorResponse.status }

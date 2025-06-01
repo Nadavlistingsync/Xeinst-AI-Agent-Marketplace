@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { products } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 const ProductSchema = z.object({
@@ -24,23 +22,20 @@ const ProductSchema = z.object({
 export async function GET(
   _request: Request,
   { params }: { params: { slug: string } }
-) {
+): Promise<NextResponse> {
   try {
-    const product = await db
-      .select()
-      .from(products)
-      .where(eq(products.id, params.slug))
-      .limit(1);
+    const product = await prisma.product.findUnique({
+      where: { id: params.slug },
+    });
 
-    if (!product.length) {
+    if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }
       );
     }
 
-    const validatedProduct = ProductSchema.parse(product[0]);
-
+    const validatedProduct = ProductSchema.parse(product);
     return NextResponse.json(validatedProduct);
   } catch (error) {
     console.error('Error fetching product:', error);
@@ -62,14 +57,13 @@ export async function GET(
 export async function DELETE(
   _request: Request,
   { params }: { params: { slug: string } }
-) {
+): Promise<NextResponse> {
   try {
-    const result = await db
-      .delete(products)
-      .where(eq(products.id, params.slug))
-      .returning();
+    const product = await prisma.product.delete({
+      where: { id: params.slug },
+    });
 
-    if (!result.length) {
+    if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
         { status: 404 }

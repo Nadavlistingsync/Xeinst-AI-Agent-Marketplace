@@ -7,7 +7,7 @@ import { z } from 'zod';
 const updateStatusSchema = z.object({
   agentId: z.string().uuid(),
   status: z.enum(['pending', 'deploying', 'active', 'failed', 'stopped']),
-  api_endpoint: z.string().url().optional(),
+  apiEndpoint: z.string().url().optional(),
 });
 
 export async function POST(req: Request) {
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { agentId, status, api_endpoint } = updateStatusSchema.parse(body);
+    const { agentId, status, apiEndpoint } = updateStatusSchema.parse(body);
 
     const agent = await prisma.deployment.findUnique({
       where: { id: agentId },
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (agent.deployed_by !== session.user.id) {
+    if (agent.userId !== session.user.id) {
       return NextResponse.json(
         { error: 'Not authorized to update this agent' },
         { status: 403 }
@@ -42,8 +42,8 @@ export async function POST(req: Request) {
       where: { id: agentId },
       data: {
         status,
-        ...(api_endpoint && { api_endpoint }),
-        updated_at: new Date(),
+        ...(apiEndpoint && { apiEndpoint }),
+        updatedAt: new Date(),
       },
     });
 

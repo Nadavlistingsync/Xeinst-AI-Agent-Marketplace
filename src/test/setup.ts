@@ -5,14 +5,9 @@ import React from 'react';
 import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
 
-// Set default test database URL if not provided
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'file:./test.db';
-
-// Use Object.defineProperty to set NODE_ENV
-Object.defineProperty(process.env, 'NODE_ENV', {
-  value: 'test',
-  writable: true
-});
+// Set test environment
+process.env.NODE_ENV = 'test';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test';
 
 // Create a new Prisma client instance for testing
 const prisma = new PrismaClient({
@@ -26,6 +21,14 @@ const prisma = new PrismaClient({
 // Reset database before all tests
 beforeAll(async () => {
   try {
+    // Drop the database and recreate it
+    await prisma.$executeRawUnsafe(`
+      DROP SCHEMA public CASCADE;
+      CREATE SCHEMA public;
+      GRANT ALL ON SCHEMA public TO postgres;
+      GRANT ALL ON SCHEMA public TO public;
+    `);
+
     // Push schema to test database
     execSync('npx prisma db push --force-reset', {
       env: {
@@ -76,6 +79,44 @@ vi.mock('next-auth', () => ({
     data: null,
     status: 'unauthenticated',
   })),
+}));
+
+// Mock Prisma client
+vi.mock('@/lib/prisma', () => ({
+  default: {
+    agentLog: {
+      findMany: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    deployment: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    agentMetrics: {
+      findUnique: vi.fn(),
+      upsert: vi.fn(),
+    },
+    agentFeedback: {
+      findMany: vi.fn(),
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    user: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+  },
 }));
 
 // Mock fetch

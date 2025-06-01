@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import db from '@/lib/db';
-import { users } from '@/lib/schema';
+import { prisma } from '@/lib/db';
+import { User } from '@/lib/schema';
 import { eq } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 
@@ -18,9 +18,19 @@ const handler = NextAuth({
           throw new Error('Email and password are required');
         }
 
-        const [user] = await db.select()
-          .from(users)
-          .where(eq(users.email, credentials.email));
+        const user = await prisma.user.findUnique({
+          where: {
+            email: credentials.email,
+          },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            image: true,
+            role: true,
+            subscriptionTier: true,
+          },
+        });
 
         if (!user) {
           throw new Error('No user found with this email');
@@ -39,8 +49,8 @@ const handler = NextAuth({
           id: user.id,
           email: user.email,
           role: user.role,
-          subscription_tier: (['free', 'basic', 'premium'].includes(user.subscription_tier)
-            ? user.subscription_tier
+          subscription_tier: (['free', 'basic', 'premium'].includes(user.subscriptionTier)
+            ? user.subscriptionTier
             : 'free') as 'free' | 'basic' | 'premium',
         };
       }

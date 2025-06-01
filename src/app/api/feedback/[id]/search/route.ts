@@ -2,40 +2,20 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { startOfDay, subDays } from 'date-fns';
 import { createErrorResponse } from '@/lib/api';
 import { z } from 'zod';
 
-const categoriesQuerySchema = z.object({
+const searchQuerySchema = z.object({
+  query: z.string().min(1).max(1000),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
+  minRating: z.number().min(1).max(5).optional(),
+  maxRating: z.number().min(1).max(5).optional(),
+  page: z.number().min(1).optional(),
   limit: z.number().min(1).max(100).optional(),
+  sortBy: z.enum(['rating', 'createdAt', 'updatedAt']).optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional()
 });
-
-// Simple keyword-based categorization
-const categorizeFeedback = (comment: string | null): string => {
-  if (!comment) return 'No Comment';
-  
-  const lowerComment = comment.toLowerCase();
-  
-  if (lowerComment.includes('bug') || lowerComment.includes('error') || lowerComment.includes('issue')) {
-    return 'Bugs & Issues';
-  }
-  if (lowerComment.includes('slow') || lowerComment.includes('performance') || lowerComment.includes('speed')) {
-    return 'Performance';
-  }
-  if (lowerComment.includes('interface') || lowerComment.includes('ui') || lowerComment.includes('ux')) {
-    return 'User Interface';
-  }
-  if (lowerComment.includes('feature') || lowerComment.includes('request') || lowerComment.includes('suggestion')) {
-    return 'Feature Requests';
-  }
-  if (lowerComment.includes('documentation') || lowerComment.includes('guide') || lowerComment.includes('help')) {
-    return 'Documentation';
-  }
-  
-  return 'General Feedback';
-};
 
 export async function GET(
   request: Request,
@@ -96,63 +76,89 @@ export async function GET(
     // Parse and validate query parameters
     const { searchParams } = new URL(request.url);
     const queryParams = {
+      query: searchParams.get('query'),
       startDate: searchParams.get('startDate'),
       endDate: searchParams.get('endDate'),
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
+      minRating: searchParams.get('minRating') ? parseInt(searchParams.get('minRating')!) : undefined,
+      maxRating: searchParams.get('maxRating') ? parseInt(searchParams.get('maxRating')!) : undefined,
+      page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : undefined,
+      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
+      sortBy: searchParams.get('sortBy') as 'rating' | 'createdAt' | 'updatedAt' | null,
+      sortOrder: searchParams.get('sortOrder') as 'asc' | 'desc' | null
     };
 
-    const validatedParams = categoriesQuerySchema.parse(queryParams);
+    const validatedParams = searchQuerySchema.parse(queryParams);
+
+    // Calculate pagination
+    const page = validatedParams.page || 1;
+    const limit = validatedParams.limit || 10;
+    const skip = (page - 1) * limit;
+
+    // Build search query
+    const where = {
+      agentId: params.id,
+      OR: [
+        { comment: { contains: validatedParams.query, mode: 'insensitive' } }
+      ],
+      ...(validatedParams.startDate && validatedParams.endDate ? {
+        createdAt: {
+          gte: new Date(validatedParams.startDate),
+          lte: new Date(validatedParams.endDate)
+        }
+      } : {}),
+      ...(validatedParams.minRating && validatedParams.maxRating ? {
+        rating: {
+          gte: validatedParams.minRating,
+          lte: validatedParams.maxRating
+        }
+      } : validatedParams.minRating ? {
+        rating: { gte: validatedParams.minRating }
+      } : validatedParams.maxRating ? {
+        rating: { lte: validatedParams.maxRating }
+      } : {})
+    };
+
+    // Get total count for pagination
+    const total = await prisma.feedback.count({ where });
 
     // Get feedback entries
     const feedback = await prisma.feedback.findMany({
-      where: {
-        agentId: params.id,
-        ...(validatedParams.startDate && validatedParams.endDate ? {
-          createdAt: {
-            gte: new Date(validatedParams.startDate),
-            lte: new Date(validatedParams.endDate)
-          }
-        } : {})
-      },
+      where,
       orderBy: {
-        createdAt: 'desc'
+        [validatedParams.sortBy || 'createdAt']: validatedParams.sortOrder || 'desc'
       },
-      take: validatedParams.limit
+      skip,
+      take: limit
     });
 
-    // Categorize feedback
-    const categories = feedback.reduce((acc, item) => {
-      const category = categorizeFeedback(item.comment);
-      if (!acc[category]) {
-        acc[category] = {
-          count: 0,
-          items: []
-        };
-      }
-      acc[category].count++;
-      acc[category].items.push({
-        id: item.id,
-        comment: item.comment,
-        rating: item.rating,
-        createdAt: item.createdAt
-      });
-      return acc;
-    }, {} as Record<string, { count: number; items: any[] }>);
-
     return NextResponse.json({
-      categories,
+      data: feedback,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      },
       metadata: {
         agentId: params.id,
+        query: validatedParams.query,
         timeRange: {
           start: validatedParams.startDate,
           end: validatedParams.endDate
         },
-        totalFeedback: feedback.length,
+        filters: {
+          minRating: validatedParams.minRating,
+          maxRating: validatedParams.maxRating
+        },
+        sort: {
+          by: validatedParams.sortBy,
+          order: validatedParams.sortOrder
+        },
         lastUpdated: new Date().toISOString()
       }
     });
   } catch (error) {
-    console.error('Error categorizing feedback:', error);
+    console.error('Error searching feedback:', error);
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -164,7 +170,7 @@ export async function GET(
       );
     }
 
-    const errorResponse = createErrorResponse(error, 'Failed to categorize feedback');
+    const errorResponse = createErrorResponse(error, 'Failed to search feedback');
     return NextResponse.json(
       { error: errorResponse.message },
       { status: errorResponse.status }

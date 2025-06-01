@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { products } from '@/lib/schema';
-import { eq, desc } from 'drizzle-orm';
+import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 const ProductSchema = z.object({
@@ -10,26 +8,29 @@ const ProductSchema = z.object({
   description: z.string(),
   tag: z.string(),
   price: z.number().nullable(),
-  image_url: z.string().nullable(),
-  average_rating: z.number(),
-  total_ratings: z.number(),
-  download_count: z.number(),
+  imageUrl: z.string().nullable(),
+  rating: z.number(),
+  totalRatings: z.number(),
+  downloadCount: z.number(),
   isPublic: z.boolean(),
   isFeatured: z.boolean(),
-  created_at: z.date(),
+  createdAt: z.date(),
 });
 
 export async function GET() {
   try {
-    const trendingAgents = await db
-      .select()
-      .from(products)
-      .where(eq(products.is_public, true))
-      .orderBy(desc(products.download_count))
-      .limit(6);
+    const agents = await prisma.deployment.findMany({
+      where: {
+        status: 'active',
+      },
+      orderBy: {
+        downloadCount: 'desc',
+      },
+      take: 10,
+    });
 
     // Validate the response data
-    const validatedAgents = trendingAgents.map(agent => {
+    const validatedAgents = agents.map(agent => {
       try {
         return ProductSchema.parse(agent);
       } catch (error) {

@@ -1,45 +1,70 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { agentFeedbacks } from '@/lib/schema';
-import { v4 as uuidv4 } from 'uuid';
+import prisma from '@/lib/prisma';
+import { createErrorResponse } from '@/lib/api';
+import { feedbackSchema, type FeedbackInput, type FeedbackApiResponse } from '@/types/feedback';
+import { type Feedback } from '@/types/database';
+import { z } from 'zod';
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse<FeedbackApiResponse>> {
   try {
     const data = await request.json();
     
     // Validate required fields
-    if (!data.type || !data.message) {
-      return NextResponse.json(
-        { success: false, error: 'Type and message are required' },
-        { status: 400 }
-      );
-    }
+    const validatedData = feedbackSchema.parse(data);
 
     // Calculate rating based on type
-    const rating = data.type === 'error' ? 1 : data.type === 'warning' ? 2 : 5;
+    const rating = validatedData.type === 'error' ? 1 : validatedData.type === 'warning' ? 2 : 5;
     
-    // Store feedback in database using Drizzle
-    const feedback = await db.insert(agentFeedbacks).values({
-      id: uuidv4(),
-      agentId: 'system', // Using 'system' for general feedback
-      user_id: 'system', // Using 'system' for general feedback
-      rating,
-      comment: data.message,
-      created_at: new Date(),
-      updated_at: new Date(),
-    }).returning();
+    // Store feedback in database using Prisma
+    const feedback = await prisma.feedback.create({
+      data: {
+        agentId: validatedData.agentId || 'system',
+        userId: validatedData.userId || 'system',
+        rating,
+        comment: validatedData.message,
+        metadata: validatedData.metadata || {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        agentId: true,
+        userId: true,
+        rating: true,
+        comment: true,
+        metadata: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }) as Feedback;
 
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
       console.log('Feedback received:', feedback);
     }
 
-    return NextResponse.json({ success: true, feedback: feedback[0] });
+    return NextResponse.json({ success: true, feedback });
   } catch (error) {
     console.error('Error processing feedback:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Validation error',
+          details: error.errors 
+        },
+        { status: 400 }
+      );
+    }
+
+    const errorResponse = createErrorResponse(error, 'Failed to process feedback');
     return NextResponse.json(
-      { success: false, error: 'Failed to process feedback' },
-      { status: 500 }
+      { 
+        success: false, 
+        error: errorResponse.error 
+      },
+      { status: errorResponse.status }
     );
   }
 } 

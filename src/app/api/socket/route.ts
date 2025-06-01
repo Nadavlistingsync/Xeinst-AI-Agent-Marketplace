@@ -1,23 +1,64 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { initSocket } from '@/lib/websocket';
+import { initializeSocket } from '@/lib/socket';
+import { createErrorResponse } from '@/lib/api';
+import { z } from 'zod';
 
-export async function GET(req: Request) {
+const socketQuerySchema = z.object({
+  reconnect: z.boolean().optional(),
+  forceNew: z.boolean().optional(),
+});
+
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const io = initSocket(req as any);
-    if (!io) {
-      return new NextResponse('Failed to initialize socket', { status: 500 });
-    }
+    // Parse and validate query parameters
+    const { searchParams } = new URL(request.url);
+    const queryParams = {
+      reconnect: searchParams.get('reconnect') === 'true',
+      forceNew: searchParams.get('forceNew') === 'true'
+    };
 
-    return new NextResponse('Socket initialized', { status: 200 });
+    const validatedParams = socketQuerySchema.parse(queryParams);
+
+    const socket = await initializeSocket(session.user.id, {
+      reconnect: validatedParams.reconnect,
+      forceNew: validatedParams.forceNew
+    });
+
+    return NextResponse.json({
+      socket,
+      metadata: {
+        userId: session.user.id,
+        timestamp: new Date().toISOString(),
+        options: validatedParams
+      }
+    });
   } catch (error) {
     console.error('Error initializing socket:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Validation error',
+          details: error.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    const errorResponse = createErrorResponse(error, 'Failed to initialize socket');
+    return NextResponse.json(
+      { error: errorResponse.message },
+      { status: errorResponse.status }
+    );
   }
 } 

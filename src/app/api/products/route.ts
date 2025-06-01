@@ -2,44 +2,93 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { z } from 'zod';
+import { createErrorResponse } from '@/lib/api';
 
-export async function GET() {
+const ProductInputSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().min(1).max(500),
+  longDescription: z.string().max(2000).optional(),
+  category: z.string().min(1),
+  price: z.number().min(0).optional(),
+  image_url: z.string().url().optional(),
+  features: z.array(z.string()).max(20).optional(),
+  requirements: z.array(z.string()).max(20).optional(),
+  isPublic: z.boolean().optional(),
+  isFeatured: z.boolean().optional(),
+  earnings_split: z.number().min(0).max(100).optional(),
+});
+
+export async function GET(): Promise<NextResponse> {
   try {
-    const allProducts = await prisma.product.findMany();
-    return NextResponse.json(allProducts);
+    const session = await getServerSession(authOptions);
+    const allProducts = await prisma.product.findMany({
+      where: {
+        OR: [
+          { isPublic: true },
+          { createdBy: session?.user?.id }
+        ]
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    return NextResponse.json({ products: allProducts });
   } catch (error) {
     console.error('Error fetching products:', error);
-    return NextResponse.json({ error: 'Failed to fetch products' }, { status: 500 });
+    const errorResponse = createErrorResponse(error, 'Failed to fetch products');
+    return NextResponse.json(
+      { error: errorResponse.message },
+      { status: errorResponse.status }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const data = await request.json();
-    const newProduct = await prisma.product.create({
+    const body = await request.json();
+    const validatedData = ProductInputSchema.parse(body);
+
+    const product = await prisma.product.create({
       data: {
-        ...data,
+        ...validatedData,
         createdBy: session.user.id,
-        uploadedBy: session.user.id,
-        isPublic: data.isPublic ?? true,
-        isFeatured: data.isFeatured ?? false,
-        download_count: 0,
-        earnings_split: data.earnings_split ?? 0.70,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     });
-    return NextResponse.json(newProduct);
+
+    return NextResponse.json(product);
   } catch (error) {
     console.error('Error creating product:', error);
-    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 });
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        {
+          error: 'Validation error',
+          details: error.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    const errorResponse = createErrorResponse(error, 'Failed to create product');
+    return NextResponse.json(
+      { error: errorResponse.message },
+      { status: errorResponse.status }
+    );
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: Request): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -48,11 +97,15 @@ export async function PUT(request: Request) {
 
     const data = await request.json();
     const { id, ...updateData } = data;
+    const parsed = ProductInputSchema.safeParse(updateData);
+    if (!id || !parsed.success) {
+      return NextResponse.json({ error: 'Invalid product data', details: parsed.error?.errors }, { status: 400 });
+    }
 
     const updatedProduct = await prisma.product.update({
       where: { id },
       data: {
-        ...updateData,
+        ...parsed.data,
         updated_at: new Date(),
       },
     });
@@ -63,7 +116,7 @@ export async function PUT(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: Request): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {

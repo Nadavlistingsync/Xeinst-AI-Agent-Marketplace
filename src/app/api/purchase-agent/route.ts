@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { getProduct } from '@/lib/db-helpers';
-import db from '@/lib/db';
-import { purchases } from '@/lib/schema';
-import { eq, and } from 'drizzle-orm';
+import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
+import { z } from 'zod';
 
-export async function POST(request: Request) {
-  const session = await getServerSession();
+const purchaseSchema = z.object({
+  productId: z.string().uuid(),
+});
+
+export async function POST(request: Request): Promise<NextResponse> {
+  const session = await getServerSession(authOptions);
   
   if (!session?.user?.id) {
     return NextResponse.json(
@@ -16,17 +19,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { product_id } = await request.json();
-
-    if (!product_id) {
-      return NextResponse.json(
-        { error: 'Product ID is required' },
-        { status: 400 }
-      );
-    }
+    const body = await request.json();
+    const { productId } = purchaseSchema.parse(body);
 
     // Check if product exists
-    const product = await getProduct(product_id);
+    const product = await prisma.product.findUnique({
+      where: { id: productId }
+    });
+
     if (!product) {
       return NextResponse.json(
         { error: 'Product not found' },
@@ -35,11 +35,14 @@ export async function POST(request: Request) {
     }
 
     // Check if user has already purchased this product
-    const [existing] = await db.select()
-      .from(purchases)
-      .where(and(eq(purchases.product_id, product_id), eq(purchases.user_id, session.user.id)));
+    const existingPurchase = await prisma.purchase.findFirst({
+      where: {
+        productId,
+        userId: session.user.id,
+      }
+    });
 
-    if (existing) {
+    if (existingPurchase) {
       return NextResponse.json(
         { error: 'You have already purchased this product' },
         { status: 400 }
@@ -47,18 +50,26 @@ export async function POST(request: Request) {
     }
 
     // Create purchase record
-    const [purchase] = await db.insert(purchases)
-      .values({
-        product_id: product_id,
-        user_id: session.user.id,
+    const purchase = await prisma.purchase.create({
+      data: {
+        productId,
+        userId: session.user.id,
         amount: product.price,
         status: 'completed',
-      })
-      .returning();
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+    });
 
     return NextResponse.json(purchase);
   } catch (error) {
     console.error('Error processing purchase:', error);
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: error.errors },
+        { status: 400 }
+      );
+    }
     return NextResponse.json(
       { error: 'Failed to process purchase' },
       { status: 500 }

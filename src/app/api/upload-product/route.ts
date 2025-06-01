@@ -7,47 +7,25 @@ import { authOptions } from '@/lib/auth';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import slugify from 'slugify';
+import { uploadProduct } from '@/lib/upload';
 
-export async function POST(req: NextRequest) {
-  const formData = await req.formData();
-  const file = formData.get('file') as File;
-  const name = formData.get('name') as string;
-  const description = formData.get('description') as string;
-  const price = formData.get('price') as string;
-  const category = formData.get('category') as string;
-  const uploader_id = formData.get('uploader_id') as string;
-
-  if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
-
+export async function POST(request: Request): Promise<NextResponse> {
   try {
-    // Save file to local storage
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const fileName = `${Date.now()}_${file.name}`;
-    const filePath = join(process.cwd(), 'public', 'uploads', fileName);
-    await writeFile(filePath, buffer);
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // Insert product metadata into DB
-    const slug = slugify(name, { lower: true, strict: true });
-    const [product] = await db
-      .insert(products)
-      .values({
-        name,
-        slug,
-        description,
-        price: price,
-        category,
-        uploaded_by: uploader_id,
-        file_url: `/uploads/${fileName}`,
-      })
-      .returning();
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    if (!file) {
+      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    }
 
-    return NextResponse.json({ product });
+    const productUrl = await uploadProduct(file, session.user.id);
+    return NextResponse.json({ productUrl });
   } catch (error) {
     console.error('Error uploading product:', error);
-    return NextResponse.json(
-      { error: 'Failed to upload product' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to upload product' }, { status: 500 });
   }
 } 
