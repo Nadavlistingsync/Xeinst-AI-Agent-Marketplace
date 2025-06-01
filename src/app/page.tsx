@@ -5,10 +5,7 @@ import FeaturedAgents from '@/components/FeaturedAgents';
 import * as Sentry from '@sentry/nextjs';
 
 export default function Home() {
-  // Test error for Sentry
-  if (process.env.NODE_ENV === 'development') {
-    throw new Error("Sentry test error!");
-  }
+  // Sentry test error removed after verification
 
   return (
     <main className="bg-[#0B0C10] text-white font-sans">
