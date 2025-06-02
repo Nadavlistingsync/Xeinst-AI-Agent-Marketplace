@@ -1,4 +1,4 @@
-import prismaClient from './db';
+import { prisma } from './db';
 import { Notification } from './schema';
 
 export type NotificationType = 
@@ -22,7 +22,7 @@ export interface CreateNotificationInput {
 }
 
 export async function createNotification(data: CreateNotificationInput): Promise<Notification> {
-  return await prismaClient.notification.create({
+  return await prisma.notification.create({
     data: {
       user_id: data.user_id,
       type: data.type,
@@ -38,7 +38,7 @@ export async function updateNotification(
   id: string,
   data: Partial<CreateNotificationInput>
 ): Promise<Notification> {
-  return await prismaClient.notification.update({
+  return await prisma.notification.update({
     where: { id },
     data: {
       ...data,
@@ -59,7 +59,7 @@ export async function getNotifications(
   if (options.unread_only) where.read = false;
   if (options.type) where.type = options.type;
 
-  return await prismaClient.notification.findMany({
+  return await prisma.notification.findMany({
     where,
     orderBy: { created_at: 'desc' },
     take: options.limit,
@@ -67,33 +67,33 @@ export async function getNotifications(
 }
 
 export async function getNotification(id: string): Promise<Notification | null> {
-  return await prismaClient.notification.findUnique({
+  return await prisma.notification.findUnique({
     where: { id },
   });
 }
 
 export async function markNotificationAsRead(id: string): Promise<Notification> {
-  return await prismaClient.notification.update({
+  return await prisma.notification.update({
     where: { id },
     data: { read: true },
   });
 }
 
 export async function markAllNotificationsAsRead(user_id: string): Promise<void> {
-  await prismaClient.notification.updateMany({
+  await prisma.notification.updateMany({
     where: { user_id, read: false },
     data: { read: true },
   });
 }
 
 export async function deleteNotification(id: string): Promise<void> {
-  await prismaClient.notification.delete({
+  await prisma.notification.delete({
     where: { id },
   });
 }
 
 export async function deleteAllNotifications(user_id: string): Promise<void> {
-  await prismaClient.notification.deleteMany({
+  await prisma.notification.deleteMany({
     where: { user_id },
   });
 }
@@ -109,7 +109,7 @@ export async function getNotificationCount(
   if (options.unread_only) where.read = false;
   if (options.type) where.type = options.type;
 
-  return await prismaClient.notification.count({ where });
+  return await prisma.notification.count({ where });
 }
 
 export async function getNotificationStats(user_id: string): Promise<{
@@ -118,9 +118,9 @@ export async function getNotificationStats(user_id: string): Promise<{
   by_type: Record<NotificationType, number>;
 }> {
   const [total, unread, byType] = await Promise.all([
-    prismaClient.notification.count({ where: { user_id } }),
-    prismaClient.notification.count({ where: { user_id, read: false } }),
-    prismaClient.notification.groupBy({
+    prisma.notification.count({ where: { user_id } }),
+    prisma.notification.count({ where: { user_id, read: false } }),
+    prisma.notification.groupBy({
       by: ['type'],
       where: { user_id },
       _count: true,

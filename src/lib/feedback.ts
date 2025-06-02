@@ -1,5 +1,5 @@
+import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import { prismaClient } from './db';
 import { Feedback } from './schema';
 
 export interface CreateFeedbackInput {
@@ -26,7 +26,7 @@ export interface FeedbackOptions {
 
 export async function createFeedback(data: CreateFeedbackInput): Promise<Feedback> {
   try {
-    return await prismaClient.agentFeedback.create({
+    return await prisma.agentFeedback.create({
       data: {
         ...data,
         created_at: new Date(),
@@ -40,7 +40,7 @@ export async function createFeedback(data: CreateFeedbackInput): Promise<Feedbac
 
 export async function updateFeedback(id: string, data: UpdateFeedbackInput): Promise<Feedback> {
   try {
-    return await prismaClient.agentFeedback.update({
+    return await prisma.agentFeedback.update({
       where: { id },
       data: {
         ...data,
@@ -64,7 +64,7 @@ export async function getFeedbacks(options: FeedbackOptions = {}): Promise<Feedb
       where.creatorResponse = options.hasResponse ? { not: null } : null;
     }
 
-    return await prismaClient.agentFeedback.findMany({
+    return await prisma.agentFeedback.findMany({
       where,
       orderBy: { created_at: 'desc' },
     });
@@ -76,7 +76,7 @@ export async function getFeedbacks(options: FeedbackOptions = {}): Promise<Feedb
 
 export async function getFeedback(id: string): Promise<Feedback | null> {
   try {
-    return await prismaClient.agentFeedback.findUnique({
+    return await prisma.agentFeedback.findUnique({
       where: { id },
     });
   } catch (error) {
@@ -87,7 +87,7 @@ export async function getFeedback(id: string): Promise<Feedback | null> {
 
 export async function deleteFeedback(id: string): Promise<void> {
   try {
-    await prismaClient.agentFeedback.delete({
+    await prisma.agentFeedback.delete({
       where: { id },
     });
   } catch (error) {

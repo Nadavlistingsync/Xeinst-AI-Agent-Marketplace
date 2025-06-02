@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import prismaClient from './db';
+import { prisma } from './db';
 import { User } from './schema';
 
 export async function createUser(data: {
@@ -13,7 +13,7 @@ export async function createUser(data: {
 }): Promise<User> {
   try {
     const hashedPassword = await bcrypt.hash(data.password, 10);
-    return await prismaClient.user.create({
+    return await prisma.user.create({
       data: {
         ...data,
         password: hashedPassword,
@@ -34,7 +34,7 @@ export async function updateUser(id: string, data: Partial<User>): Promise<User>
     if (data.password) {
       updateData.password = await bcrypt.hash(data.password, 10);
     }
-    return await prismaClient.user.update({
+    return await prisma.user.update({
       where: { id },
       data: {
         ...updateData,
@@ -68,7 +68,7 @@ export async function getUsers(options: {
       ];
     }
 
-    return await prismaClient.user.findMany({
+    return await prisma.user.findMany({
       where,
       orderBy: { created_at: 'desc' },
     });
@@ -80,7 +80,7 @@ export async function getUsers(options: {
 
 export async function getUser(id: string): Promise<User | null> {
   try {
-    return await prismaClient.user.findUnique({
+    return await prisma.user.findUnique({
       where: { id },
     });
   } catch (error) {
@@ -90,14 +90,14 @@ export async function getUser(id: string): Promise<User | null> {
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
-  return await prismaClient.user.findUnique({
+  return await prisma.user.findUnique({
     where: { email },
   });
 }
 
 export async function deleteUser(id: string): Promise<void> {
   try {
-    await prismaClient.user.delete({
+    await prisma.user.delete({
       where: { id },
     });
   } catch (error) {
@@ -119,7 +119,7 @@ export async function getUserAgents(
   if (options.status) where.status = options.status;
   if (options.category) where.category = options.category;
 
-  return await prismaClient.agent.findMany({
+  return await prisma.agent.findMany({
     where,
     orderBy: { created_at: 'desc' },
     take: options.limit,
@@ -141,7 +141,7 @@ export async function getUserDeployments(
   if (options.startDate) where.startDate = { gte: options.startDate };
   if (options.endDate) where.endDate = { lte: options.endDate };
 
-  return await prismaClient.deployment.findMany({
+  return await prisma.deployment.findMany({
     where,
     orderBy: { startDate: 'desc' },
     take: options.limit,
@@ -161,7 +161,7 @@ export async function getUserFeedbacks(
   if (options.startDate) where.created_at = { gte: options.startDate };
   if (options.endDate) where.created_at = { lte: options.endDate };
 
-  return await prismaClient.agentFeedback.findMany({
+  return await prisma.agentFeedback.findMany({
     where,
     orderBy: { created_at: 'desc' },
     take: options.limit,
@@ -181,7 +181,7 @@ export async function getUserEarnings(
   if (options.startDate) where.created_at = { gte: options.startDate };
   if (options.endDate) where.created_at = { lte: options.endDate };
 
-  return await prismaClient.earning.findMany({
+  return await prisma.earning.findMany({
     where,
     orderBy: { created_at: 'desc' },
     take: options.limit,
@@ -201,7 +201,7 @@ export async function getUserPurchases(
   if (options.startDate) where.created_at = { gte: options.startDate };
   if (options.endDate) where.created_at = { lte: options.endDate };
 
-  return await prismaClient.purchase.findMany({
+  return await prisma.purchase.findMany({
     where,
     orderBy: { created_at: 'desc' },
     take: options.limit,

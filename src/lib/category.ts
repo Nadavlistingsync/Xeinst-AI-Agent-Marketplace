@@ -1,5 +1,5 @@
+import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import prismaClient from './db';
 import { Category } from './schema';
 
 export async function createCategory(data: {
@@ -8,7 +8,7 @@ export async function createCategory(data: {
   parentId?: string;
 }): Promise<Category> {
   try {
-    return await prismaClient.category.create({
+    return await prisma.category.create({
       data: {
         ...data,
         created_at: new Date(),
@@ -23,7 +23,7 @@ export async function createCategory(data: {
 
 export async function updateCategory(id: string, data: Partial<Category>): Promise<Category> {
   try {
-    return await prismaClient.category.update({
+    return await prisma.category.update({
       where: { id },
       data: {
         ...data,
@@ -51,7 +51,7 @@ export async function getCategories(options: {
       ];
     }
 
-    return await prismaClient.category.findMany({
+    return await prisma.category.findMany({
       where,
       orderBy: { name: 'asc' },
     });
@@ -63,7 +63,7 @@ export async function getCategories(options: {
 
 export async function getCategory(id: string): Promise<Category | null> {
   try {
-    return await prismaClient.category.findUnique({
+    return await prisma.category.findUnique({
       where: { id },
     });
   } catch (error) {
@@ -74,7 +74,7 @@ export async function getCategory(id: string): Promise<Category | null> {
 
 export async function deleteCategory(id: string): Promise<void> {
   try {
-    await prismaClient.category.delete({
+    await prisma.category.delete({
       where: { id },
     });
   } catch (error) {
@@ -85,7 +85,7 @@ export async function deleteCategory(id: string): Promise<void> {
 
 export async function getCategoryStats(categoryId: string) {
   try {
-    const products = await prismaClient.product.findMany({
+    const products = await prisma.product.findMany({
       where: { category: categoryId },
     });
 
@@ -148,7 +148,7 @@ export async function getCategoryProducts(
   if (options.minPrice) where.price = { gte: options.minPrice };
   if (options.maxPrice) where.price = { lte: options.maxPrice };
 
-  return await prismaClient.product.findMany({
+  return await prisma.product.findMany({
     where,
     orderBy: { created_at: 'desc' },
     take: options.limit,

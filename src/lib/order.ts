@@ -1,5 +1,5 @@
+import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import prismaClient from './db';
 import { Order } from './schema';
 
 export interface CreateOrderInput {
@@ -12,7 +12,7 @@ export interface CreateOrderInput {
 
 export async function createOrder(data: CreateOrderInput): Promise<Order> {
   try {
-    return await prismaClient.order.create({
+    return await prisma.order.create({
       data: {
         user_id: data.user_id,
         product_id: data.product_id,
@@ -44,7 +44,7 @@ export async function updateOrder(
     }
     updateData.updated_at = new Date();
 
-    return await prismaClient.order.update({
+    return await prisma.order.update({
       where: { id },
       data: updateData,
     });
@@ -70,7 +70,7 @@ export async function getOrders(options: {
     if (options.start_date) where.created_at = { gte: options.start_date };
     if (options.end_date) where.created_at = { lte: options.end_date };
 
-    return await prismaClient.order.findMany({
+    return await prisma.order.findMany({
       where,
       orderBy: { created_at: 'desc' },
     });
@@ -82,7 +82,7 @@ export async function getOrders(options: {
 
 export async function getOrder(id: string): Promise<Order | null> {
   try {
-    return await prismaClient.order.findUnique({
+    return await prisma.order.findUnique({
       where: { id },
     });
   } catch (error) {
@@ -93,7 +93,7 @@ export async function getOrder(id: string): Promise<Order | null> {
 
 export async function deleteOrder(id: string): Promise<void> {
   try {
-    await prismaClient.order.delete({
+    await prisma.order.delete({
       where: { id },
     });
   } catch (error) {

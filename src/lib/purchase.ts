@@ -1,5 +1,5 @@
+import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import prismaClient from './db';
 import { Purchase } from './schema';
 
 export interface PurchaseOptions {
@@ -17,7 +17,7 @@ export async function createPurchase(data: {
   status?: string;
 }): Promise<Purchase> {
   try {
-    return await prismaClient.purchase.create({
+    return await prisma.purchase.create({
       data: {
         ...data,
         status: data.status || 'pending',
@@ -33,7 +33,7 @@ export async function createPurchase(data: {
 
 export async function updatePurchase(id: string, data: Partial<Purchase>): Promise<Purchase> {
   try {
-    return await prismaClient.purchase.update({
+    return await prisma.purchase.update({
       where: { id },
       data: {
         ...data,
@@ -56,7 +56,7 @@ export async function getPurchases(options: PurchaseOptions = {}): Promise<Purch
     if (options.startDate) where.created_at = { gte: options.startDate };
     if (options.endDate) where.created_at = { lte: options.endDate };
 
-    return await prismaClient.purchase.findMany({
+    return await prisma.purchase.findMany({
       where,
       orderBy: { created_at: 'desc' },
     });
@@ -68,7 +68,7 @@ export async function getPurchases(options: PurchaseOptions = {}): Promise<Purch
 
 export async function getPurchase(id: string): Promise<Purchase | null> {
   try {
-    return await prismaClient.purchase.findUnique({
+    return await prisma.purchase.findUnique({
       where: { id },
     });
   } catch (error) {
@@ -79,7 +79,7 @@ export async function getPurchase(id: string): Promise<Purchase | null> {
 
 export async function deletePurchase(id: string): Promise<void> {
   try {
-    await prismaClient.purchase.delete({
+    await prisma.purchase.delete({
       where: { id },
     });
   } catch (error) {
@@ -103,7 +103,7 @@ export async function getUserPurchases(
   if (options.startDate) where.created_at = { gte: options.startDate };
   if (options.endDate) where.created_at = { lte: options.endDate };
 
-  return await prismaClient.purchase.findMany({
+  return await prisma.purchase.findMany({
     where,
     include: {
       product: true,
@@ -128,7 +128,7 @@ export async function getProductPurchases(
   if (options.startDate) where.created_at = { gte: options.startDate };
   if (options.endDate) where.created_at = { lte: options.endDate };
 
-  return await prismaClient.purchase.findMany({
+  return await prisma.purchase.findMany({
     where,
     include: {
       user: true,
@@ -188,7 +188,7 @@ export async function getPurchaseHistory() {
 export async function updateProductDownloadCount(
   product_id: string
 ): Promise<void> {
-  await prismaClient.product.update({
+  await prisma.product.update({
     where: { id: product_id },
     data: {
       download_count: {

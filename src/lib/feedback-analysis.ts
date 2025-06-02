@@ -1,5 +1,5 @@
+import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import prismaClient from './db';
 import { AgentFeedback } from './schema';
 import { createNotification } from './notifications';
 
@@ -135,7 +135,7 @@ export async function analyzeAgentFeedback(
 }
 
 export async function getFeedbackAnalysis(deploymentId: string): Promise<FeedbackAnalysis> {
-  const feedbacks = await prismaClient.agentFeedback.findMany({
+  const feedbacks = await prisma.agentFeedback.findMany({
     where: { deploymentId },
     orderBy: { created_at: 'desc' },
   });
@@ -150,7 +150,7 @@ export async function updateFeedbackAnalysis(
     categories: Record<string, number>;
   }
 ): Promise<void> {
-  await prismaClient.agentFeedback.update({
+  await prisma.agentFeedback.update({
     where: { id: feedbackId },
     data: {
       sentimentScore: analysis.sentimentScore,
@@ -166,6 +166,7 @@ export async function analyzeFeedbackTrends(
   sentimentTrend: { date: string; score: number }[];
   categoryTrend: { date: string; categories: { [key: string]: number } }[];
 }> {
+  const feedbacks = await prisma.agentFeedback.findMany({
   const feedbacks = await prismaClient.agentFeedback.findMany({
     where: {
       agentId,

@@ -1,5 +1,5 @@
+import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import prismaClient from './db';
 import { Review } from './schema';
 
 export interface ReviewOptions {
@@ -20,7 +20,7 @@ export interface CreateReviewInput {
 
 export async function createReview(data: CreateReviewInput): Promise<Review> {
   try {
-    return await prismaClient.review.create({
+    return await prisma.review.create({
       data: {
         product_id: data.product_id,
         user_id: data.user_id,
@@ -43,7 +43,7 @@ export async function updateReview(
   }
 ): Promise<Review> {
   try {
-    return await prismaClient.review.update({
+    return await prisma.review.update({
       where: { id },
       data,
     });
@@ -69,7 +69,7 @@ export async function getReviews(options: {
     if (options.startDate) where.created_at = { gte: options.startDate };
     if (options.endDate) where.created_at = { lte: options.endDate };
 
-    return await prismaClient.review.findMany({
+    return await prisma.review.findMany({
       where,
       orderBy: { created_at: 'desc' },
     });
@@ -81,7 +81,7 @@ export async function getReviews(options: {
 
 export async function getReview(id: string): Promise<Review | null> {
   try {
-    return await prismaClient.review.findUnique({
+    return await prisma.review.findUnique({
       where: { id },
     });
   } catch (error) {
@@ -92,7 +92,7 @@ export async function getReview(id: string): Promise<Review | null> {
 
 export async function deleteReview(id: string): Promise<void> {
   try {
-    await prismaClient.review.delete({
+    await prisma.review.delete({
       where: { id },
     });
   } catch (error) {
@@ -102,14 +102,14 @@ export async function deleteReview(id: string): Promise<void> {
 }
 
 export async function updateProductRating(product_id: string): Promise<void> {
-  const reviews = await prismaClient.review.findMany({
+  const reviews = await prisma.review.findMany({
     where: { product_id },
   });
 
   const average_rating =
     reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
 
-  await prismaClient.product.update({
+  await prisma.product.update({
     where: { id: product_id },
     data: { rating: average_rating },
   });
@@ -128,7 +128,7 @@ export async function getUserReviews(
   if (options.startDate) where.created_at = { gte: options.startDate };
   if (options.endDate) where.created_at = { lte: options.endDate };
 
-  return await prismaClient.review.findMany({
+  return await prisma.review.findMany({
     where,
     include: {
       product: true,
@@ -151,7 +151,7 @@ export async function getProductReviews(
   if (options.startDate) where.created_at = { gte: options.startDate };
   if (options.endDate) where.created_at = { lte: options.endDate };
 
-  return await prismaClient.review.findMany({
+  return await prisma.review.findMany({
     where,
     include: {
       user: true,

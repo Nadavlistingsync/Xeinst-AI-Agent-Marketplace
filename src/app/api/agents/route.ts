@@ -166,7 +166,7 @@ export async function DELETE(request: Request): Promise<NextResponse<AgentApiRes
 
 export async function getFeaturedAgents(): Promise<Agent[]> {
   try {
-    const agents = await prisma.deployment.findMany({
+    const agents = await prisma.agent.findMany({
       where: { status: 'active' },
       orderBy: { downloadCount: 'desc' },
       take: 5,
@@ -189,7 +189,7 @@ export async function getFeaturedAgents(): Promise<Agent[]> {
 
 export async function getTrendingAgents(): Promise<Agent[]> {
   try {
-    const agents = await prisma.deployment.findMany({
+    const agents = await prisma.agent.findMany({
       where: { status: 'active' },
       orderBy: { rating: 'desc' },
       take: 5,
@@ -208,5 +208,4 @@ export async function getTrendingAgents(): Promise<Agent[]> {
     console.error('Error fetching trending agents:', error);
     return [];
   }
-} 
 } 

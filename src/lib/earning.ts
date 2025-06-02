@@ -1,5 +1,5 @@
+import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import prismaClient from './db';
 import { Earning } from './schema';
 
 export interface EarningOptions {
@@ -18,7 +18,7 @@ export async function createEarning(data: {
   stripeTransferId?: string;
 }): Promise<Earning> {
   try {
-    return await prismaClient.earning.create({
+    return await prisma.earning.create({
       data: {
         user_id: data.user_id,
         product_id: data.product_id,
@@ -52,7 +52,7 @@ export async function updateEarning(
       updateData.paidAt = data.paidAt;
     }
 
-    return await prismaClient.earning.update({
+    return await prisma.earning.update({
       where: { id },
       data: updateData,
     });
@@ -72,7 +72,7 @@ export async function getEarnings(options: EarningOptions = {}): Promise<Earning
     if (options.startDate) where.created_at = { gte: options.startDate };
     if (options.endDate) where.created_at = { lte: options.endDate };
 
-    return await prismaClient.earning.findMany({
+    return await prisma.earning.findMany({
       where,
       orderBy: { created_at: 'desc' },
     });
@@ -84,7 +84,7 @@ export async function getEarnings(options: EarningOptions = {}): Promise<Earning
 
 export async function getEarning(id: string): Promise<Earning | null> {
   try {
-    return await prismaClient.earning.findUnique({
+    return await prisma.earning.findUnique({
       where: { id },
     });
   } catch (error) {
@@ -95,7 +95,7 @@ export async function getEarning(id: string): Promise<Earning | null> {
 
 export async function deleteEarning(id: string): Promise<void> {
   try {
-    await prismaClient.earning.delete({
+    await prisma.earning.delete({
       where: { id },
     });
   } catch (error) {
@@ -119,7 +119,7 @@ export async function getUserEarnings(
   if (options.startDate) where.created_at = { gte: options.startDate };
   if (options.endDate) where.created_at = { lte: options.endDate };
 
-  return await prismaClient.earning.findMany({
+  return await prisma.earning.findMany({
     where,
     include: {
       product: true,
@@ -144,7 +144,7 @@ export async function getProductEarnings(
   if (options.startDate) where.created_at = { gte: options.startDate };
   if (options.endDate) where.created_at = { lte: options.endDate };
 
-  return await prismaClient.earning.findMany({
+  return await prisma.earning.findMany({
     where,
     include: {
       user: true,
@@ -218,7 +218,7 @@ export async function getProductEarningStats(product_id: string): Promise<{
   totalPaid: number;
   earningDistribution: Record<string, number>;
 }> {
-  const earnings = await prismaClient.earning.findMany({
+  const earnings = await prisma.earning.findMany({
     where: { product_id },
   });
 

@@ -1,5 +1,5 @@
+import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import { prismaClient } from './db';
 import { Agent } from './schema';
 
 export interface CreateAgentInput {
@@ -32,7 +32,7 @@ export interface AgentOptions {
 }
 
 export async function createAgent(data: CreateAgentInput) {
-  return await prismaClient.deployment.create({
+  return await prisma.deployment.create({
     data: {
       name: data.name,
       description: data.description,
@@ -48,7 +48,7 @@ export async function createAgent(data: CreateAgentInput) {
 }
 
 export async function updateAgent(id: string, data: UpdateAgentInput) {
-  return await prismaClient.deployment.update({
+  return await prisma.deployment.update({
     where: { id },
     data,
   });
@@ -67,33 +67,33 @@ export async function getAgents(options: AgentOptions = {}) {
     where.status = options.status;
   }
 
-  return await prismaClient.deployment.findMany({
+  return await prisma.deployment.findMany({
     where,
     orderBy: { created_at: "desc" },
   });
 }
 
 export async function getAgent(id: string) {
-  return await prismaClient.deployment.findUnique({
+  return await prisma.deployment.findUnique({
     where: { id },
   });
 }
 
 export async function deleteAgent(id: string) {
-  await prismaClient.deployment.delete({
+  await prisma.deployment.delete({
     where: { id },
   });
 }
 
 export async function getAgentDeployments(agentId: string) {
-  return await prismaClient.deployment.findMany({
+  return await prisma.deployment.findMany({
     where: { id: agentId },
     orderBy: { created_at: "desc" },
   });
 }
 
 export async function getAgentMetrics(agentId: string) {
-  const metrics = await prismaClient.agentMetrics.findMany({
+  const metrics = await prisma.agentMetrics.findMany({
     where: { agentId },
   });
 
@@ -115,7 +115,7 @@ export async function getAgentMetrics(agentId: string) {
 }
 
 export async function getAgentLogs(agentId: string) {
-  return await prismaClient.agentLog.findMany({
+  return await prisma.agentLog.findMany({
     where: { agentId },
     orderBy: { timestamp: "desc" },
   });
@@ -131,7 +131,7 @@ export async function getAgentFeedback(agentId: string, options: { startDate?: D
     where.created_at = { lte: options.endDate };
   }
 
-  return await prismaClient.agentFeedback.findMany({
+  return await prisma.agentFeedback.findMany({
     where,
     orderBy: { created_at: "desc" },
   });

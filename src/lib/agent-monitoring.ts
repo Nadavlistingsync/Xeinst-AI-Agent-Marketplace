@@ -1,5 +1,5 @@
+import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import { prismaClient } from './db';
 import { AgentLog, AgentMetrics, AgentFeedback } from './schema';
 import { eq, gte, lte, desc, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
@@ -48,7 +48,7 @@ export async function logAgentEvent(
   message: string,
   metadata?: Record<string, any>
 ) {
-  return prismaClient.agentLog.create({
+  return prisma.agentLog.create({
     data: {
       agentId,
       level,
@@ -72,7 +72,7 @@ export async function updateAgentMetrics(
     totalCost?: number;
   }
 ) {
-  return prismaClient.agentMetrics.upsert({
+  return prisma.agentMetrics.upsert({
     where: { agentId },
     update: {
       ...data,
@@ -115,7 +115,7 @@ export async function getAgentLogs(
     }
   }
 
-  return prismaClient.agentLog.findMany({
+  return prisma.agentLog.findMany({
     where,
     orderBy: {
       timestamp: 'desc',
@@ -134,7 +134,7 @@ export async function getAgentMetrics(agentId: string, options: MonitoringOption
     where.created_at = { lte: options.endDate };
   }
 
-  const metrics = await prismaClient.agentMetrics.findMany({
+  const metrics = await prisma.agentMetrics.findMany({
     where,
     orderBy: { created_at: "desc" },
   });
@@ -179,7 +179,7 @@ export async function getAgentAnalytics(deploymentId: string) {
 }
 
 export async function getAgentWarnings(deploymentId: string): Promise<AgentLog[]> {
-  return await prismaClient.agentLog.findMany({
+  return await prisma.agentLog.findMany({
     where: {
       deploymentId,
       level: 'warning',
@@ -189,7 +189,7 @@ export async function getAgentWarnings(deploymentId: string): Promise<AgentLog[]
 }
 
 export async function getAgentErrors(deploymentId: string): Promise<AgentLog[]> {
-  return await prismaClient.agentLog.findMany({
+  return await prisma.agentLog.findMany({
     where: {
       deploymentId,
       level: 'error',
@@ -199,7 +199,7 @@ export async function getAgentErrors(deploymentId: string): Promise<AgentLog[]> 
 }
 
 export async function getAgentInfo(deploymentId: string): Promise<AgentLog[]> {
-  return await prismaClient.agentLog.findMany({
+  return await prisma.agentLog.findMany({
     where: {
       deploymentId,
       level: 'info',
@@ -218,14 +218,14 @@ export async function getAgentFeedback(agentId: string, options: MonitoringOptio
     where.created_at = { lte: options.endDate };
   }
 
-  return await prismaClient.agentFeedback.findMany({
+  return await prisma.agentFeedback.findMany({
     where,
     orderBy: { created_at: "desc" },
   });
 }
 
 export async function getAgentPerformanceMetrics(agentId: string) {
-  const metrics = await prismaClient.agentMetrics.findUnique({
+  const metrics = await prisma.agentMetrics.findUnique({
     where: { agentId },
   });
 
@@ -322,7 +322,7 @@ export async function getAgentHealth(agentId: string) {
 }
 
 export async function getAgentDeploymentHistory(agentId: string): Promise<any[]> {
-  const deploymentHistory = await prismaClient.agentLog.findMany({
+  const deploymentHistory = await prisma.agentLog.findMany({
     where: and(
       eq(agentLogs.agentId, agentId),
       eq(agentLogs.level, 'info'),
@@ -340,7 +340,7 @@ export async function submitAgentFeedback(
   rating: number,
   comment: string | null = null
 ): Promise<void> {
-  await prismaClient.agentFeedback.create({
+  await prisma.agentFeedback.create({
     data: {
       id: uuidv4(),
       agentId,
@@ -366,7 +366,7 @@ export async function getAgentFeedbacks(
   if (options.startDate) where.created_at = { gte: options.startDate };
   if (options.endDate) where.created_at = { lte: options.endDate };
 
-  return await prismaClient.agentFeedback.findMany({
+  return await prisma.agentFeedback.findMany({
     where,
     orderBy: { created_at: 'desc' },
     take: options.limit,
@@ -374,7 +374,7 @@ export async function getAgentFeedbacks(
 }
 
 export async function getAgentFeedbackStats(agentId: string) {
-  const feedbacks = await prismaClient.agentFeedback.findMany({
+  const feedbacks = await prisma.agentFeedback.findMany({
     where: { agentId },
     orderBy: { created_at: 'desc' },
   });
@@ -427,7 +427,7 @@ export async function getAgentFeedbackStats(agentId: string) {
 }
 
 export async function getAgentDeployments(agentId: string): Promise<any[]> {
-  return prismaClient.agentLog.findMany({
+  return prisma.agentLog.findMany({
     where: and(
       eq(agentLogs.agentId, agentId),
       eq(agentLogs.level, 'info'),
@@ -443,7 +443,7 @@ export async function createAgentFeedback(data: {
   rating: number;
   comment?: string;
 }): Promise<AgentFeedback> {
-  return await prismaClient.agentFeedback.create({
+  return await prisma.agentFeedback.create({
     data: {
       agentId: data.agentId,
       user_id: data.user_id,
@@ -538,7 +538,7 @@ export async function monitorAgentHealth(agentId: string) {
 }
 
 export async function getAgentDeploymentStatus(agentId: string) {
-  const deployment = await prismaClient.deployment.findUnique({
+  const deployment = await prisma.deployment.findUnique({
     where: { id: agentId },
     include: { metrics: true },
   });
@@ -554,7 +554,7 @@ export async function getAgentDeploymentStatus(agentId: string) {
 }
 
 export async function getAgentDeploymentMetrics(agentId: string) {
-  const metrics = await prismaClient.agentMetrics.findMany({
+  const metrics = await prisma.agentMetrics.findMany({
     where: { agentId },
     orderBy: { created_at: "desc" },
   });
@@ -577,14 +577,14 @@ export async function getAgentDeploymentMetrics(agentId: string) {
 }
 
 export async function getAgentDeploymentLogs(agentId: string) {
-  return await prismaClient.agentLog.findMany({
+  return await prisma.agentLog.findMany({
     where: { agentId },
     orderBy: { timestamp: "desc" },
   });
 }
 
 export async function getAgentDeploymentFeedback(agentId: string) {
-  return await prismaClient.agentFeedback.findMany({
+  return await prisma.agentFeedback.findMany({
     where: { agentId },
     orderBy: { created_at: "desc" },
   });
@@ -674,7 +674,7 @@ export async function monitorAgentDeployment(agentId: string) {
 }
 
 export async function updateAgentDeploymentMetrics(agentId: string, metrics: Partial<AgentMetrics>) {
-  return await prismaClient.agentMetrics.upsert({
+  return await prisma.agentMetrics.upsert({
     where: { agentId },
     create: {
       agentId,
@@ -685,7 +685,7 @@ export async function updateAgentDeploymentMetrics(agentId: string, metrics: Par
 }
 
 export async function createAgentDeploymentLog(agentId: string, level: string, message: string, metadata?: any) {
-  return await prismaClient.agentLog.create({
+  return await prisma.agentLog.create({
     data: {
       agentId,
       level,
@@ -703,7 +703,7 @@ export async function createAgentDeploymentFeedback(data: {
   comment?: string;
   categories?: string[];
 }) {
-  return await prismaClient.agentFeedback.create({
+  return await prisma.agentFeedback.create({
     data: {
       ...data,
       created_at: new Date(),
@@ -712,7 +712,7 @@ export async function createAgentDeploymentFeedback(data: {
 }
 
 export async function respondToAgentDeploymentFeedback(feedbackId: string, response: string) {
-  return await prismaClient.agentFeedback.update({
+  return await prisma.agentFeedback.update({
     where: { id: feedbackId },
     data: {
       creatorResponse: response,

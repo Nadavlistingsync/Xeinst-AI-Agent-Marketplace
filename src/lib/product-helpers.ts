@@ -1,7 +1,6 @@
 import { Prisma } from '@prisma/client';
-import prismaClient from './db';
-import { Product } from './schema';
 import { prisma } from './db';
+import { Product } from './schema';
 
 export async function getProduct(slug: string): Promise<Product | null> {
   return prisma.product.findUnique({
@@ -132,7 +131,7 @@ export async function getProducts(options: {
 }
 
 export async function getRelatedProducts(product_id: string, category: string): Promise<Product[]> {
-  return await prismaClient.product.findMany({
+  return await prisma.product.findMany({
     where: {
       category: {
         name: category,
@@ -150,7 +149,7 @@ export async function getRelatedProducts(product_id: string, category: string): 
 }
 
 export async function getProductReviews(product_id: string): Promise<any[]> {
-  return await prismaClient.review.findMany({
+  return await prisma.review.findMany({
     where: {
       product_id,
     },
@@ -169,7 +168,7 @@ export async function createProductReview(data: {
   rating: number;
   comment?: string;
 }): Promise<any> {
-  return await prismaClient.review.create({
+  return await prisma.review.create({
     data,
     include: {
       user: true,
@@ -178,13 +177,13 @@ export async function createProductReview(data: {
 }
 
 export async function updateProductRating(product_id: string): Promise<void> {
-  const reviews = await prismaClient.review.findMany({
+  const reviews = await prisma.review.findMany({
     where: { product_id },
   });
 
   const average_rating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
 
-  await prismaClient.product.update({
+  await prisma.product.update({
     where: { id: product_id },
     data: {
       rating: average_rating,
