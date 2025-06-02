@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from "react";
 import { Deployment } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
