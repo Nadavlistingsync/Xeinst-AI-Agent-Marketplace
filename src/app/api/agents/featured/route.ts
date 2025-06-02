@@ -10,7 +10,7 @@ const ProductSchema = z.object({
   description: z.string(),
   tag: z.string(),
   price: z.number().nullable(),
-  image_url: z.string().nullable(),
+  imageUrl: z.string().nullable(),
   average_rating: z.number(),
   total_ratings: z.number(),
   download_count: z.number(),

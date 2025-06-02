@@ -9,16 +9,16 @@ datasource db {
 }
 
 model User {
-  id              String    @id @default(uuid())
+  id              String    @id @default(cuid())
   name            String?
   email           String    @unique
-  emailVerified   DateTime?
-  password        String
   image           String?
   role            String    @default("user")
   subscriptionTier String   @default("free")
+  emailVerified   DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  password        String?
   createdProducts Product[] @relation("ProductCreator")
   uploadedProducts Product[] @relation("ProductUploader")
   purchases       Purchase[]
@@ -33,20 +33,20 @@ model User {
 }
 
 model Product {
-  id              String    @id @default(uuid())
+  id              String    @id @default(cuid())
   name            String
   slug            String    @unique
   description     String
   longDescription String?
   category        String
-  price           Decimal   @db.Decimal(10, 2)
+  price           Decimal   @default(0)
   imageUrl        String?
   fileUrl         String
   documentation   String?
   features        String[]
   requirements    String[]
-  rating          Int       @default(0)
-  averageRating   Decimal   @default(0) @db.Decimal(3, 2)
+  rating          Float     @default(0)
+  averageRating   Decimal   @default(0)
   totalRatings    Int       @default(0)
   createdBy       String
   uploadedBy      String
@@ -55,7 +55,7 @@ model Product {
   isPublic        Boolean   @default(true)
   isFeatured      Boolean   @default(false)
   downloadCount   Int       @default(0)
-  earningsSplit   Decimal   @default(0.70) @db.Decimal(3, 2)
+  earningsSplit   Decimal   @default(0.7)
   creator         User      @relation("ProductCreator", fields: [createdBy], references: [id])
   uploader        User      @relation("ProductUploader", fields: [uploadedBy], references: [id])
   purchases       Purchase[]
@@ -66,16 +66,18 @@ model Product {
 }
 
 model Review {
-  id        String   @id @default(uuid())
-  productId String
-  userId    String
-  rating    Int
-  comment   String?
-  createdAt DateTime @default(now())
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user      User     @relation("UserReviews", fields: [userId], references: [id], onDelete: Cascade)
+  id           String     @id @default(cuid())
+  rating       Int
+  comment      String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  deployment   Deployment @relation(fields: [deploymentId], references: [id], onDelete: Cascade)
+  deploymentId String
 
-  @@map("reviews")
+  @@index([userId])
+  @@index([deploymentId])
 }
 
 model Earning {
@@ -94,34 +96,27 @@ model Earning {
 }
 
 model Deployment {
-  id            String    @id @default(uuid())
+  id            String     @id @default(cuid())
   name          String
   description   String
+  status        String     @default("draft")
   framework     String
-  fileUrl       String?
-  deployedBy    String
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accessLevel   String    @default("public")
-  licenseType   String    @default("free")
-  priceCents    Int       @default(0)
-  downloads     Int       @default(0)
-  rating        Decimal   @default(0) @db.Decimal(3, 2)
-  ratingCount   Int       @default(0)
-  downloadCount Int       @default(0)
-  status        String    @default("pending")
-  modelType     String
-  requirements  String?
-  apiEndpoint   String?
-  environment   String    @default("production")
   version       String
-  source        String
-  deployer      User      @relation(fields: [deployedBy], references: [id])
-  metrics       AgentMetrics?
-  logs          AgentLog[]
-  feedbacks     AgentFeedback[]
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  rating        Float      @default(0)
+  totalRatings  Int        @default(0)
+  requirements  String[]
+  metrics       Json?
+  creator       User       @relation("DeploymentCreator", fields: [createdBy], references: [id])
+  createdBy     String
+  deployedUser  User?      @relation("DeployedDeployments", fields: [deployedBy], references: [id])
+  deployedBy    String?
+  reviews       Review[]
 
-  @@map("deployments")
+  @@index([framework])
+  @@index([createdBy])
+  @@index([deployedBy])
 }
 
 model Purchase {
@@ -217,4 +212,56 @@ model File {
   user        User     @relation("UserFiles", fields: [uploadedBy], references: [id])
 
   @@map("files")
+}
+
+model Agent {
+  id              String    @id @default(cuid())
+  name            String
+  description     String
+  longDescription String?
+  documentation   String?
+  category        String
+  framework       String
+  requirements    String[]
+  source          String
+  version         String
+  createdBy       String
+  accessLevel     String    @default("public")
+  licenseType     String
+  environment     String
+  fileUrl         String?
+  imageUrl        String?
+  status          String    @default("active")
+  rating          Float     @default(0)
+  downloadCount   Int       @default(0)
+  isPublic        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  createdProducts Product[] @relation("ProductCreator")
+  uploadedProducts Product[] @relation("ProductUploader")
+  purchases       Purchase[]
+  reviews         Review[]
+  earnings        Earning[]
+  feedbacks       AgentFeedback[]
+  notifications   Notification[]
+  deployments     Deployment[]
+  earningsSplit   Decimal   @default(0.7)
+  creator         User      @relation("ProductCreator", fields: [createdBy], references: [id])
+  uploader        User      @relation("ProductUploader", fields: [uploadedBy], references: [id])
+}
+
+model Feedback {
+  id              String    @id @default(cuid())
+  agentId         String
+  userId          String
+  rating          Float
+  comment         String?
+  sentimentScore  Decimal?
+  categories      Json?
+  creatorResponse String?
+  responseDate    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  agent           Deployment @relation(fields: [agentId], references: [id])
+  user            User        @relation(fields: [userId], references: [id])
 }

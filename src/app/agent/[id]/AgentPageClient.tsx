@@ -22,9 +22,9 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="relative h-96 w-full">
-          {product.image_url && (
+          {product.imageUrl && (
             <Image
-              src={product.image_url}
+              src={product.imageUrl}
               alt={product.name}
               fill
               className="object-cover"

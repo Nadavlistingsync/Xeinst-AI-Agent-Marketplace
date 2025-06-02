@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import * as Sentry from '@sentry/nextjs';
+import { captureException } from '@/lib/sentry';
 
 interface Props {
   children: React.ReactNode;
@@ -24,12 +24,8 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    Sentry.captureException(error, {
-      contexts: {
-        react: {
-          componentStack: errorInfo.componentStack,
-        },
-      },
+    captureException(error, {
+      componentStack: errorInfo.componentStack,
     });
   }
 
@@ -41,25 +37,32 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
       return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
+          <div className="max-w-md w-full space-y-8 p-8">
             <div className="text-center">
               <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
                 Something went wrong
               </h2>
               <p className="mt-2 text-sm text-gray-600">
-                We apologize for the inconvenience. Our team has been notified and is working on fixing the issue.
+                We apologize for the inconvenience. Please try refreshing the page or contact support if the problem persists.
               </p>
               <div className="mt-4">
                 <button
-                  onClick={() => {
-                    this.setState({ hasError: false, error: null });
-                    window.location.reload();
-                  }}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => window.location.reload()}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                 >
-                  Try again
+                  Refresh Page
                 </button>
               </div>
+              {process.env.NODE_ENV === 'development' && this.state.error && (
+                <div className="mt-4 p-4 bg-red-50 rounded-md">
+                  <p className="text-sm text-red-800 font-mono">
+                    {this.state.error.message}
+                  </p>
+                  <pre className="mt-2 text-xs text-red-600 overflow-auto">
+                    {this.state.error.stack}
+                  </pre>
+                </div>
+              )}
             </div>
           </div>
         </div>

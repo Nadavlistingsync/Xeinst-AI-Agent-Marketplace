@@ -61,7 +61,7 @@ export const agentSchema = z.object({
   license_type: z.string(),
   environment: z.string(),
   file_url: z.string(),
-  image_url: z.string().nullable(),
+  imageUrl: z.string().nullable(),
   status: z.string(),
   rating: z.number(),
   download_count: z.number(),
@@ -121,7 +121,7 @@ export const productSchema = z.object({
   long_description: z.string().nullable(),
   category: z.string(),
   price: z.number().transform(decimalToNumber),
-  image_url: z.string().nullable(),
+  imageUrl: z.string().nullable(),
   file_url: z.string(),
   documentation: z.string().nullable(),
   features: z.array(z.string()),
@@ -421,4 +421,7 @@ export interface RatingRangeResult<T> {
   range: RatingRangeOptions;
 }
 
-export type File = Prisma.FileGetPayload<{}>; 
+export type File = Prisma.FileGetPayload<{}>;
+
+export const products = productSchema;
+export const Deployment = deploymentSchema; 

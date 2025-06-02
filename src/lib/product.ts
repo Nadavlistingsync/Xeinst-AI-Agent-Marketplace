@@ -17,7 +17,7 @@ export interface CreateProductInput {
   longDescription?: string;
   category: string;
   price: number;
-  image_url?: string;
+  imageUrl?: string;
   file_url: string;
   documentation?: string;
   features: string[];
@@ -39,7 +39,7 @@ export async function createProduct(data: CreateProductInput): Promise<Product> 
         longDescription: data.longDescription,
         category: data.category,
         price: new Prisma.Decimal(data.price),
-        image_url: data.image_url,
+        imageUrl: data.imageUrl,
         file_url: data.file_url,
         documentation: data.documentation,
         features: data.features,

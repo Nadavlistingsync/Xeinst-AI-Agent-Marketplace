@@ -14,7 +14,7 @@ interface Product {
   longDescription?: string;
   category: string;
   price?: number;
-  image_url?: string;
+  imageUrl?: string;
   rating?: number;
   features?: string[];
   requirements?: string[];
@@ -84,10 +84,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-4">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {product.image_url && (
+          {product.imageUrl && (
             <div className="w-full h-64 md:h-96 relative">
               <Image
-                src={product.image_url}
+                src={product.imageUrl}
                 alt={product.name}
                 fill
                 className="object-cover"

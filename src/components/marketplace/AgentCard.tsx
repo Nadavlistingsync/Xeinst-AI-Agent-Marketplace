@@ -1,70 +1,89 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { StarIcon } from "lucide-react";
-import { formatDistanceToNow } from 'date-fns';
-
-interface Agent {
-  id: string;
-  name: string;
-  description: string;
-  framework: string;
-  access_level: string;
-  licenseType: string;
-  priceCents: number;
-  rating: number;
-  ratingCount: number;
-  download_count: number;
-  created_at: Date;
-  deployer: {
-    name: string | null;
-    image: string | null;
-  };
-}
+import Image from "next/image";
+import Link from "next/link";
+import { Deployment } from "@prisma/client";
+import { StarIcon, ShieldCheckIcon, TrendingUpIcon, SparklesIcon } from "@heroicons/react/20/solid";
+import { formatPrice } from "@/lib/utils";
+import { Badge } from "../ui/badge";
+import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
 
 interface AgentCardProps {
-  agent: Agent;
-  onSelect?: (agent: Agent) => void;
+  deployment: Deployment;
 }
 
-export function AgentCard({ agent, onSelect }: AgentCardProps) {
+export function AgentCard({ deployment }: AgentCardProps) {
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-xl">{agent.name}</CardTitle>
-            <CardDescription className="mt-1">
-              by {agent.deployer.name || "Anonymous"}
-            </CardDescription>
+    <Link href={`/marketplace/${deployment.id}`}>
+      <Card className="group h-full transition-all duration-200 hover:shadow-lg">
+        <CardHeader className="p-0">
+          <div className="aspect-w-16 aspect-h-9 bg-gray-100 relative">
+            {deployment.imageUrl ? (
+              <Image
+                src={deployment.imageUrl}
+                alt={deployment.name}
+                fill
+                className="object-cover rounded-t-lg"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-t-lg">
+                <span className="text-gray-400">No image</span>
+              </div>
+            )}
+            <div className="absolute top-2 right-2 flex gap-2">
+              {deployment.isVerified && (
+                <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
+                  <ShieldCheckIcon className="h-4 w-4 mr-1" />
+                  Verified
+                </Badge>
+              )}
+              {deployment.isPopular && (
+                <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
+                  <TrendingUpIcon className="h-4 w-4 mr-1" />
+                  Popular
+                </Badge>
+              )}
+              {deployment.isNew && (
+                <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
+                  <SparklesIcon className="h-4 w-4 mr-1" />
+                  New
+                </Badge>
+              )}
+            </div>
           </div>
-          <Badge variant={agent.access_level === "public" ? "default" : "secondary"}>
-            {agent.access_level}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="flex-grow">
-        <p className="text-gray-600 line-clamp-3">{agent.description}</p>
-        <div className="mt-4 flex items-center gap-2">
-          <div className="flex items-center">
-            <StarIcon className="w-4 h-4 text-yellow-400 fill-current" />
-            <span className="ml-1">{agent.rating.toFixed(1)}</span>
+        </CardHeader>
+
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 line-clamp-1">
+              {deployment.name}
+            </h3>
+            <div className="flex items-center">
+              <StarIcon className="h-5 w-5 text-yellow-400" />
+              <span className="ml-1 text-sm text-gray-600">
+                {deployment.rating.toFixed(1)}
+              </span>
+            </div>
           </div>
-          <span className="text-gray-500">({agent.ratingCount} reviews)</span>
-        </div>
-        <div className="mt-2 text-sm text-gray-500">
-          {agent.download_count} downloads
-        </div>
-        <div className="mt-2 text-sm text-gray-500">
-          Created {formatDistanceToNow(new Date(agent.created_at), { addSuffix: true })}
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between items-center">
-        <div className="text-lg font-semibold">
-          {agent.priceCents > 0 ? `$${(agent.priceCents / 100).toFixed(2)}` : "Free"}
-        </div>
-        <Button onClick={() => onSelect?.(agent)}>View Details</Button>
-      </CardFooter>
-    </Card>
+
+          <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+            {deployment.description}
+          </p>
+
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Badge variant="outline">{deployment.framework}</Badge>
+            <Badge variant="outline">{deployment.category}</Badge>
+            <Badge variant="outline">{deployment.accessLevel}</Badge>
+          </div>
+        </CardContent>
+
+        <CardFooter className="p-4 pt-0 flex items-center justify-between">
+          <div className="text-lg font-semibold text-gray-900">
+            {formatPrice(deployment.priceCents)}
+          </div>
+          <div className="text-sm text-gray-500">
+            {deployment.downloadCount} downloads
+          </div>
+        </CardFooter>
+      </Card>
+    </Link>
   );
 } 

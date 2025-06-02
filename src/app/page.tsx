@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { FeaturedAgents } from '@/components/FeaturedAgents';
-import { Header } from '@/components/Header';
+import Header from '@/components/Header';
 import { BlogSection } from '@/components/BlogSection';
 import { Footer } from '@/components/Footer';
 import * as Sentry from '@sentry/nextjs';

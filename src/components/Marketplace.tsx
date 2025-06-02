@@ -18,7 +18,7 @@ interface Agent {
   tag: string;
   rating: number;
   price?: number;
-  image_url?: string;
+  imageUrl?: string;
 }
 
 interface MarketplaceProps {
@@ -132,10 +132,10 @@ export default function Marketplace({ session }: MarketplaceProps) {
             key={agent.id}
             className="glass-card card-hover p-6"
           >
-            {agent.image_url && (
+            {agent.imageUrl && (
               <div className="mb-4 relative w-full h-48">
                 <Image
-                  src={agent.image_url}
+                  src={agent.imageUrl}
                   alt={agent.name}
                   fill
                   className="object-cover rounded-lg"

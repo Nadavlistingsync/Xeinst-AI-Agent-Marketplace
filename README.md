@@ -1,115 +1,114 @@
 # AI Agency Website
 
-A Next.js application for managing and showcasing AI agents.
+A modern marketplace for AI agents and deployments, built with Next.js, Prisma, and PostgreSQL.
 
 ## Features
 
-- Featured and trending AI agents showcase
-- Comprehensive error handling and monitoring
-- Type-safe API routes
-- Automated testing and deployment
-- Sentry integration for error tracking
+- 🚀 Modern tech stack with Next.js 14 and TypeScript
+- 🎨 Beautiful UI with Tailwind CSS and shadcn/ui
+- 🔐 Authentication with NextAuth.js
+- 📊 Real-time metrics and analytics
+- 💬 Review and feedback system
+- 🛍️ Marketplace for AI agents
+- 📱 Responsive design
+- 🔄 CI/CD pipeline with GitHub Actions
+- 🐳 Docker support for development and production
 
 ## Prerequisites
 
 - Node.js 18 or later
 - PostgreSQL 14 or later
-- GitHub account
-- Vercel account
-- Sentry account
+- Docker and Docker Compose (optional)
 
-## Environment Setup
+## Getting Started
 
-1. Copy `.env.example` to `.env` and fill in the required values:
+1. Clone the repository:
 ```bash
-cp .env.example .env
+git clone https://github.com/yourusername/ai-agency-website.git
+cd ai-agency-website
 ```
 
-2. Required environment variables:
-- `DATABASE_URL`: Your PostgreSQL database URL
-- `TEST_DATABASE_URL`: Your test database URL
-- `NEXTAUTH_URL`: Your application URL
-- `NEXTAUTH_SECRET`: A random string for NextAuth
-- `GITHUB_ID`: GitHub OAuth client ID
-- `GITHUB_SECRET`: GitHub OAuth client secret
-- `NEXT_PUBLIC_SENTRY_DSN`: Sentry DSN
-- `SENTRY_AUTH_TOKEN`: Sentry auth token
-- `SENTRY_ORG`: Your Sentry organization
-- `SENTRY_PROJECT`: Your Sentry project name
-
-## Development
-
-1. Install dependencies:
+2. Install dependencies:
 ```bash
 npm install
 ```
 
-2. Run database migrations:
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+Edit `.env` with your configuration.
+
+4. Set up the database:
 ```bash
 npx prisma migrate dev
 ```
 
-3. Start the development server:
+5. Start the development server:
 ```bash
 npm run dev
 ```
 
+Or using Docker:
+```bash
+docker-compose up
+```
+
+## Development
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm test` - Run tests
+- `npm run type-check` - Run TypeScript type checking
+
 ## Testing
 
-Run the test suite:
 ```bash
+# Run tests
 npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate test coverage
+npm run test:coverage
 ```
 
 ## Deployment
 
-The application is configured for automatic deployment to Vercel. The deployment process includes:
+The project is configured for deployment on Vercel. The CI/CD pipeline will automatically deploy to production when changes are pushed to the main branch.
 
-1. Running tests
-2. Building the application
-3. Deploying to Vercel
-
-### Manual Deployment
-
-1. Build the application:
-```bash
-npm run build
-```
-
-2. Deploy to Vercel:
-```bash
-vercel --prod
-```
-
-## GitHub Actions
-
-The repository includes GitHub Actions workflows for:
-- Running tests
-- Building the application
-- Deploying to Vercel
-
-Required secrets:
-- `VERCEL_TOKEN`
-- `VERCEL_ORG_ID`
-- `VERCEL_PROJECT_ID`
-
-## Error Monitoring
-
-The application uses Sentry for error monitoring. To set up Sentry:
-
-1. Create a Sentry account
-2. Create a new project
-3. Add the Sentry DSN to your environment variables
-4. Configure the Sentry auth token and project details
+1. Fork the repository
+2. Connect your Vercel account
+3. Set up the required environment variables
+4. Deploy!
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For support, please:
+
+1. Check the [documentation](docs/)
+2. Review [existing issues](https://github.com/yourusername/ai-agency-website/issues)
+3. Create a new issue if needed
+
+## Acknowledgments
+
+- [Next.js](https://nextjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Shadcn UI](https://ui.shadcn.com/)
+- [Prisma](https://www.prisma.io/)
+- [Sentry](https://sentry.io/)

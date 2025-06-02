@@ -1,26 +1,29 @@
 import { Metadata } from 'next';
-import { CreatorDashboard } from '@/components/dashboard/CreatorDashboard';
-import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { DashboardStats } from '@/components/dashboard/DashboardStats';
+import { DeploymentsList } from '@/components/dashboard/DeploymentsList';
 
 export const metadata: Metadata = {
-  title: 'Creator Dashboard - Xeinst',
-  description: 'Manage your AI agents and track your revenue',
+  title: 'Dashboard | AI Agency',
+  description: 'Manage your AI agent deployments and monitor their performance.',
 };
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session) {
-    redirect('/login?callbackUrl=/dashboard');
+  if (!session?.user) {
+    redirect('/auth/signin');
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Creator Dashboard</h1>
-        <CreatorDashboard />
+    <div className="container mx-auto px-4 py-8">
+      <DashboardHeader user={session.user} />
+      <div className="mt-8 space-y-8">
+        <DashboardStats userId={session.user.id} />
+        <DeploymentsList userId={session.user.id} />
       </div>
     </div>
   );

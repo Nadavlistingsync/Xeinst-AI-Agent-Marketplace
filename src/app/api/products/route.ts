@@ -11,7 +11,7 @@ const ProductInputSchema = z.object({
   longDescription: z.string().max(2000).optional(),
   category: z.string().min(1),
   price: z.number().min(0).optional(),
-  image_url: z.string().url().optional(),
+  imageUrl: z.string().url().optional(),
   features: z.array(z.string()).max(20).optional(),
   requirements: z.array(z.string()).max(20).optional(),
   isPublic: z.boolean().optional(),

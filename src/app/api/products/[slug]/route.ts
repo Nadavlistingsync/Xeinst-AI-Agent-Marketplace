@@ -9,7 +9,7 @@ const ProductSchema = z.object({
   longDescription: z.string().nullable(),
   category: z.string(),
   price: z.number().nullable(),
-  image_url: z.string().nullable(),
+  imageUrl: z.string().nullable(),
   rating: z.number().nullable(),
   features: z.array(z.string()).nullable(),
   requirements: z.array(z.string()).nullable(),

@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
+import { Deployment } from "@prisma/client";
 
 // Product operations
 export async function getProduct(id: string) {
@@ -272,68 +273,106 @@ export async function getUserProducts(user_id: string) {
 }
 
 // Deployment operations
-export async function getDeployments(params: {
+interface DeploymentFilters {
   query?: string;
   framework?: string;
-  access_level?: string;
-  licenseType?: string;
-}) {
-  const { query, framework, access_level, licenseType } = params;
+  category?: string;
+  accessLevel?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  verified?: string;
+  popular?: string;
+  new?: string;
+}
 
-  const where: Prisma.DeploymentWhereInput = {
-    status: "active",
+export async function getDeployments(filters?: DeploymentFilters): Promise<Deployment[]> {
+  const where: any = {
+    status: "published",
   };
 
-  if (query) {
+  if (filters?.query) {
     where.OR = [
-      { name: { contains: query, mode: "insensitive" } },
-      { description: { contains: query, mode: "insensitive" } },
+      { name: { contains: filters.query, mode: "insensitive" } },
+      { description: { contains: filters.query, mode: "insensitive" } },
     ];
   }
 
-  if (framework) {
-    where.framework = framework;
+  if (filters?.framework && filters.framework !== "All") {
+    where.framework = filters.framework;
   }
 
-  if (access_level) {
-    where.access_level = access_level;
+  if (filters?.category && filters.category !== "All") {
+    where.category = filters.category;
   }
 
-  if (licenseType) {
-    where.licenseType = licenseType;
+  if (filters?.accessLevel && filters.accessLevel !== "All") {
+    where.accessLevel = filters.accessLevel.toLowerCase();
+  }
+
+  if (filters?.minPrice || filters?.maxPrice) {
+    where.priceCents = {
+      ...(filters.minPrice && { gte: parseInt(filters.minPrice) }),
+      ...(filters.maxPrice && { lte: parseInt(filters.maxPrice) }),
+    };
+  }
+
+  if (filters?.verified === "true") {
+    where.isVerified = true;
+  }
+
+  if (filters?.popular === "true") {
+    where.isPopular = true;
+  }
+
+  if (filters?.new === "true") {
+    where.isNew = true;
   }
 
   return prisma.deployment.findMany({
     where,
     include: {
-      deployer: {
+      users: {
         select: {
           name: true,
-          image: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: [
+      { isVerified: "desc" },
+      { isPopular: "desc" },
+      { isNew: "desc" },
+      { createdAt: "desc" },
+    ],
+  });
+}
+
+export async function getDeploymentById(id: string): Promise<Deployment | null> {
+  return prisma.deployment.findUnique({
+    where: { id },
+    include: {
+      users: {
+        select: {
+          name: true,
+          email: true,
         },
       },
       metrics: true,
-    },
-    orderBy: {
-      created_at: "desc",
     },
   });
 }
 
-export async function getDeployment(id: string) {
-  return prisma.deployment.findUnique({
-    where: { id },
-    include: {
-      deployer: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
-      metrics: true,
-      logs: true,
-      feedbacks: true,
-    },
+export async function getDeploymentMetrics(id: string) {
+  return prisma.agentMetrics.findUnique({
+    where: { agentId: id },
+  });
+}
+
+export async function getDeploymentLogs(id: string, limit = 100) {
+  return prisma.agentLog.findMany({
+    where: { agentId: id },
+    orderBy: { timestamp: "desc" },
+    take: limit,
   });
 }
 
@@ -375,6 +414,56 @@ export async function updateDeployment(id: string, data: Prisma.DeploymentUpdate
 export async function deleteDeployment(id: string) {
   return prisma.deployment.delete({
     where: { id },
+  });
+}
+
+export async function updateDeploymentMetrics(id: string, metrics: any) {
+  return prisma.deployment.update({
+    where: { id },
+    data: {
+      metrics: {
+        upsert: {
+          create: metrics,
+          update: metrics,
+        },
+      },
+    },
+  });
+}
+
+export async function incrementDownloadCount(id: string) {
+  return prisma.deployment.update({
+    where: { id },
+    data: {
+      downloadCount: {
+        increment: 1,
+      },
+    },
+  });
+}
+
+export async function updateDeploymentRating(id: string, rating: number) {
+  const deployment = await prisma.deployment.findUnique({
+    where: { id },
+    select: {
+      rating: true,
+      totalRatings: true,
+    },
+  });
+
+  if (!deployment) {
+    throw new Error("Deployment not found");
+  }
+
+  const newTotalRatings = deployment.totalRatings + 1;
+  const newRating = ((deployment.rating * deployment.totalRatings) + rating) / newTotalRatings;
+
+  return prisma.deployment.update({
+    where: { id },
+    data: {
+      rating: newRating,
+      totalRatings: newTotalRatings,
+    },
   });
 }
 
