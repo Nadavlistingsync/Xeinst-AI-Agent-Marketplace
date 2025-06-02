@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Agent } from '@/types/agent';
 
 export function FeaturedAgents() {
@@ -60,10 +61,12 @@ export function FeaturedAgents() {
   const renderAgentCard = (agent: Agent) => (
     <div key={agent.id} className="bg-white/5 rounded-xl p-6 hover:bg-white/10 transition-all duration-300">
       <div className="aspect-video relative mb-4 rounded-lg overflow-hidden">
-        <img
+        <Image
           src={agent.metadata?.image || '/agent-placeholder.png'}
           alt={agent.name}
-          className="w-full h-full object-cover"
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
       </div>
       <h3 className="text-xl font-semibold mb-2">{agent.name}</h3>

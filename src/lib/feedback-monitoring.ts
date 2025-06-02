@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { AgentFeedback } from './schema';
 import { createNotification, NotificationType, NotificationSeverity } from './notification';
 

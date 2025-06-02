@@ -6,7 +6,7 @@ import { Prisma } from '@prisma/client';
 import { AgentCard } from '@/components/marketplace/AgentCard';
 import { SearchBar } from '@/components/marketplace/SearchBar';
 import { FilterBar } from '@/components/marketplace/FilterBar';
-import { getDeployments } from '@/lib/agent-deployment';
+import { getDeployments } from '@/lib/db-helpers';
 import { Suspense } from "react";
 import { Deployment } from "@prisma/client";
 
@@ -24,81 +24,29 @@ export const metadata: Metadata = {
 };
 
 export default async function MarketplacePage({ searchParams }: MarketplacePageProps) {
-  const { query, framework, access_level } = searchParams;
-
   const deployments = await getDeployments({
-    where: {
-      OR: query
-        ? [
-            { name: { contains: query, mode: "insensitive" } },
-            { description: { contains: query, mode: "insensitive" } },
-          ]
-        : undefined,
-      access_level: access_level || "public",
-      framework: framework,
-    },
-    orderBy: { created_at: "desc" },
-    include: {
-      deployer: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-        },
-      },
-    },
+    query: searchParams.query,
+    framework: searchParams.framework,
+    access_level: searchParams.access_level
   });
 
-  const agents = deployments.map((agent) => ({
-    id: agent.id,
-    name: agent.name,
-    description: agent.description,
-    framework: agent.framework,
-    environment: agent.environment,
-    status: agent.status,
-    rating: Number(agent.rating),
-    ratingCount: agent.ratingCount || 0,
-    download_count: agent.download_count,
-    priceCents: agent.priceCents,
-    access_level: agent.access_level,
-    licenseType: agent.licenseType,
-    access_level: agent.access_level as "public" | "basic" | "premium",
-    licenseType: agent.licenseType as "full-access" | "limited-use" | "view-only" | "non-commercial",
-    deployer: {
-      id: agent.deployer.id,
-      name: agent.deployer.name ?? "",
-      email: agent.deployer.email,
-      image: agent.deployer.image,
-    },
-    created_at: agent.created_at,
-    updated_at: agent.updated_at,
-    apiEndpoint: agent.apiEndpoint,
-  }));
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4">AI Agent Marketplace</h1>
-        <p className="text-gray-600">
-          Discover and deploy powerful AI agents for your business needs
-        </p>
-      </div>
+    <div className="container mx-auto py-8">
+      <div className="flex flex-col gap-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">AI Agent Marketplace</h1>
+        </div>
+        
+        <div className="flex flex-col gap-4">
+          <SearchBar />
+          <FilterBar />
+        </div>
 
-      <div className="mb-8">
-        <SearchBar />
-      </div>
-
-      <div className="mb-8">
-        <FilterBar />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Suspense fallback={<div>Loading agents...</div>}>
-          {agents.map((agent) => (
-            <AgentCard key={agent.id} agent={agent} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {deployments.map((deployment) => (
+            <AgentCard key={deployment.id} deployment={deployment} />
           ))}
-        </Suspense>
+        </div>
       </div>
     </div>
   );

@@ -15,7 +15,7 @@ export default function DeploymentsPage() {
       if (!session?.user?.id) return;
 
       try {
-        const data = await getDeployments(session.user.id);
+        const data = await getDeployments({});
         setDeployments(data);
       } catch (err) {
         setError("Failed to load deployments");

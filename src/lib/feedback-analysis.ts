@@ -167,7 +167,6 @@ export async function analyzeFeedbackTrends(
   categoryTrend: { date: string; categories: { [key: string]: number } }[];
 }> {
   const feedbacks = await prisma.agentFeedback.findMany({
-  const feedbacks = await prismaClient.agentFeedback.findMany({
     where: {
       agentId,
       ...(timeRange ? {
@@ -219,7 +218,7 @@ export async function generateFeedbackInsights(agentId: string): Promise<{
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const feedbacks = await prismaClient.agentFeedback.findMany({
+  const feedbacks = await prisma.agentFeedback.findMany({
     where: {
       agentId,
       created_at: {
@@ -267,7 +266,7 @@ export async function generateFeedbackInsights(agentId: string): Promise<{
 }
 
 export async function analyzeFeedback(agentId: string, timeRange: { start: Date; end: Date }): Promise<FeedbackAnalysis> {
-  const feedback = await prismaClient.agentFeedback.findMany({
+  const feedback = await prisma.agentFeedback.findMany({
     where: {
       agentId,
       created_at: {

@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import prisma from "./db";
+import { prisma } from "./db";
 
 // Product operations
 export async function getProduct(id: string) {

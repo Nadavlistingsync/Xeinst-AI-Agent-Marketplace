@@ -1,4 +1,4 @@
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
 
 export async function runFeedbackAnalysisJob() {

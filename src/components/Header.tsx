@@ -3,6 +3,8 @@
 import { motion, useScroll } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -30,45 +32,39 @@ export default function Header() {
       <div className="container">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <motion.a
-            href="/"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="text-3xl font-extrabold tracking-wider text-white logo-glow hover:text-[#00b4ff] transition-all duration-300"
-            aria-label="Xeinst Home"
-          >
-            Xeinst
-          </motion.a>
+          <Link href="/" className="flex items-center space-x-2">
+            <Image src="/logo.svg" alt="AI Agency" width={40} height={40} />
+            <span className="text-xl font-bold text-white">AI Agency</span>
+          </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-12" role="navigation" aria-label="Main navigation">
-            {menuItems.map((item) => (
-              <motion.a
-                key={item.label}
-                href={item.href}
-                className="text-white/90 hover:text-[#00b4ff] focus:text-[#00b4ff] transition-all duration-200 text-lg font-semibold px-4 py-2 rounded-lg focus:bg-white/10 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-[#00b4ff]"
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.97 }}
-                aria-label={`Navigate to ${item.label}`}
-              >
-                {item.label}
-              </motion.a>
-            ))}
-            <motion.a
-              href="#contact"
-              className="btn-primary text-lg font-bold shadow-md hover:shadow-[#00b4ff]/30 focus:shadow-[#00b4ff]/40 px-8 py-3 ml-4"
-              whileHover={{ scale: 1.08 }}
-              whileTap={{ scale: 0.97 }}
-              aria-label="Start a new project"
+          <div className="hidden md:flex items-center space-x-8">
+            <Link href="#services" className="text-gray-300 hover:text-white transition-colors">
+              Services
+            </Link>
+            <Link href="#agents" className="text-gray-300 hover:text-white transition-colors">
+              AI Agents
+            </Link>
+            <Link href="#case-studies" className="text-gray-300 hover:text-white transition-colors">
+              Case Studies
+            </Link>
+            <Link href="#blog" className="text-gray-300 hover:text-white transition-colors">
+              Blog
+            </Link>
+            <Link href="#contact" className="text-gray-300 hover:text-white transition-colors">
+              Contact
+            </Link>
+            <Link 
+              href="/login" 
+              className="px-4 py-2 text-white bg-[#00AFFF] rounded-lg hover:bg-[#0090cc] transition-colors"
             >
-              Start Project
-            </motion.a>
-          </nav>
+              Login
+            </Link>
+          </div>
 
           {/* Mobile Menu Button */}
           <motion.button
-            className="md:hidden text-white hover:text-[#00b4ff] p-3 rounded-xl hover:bg-white/10 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#00b4ff]"
+            className="md:hidden text-gray-300 hover:text-white p-3 rounded-xl hover:bg-white/10 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#00b4ff]"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             whileHover={{ scale: 1.08 }}
             whileTap={{ scale: 0.97 }}
@@ -76,7 +72,21 @@ export default function Header() {
             aria-controls="mobile-menu"
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
           >
-            {isMenuOpen ? <X className="h-7 w-7" aria-hidden="true" /> : <Menu className="h-7 w-7" aria-hidden="true" />}
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              {isMenuOpen ? (
+                <path d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
           </motion.button>
         </div>
       </div>
@@ -99,25 +109,25 @@ export default function Header() {
           <ul className="px-4 pt-4 pb-6 space-y-2">
             {menuItems.map((item) => (
               <li key={item.label}>
-                <a
+                <Link
                   href={item.href}
-                  className="block text-white/90 hover:text-[#00b4ff] focus:text-[#00b4ff] transition-all duration-200 text-lg font-semibold py-3 px-4 rounded-lg hover:bg-white/5 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#00b4ff]"
+                  className="block text-gray-300 hover:text-white transition-colors text-lg font-semibold py-3 px-4 rounded-lg hover:bg-white/5 focus:bg-white/10 focus:outline-none focus:ring-2 focus:ring-[#00b4ff]"
                   onClick={() => setIsMenuOpen(false)}
                   aria-label={`Navigate to ${item.label}`}
                 >
                   {item.label}
-                </a>
+                </Link>
               </li>
             ))}
             <li>
-              <a
-                href="#contact"
-                className="block w-full text-center btn-primary text-lg font-bold px-8 py-3 mt-2 shadow-md hover:shadow-[#00b4ff]/30 focus:shadow-[#00b4ff]/40"
+              <Link
+                href="/login"
+                className="block w-full text-center text-gray-300 hover:text-white transition-colors text-lg font-semibold px-8 py-3 mt-2 bg-[#00AFFF] rounded-lg hover:bg-[#0090cc] transition-colors"
                 onClick={() => setIsMenuOpen(false)}
-                aria-label="Start a new project"
+                aria-label="Login"
               >
-                Start Project
-              </a>
+                Login
+              </Link>
             </li>
           </ul>
         </div>

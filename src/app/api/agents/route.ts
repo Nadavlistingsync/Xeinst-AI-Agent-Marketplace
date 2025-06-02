@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { startBackgroundJobs } from '@/lib/background-jobs';
 import { createErrorResponse } from '@/lib/api';
@@ -152,51 +152,5 @@ export async function DELETE(request: Request): Promise<NextResponse<AgentApiRes
       createErrorResponse(error, 'Failed to delete agent'),
       { status: 500 }
     );
-  }
-}
-
-export async function getFeaturedAgents(): Promise<Agent[]> {
-  try {
-    const agents = await prisma.agent.findMany({
-      where: { status: 'active' },
-      orderBy: { downloadCount: 'desc' },
-      take: 5,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        status: true,
-        metadata: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    }) as Agent[];
-    return agents;
-  } catch (error) {
-    console.error('Error fetching featured agents:', error);
-    return [];
-  }
-}
-
-export async function getTrendingAgents(): Promise<Agent[]> {
-  try {
-    const agents = await prisma.agent.findMany({
-      where: { status: 'active' },
-      orderBy: { rating: 'desc' },
-      take: 5,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        status: true,
-        metadata: true,
-        createdAt: true,
-        updatedAt: true,
-      },
-    }) as Agent[];
-    return agents;
-  } catch (error) {
-    console.error('Error fetching trending agents:', error);
-    return [];
   }
 } 

@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@auth/prisma-adapter": "1.6.0",
+    "@hookform/resolvers": "^5.0.1",
     "@monaco-editor/react": "^4.7.0",
     "@prisma/client": "^5.0.0",
     "@radix-ui/react-dialog": "^1.1.14",
@@ -31,6 +32,7 @@
     "@vercel/analytics": "^1.5.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
+    "canvas": "^3.1.0",
     "class-variance-authority": "^0.7.1",
     "drizzle-orm": "^0.44.1",
     "framer-motion": "^10.0.0",
@@ -41,6 +43,7 @@
     "next-auth": "^4.24.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-hook-form": "^7.57.0",
     "react-hot-toast": "^2.4.0",
     "react-icons": "^5.5.0",
     "recharts": "^2.15.3",
