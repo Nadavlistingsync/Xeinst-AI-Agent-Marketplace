@@ -6,7 +6,6 @@ import { getDeploymentById } from "@/lib/db-helpers";
 import { DeploymentOverview } from "@/components/dashboard/DeploymentOverview";
 import { DeploymentMetrics } from "@/components/dashboard/DeploymentMetrics";
 import { DeploymentLogs } from "@/components/dashboard/DeploymentLogs";
-import { DeploymentSettings } from "@/components/dashboard/DeploymentSettings";
 
 interface DeploymentPageProps {
   params: {
@@ -57,7 +56,7 @@ export default async function DeploymentPage({ params }: DeploymentPageProps) {
         </div>
         
         <div className="lg:col-span-1">
-          <DeploymentSettings deployment={deployment} />
+          {/* <DeploymentSettings deployment={deployment} /> */}
         </div>
       </div>
     </div>
