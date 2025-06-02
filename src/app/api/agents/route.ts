@@ -16,13 +16,6 @@ import { z } from 'zod';
 // Start background jobs when the module is loaded
 startBackgroundJobs();
 
-const agentQuerySchema = z.object({
-  page: z.string().optional(),
-  limit: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'pending']).optional(),
-  search: z.string().optional(),
-});
-
 export async function GET(request: Request): Promise<NextResponse<AgentsApiResponse>> {
   try {
     const session = await getServerSession(authOptions);
@@ -35,16 +28,14 @@ export async function GET(request: Request): Promise<NextResponse<AgentsApiRespo
 
     const { searchParams } = new URL(request.url);
     const query = {
-      page: searchParams.get('page'),
-      limit: searchParams.get('limit'),
+      page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : undefined,
+      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
       status: searchParams.get('status'),
       search: searchParams.get('search'),
     };
 
     const validatedQuery = agentQuerySchema.parse(query);
-    const page = parseInt(validatedQuery.page || '1');
-    const limit = parseInt(validatedQuery.limit || '10');
-    const skip = (page - 1) * limit;
+    const skip = (validatedQuery.page - 1) * validatedQuery.limit;
 
     const where = {
       ...(validatedQuery.status && { status: validatedQuery.status }),
@@ -60,7 +51,7 @@ export async function GET(request: Request): Promise<NextResponse<AgentsApiRespo
       prisma.agent.findMany({
         where,
         skip,
-        take: limit,
+        take: validatedQuery.limit,
         include: {
           user: {
             select: {
@@ -94,9 +85,9 @@ export async function GET(request: Request): Promise<NextResponse<AgentsApiRespo
       agents: formattedAgents,
       pagination: {
         total,
-        pages: Math.ceil(total / limit),
-        currentPage: page,
-        limit,
+        pages: Math.ceil(total / validatedQuery.limit),
+        currentPage: validatedQuery.page,
+        limit: validatedQuery.limit,
       },
     });
   } catch (error) {
