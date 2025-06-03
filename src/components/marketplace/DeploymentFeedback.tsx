@@ -22,7 +22,7 @@ export function DeploymentFeedback({ deploymentId }: DeploymentFeedbackProps) {
 
   useEffect(() => {
     fetchReviews();
-  }, [deploymentId]);
+  }, [deploymentId, fetchReviews]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

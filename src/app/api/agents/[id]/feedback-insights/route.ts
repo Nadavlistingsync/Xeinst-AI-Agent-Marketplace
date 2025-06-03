@@ -81,7 +81,7 @@ export async function GET(
     const validatedParams = insightsQuerySchema.parse(queryParams);
 
     const [insights, trends] = await Promise.all([
-      generateFeedbackInsights(params.id, validatedParams),
+      generateFeedbackInsights(params.id),
       analyzeFeedbackTrends(params.id, {
         startDate: validatedParams.startDate ? new Date(validatedParams.startDate) : undefined,
         endDate: validatedParams.endDate ? new Date(validatedParams.endDate) : undefined,
