@@ -2,11 +2,11 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 export const feedbackSchema = z.object({
-  agentId: z.string(),
-  rating: z.number().min(1).max(5),
-  comment: z.string().optional(),
-  sentimentScore: z.number().optional(),
-  categories: z.record(z.number()).optional()
+  type: z.enum(['error', 'warning', 'success']),
+  message: z.string().min(1).max(1000),
+  agentId: z.string().optional(),
+  userId: z.string().optional(),
+  metadata: z.record(z.unknown()).optional(),
 });
 
 export type FeedbackInput = z.infer<typeof feedbackSchema>;
@@ -16,6 +16,26 @@ export interface FeedbackOptions {
   endDate?: Date;
   limit?: number;
   offset?: number;
+  agentId?: string;
+  userId?: string;
+  type?: 'error' | 'warning' | 'success';
+}
+
+export interface FeedbackFilter {
+  where?: {
+    createdAt?: {
+      gte?: Date;
+      lte?: Date;
+    };
+    agentId?: string;
+    userId?: string;
+    type?: 'error' | 'warning' | 'success';
+  };
+  take?: number;
+  skip?: number;
+  orderBy?: {
+    [key: string]: 'asc' | 'desc';
+  };
 }
 
 export async function createFeedback(data: FeedbackInput) {

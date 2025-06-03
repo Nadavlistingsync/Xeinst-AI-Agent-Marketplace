@@ -29,9 +29,18 @@ export const authOptions: NextAuthOptions = {
           where: {
             email: credentials.email,
           },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            image: true,
+            role: true,
+            subscriptionTier: true,
+            password: true,
+          },
         });
 
-        if (!user) {
+        if (!user || !user.password) {
           return null;
         }
 
@@ -47,7 +56,8 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
-          subscriptionTier: user.subscriptionTier,
+          subscriptionTier: user.subscriptionTier as 'free' | 'basic' | 'premium',
+          password: user.password,
         };
       },
     }),
@@ -69,6 +79,15 @@ export const authOptions: NextAuthOptions = {
         where: {
           email: token.email!,
         },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          image: true,
+          role: true,
+          subscriptionTier: true,
+          password: true,
+        },
       });
 
       if (!dbUser) {
@@ -84,7 +103,8 @@ export const authOptions: NextAuthOptions = {
         email: dbUser.email,
         picture: dbUser.image,
         role: dbUser.role,
-        subscriptionTier: dbUser.subscriptionTier,
+        subscriptionTier: dbUser.subscriptionTier as 'free' | 'basic' | 'premium',
+        password: dbUser.password,
       };
     },
   },
@@ -149,6 +169,7 @@ export async function createUser(data: {
       image: true,
       role: true,
       subscriptionTier: true,
+      password: true,
       emailVerified: true,
       createdAt: true,
       updatedAt: true,
@@ -176,6 +197,7 @@ export async function updateUser(
       image: true,
       role: true,
       subscriptionTier: true,
+      password: true,
       emailVerified: true,
       createdAt: true,
       updatedAt: true,
@@ -193,6 +215,7 @@ export async function deleteUser(id: string): Promise<User> {
       image: true,
       role: true,
       subscriptionTier: true,
+      password: true,
       emailVerified: true,
       createdAt: true,
       updatedAt: true,

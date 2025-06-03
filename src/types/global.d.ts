@@ -5,12 +5,12 @@ declare module "next-auth" {
     user: {
       id: string;
       role: string;
-      subscription_tier: 'free' | 'basic' | 'premium';
+      subscriptionTier: 'free' | 'basic' | 'premium';
     } & DefaultSession["user"];
   }
   interface User extends NextAuthUser {
     role: string;
-    subscription_tier: 'free' | 'basic' | 'premium';
+    subscriptionTier: 'free' | 'basic' | 'premium';
   }
 }
 

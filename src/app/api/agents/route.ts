@@ -7,9 +7,6 @@ import { agentSchema } from '@/lib/schema';
 export async function GET() {
   try {
     const agents = await prisma.deployment.findMany({
-      where: {
-        isPublic: true,
-      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -42,7 +39,7 @@ export async function POST(request: Request) {
       data: {
         ...validatedData,
         createdBy: session.user.id,
-        uploadedBy: session.user.id,
+        deployedBy: session.user.id,
       },
     });
 

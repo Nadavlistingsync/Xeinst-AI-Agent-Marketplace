@@ -7,7 +7,10 @@ import { z } from "zod";
 const updateDeploymentSchema = z.object({
   status: z.enum(["pending", "deploying", "active", "failed", "stopped"]).optional(),
   name: z.string().min(1).max(100).optional(),
-  environment: z.enum(["development", "staging", "production"]).optional(),
+  description: z.string().optional(),
+  framework: z.string().optional(),
+  version: z.string().optional(),
+  requirements: z.array(z.string()).optional(),
 });
 
 export async function GET(
@@ -18,7 +21,7 @@ export async function GET(
     const deployment = await prisma.deployment.findUnique({
       where: { id: params.id },
       include: {
-        users: {
+        creator: {
           select: {
             name: true,
             email: true,
@@ -65,7 +68,7 @@ export async function POST(
         const deployment = await prisma.deployment.update({
           where: { id: params.id },
           data: {
-            status: "deployed",
+            status: "active",
             deployedBy: session.user.id,
           },
         });
@@ -119,9 +122,11 @@ export async function PUT(
     }
 
     const data = await request.json();
+    const validatedData = updateDeploymentSchema.parse(data);
+    
     const deployment = await prisma.deployment.update({
       where: { id: params.id },
-      data,
+      data: validatedData,
     });
 
     return NextResponse.json(deployment);
@@ -157,7 +162,7 @@ export async function PATCH(
     }
 
     // Check if user has access to update this deployment
-    if (deployment.deployedBy !== session.user.id) {
+    if (deployment.createdBy !== session.user.id) {
       return new NextResponse("Unauthorized to update this deployment", { status: 403 });
     }
 
@@ -198,7 +203,7 @@ export async function DELETE(
     }
 
     // Check if user has access to delete this deployment
-    if (deployment.deployedBy !== session.user.id) {
+    if (deployment.createdBy !== session.user.id) {
       return new NextResponse("Unauthorized to delete this deployment", { status: 403 });
     }
 

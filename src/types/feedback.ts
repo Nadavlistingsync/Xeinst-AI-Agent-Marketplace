@@ -18,10 +18,20 @@ export interface FeedbackResponse {
     agentId: string;
     userId: string;
     rating: number;
-    comment: string;
+    comment: string | null;
+    sentimentScore: number | null;
+    categories: Record<string, number> | null;
     metadata: Record<string, unknown>;
     createdAt: Date;
     updatedAt: Date;
+    response: string | null;
+    responseDate: Date | null;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      image: string | null;
+    };
   };
   error?: string;
   details?: z.ZodError[];
@@ -40,10 +50,20 @@ export interface FeedbackSuccess {
     agentId: string;
     userId: string;
     rating: number;
-    comment: string;
+    comment: string | null;
+    sentimentScore: number | null;
+    categories: Record<string, number> | null;
     metadata: Record<string, unknown>;
     createdAt: Date;
     updatedAt: Date;
+    response: string | null;
+    responseDate: Date | null;
+    user: {
+      id: string;
+      name: string;
+      email: string;
+      image: string | null;
+    };
   };
 }
 
@@ -73,7 +93,7 @@ export interface FeedbackSummary {
   };
   categoryDistribution: Record<string, number>;
   recentActivity: {
-    lastFeedbackDate: Date | null;
+    lastFeedbackDate: string;
     responseRate: number;
     averageResponseTime: number;
   };
@@ -152,4 +172,21 @@ export interface FeedbackExport {
   responseDate: Date | null;
   userName: string | null;
   userEmail: string | null;
+}
+
+export interface FeedbackMetrics {
+  averageRating: number;
+  totalFeedbacks: number;
+  positiveFeedbacks: number;
+  negativeFeedbacks: number;
+  neutralFeedbacks: number;
+  sentimentScore: number;
+  commonIssues: string[];
+  improvementSuggestions: string[];
+  categories: Record<string, number>;
+  responseMetrics: {
+    totalResponses: number;
+    averageResponseTime: number;
+    responseRate: number;
+  };
 } 

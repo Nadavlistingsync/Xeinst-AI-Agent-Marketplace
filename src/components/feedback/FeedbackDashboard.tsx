@@ -29,14 +29,18 @@ interface FeedbackMetrics {
 interface Feedback {
   id: string;
   rating: number;
-  comment: string;
-  created_at: string;
-  creator_response?: string;
-  response_date?: string;
+  comment: string | null;
+  sentimentScore: number | null;
+  categories: Record<string, number> | null;
+  createdAt: Date;
+  updatedAt: Date;
+  response: string | null;
+  responseDate: Date | null;
   user: {
     name: string;
     email: string;
   };
+  agentId: string;
 }
 
 interface FeedbackDashboardProps {
@@ -148,7 +152,7 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
                     <div>
                       <p className="font-medium">{feedback.user.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {formatDistanceToNow(new Date(feedback.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(feedback.createdAt), { addSuffix: true })}
                       </p>
                     </div>
                     <div className="flex items-center">
@@ -157,12 +161,12 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
                     </div>
                   </div>
                   <p className="mb-4">{feedback.comment}</p>
-                  {feedback.creator_response ? (
+                  {feedback.response ? (
                     <div className="bg-muted p-4 rounded-md">
                       <p className="font-medium mb-2">Your Response:</p>
-                      <p>{feedback.creator_response}</p>
+                      <p>{feedback.response}</p>
                       <p className="text-sm text-muted-foreground mt-2">
-                        {formatDistanceToNow(new Date(feedback.response_date || ''), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(feedback.responseDate || ''), { addSuffix: true })}
                       </p>
                     </div>
                   ) : (
@@ -180,7 +184,7 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
         <TabsContent value="unresponded" className="space-y-4">
           <ScrollArea className="h-[600px] rounded-md border p-4">
             {feedbacks
-              .filter((f) => !f.creator_response)
+              .filter((f) => !f.response)
               .map((feedback) => (
                 <Card key={feedback.id} className="mb-4">
                   <CardContent className="pt-6">
@@ -188,7 +192,7 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
                       <div>
                         <p className="font-medium">{feedback.user.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {formatDistanceToNow(new Date(feedback.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(feedback.createdAt), { addSuffix: true })}
                         </p>
                       </div>
                       <div className="flex items-center">
@@ -210,7 +214,7 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
         <TabsContent value="responded" className="space-y-4">
           <ScrollArea className="h-[600px] rounded-md border p-4">
             {feedbacks
-              .filter((f) => f.creator_response)
+              .filter((f) => f.response)
               .map((feedback) => (
                 <Card key={feedback.id} className="mb-4">
                   <CardContent className="pt-6">
@@ -218,7 +222,7 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
                       <div>
                         <p className="font-medium">{feedback.user.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {formatDistanceToNow(new Date(feedback.created_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(feedback.createdAt), { addSuffix: true })}
                         </p>
                       </div>
                       <div className="flex items-center">
@@ -229,9 +233,9 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
                     <p className="mb-4">{feedback.comment}</p>
                     <div className="bg-muted p-4 rounded-md">
                       <p className="font-medium mb-2">Your Response:</p>
-                      <p>{feedback.creator_response}</p>
+                      <p>{feedback.response}</p>
                       <p className="text-sm text-muted-foreground mt-2">
-                        {formatDistanceToNow(new Date(feedback.response_date || ''), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(feedback.responseDate || ''), { addSuffix: true })}
                       </p>
                     </div>
                   </CardContent>

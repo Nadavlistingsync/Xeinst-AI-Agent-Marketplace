@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
 import { Prisma } from '@prisma/client';
+import { type FeedbackInsightsApiResponse } from '@/types/feedback-analytics';
 
 interface FeedbackInsights {
   totalFeedbacks: number;
@@ -22,118 +23,131 @@ interface FeedbackInsights {
   }>;
 }
 
-function calculateSentiment(feedbacks: Array<{ sentimentScore: number | null }>) {
-  const sentimentCounts = {
-    positive: 0,
-    neutral: 0,
-    negative: 0
-  };
-
-  feedbacks.forEach(feedback => {
-    const score = feedback.sentimentScore ? Number(feedback.sentimentScore) : 0;
-    if (score > 0.5) sentimentCounts.positive++;
-    else if (score < -0.5) sentimentCounts.negative++;
-    else sentimentCounts.neutral++;
-  });
-
-  const total = feedbacks.length;
-  return {
-    positive: total ? sentimentCounts.positive / total : 0,
-    neutral: total ? sentimentCounts.neutral / total : 0,
-    negative: total ? sentimentCounts.negative / total : 0
-  };
-}
-
-function extractCategories(feedbacks: Array<{ categories: Prisma.JsonValue }>) {
-  const categoryCounts: Record<string, number> = {};
-  let totalFeedbacks = 0;
-
-  feedbacks.forEach(feedback => {
-    if (feedback.categories && typeof feedback.categories === 'object') {
-      const categories = feedback.categories as Record<string, number>;
-      Object.entries(categories).forEach(([category, value]) => {
-        categoryCounts[category] = (categoryCounts[category] || 0) + value;
-      });
-      totalFeedbacks++;
-    }
-  });
-
-  const distribution: Record<string, number> = {};
-  Object.entries(categoryCounts).forEach(([category, count]) => {
-    distribution[category] = totalFeedbacks ? count / totalFeedbacks : 0;
-  });
-
-  return distribution;
-}
-
-function calculateAverageRating(feedbacks: Array<{ rating: number }>) {
-  if (feedbacks.length === 0) return 0;
-  const sum = feedbacks.reduce((acc, feedback) => acc + feedback.rating, 0);
-  return sum / feedbacks.length;
-}
-
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse<FeedbackInsightsApiResponse>> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const agentId = searchParams.get('agentId');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-
-    const where: Prisma.AgentFeedbackWhereInput = {
-      ...(agentId && { agentId }),
-      ...(startDate && endDate && {
-        createdAt: {
-          gte: new Date(startDate),
-          lte: new Date(endDate)
-        }
-      })
-    };
-
     const feedbacks = await prisma.agentFeedback.findMany({
-      where,
-      orderBy: { createdAt: 'asc' }
-    });
-
-    // Group feedbacks by date
-    const groupedFeedbacks = feedbacks.reduce((acc, feedback) => {
-      const date = feedback.createdAt.toISOString().split('T')[0];
-      if (!acc[date]) {
-        acc[date] = [];
+      where: {
+        userId: session.user.id
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
-      acc[date].push(feedback);
-      return acc;
-    }, {} as Record<string, typeof feedbacks>);
-
-    // Calculate time series data
-    const timeSeriesData = Object.entries(groupedFeedbacks).map(([date, groupFeedbacks]) => ({
-      date,
-      averageRating: calculateAverageRating(groupFeedbacks),
-      sentiment: calculateSentiment(groupFeedbacks).positive - calculateSentiment(groupFeedbacks).negative,
-      categories: extractCategories(groupFeedbacks)
-    }));
+    });
 
     const insights: FeedbackInsights = {
       totalFeedbacks: feedbacks.length,
-      averageRating: calculateAverageRating(feedbacks),
-      sentimentDistribution: calculateSentiment(feedbacks),
-      categoryDistribution: extractCategories(feedbacks),
-      timeSeriesData
+      averageRating: 0,
+      sentimentDistribution: {
+        positive: 0,
+        neutral: 0,
+        negative: 0
+      },
+      categoryDistribution: {},
+      timeSeriesData: []
     };
 
-    return NextResponse.json(insights);
+    if (feedbacks.length > 0) {
+      // Calculate average rating
+      insights.averageRating = feedbacks.reduce((sum, item) => sum + item.rating, 0) / feedbacks.length;
+
+      // Calculate sentiment distribution
+      feedbacks.forEach((item) => {
+        if (item.sentimentScore) {
+          const score = Number(item.sentimentScore);
+          if (score > 0.5) {
+            insights.sentimentDistribution.positive++;
+          } else if (score < -0.5) {
+            insights.sentimentDistribution.negative++;
+          } else {
+            insights.sentimentDistribution.neutral++;
+          }
+        }
+      });
+
+      // Calculate category distribution
+      feedbacks.forEach((item) => {
+        if (item.categories) {
+          const categories = item.categories as Record<string, number>;
+          Object.entries(categories).forEach(([category, value]) => {
+            insights.categoryDistribution[category] = (insights.categoryDistribution[category] || 0) + value;
+          });
+        }
+      });
+
+      // Calculate time series data
+      const timeSeriesMap = new Map<string, {
+        totalRating: number;
+        count: number;
+        totalSentiment: number;
+        categories: Record<string, number>;
+      }>();
+
+      feedbacks.forEach((item) => {
+        const date = item.createdAt.toISOString().split('T')[0];
+        const current = timeSeriesMap.get(date) || {
+          totalRating: 0,
+          count: 0,
+          totalSentiment: 0,
+          categories: {}
+        };
+
+        current.totalRating += item.rating;
+        current.count++;
+        if (item.sentimentScore) {
+          current.totalSentiment += Number(item.sentimentScore);
+        }
+        if (item.categories) {
+          const categories = item.categories as Record<string, number>;
+          Object.entries(categories).forEach(([category, value]) => {
+            current.categories[category] = (current.categories[category] || 0) + value;
+          });
+        }
+
+        timeSeriesMap.set(date, current);
+      });
+
+      insights.timeSeriesData = Array.from(timeSeriesMap.entries()).map(([date, data]) => ({
+        date,
+        averageRating: data.totalRating / data.count,
+        sentiment: data.totalSentiment / data.count,
+        categories: data.categories
+      }));
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        insights: [{
+          date: new Date(),
+          count: insights.totalFeedbacks,
+          averageRating: insights.averageRating,
+          sentiment: insights.sentimentDistribution,
+          categories: Object.entries(insights.categoryDistribution).map(([name, count]) => ({
+            name,
+            count,
+            percentage: (count / insights.totalFeedbacks) * 100
+          }))
+        }],
+        summary: {
+          total: insights.totalFeedbacks,
+          averageRating: insights.averageRating,
+          sentiment: insights.sentimentDistribution
+        }
+      }
+    });
   } catch (error) {
     console.error('Error fetching feedback insights:', error);
     const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to fetch feedback insights');
     return NextResponse.json(
-      { error: errorResponse.message },
+      { success: false, error: errorResponse.message },
       { status: errorResponse.statusCode }
     );
   }

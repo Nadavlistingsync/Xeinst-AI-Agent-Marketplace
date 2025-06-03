@@ -6,8 +6,8 @@ export interface CreateAgentInput {
   name: string;
   description: string;
   framework: string;
-  file_url?: string;
-  deployed_by: string;
+  fileUrl?: string;
+  deployedBy: string;
   modelType: string;
   requirements?: string;
   version: string;
@@ -18,7 +18,7 @@ export interface UpdateAgentInput {
   name?: string;
   description?: string;
   framework?: string;
-  file_url?: string;
+  fileUrl?: string;
   modelType?: string;
   requirements?: string;
   version?: string;
@@ -37,8 +37,8 @@ export async function createAgent(data: CreateAgentInput) {
       name: data.name,
       description: data.description,
       framework: data.framework,
-      file_url: data.file_url,
-      deployed_by: data.deployed_by,
+      fileUrl: data.fileUrl,
+      deployedBy: data.deployedBy,
       modelType: data.modelType,
       requirements: data.requirements,
       version: data.version,
@@ -58,10 +58,10 @@ export async function getAgents(options: AgentOptions = {}) {
   const where: Prisma.DeploymentWhereInput = {};
 
   if (options.startDate) {
-    where.created_at = { gte: options.startDate };
+    where.createdAt = { gte: options.startDate };
   }
   if (options.endDate) {
-    where.created_at = { lte: options.endDate };
+    where.createdAt = { lte: options.endDate };
   }
   if (options.status) {
     where.status = options.status;
@@ -69,7 +69,7 @@ export async function getAgents(options: AgentOptions = {}) {
 
   return await prisma.deployment.findMany({
     where,
-    orderBy: { created_at: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -88,7 +88,7 @@ export async function deleteAgent(id: string) {
 export async function getAgentDeployments(agentId: string) {
   return await prisma.deployment.findMany({
     where: { id: agentId },
-    orderBy: { created_at: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 }
 
@@ -125,14 +125,14 @@ export async function getAgentFeedback(agentId: string, options: { startDate?: D
   const where: Prisma.AgentFeedbackWhereInput = { agentId };
 
   if (options.startDate) {
-    where.created_at = { gte: options.startDate };
+    where.createdAt = { gte: options.startDate };
   }
   if (options.endDate) {
-    where.created_at = { lte: options.endDate };
+    where.createdAt = { lte: options.endDate };
   }
 
   return await prisma.agentFeedback.findMany({
     where,
-    orderBy: { created_at: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 } 

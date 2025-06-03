@@ -35,9 +35,9 @@ export async function GET(
       );
     }
 
-    if (!agent.file_url) {
+    if (!agent.fileUrl) {
       return NextResponse.json(
-        { error: 'Agent file URL not found' },
+        { success: false, error: 'Agent file not found' },
         { status: 404 }
       );
     }
@@ -45,9 +45,9 @@ export async function GET(
     const user = session.user as { subscription_tier: string } & typeof session.user;
     // Check access level
     const canAccess = () => {
-      if (agent.access_level === 'public') return true;
-      if (agent.access_level === 'basic' && user.subscription_tier === 'basic') return true;
-      if (agent.access_level === 'premium' && user.subscription_tier === 'premium') return true;
+      if (agent.accessLevel === 'public') return true;
+      if (agent.accessLevel === 'basic' && user.subscriptionTier === 'basic') return true;
+      if (agent.accessLevel === 'premium' && user.subscriptionTier === 'premium') return true;
       return false;
     };
 
@@ -59,7 +59,7 @@ export async function GET(
     }
 
     // Fetch the agent file
-    const response = await fetch(agent.file_url);
+    const response = await fetch(agent.fileUrl);
     if (!response.ok) {
       throw new Error('Failed to fetch agent file');
     }
@@ -70,10 +70,10 @@ export async function GET(
     await prisma.deployment.update({
       where: { id: params.id },
       data: {
-        download_count: {
-          increment: 1,
-        },
-      },
+        downloadCount: {
+          increment: 1
+        }
+      }
     });
 
     // Return the file

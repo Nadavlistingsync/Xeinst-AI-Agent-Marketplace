@@ -5,9 +5,11 @@ import prisma from "@/lib/prisma";
 import { z } from "zod";
 
 const deploymentSchema = z.object({
-  agentId: z.string(),
   name: z.string().min(1).max(100),
-  environment: z.enum(["development", "staging", "production"]),
+  description: z.string(),
+  framework: z.string(),
+  version: z.string(),
+  requirements: z.array(z.string()),
 });
 
 export async function POST(req: Request) {
@@ -21,31 +23,10 @@ export async function POST(req: Request) {
     const body = await req.json();
     const validatedData = deploymentSchema.parse(body);
 
-    // Get the agent details
-    const agent = await prisma.deployment.findUnique({
-      where: { id: validatedData.agentId },
-    });
-
-    if (!agent) {
-      return new NextResponse("Agent not found", { status: 404 });
-    }
-
-    // Check if user has access to deploy this agent
-    if (agent.isPublic === false && agent.createdBy !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Not authorized to deploy this agent' },
-        { status: 403 }
-      );
-    }
-
     // Create the deployment
     const deployment = await prisma.deployment.create({
       data: {
-        name: agent.name,
-        description: agent.description,
-        framework: agent.framework,
-        version: agent.version,
-        requirements: agent.requirements,
+        ...validatedData,
         createdBy: session.user.id,
         deployedBy: session.user.id,
         status: 'active',
@@ -83,12 +64,12 @@ export async function GET(req: Request) {
     const userId = searchParams.get("userId");
 
     // If userId is provided, only return deployments for that user
-    const where = userId ? { deployedBy: userId } : {};
+    const where = userId ? { createdBy: userId } : {};
 
     const deployments = await prisma.deployment.findMany({
       where,
       include: {
-        deployer: {
+        creator: {
           select: {
             name: true,
             image: true,

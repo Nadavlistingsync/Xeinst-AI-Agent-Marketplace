@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
 import { Prisma } from '@prisma/client';
+import { type FeedbackSummaryApiResponse } from '@/types/feedback-analytics';
 
 interface FeedbackSummary {
   totalFeedbacks: number;
@@ -24,12 +25,12 @@ interface FeedbackSummary {
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse<FeedbackSummaryApiResponse>> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
@@ -39,30 +40,21 @@ export async function GET(
       select: {
         id: true,
         name: true,
-        description: true,
-        status: true,
-        framework: true,
-        version: true,
-        rating: true,
-        totalRatings: true,
-        requirements: true,
         createdBy: true,
-        deployedBy: true,
-        createdAt: true,
-        updatedAt: true
+        isPublic: true
       }
     });
 
     if (!agent) {
       return NextResponse.json(
-        { error: 'Agent not found' },
+        { success: false, error: 'Agent not found' },
         { status: 404 }
       );
     }
 
     if (agent.createdBy !== session.user.id && !agent.isPublic) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 403 }
       );
     }
@@ -72,77 +64,87 @@ export async function GET(
       orderBy: { createdAt: 'desc' }
     });
 
-    // Calculate sentiment distribution
-    const sentimentCounts = {
-      positive: 0,
-      neutral: 0,
-      negative: 0
-    };
-
-    feedbacks.forEach(feedback => {
-      const score = feedback.sentimentScore ? Number(feedback.sentimentScore) : 0;
-      if (score > 0.5) sentimentCounts.positive++;
-      else if (score < -0.5) sentimentCounts.negative++;
-      else sentimentCounts.neutral++;
-    });
-
-    const totalFeedbacks = feedbacks.length;
-    const sentimentDistribution = {
-      positive: totalFeedbacks ? sentimentCounts.positive / totalFeedbacks : 0,
-      neutral: totalFeedbacks ? sentimentCounts.neutral / totalFeedbacks : 0,
-      negative: totalFeedbacks ? sentimentCounts.negative / totalFeedbacks : 0
-    };
-
-    // Calculate category distribution
-    const categoryCounts: Record<string, number> = {};
-    feedbacks.forEach(feedback => {
-      if (feedback.categories && typeof feedback.categories === 'object') {
-        const categories = feedback.categories as Record<string, number>;
-        Object.entries(categories).forEach(([category, value]) => {
-          categoryCounts[category] = (categoryCounts[category] || 0) + value;
-        });
-      }
-    });
-
-    const categoryDistribution: Record<string, number> = {};
-    Object.entries(categoryCounts).forEach(([category, count]) => {
-      categoryDistribution[category] = totalFeedbacks ? count / totalFeedbacks : 0;
-    });
-
-    // Calculate recent activity metrics
-    const respondedFeedbacks = feedbacks.filter(f => f.creatorResponse);
-    const responseRate = totalFeedbacks ? respondedFeedbacks.length / totalFeedbacks : 0;
-
-    let totalResponseTime = 0;
-    let responseCount = 0;
-    respondedFeedbacks.forEach(feedback => {
-      if (feedback.responseDate) {
-        const responseTime = feedback.responseDate.getTime() - feedback.createdAt.getTime();
-        totalResponseTime += responseTime;
-        responseCount++;
-      }
-    });
-
-    const averageResponseTime = responseCount ? totalResponseTime / responseCount : 0;
-
     const summary: FeedbackSummary = {
-      totalFeedbacks,
-      averageRating: agent.rating,
-      sentimentDistribution,
-      categoryDistribution,
+      totalFeedbacks: feedbacks.length,
+      averageRating: 0,
+      sentimentDistribution: {
+        positive: 0,
+        neutral: 0,
+        negative: 0
+      },
+      categoryDistribution: {},
       recentActivity: {
-        lastFeedback: feedbacks[0]?.createdAt.toISOString() || '',
-        responseRate,
-        averageResponseTime
+        lastFeedback: '',
+        responseRate: 0,
+        averageResponseTime: 0
       }
     };
 
-    return NextResponse.json(summary);
+    if (feedbacks.length > 0) {
+      // Calculate average rating
+      summary.averageRating = feedbacks.reduce((sum, item) => sum + item.rating, 0) / feedbacks.length;
+
+      // Calculate sentiment distribution
+      feedbacks.forEach((item) => {
+        if (item.sentimentScore) {
+          const score = Number(item.sentimentScore);
+          if (score > 0.5) {
+            summary.sentimentDistribution.positive++;
+          } else if (score < -0.5) {
+            summary.sentimentDistribution.negative++;
+          } else {
+            summary.sentimentDistribution.neutral++;
+          }
+        }
+      });
+
+      // Calculate category distribution
+      feedbacks.forEach((item) => {
+        if (item.categories) {
+          const categories = item.categories as Record<string, number>;
+          Object.entries(categories).forEach(([category, value]) => {
+            summary.categoryDistribution[category] = (summary.categoryDistribution[category] || 0) + value;
+          });
+        }
+      });
+
+      // Calculate recent activity
+      const respondedFeedbacks = feedbacks.filter(f => f.response);
+      summary.recentActivity.lastFeedback = feedbacks[0].createdAt.toISOString();
+      summary.recentActivity.responseRate = (respondedFeedbacks.length / feedbacks.length) * 100;
+
+      if (respondedFeedbacks.length > 0) {
+        const totalResponseTime = respondedFeedbacks.reduce((sum, item) => {
+          if (item.responseDate) {
+            return sum + (new Date(item.responseDate).getTime() - new Date(item.createdAt).getTime());
+          }
+          return sum;
+        }, 0);
+        summary.recentActivity.averageResponseTime = totalResponseTime / respondedFeedbacks.length / (1000 * 60 * 60); // Convert to hours
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        summary: {
+          total: summary.totalFeedbacks,
+          averageRating: summary.averageRating,
+          sentiment: summary.sentimentDistribution,
+          categories: summary.categoryDistribution,
+          recentActivity: {
+            lastFeedbackDate: summary.recentActivity.lastFeedback,
+            responseRate: summary.recentActivity.responseRate,
+            averageResponseTime: summary.recentActivity.averageResponseTime
+          }
+        }
+      }
+    });
   } catch (error) {
     console.error('Error fetching feedback summary:', error);
     const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to fetch feedback summary');
     return NextResponse.json(
-      { error: errorResponse.message },
+      { success: false, error: errorResponse.message },
       { status: errorResponse.statusCode }
     );
   }

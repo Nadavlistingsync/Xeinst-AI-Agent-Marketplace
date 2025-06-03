@@ -6,13 +6,13 @@ declare module 'next-auth' {
     user: {
       id: string;
       role: string;
-      subscription_tier: 'free' | 'basic' | 'premium';
+      subscriptionTier: 'free' | 'basic' | 'premium';
     } & DefaultSession['user'];
   }
 
   interface User {
     role: string;
-    subscription_tier: 'free' | 'basic' | 'premium';
+    subscriptionTier: 'free' | 'basic' | 'premium';
   }
 }
 
@@ -20,6 +20,6 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string;
     role: string;
-    subscription_tier: string;
+    subscriptionTier: string;
   }
 } 

@@ -60,6 +60,7 @@ export async function logAgentEvent(
       level,
       message,
       metadata: metadata || {},
+      timestamp: new Date(),
     },
   });
 }
@@ -78,6 +79,8 @@ export async function updateAgentMetrics(
       agentId,
       ...data,
       lastUpdated: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
   });
 }
@@ -135,22 +138,22 @@ export async function getAgentMetrics(agentId: string, options: MonitoringOption
   }
 
   return {
-    totalRequests: metrics.reduce((sum, m) => sum + m.totalRequests, 0),
-    averageResponseTime: metrics.reduce((sum, m) => sum + m.averageResponseTime, 0) / metrics.length || 0,
-    errorRate: metrics.reduce((sum, m) => sum + m.errorRate, 0) / metrics.length || 0,
-    successRate: metrics.reduce((sum, m) => sum + m.successRate, 0) / metrics.length || 0,
-    activeUsers: metrics.reduce((sum, m) => sum + m.activeUsers, 0),
-    requestsPerMinute: metrics.reduce((sum, m) => sum + m.requestsPerMinute, 0) / metrics.length || 0,
-    averageTokensUsed: metrics.reduce((sum, m) => sum + m.averageTokensUsed, 0) / metrics.length || 0,
-    costPerRequest: metrics.reduce((sum, m) => sum + m.costPerRequest, 0) / metrics.length || 0,
-    totalCost: metrics.reduce((sum, m) => sum + m.totalCost, 0),
+    totalRequests: metrics.reduce((sum, m) => sum + (m.totalRequests || 0), 0),
+    averageResponseTime: metrics.reduce((sum, m) => sum + (m.averageResponseTime || 0), 0) / metrics.length || 0,
+    errorRate: metrics.reduce((sum, m) => sum + (m.errorRate || 0), 0) / metrics.length || 0,
+    successRate: metrics.reduce((sum, m) => sum + (m.successRate || 0), 0) / metrics.length || 0,
+    activeUsers: metrics.reduce((sum, m) => sum + (m.activeUsers || 0), 0),
+    requestsPerMinute: metrics.reduce((sum, m) => sum + (m.requestsPerMinute || 0), 0) / metrics.length || 0,
+    averageTokensUsed: metrics.reduce((sum, m) => sum + (m.averageTokensUsed || 0), 0) / metrics.length || 0,
+    costPerRequest: metrics.reduce((sum, m) => sum + (m.costPerRequest || 0), 0) / metrics.length || 0,
+    totalCost: metrics.reduce((sum, m) => sum + (m.totalCost || 0), 0),
   };
 }
 
-export async function getAgentAnalytics(deploymentId: string) {
+export async function getAgentAnalytics(agentId: string) {
   const [metrics, logs] = await Promise.all([
-    getAgentMetrics(deploymentId),
-    getAgentLogs(deploymentId),
+    getAgentMetrics(agentId),
+    getAgentLogs(agentId),
   ]);
 
   return {
@@ -167,30 +170,30 @@ export async function getAgentAnalytics(deploymentId: string) {
   };
 }
 
-export async function getAgentWarnings(deploymentId: string): Promise<AgentLog[]> {
+export async function getAgentWarnings(agentId: string): Promise<AgentLog[]> {
   return await prisma.agentLog.findMany({
     where: {
-      deploymentId,
+      agentId,
       level: 'warning',
     },
     orderBy: { timestamp: 'desc' },
   });
 }
 
-export async function getAgentErrors(deploymentId: string): Promise<AgentLog[]> {
+export async function getAgentErrors(agentId: string): Promise<AgentLog[]> {
   return await prisma.agentLog.findMany({
     where: {
-      deploymentId,
+      agentId,
       level: 'error',
     },
     orderBy: { timestamp: 'desc' },
   });
 }
 
-export async function getAgentInfo(deploymentId: string): Promise<AgentLog[]> {
+export async function getAgentInfo(agentId: string): Promise<AgentLog[]> {
   return await prisma.agentLog.findMany({
     where: {
-      deploymentId,
+      agentId,
       level: 'info',
     },
     orderBy: { timestamp: 'desc' },
@@ -233,85 +236,76 @@ export async function getAgentPerformanceMetrics(agentId: string) {
   }
 
   return {
-    totalRequests: metrics.totalRequests,
-    averageResponseTime: metrics.averageResponseTime,
-    errorRate: metrics.errorRate,
-    successRate: metrics.successRate,
-    activeUsers: metrics.activeUsers,
-    requestsPerMinute: metrics.requestsPerMinute,
-    averageTokensUsed: metrics.averageTokensUsed,
-    costPerRequest: metrics.costPerRequest,
-    totalCost: metrics.totalCost,
+    totalRequests: metrics.totalRequests || 0,
+    averageResponseTime: metrics.averageResponseTime || 0,
+    errorRate: metrics.errorRate || 0,
+    successRate: metrics.successRate || 0,
+    activeUsers: metrics.activeUsers || 0,
+    requestsPerMinute: metrics.requestsPerMinute || 0,
+    averageTokensUsed: metrics.averageTokensUsed || 0,
+    costPerRequest: metrics.costPerRequest || 0,
+    totalCost: metrics.totalCost || 0,
   };
 }
 
-export async function getAgentUsageStats(deploymentId: string): Promise<{
+export async function getAgentUsageStats(agentId: string): Promise<{
   totalRequests: number;
   activeUsers: number;
   averageResponseTime: number;
+  errorRate: number;
+  successRate: number;
 }> {
-  const metrics = await getAgentMetrics(deploymentId);
-  if (!metrics) {
-    return {
-      totalRequests: 0,
-      activeUsers: 0,
-      averageResponseTime: 0,
-    };
-  }
-
+  const metrics = await getAgentPerformanceMetrics(agentId);
+  
   return {
     totalRequests: metrics.totalRequests,
     activeUsers: metrics.activeUsers,
     averageResponseTime: metrics.averageResponseTime,
+    errorRate: metrics.errorRate,
+    successRate: metrics.successRate,
   };
 }
 
 export async function getAgentHealth(agentId: string) {
-  const metrics = await getAgentMetrics(agentId);
-  const recentLogs = await getAgentLogs(agentId);
+  const metrics = await getAgentPerformanceMetrics(agentId);
+  const errors = await getAgentErrors(agentId);
+  const warnings = await getAgentWarnings(agentId);
 
-  const errorRate = metrics?.errorRate || 0;
-  const responseTime = metrics?.averageResponseTime || 0;
-  const successRate = metrics?.successRate || 0;
-
-  let health = 'healthy';
-  let issues: string[] = [];
-
-  if (errorRate > 0.1) {
-    health = 'unhealthy';
-    issues.push('High error rate');
-  }
-
-  if (responseTime > 5000) {
-    health = 'degraded';
-    issues.push('Slow response time');
-  }
-
-  if (successRate < 0.9) {
-    health = 'degraded';
-    issues.push('Low success rate');
-  }
-
-  const recentErrors = recentLogs.filter(log => log.level === 'error');
-  if (recentErrors.length > 0) {
-    issues.push(`Recent errors: ${recentErrors.length}`);
-  }
-
-  return {
-    status: health,
-    issues,
+  const health = {
+    status: 'healthy' as const,
+    issues: [] as string[],
     metrics: {
-      errorRate,
-      responseTime,
-      successRate,
-      totalRequests: metrics?.totalRequests || 0,
-      activeUsers: metrics?.activeUsers || 0
-    }
+      errorRate: metrics.errorRate,
+      responseTime: metrics.averageResponseTime,
+      successRate: metrics.successRate,
+      totalRequests: metrics.totalRequests,
+      activeUsers: metrics.activeUsers,
+    },
   };
+
+  if (metrics.errorRate > 0.1) {
+    health.status = 'unhealthy';
+    health.issues.push('High error rate detected');
+  }
+
+  if (metrics.averageResponseTime > 1000) {
+    health.status = 'degraded';
+    health.issues.push('Slow response time');
+  }
+
+  if (errors.length > 0) {
+    health.issues.push(`${errors.length} errors in the last period`);
+  }
+
+  if (warnings.length > 0) {
+    health.issues.push(`${warnings.length} warnings in the last period`);
+  }
+
+  return health;
 }
 
 export async function getAgentDeploymentHistory(agentId: string): Promise<any[]> {
-  const deploymentHistory = await prisma.agentLog.findMany({
+  return await prisma.deployment.findMany({
     where: and(
       eq(agentLogs.agentId, agentId),
       eq(agentLogs.level, 'info'),
@@ -319,26 +313,23 @@ export async function getAgentDeploymentHistory(agentId: string): Promise<any[]>
     ),
     orderBy: [desc(agentLogs.timestamp)]
   });
-
-  return deploymentHistory;
 }
 
 export async function submitAgentFeedback(
   agentId: string,
-  user_id: string,
+  userId: string,
   rating: number,
   comment: string | null = null
 ): Promise<void> {
   await prisma.agentFeedback.create({
     data: {
-      id: uuidv4(),
       agentId,
-      user_id,
+      userId,
       rating,
       comment,
-      created_at: new Date(),
-      updated_at: new Date()
-    }
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
   });
 }
 
@@ -352,67 +343,50 @@ export async function getAgentFeedbacks(
 ): Promise<AgentFeedback[]> {
   const where: Prisma.AgentFeedbackWhereInput = { agentId };
 
-  if (options.startDate) where.created_at = { gte: options.startDate };
-  if (options.endDate) where.created_at = { lte: options.endDate };
+  if (options.startDate) {
+    where.createdAt = { gte: options.startDate };
+  }
+  if (options.endDate) {
+    where.createdAt = { lte: options.endDate };
+  }
 
   return await prisma.agentFeedback.findMany({
     where,
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }
 
 export async function getAgentFeedbackStats(agentId: string) {
-  const feedbacks = await prisma.agentFeedback.findMany({
-    where: { agentId },
-    orderBy: { created_at: 'desc' },
-  });
-
-  const stats = {
-    totalFeedbacks: feedbacks.length,
-    average_rating: 0,
-    sentimentDistribution: {
-      positive: 0,
-      neutral: 0,
-      negative: 0,
-    },
-    categoryDistribution: {} as Record<string, number>,
-  };
-
+  const feedbacks = await getAgentFeedbacks(agentId);
+  
   if (feedbacks.length === 0) {
-    return stats;
+    return {
+      averageRating: 0,
+      totalFeedbacks: 0,
+      ratingDistribution: {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0,
+        5: 0,
+      },
+    };
   }
 
-  let totalRating = 0;
-  let totalSentiment = 0;
+  const ratingDistribution = feedbacks.reduce((acc, feedback) => {
+    const rating = Math.round(feedback.rating);
+    acc[rating] = (acc[rating] || 0) + 1;
+    return acc;
+  }, {} as Record<number, number>);
 
-  feedbacks.forEach(feedback => {
-    totalRating += feedback.rating;
-    totalSentiment += feedback.sentimentScore ? Number(feedback.sentimentScore) : 0;
+  const averageRating = feedbacks.reduce((sum, feedback) => sum + feedback.rating, 0) / feedbacks.length;
 
-    if (feedback.sentimentScore) {
-      if (Number(feedback.sentimentScore) > 0.5) {
-        stats.sentimentDistribution.positive++;
-      } else if (Number(feedback.sentimentScore) < -0.5) {
-        stats.sentimentDistribution.negative++;
-      } else {
-        stats.sentimentDistribution.neutral++;
-      }
-    }
-
-    if (feedback.categories) {
-      feedback.categories.forEach(category => {
-        stats.categoryDistribution[category] = (stats.categoryDistribution[category] || 0) + 1;
-      });
-    }
-  });
-
-  stats.average_rating = totalRating / feedbacks.length;
-  stats.sentimentDistribution.positive = (stats.sentimentDistribution.positive / feedbacks.length) * 100;
-  stats.sentimentDistribution.neutral = (stats.sentimentDistribution.neutral / feedbacks.length) * 100;
-  stats.sentimentDistribution.negative = (stats.sentimentDistribution.negative / feedbacks.length) * 100;
-
-  return stats;
+  return {
+    averageRating,
+    totalFeedbacks: feedbacks.length,
+    ratingDistribution,
+  };
 }
 
 export async function getAgentDeployments(agentId: string): Promise<any[]> {
@@ -428,258 +402,305 @@ export async function getAgentDeployments(agentId: string): Promise<any[]> {
 
 export async function createAgentFeedback(data: {
   agentId: string;
-  user_id: string;
+  userId: string;
   rating: number;
   comment?: string;
 }): Promise<AgentFeedback> {
   return await prisma.agentFeedback.create({
     data: {
-      agentId: data.agentId,
-      user_id: data.user_id,
-      rating: data.rating,
-      comment: data.comment,
-      created_at: new Date(),
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
   });
 }
 
 export async function analyzeAgentPerformance(agentId: string) {
-  const [metrics, logs, feedback] = await Promise.all([
-    getAgentMetrics(agentId),
+  const [metrics, feedbacks, logs] = await Promise.all([
+    getAgentPerformanceMetrics(agentId),
+    getAgentFeedbacks(agentId),
     getAgentLogs(agentId),
-    getAgentFeedback(agentId),
   ]);
 
-  if (!metrics) {
-    return null;
+  const performance = {
+    metrics,
+    feedback: {
+      averageRating: 0,
+      totalFeedbacks: feedbacks.length,
+      sentimentScore: 0,
+    },
+    logs: {
+      totalLogs: logs.length,
+      errorCount: logs.filter(log => log.level === 'error').length,
+      warningCount: logs.filter(log => log.level === 'warning').length,
+    },
+    recommendations: [] as string[],
+  };
+
+  if (feedbacks.length > 0) {
+    performance.feedback.averageRating = feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length;
   }
 
-  const totalFeedbacks = feedback.length;
-  const average_rating = feedback.reduce((sum, f) => sum + f.rating, 0) / totalFeedbacks || 0;
+  // Add recommendations based on metrics
+  if (metrics.errorRate > 0.1) {
+    performance.recommendations.push('High error rate detected. Consider reviewing error logs and improving error handling.');
+  }
 
-  const categoryDistribution: Record<string, number> = {};
-  feedback.forEach((f) => {
-    if (f.categories) {
-      const categories = Array.isArray(f.categories) ? f.categories : [f.categories];
-      categories.forEach((category) => {
-        categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
-      });
-    }
-  });
+  if (metrics.averageResponseTime > 1000) {
+    performance.recommendations.push('Slow response time detected. Consider optimizing performance.');
+  }
 
-  const responseRate = feedback.filter((f) => f.creatorResponse).length / totalFeedbacks || 0;
-  const averageResponseTime = feedback.reduce((sum, f) => {
-    if (f.creatorResponse && f.responseDate) {
-      return sum + (f.responseDate.getTime() - f.created_at.getTime());
-    }
-    return sum;
-  }, 0) / feedback.filter((f) => f.creatorResponse && f.responseDate).length || 0;
+  if (performance.feedback.averageRating < 3) {
+    performance.recommendations.push('Low user satisfaction. Consider gathering more feedback to identify issues.');
+  }
 
-  return {
-    metrics,
-    logs,
-    feedback: {
-      totalFeedbacks,
-      average_rating,
-      categoryDistribution,
-      responseRate,
-      averageResponseTime,
-    },
-  };
+  return performance;
 }
 
 export async function monitorAgentHealth(agentId: string) {
-  const [metrics, logs] = await Promise.all([
-    getAgentMetrics(agentId),
-    getAgentLogs(agentId, { level: "error" }),
+  const [metrics, logs, feedbacks] = await Promise.all([
+    getAgentPerformanceMetrics(agentId),
+    getAgentLogs(agentId),
+    getAgentFeedbacks(agentId),
   ]);
 
-  if (!metrics) {
-    return null;
-  }
-
-  const healthStatus = {
-    isHealthy: true,
+  const health = {
+    status: 'healthy' as const,
     issues: [] as string[],
+    metrics: {
+      errorRate: metrics.errorRate,
+      responseTime: metrics.averageResponseTime,
+      successRate: metrics.successRate,
+      totalRequests: metrics.totalRequests,
+      activeUsers: metrics.activeUsers,
+    },
   };
 
+  // Check error rate
   if (metrics.errorRate > 0.1) {
-    healthStatus.isHealthy = false;
-    healthStatus.issues.push("High error rate detected");
+    health.status = 'unhealthy';
+    health.issues.push('High error rate detected');
   }
 
-  if (metrics.averageResponseTime > 5000) {
-    healthStatus.isHealthy = false;
-    healthStatus.issues.push("Slow response time detected");
+  // Check response time
+  if (metrics.averageResponseTime > 1000) {
+    health.status = 'degraded';
+    health.issues.push('Slow response time');
   }
 
-  if (metrics.successRate < 0.9) {
-    healthStatus.isHealthy = false;
-    healthStatus.issues.push("Low success rate detected");
+  // Check recent errors
+  const recentErrors = logs.filter(log => 
+    log.level === 'error' && 
+    log.timestamp > new Date(Date.now() - 24 * 60 * 60 * 1000)
+  );
+  if (recentErrors.length > 0) {
+    health.issues.push(`${recentErrors.length} errors in the last 24 hours`);
   }
 
-  if (logs.length > 0) {
-    healthStatus.isHealthy = false;
-    healthStatus.issues.push(`${logs.length} error logs found`);
+  // Check user satisfaction
+  if (feedbacks.length > 0) {
+    const averageRating = feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length;
+    if (averageRating < 3) {
+      health.issues.push('Low user satisfaction');
+    }
   }
 
-  return healthStatus;
+  return health;
 }
 
 export async function getAgentDeploymentStatus(agentId: string) {
-  const deployment = await prisma.deployment.findUnique({
-    where: { id: agentId },
-    include: { metrics: true },
+  const deployment = await prisma.deployment.findFirst({
+    where: { agentId },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  if (!deployment) {
+    return {
+      status: 'not_deployed' as const,
+      lastDeployed: null,
+      version: null,
+    };
+  }
+
+  return {
+    status: deployment.status as 'active' | 'inactive' | 'failed',
+    lastDeployed: deployment.createdAt,
+    version: deployment.version,
+  };
+}
+
+export async function getAgentDeploymentMetrics(agentId: string) {
+  const deployment = await prisma.deployment.findFirst({
+    where: { agentId },
+    orderBy: { createdAt: 'desc' },
   });
 
   if (!deployment) {
     return null;
   }
 
+  const metrics = await getAgentPerformanceMetrics(agentId);
+
   return {
+    deploymentId: deployment.id,
     status: deployment.status,
-    metrics: deployment.metrics,
-  };
-}
-
-export async function getAgentDeploymentMetrics(agentId: string) {
-  const metrics = await prisma.agentMetrics.findMany({
-    where: { agentId },
-    orderBy: { created_at: "desc" },
-  });
-
-  if (metrics.length === 0) {
-    return null;
-  }
-
-  return {
-    totalRequests: metrics.reduce((sum, m) => sum + m.totalRequests, 0),
-    averageResponseTime: metrics.reduce((sum, m) => sum + m.averageResponseTime, 0) / metrics.length || 0,
-    errorRate: metrics.reduce((sum, m) => sum + m.errorRate, 0) / metrics.length || 0,
-    successRate: metrics.reduce((sum, m) => sum + m.successRate, 0) / metrics.length || 0,
-    activeUsers: metrics.reduce((sum, m) => sum + m.activeUsers, 0),
-    requestsPerMinute: metrics.reduce((sum, m) => sum + m.requestsPerMinute, 0) / metrics.length || 0,
-    averageTokensUsed: metrics.reduce((sum, m) => sum + m.averageTokensUsed, 0) / metrics.length || 0,
-    costPerRequest: metrics.reduce((sum, m) => sum + m.costPerRequest, 0) / metrics.length || 0,
-    totalCost: metrics.reduce((sum, m) => sum + m.totalCost, 0),
+    metrics,
+    lastUpdated: new Date(),
   };
 }
 
 export async function getAgentDeploymentLogs(agentId: string) {
-  return await prisma.agentLog.findMany({
-    where: { agentId },
-    orderBy: { timestamp: "desc" },
-  });
+  return await getAgentLogs(agentId);
 }
 
 export async function getAgentDeploymentFeedback(agentId: string) {
-  return await prisma.agentFeedback.findMany({
-    where: { agentId },
-    orderBy: { created_at: "desc" },
-  });
+  return await getAgentFeedback(agentId);
 }
 
 export async function analyzeAgentDeployment(agentId: string) {
-  const [metrics, logs, feedback] = await Promise.all([
-    getAgentDeploymentMetrics(agentId),
-    getAgentDeploymentLogs(agentId),
-    getAgentDeploymentFeedback(agentId),
+  const [deployment, metrics, feedbacks, logs] = await Promise.all([
+    prisma.deployment.findFirst({
+      where: { agentId },
+      orderBy: { createdAt: 'desc' },
+    }),
+    getAgentPerformanceMetrics(agentId),
+    getAgentFeedbacks(agentId),
+    getAgentLogs(agentId),
   ]);
 
-  if (!metrics) {
+  if (!deployment) {
     return null;
   }
 
-  const totalFeedbacks = feedback.length;
-  const average_rating = feedback.reduce((sum, f) => sum + f.rating, 0) / totalFeedbacks || 0;
-
-  const categoryDistribution: Record<string, number> = {};
-  feedback.forEach((f) => {
-    if (f.categories) {
-      const categories = Array.isArray(f.categories) ? f.categories : [f.categories];
-      categories.forEach((category) => {
-        categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
-      });
-    }
-  });
-
-  const responseRate = feedback.filter((f) => f.creatorResponse).length / totalFeedbacks || 0;
-  const averageResponseTime = feedback.reduce((sum, f) => {
-    if (f.creatorResponse && f.responseDate) {
-      return sum + (f.responseDate.getTime() - f.created_at.getTime());
-    }
-    return sum;
-  }, 0) / feedback.filter((f) => f.creatorResponse && f.responseDate).length || 0;
-
-  return {
+  const analysis = {
+    deploymentId: deployment.id,
+    status: deployment.status,
     metrics,
-    logs,
     feedback: {
-      totalFeedbacks,
-      average_rating,
-      categoryDistribution,
-      responseRate,
-      averageResponseTime,
+      averageRating: 0,
+      totalFeedbacks: feedbacks.length,
+      sentimentScore: 0,
     },
+    logs: {
+      totalLogs: logs.length,
+      errorCount: logs.filter(log => log.level === 'error').length,
+      warningCount: logs.filter(log => log.level === 'warning').length,
+    },
+    recommendations: [] as string[],
   };
+
+  if (feedbacks.length > 0) {
+    analysis.feedback.averageRating = feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length;
+  }
+
+  // Add recommendations based on metrics
+  if (metrics.errorRate > 0.1) {
+    analysis.recommendations.push('High error rate detected. Consider reviewing error logs and improving error handling.');
+  }
+
+  if (metrics.averageResponseTime > 1000) {
+    analysis.recommendations.push('Slow response time detected. Consider optimizing performance.');
+  }
+
+  if (analysis.feedback.averageRating < 3) {
+    analysis.recommendations.push('Low user satisfaction. Consider gathering more feedback to identify issues.');
+  }
+
+  return analysis;
 }
 
 export async function monitorAgentDeployment(agentId: string) {
-  const [metrics, logs] = await Promise.all([
-    getAgentDeploymentMetrics(agentId),
-    getAgentDeploymentLogs(agentId, { level: "error" }),
+  const [deployment, metrics, logs, feedbacks] = await Promise.all([
+    prisma.deployment.findFirst({
+      where: { agentId },
+      orderBy: { createdAt: 'desc' },
+    }),
+    getAgentPerformanceMetrics(agentId),
+    getAgentLogs(agentId),
+    getAgentFeedbacks(agentId),
   ]);
 
-  if (!metrics) {
+  if (!deployment) {
     return null;
   }
 
-  const healthStatus = {
-    isHealthy: true,
-    issues: [] as string[],
+  const health = {
+    deploymentId: deployment.id,
+    status: deployment.status,
+    health: {
+      status: 'healthy' as const,
+      issues: [] as string[],
+      metrics: {
+        errorRate: metrics.errorRate,
+        responseTime: metrics.averageResponseTime,
+        successRate: metrics.successRate,
+        totalRequests: metrics.totalRequests,
+        activeUsers: metrics.activeUsers,
+      },
+    },
   };
 
+  // Check error rate
   if (metrics.errorRate > 0.1) {
-    healthStatus.isHealthy = false;
-    healthStatus.issues.push("High error rate detected");
+    health.health.status = 'unhealthy';
+    health.health.issues.push('High error rate detected');
   }
 
-  if (metrics.averageResponseTime > 5000) {
-    healthStatus.isHealthy = false;
-    healthStatus.issues.push("Slow response time detected");
+  // Check response time
+  if (metrics.averageResponseTime > 1000) {
+    health.health.status = 'degraded';
+    health.health.issues.push('Slow response time');
   }
 
-  if (metrics.successRate < 0.9) {
-    healthStatus.isHealthy = false;
-    healthStatus.issues.push("Low success rate detected");
+  // Check recent errors
+  const recentErrors = logs.filter(log => 
+    log.level === 'error' && 
+    log.timestamp > new Date(Date.now() - 24 * 60 * 60 * 1000)
+  );
+  if (recentErrors.length > 0) {
+    health.health.issues.push(`${recentErrors.length} errors in the last 24 hours`);
   }
 
-  if (logs.length > 0) {
-    healthStatus.isHealthy = false;
-    healthStatus.issues.push(`${logs.length} error logs found`);
+  // Check user satisfaction
+  if (feedbacks.length > 0) {
+    const averageRating = feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length;
+    if (averageRating < 3) {
+      health.health.issues.push('Low user satisfaction');
+    }
   }
 
-  return healthStatus;
+  return health;
 }
 
 export async function updateAgentDeploymentMetrics(agentId: string, metrics: Partial<AgentMetrics>) {
   return await prisma.agentMetrics.upsert({
     where: { agentId },
+    update: {
+      ...metrics,
+      lastUpdated: new Date(),
+    },
     create: {
       agentId,
       ...metrics,
+      lastUpdated: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
-    update: metrics,
   });
 }
 
-export async function createAgentDeploymentLog(agentId: string, level: string, message: string, metadata?: any) {
+export async function createAgentDeploymentLog(
+  agentId: string,
+  level: string,
+  message: string,
+  metadata?: any
+) {
   return await prisma.agentLog.create({
     data: {
       agentId,
-      level,
+      level: level as 'info' | 'warning' | 'error',
       message,
-      metadata,
+      metadata: metadata || {},
       timestamp: new Date(),
     },
   });
@@ -687,7 +708,7 @@ export async function createAgentDeploymentLog(agentId: string, level: string, m
 
 export async function createAgentDeploymentFeedback(data: {
   agentId: string;
-  user_id: string;
+  userId: string;
   rating: number;
   comment?: string;
   categories?: string[];
@@ -695,7 +716,8 @@ export async function createAgentDeploymentFeedback(data: {
   return await prisma.agentFeedback.create({
     data: {
       ...data,
-      created_at: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
     },
   });
 }
@@ -704,53 +726,41 @@ export async function respondToAgentDeploymentFeedback(feedbackId: string, respo
   return await prisma.agentFeedback.update({
     where: { id: feedbackId },
     data: {
-      creatorResponse: response,
-      responseDate: new Date(),
+      response,
+      updatedAt: new Date(),
     },
   });
 }
 
 export async function getAgentDeploymentAnalytics(agentId: string) {
-  const [metrics, logs, feedback] = await Promise.all([
-    getAgentDeploymentMetrics(agentId),
-    getAgentDeploymentLogs(agentId),
-    getAgentDeploymentFeedback(agentId),
+  const [deployment, metrics, feedbacks, logs] = await Promise.all([
+    prisma.deployment.findFirst({
+      where: { agentId },
+      orderBy: { createdAt: 'desc' },
+    }),
+    getAgentPerformanceMetrics(agentId),
+    getAgentFeedbacks(agentId),
+    getAgentLogs(agentId),
   ]);
 
-  if (!metrics) {
+  if (!deployment) {
     return null;
   }
 
-  const totalFeedbacks = feedback.length;
-  const average_rating = feedback.reduce((sum, f) => sum + f.rating, 0) / totalFeedbacks || 0;
-
-  const categoryDistribution: Record<string, number> = {};
-  feedback.forEach((f) => {
-    if (f.categories) {
-      const categories = Array.isArray(f.categories) ? f.categories : [f.categories];
-      categories.forEach((category) => {
-        categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
-      });
-    }
-  });
-
-  const responseRate = feedback.filter((f) => f.creatorResponse).length / totalFeedbacks || 0;
-  const averageResponseTime = feedback.reduce((sum, f) => {
-    if (f.creatorResponse && f.responseDate) {
-      return sum + (f.responseDate.getTime() - f.created_at.getTime());
-    }
-    return sum;
-  }, 0) / feedback.filter((f) => f.creatorResponse && f.responseDate).length || 0;
-
   return {
+    deploymentId: deployment.id,
+    status: deployment.status,
     metrics,
-    logs,
     feedback: {
-      totalFeedbacks,
-      average_rating,
-      categoryDistribution,
-      responseRate,
-      averageResponseTime,
+      averageRating: feedbacks.length > 0
+        ? feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length
+        : 0,
+      totalFeedbacks: feedbacks.length,
+    },
+    logs: {
+      totalLogs: logs.length,
+      errorCount: logs.filter(log => log.level === 'error').length,
+      warningCount: logs.filter(log => log.level === 'warning').length,
     },
   };
 } 

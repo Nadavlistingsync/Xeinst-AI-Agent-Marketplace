@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { type FeedbackApiResponse } from '@/types/feedback';
 
 const feedbackSchema = z.object({
   rating: z.number().min(1).max(5),
@@ -16,12 +17,12 @@ const feedbackSchema = z.object({
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse<FeedbackApiResponse>> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
@@ -31,21 +32,20 @@ export async function GET(
       select: {
         id: true,
         name: true,
-        createdBy: true,
-        isPublic: true
+        createdBy: true
       }
     });
 
     if (!agent) {
       return NextResponse.json(
-        { error: 'Agent not found' },
+        { success: false, error: 'Agent not found' },
         { status: 404 }
       );
     }
 
-    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+    if (agent.createdBy !== session.user.id) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 403 }
       );
     }
@@ -65,12 +65,29 @@ export async function GET(
       orderBy: { createdAt: 'desc' }
     });
 
-    return NextResponse.json(feedbacks);
+    return NextResponse.json({ 
+      success: true, 
+      feedback: feedbacks.map(f => ({
+        id: f.id,
+        agentId: f.agentId,
+        userId: f.userId,
+        rating: f.rating,
+        comment: f.comment,
+        sentimentScore: f.sentimentScore ? Number(f.sentimentScore) : null,
+        categories: f.categories as Record<string, number> | null,
+        metadata: {},
+        response: f.creatorResponse,
+        responseDate: f.responseDate,
+        createdAt: f.createdAt,
+        updatedAt: f.updatedAt,
+        user: f.user
+      }))
+    });
   } catch (error) {
     console.error('Error fetching feedback:', error);
     const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to fetch feedback');
     return NextResponse.json(
-      { error: errorResponse.message },
+      { success: false, error: errorResponse.message },
       { status: errorResponse.statusCode }
     );
   }
@@ -79,12 +96,12 @@ export async function GET(
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse<FeedbackApiResponse>> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
@@ -94,21 +111,20 @@ export async function POST(
       select: {
         id: true,
         name: true,
-        createdBy: true,
-        isPublic: true
+        createdBy: true
       }
     });
 
     if (!agent) {
       return NextResponse.json(
-        { error: 'Agent not found' },
+        { success: false, error: 'Agent not found' },
         { status: 404 }
       );
     }
 
-    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+    if (agent.createdBy !== session.user.id) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 403 }
       );
     }
@@ -139,37 +155,29 @@ export async function POST(
       }
     });
 
-    // Create notification for agent creator
-    if (agent.createdBy !== session.user.id) {
-      await prisma.notification.create({
-        data: {
-          userId: agent.createdBy,
-          type: 'FEEDBACK_RECEIVED',
-          title: 'New Feedback Received',
-          message: `You received new feedback for your agent "${agent.name}"`,
-          metadata: {
-            agentId: agent.id,
-            feedbackId: feedback.id
-          },
-          read: false,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        }
-      });
-    }
-
-    return NextResponse.json(feedback);
+    return NextResponse.json({ 
+      success: true, 
+      feedback: {
+        id: feedback.id,
+        agentId: feedback.agentId,
+        userId: feedback.userId,
+        rating: feedback.rating,
+        comment: feedback.comment,
+        sentimentScore: feedback.sentimentScore ? Number(feedback.sentimentScore) : null,
+        categories: feedback.categories as Record<string, number> | null,
+        metadata: {},
+        response: feedback.creatorResponse,
+        responseDate: feedback.responseDate,
+        createdAt: feedback.createdAt,
+        updatedAt: feedback.updatedAt,
+        user: feedback.user
+      }
+    });
   } catch (error) {
     console.error('Error creating feedback:', error);
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation error', details: error.errors },
-        { status: 400 }
-      );
-    }
     const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to create feedback');
     return NextResponse.json(
-      { error: errorResponse.message },
+      { success: false, error: errorResponse.message },
       { status: errorResponse.statusCode }
     );
   }
@@ -178,11 +186,14 @@ export async function POST(
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse<FeedbackApiResponse>> {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session?.user) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -190,7 +201,7 @@ export async function DELETE(
 
     if (!feedbackId) {
       return NextResponse.json(
-        { error: 'Feedback ID is required' },
+        { success: false, error: 'Feedback ID is required' },
         { status: 400 }
       );
     }
@@ -204,12 +215,15 @@ export async function DELETE(
     });
 
     if (!feedback) {
-      return NextResponse.json({ error: 'Feedback not found' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Feedback not found' },
+        { status: 404 }
+      );
     }
 
     if (feedback.agentId !== params.id) {
       return NextResponse.json(
-        { error: 'Feedback does not belong to this agent' },
+        { success: false, error: 'Feedback does not belong to this agent' },
         { status: 400 }
       );
     }
@@ -222,12 +236,15 @@ export async function DELETE(
     });
 
     if (!agent) {
-      return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Agent not found' },
+        { status: 404 }
+      );
     }
 
     if (agent.createdBy !== session.user.id) {
       return NextResponse.json(
-        { error: 'Not authorized to delete feedback for this agent' },
+        { success: false, error: 'Not authorized to delete feedback for this agent' },
         { status: 403 }
       );
     }
@@ -236,12 +253,13 @@ export async function DELETE(
       where: { id: feedbackId },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, feedback: null });
   } catch (error) {
     console.error('Error deleting feedback:', error);
+    const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to delete feedback');
     return NextResponse.json(
-      { error: 'Failed to delete feedback' },
-      { status: 500 }
+      { success: false, error: errorResponse.message },
+      { status: errorResponse.statusCode }
     );
   }
 } 

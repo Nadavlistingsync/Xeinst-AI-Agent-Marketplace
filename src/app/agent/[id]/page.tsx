@@ -54,10 +54,10 @@ export default async function Page({ params }: AgentPageProps) {
 
   // Check if user has access to the agent
   if (
-    agent.deployed_by !== session.user.id &&
-    agent.access_level !== 'public' &&
-    ((agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') ||
-     (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic'))
+    agent.deployedBy !== session.user.id &&
+    agent.accessLevel !== 'public' &&
+    ((agent.accessLevel === 'premium' && session.user.subscriptionTier !== 'premium') ||
+     (agent.accessLevel === 'basic' && session.user.subscriptionTier !== 'basic'))
   ) {
     redirect('/403');
   }
@@ -66,7 +66,7 @@ export default async function Page({ params }: AgentPageProps) {
     <div className="container mx-auto py-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <AgentPage agentId={params.id} />
-        {agent.deployed_by === session.user.id && (
+        {agent.deployedBy === session.user.id && (
           <MonitoringDashboard agentId={params.id} />
         )}
       </div>

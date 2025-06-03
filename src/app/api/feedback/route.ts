@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createErrorResponse } from '@/lib/api';
 import { feedbackSchema, type FeedbackInput, type FeedbackApiResponse } from '@/types/feedback';
-import { type Feedback } from '@/types/database';
 import { z } from 'zod';
 
 export async function POST(request: Request): Promise<NextResponse<FeedbackApiResponse>> {
@@ -16,7 +15,7 @@ export async function POST(request: Request): Promise<NextResponse<FeedbackApiRe
     const rating = validatedData.type === 'error' ? 1 : validatedData.type === 'warning' ? 2 : 5;
     
     // Store feedback in database using Prisma
-    const feedback = await prisma.feedback.create({
+    const feedback = await prisma.agentFeedback.create({
       data: {
         agentId: validatedData.agentId || 'system',
         userId: validatedData.userId || 'system',
@@ -26,24 +25,41 @@ export async function POST(request: Request): Promise<NextResponse<FeedbackApiRe
         createdAt: new Date(),
         updatedAt: new Date(),
       },
-      select: {
-        id: true,
-        agentId: true,
-        userId: true,
-        rating: true,
-        comment: true,
-        metadata: true,
-        createdAt: true,
-        updatedAt: true,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true
+          },
+        },
       },
-    }) as Feedback;
+    });
 
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
       console.log('Feedback received:', feedback);
     }
 
-    return NextResponse.json({ success: true, feedback });
+    return NextResponse.json({ 
+      success: true, 
+      feedback: {
+        id: feedback.id,
+        agentId: feedback.agentId,
+        userId: feedback.userId,
+        rating: feedback.rating,
+        comment: feedback.comment,
+        sentimentScore: feedback.sentimentScore,
+        categories: feedback.categories,
+        metadata: feedback.metadata,
+        createdAt: feedback.createdAt,
+        updatedAt: feedback.updatedAt,
+        response: feedback.response,
+        responseDate: feedback.responseDate,
+        user: feedback.user,
+      }
+    });
   } catch (error) {
     console.error('Error processing feedback:', error);
     

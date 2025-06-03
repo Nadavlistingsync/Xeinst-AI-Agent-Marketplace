@@ -15,23 +15,13 @@ export async function GET() {
 
     const [
       totalAgents,
-      publicAgents,
-      privateAgents,
       totalDeployments,
       activeDeployments,
-      totalDownloads,
       averageRating,
     ] = await Promise.all([
       prisma.deployment.count(),
-      prisma.deployment.count({ where: { isPublic: true } }),
-      prisma.deployment.count({ where: { isPublic: false } }),
       prisma.deployment.count(),
       prisma.deployment.count({ where: { status: 'active' } }),
-      prisma.deployment.aggregate({
-        _sum: {
-          downloadCount: true,
-        },
-      }),
       prisma.deployment.aggregate({
         _avg: {
           rating: true,
@@ -41,11 +31,8 @@ export async function GET() {
 
     return NextResponse.json({
       totalAgents,
-      publicAgents,
-      privateAgents,
       totalDeployments,
       activeDeployments,
-      totalDownloads: totalDownloads._sum.downloadCount || 0,
       averageRating: averageRating._avg.rating || 0,
     });
   } catch (error) {

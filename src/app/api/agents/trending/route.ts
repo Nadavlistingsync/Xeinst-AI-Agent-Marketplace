@@ -2,19 +2,20 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
-const ProductSchema = z.object({
+const DeploymentSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  tag: z.string(),
-  price: z.number().nullable(),
-  imageUrl: z.string().nullable(),
+  status: z.string(),
+  framework: z.string(),
+  version: z.string(),
   rating: z.number(),
   totalRatings: z.number(),
-  downloadCount: z.number(),
-  isPublic: z.boolean(),
-  isFeatured: z.boolean(),
   createdAt: z.date(),
+  updatedAt: z.date(),
+  createdBy: z.string(),
+  deployedBy: z.string().nullable(),
+  requirements: z.array(z.string()),
 });
 
 export async function GET() {
@@ -24,7 +25,7 @@ export async function GET() {
         status: 'active',
       },
       orderBy: {
-        downloadCount: 'desc',
+        rating: 'desc',
       },
       take: 10,
     });
@@ -32,7 +33,7 @@ export async function GET() {
     // Validate the response data
     const validatedAgents = agents.map(agent => {
       try {
-        return ProductSchema.parse(agent);
+        return DeploymentSchema.parse(agent);
       } catch (error) {
         console.error('Validation error for agent:', error);
         return null;

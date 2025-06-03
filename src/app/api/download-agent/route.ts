@@ -31,16 +31,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Read file from local storage
-    const filePath = join(process.cwd(), 'public', agent.fileUrl!);
-    const fileBuffer = await readFile(filePath);
-
-    // Return file as download
-    return new NextResponse(fileBuffer, {
-      headers: {
-        'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${agent.name}"`,
-      },
+    // TODO: Implement file download logic based on your storage solution
+    // For now, return a placeholder response
+    return NextResponse.json({ 
+      message: 'File download not implemented yet',
+      agent: {
+        id: agent.id,
+        name: agent.name,
+        framework: agent.framework,
+        version: agent.version
+      }
     });
   } catch (error) {
     console.error('Error downloading agent:', error);

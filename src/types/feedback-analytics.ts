@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { type Feedback } from './database';
+import { type Feedback } from './feedback';
 
 export const feedbackInsightsSchema = z.object({
   startDate: z.date(),
@@ -49,8 +49,11 @@ export interface FeedbackInsight {
 }
 
 export interface FeedbackTrend {
-  date: Date;
-  metrics: Record<string, number>;
+  date: string;
+  count: number;
+  averageRating: number;
+  sentiment: number;
+  categories: Record<string, number> | null;
 }
 
 export interface FeedbackCategory {
@@ -112,6 +115,10 @@ export interface FeedbackAnalyticsSuccess<T> {
   success: true;
   data: T;
 }
+
+export type FeedbackAnalyticsApiResponse<T> = 
+  | FeedbackAnalyticsSuccess<T>
+  | FeedbackAnalyticsError;
 
 export type FeedbackInsightsApiResponse = 
   | FeedbackAnalyticsSuccess<FeedbackInsightsResponse['data']>
