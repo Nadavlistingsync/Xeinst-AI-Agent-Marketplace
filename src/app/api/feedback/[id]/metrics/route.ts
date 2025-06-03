@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { type FeedbackMetrics } from '@/types/feedback';
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse<{ success: boolean; data?: FeedbackMetrics; error?: string }>> {
   try {
@@ -48,9 +48,9 @@ export async function GET(
       },
     });
 
-    const totalFeedbacks = feedback.length;
+    const totalFeedback = feedback.length;
     const totalRating = feedback.reduce((sum, f) => sum + f.rating, 0);
-    const averageRating = totalFeedbacks > 0 ? totalRating / totalFeedbacks : 0;
+    const averageRating = totalFeedback > 0 ? totalRating / totalFeedback : 0;
 
     const sentimentDistribution = {
       positive: 0,
@@ -58,10 +58,7 @@ export async function GET(
       negative: 0,
     };
 
-    const categories: Record<string, number> = {};
-    const commonIssues: string[] = [];
-    const improvementSuggestions: string[] = [];
-
+    const categoryDistribution: Record<string, number> = {};
     let totalSentiment = 0;
     let totalResponses = 0;
     let totalResponseTime = 0;
@@ -84,7 +81,7 @@ export async function GET(
       if (f.categories) {
         const feedbackCategories = f.categories as Record<string, number>;
         Object.entries(feedbackCategories).forEach(([category, value]) => {
-          categories[category] = (categories[category] || 0) + value;
+          categoryDistribution[category] = (categoryDistribution[category] || 0) + value;
         });
       }
 
@@ -96,35 +93,32 @@ export async function GET(
           totalResponseTime += responseTime;
         }
       }
-
-      // Track issues and suggestions
-      if (f.rating <= 2 && f.comment) {
-        commonIssues.push(f.comment);
-      }
-      if (f.rating >= 4 && f.comment) {
-        improvementSuggestions.push(f.comment);
-      }
     });
 
-    const sentimentScore = totalFeedbacks > 0 ? totalSentiment / totalFeedbacks : 0;
+    const averageSentiment = totalFeedback > 0 ? totalSentiment / totalFeedback : 0;
     const averageResponseTime = totalResponses > 0 ? totalResponseTime / totalResponses : 0;
-    const responseRate = totalFeedbacks > 0 ? (totalResponses / totalFeedbacks) * 100 : 0;
+    const responseRate = totalFeedback > 0 ? (totalResponses / totalFeedback) * 100 : 0;
+
+    // Calculate trends (simplified for now)
+    const trends = {
+      rating: averageRating,
+      sentiment: averageSentiment,
+      volume: totalFeedback
+    };
+
+    // Calculate days since first feedback
+    const firstFeedback = feedback[feedback.length - 1];
+    const days = firstFeedback ? Math.ceil((Date.now() - firstFeedback.createdAt.getTime()) / (1000 * 60 * 60 * 24)) : 0;
 
     const metrics: FeedbackMetrics = {
       averageRating,
-      totalFeedbacks,
-      positiveFeedbacks: sentimentDistribution.positive,
-      negativeFeedbacks: sentimentDistribution.negative,
-      neutralFeedbacks: sentimentDistribution.neutral,
-      sentimentScore,
-      commonIssues: commonIssues.slice(0, 5),
-      improvementSuggestions: improvementSuggestions.slice(0, 5),
-      categories,
-      responseMetrics: {
-        totalResponses,
-        averageResponseTime,
-        responseRate,
-      },
+      totalFeedback,
+      sentimentDistribution,
+      categoryDistribution,
+      responseRate,
+      averageSentiment,
+      trends,
+      days
     };
 
     return NextResponse.json({

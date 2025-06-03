@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { z } from "zod";
+import { DeploymentStatus } from "@prisma/client";
 
 const deploymentSchema = z.object({
   name: z.string().min(1).max(100),
@@ -10,6 +11,11 @@ const deploymentSchema = z.object({
   framework: z.string(),
   version: z.string(),
   requirements: z.array(z.string()),
+  accessLevel: z.enum(['public', 'private', 'premium']).optional(),
+  licenseType: z.enum(['free', 'pro', 'enterprise']).optional(),
+  environment: z.enum(['development', 'staging', 'production']).optional(),
+  modelType: z.enum(['gpt-3.5-turbo', 'gpt-4', 'claude-2']).optional(),
+  source: z.enum(['marketplace', 'custom', 'template']).optional(),
 });
 
 export async function POST(req: Request) {
@@ -26,10 +32,18 @@ export async function POST(req: Request) {
     // Create the deployment
     const deployment = await prisma.deployment.create({
       data: {
-        ...validatedData,
         createdBy: session.user.id,
         deployedBy: session.user.id,
-        status: 'active',
+        status: DeploymentStatus.active,
+        name: validatedData.name,
+        description: validatedData.description,
+        framework: validatedData.framework,
+        version: validatedData.version,
+        accessLevel: validatedData.accessLevel || 'public',
+        licenseType: validatedData.licenseType || 'free',
+        environment: validatedData.environment || 'production',
+        modelType: validatedData.modelType || 'gpt-3.5-turbo',
+        source: validatedData.source || 'marketplace'
       },
     });
 
@@ -37,6 +51,15 @@ export async function POST(req: Request) {
     await prisma.agentMetrics.create({
       data: {
         agentId: deployment.id,
+        errorRate: 0,
+        successRate: 0,
+        activeUsers: 0,
+        totalRequests: 0,
+        averageResponseTime: 0,
+        requestsPerMinute: 0,
+        averageTokensUsed: 0,
+        costPerRequest: 0,
+        totalCost: 0
       },
     });
 

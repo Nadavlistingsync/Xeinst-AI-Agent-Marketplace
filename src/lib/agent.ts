@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import { Prisma, Deployment } from '@prisma/client';
+import { Prisma, Deployment, DeploymentStatus } from '@prisma/client';
 
 export interface CreateAgentInput {
   name: string;
@@ -27,7 +27,7 @@ export interface UpdateAgentInput {
 export interface AgentOptions {
   startDate?: Date;
   endDate?: Date;
-  status?: string;
+  status?: DeploymentStatus;
 }
 
 export async function createAgent(data: CreateAgentInput) {
@@ -42,6 +42,12 @@ export async function createAgent(data: CreateAgentInput) {
       requirements: data.requirements,
       version: data.version,
       source: data.source,
+      status: DeploymentStatus.pending,
+      startDate: new Date(),
+      rating: 0,
+      totalRatings: 0,
+      downloadCount: 0,
+      health: Prisma.JsonNull,
     },
   });
 }
@@ -53,7 +59,7 @@ export async function updateAgent(id: string, data: UpdateAgentInput) {
   });
 }
 
-export async function getAgents(options: any = {}): Promise<Deployment[]> {
+export async function getAgents(options: AgentOptions = {}): Promise<Deployment[]> {
   const where: Prisma.DeploymentWhereInput = {};
 
   if (options.startDate) {
@@ -133,5 +139,58 @@ export async function getAgentFeedback(deploymentId: string, options: { startDat
   return await prisma.agentFeedback.findMany({
     where,
     orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function createDeployment(data: {
+  name: string;
+  description: string;
+  accessLevel: string;
+  licenseType: string;
+  environment: string;
+  framework: string;
+  modelType: string;
+  version: string;
+  requirements: string[];
+  isPublic: boolean;
+  createdBy: string;
+  earningsSplit: number;
+  source: string;
+  deployedBy: string;
+}) {
+  return prisma.deployment.create({
+    data: {
+      ...data,
+      status: DeploymentStatus.pending,
+      startDate: new Date(),
+      rating: 0,
+      totalRatings: 0,
+      downloadCount: 0,
+      health: Prisma.JsonNull,
+    },
+  });
+}
+
+export async function updateDeployment(id: string, data: Partial<{
+  name: string;
+  description: string;
+  accessLevel: string;
+  licenseType: string;
+  environment: string;
+  framework: string;
+  modelType: string;
+  version: string;
+  requirements: string[];
+  isPublic: boolean;
+  earningsSplit: number;
+  status: DeploymentStatus;
+  health: Prisma.InputJsonValue;
+}>) {
+  return prisma.deployment.update({
+    where: { id },
+    data: {
+      ...data,
+      updatedAt: new Date(),
+    },
   });
 } 

@@ -1,4 +1,4 @@
-import { Deployment } from "@prisma/client";
+import { Deployment } from '@/types/deployment';
 import { Star, ArrowDownTray, Clock } from "@heroicons/react/24/outline";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";

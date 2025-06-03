@@ -73,7 +73,8 @@ export default function UploadPage() {
       }
 
       // Upload file
-      const file_url = await uploadFile(uploadFile, session?.user?.id!);
+      const uploadedFile = await uploadFile(uploadFile, session?.user?.id!);
+      const fileUrl = uploadedFile.url;
 
       // Insert product into database
       const slug = formData.name
@@ -87,7 +88,7 @@ export default function UploadPage() {
         description: formData.description,
         price: formData.price,
         documentation: formData.documentation,
-        file_url: file_url,
+        file_url: fileUrl,
         uploaded_by: session.user.id,
         is_public: true,
       }).returning();

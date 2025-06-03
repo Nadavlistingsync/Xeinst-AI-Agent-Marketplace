@@ -1,9 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getProduct } from '@/lib/product-helpers';
-import { Star } from 'lucide-react';
-import Image from 'next/image';
-import { AgentReviews } from '@/components/AgentReviews';
 import { notFound } from "next/navigation";
 import { ProductDetails } from "@/components/product/ProductDetails";
 import { ReviewSection } from "@/components/product/ReviewSection";
@@ -23,11 +20,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const isCreator = session?.user?.id === product.createdBy;
-
   const productWithDetails = {
-    ...product,
-    images: [product.imageUrl || ''],
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    price: Number(product.price) || 0,
+    images: [product.fileUrl || ''],
+    category: {
+      name: product.category
+    },
     seller: {
       name: product.createdBy
     }
@@ -37,21 +38,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
     <div className="container mx-auto px-4 py-8">
       <ProductDetails
         product={productWithDetails}
-        isCreator={isCreator}
-        user_id={session?.user?.id}
       />
       <div className="mt-12">
         <ReviewSection
-          productId={product.id}
-          userId={session?.user?.id}
-          averageRating={Number(product.rating) || 0}
-          totalRatings={product.totalRatings || 0}
+          product_id={product.id}
         />
       </div>
       <div className="mt-12">
         <RelatedProducts
-          productId={product.id}
-          productCategory={product.category}
+          product_id={product.id}
         />
       </div>
     </div>

@@ -83,9 +83,16 @@ export default async function DeploymentPage({ params }: DeploymentPageProps) {
     status: deployment.status as DeploymentStatus,
     metrics: deployment.metrics || [],
     feedbacks: deployment.feedbacks.map(feedback => ({
-      ...feedback,
+      id: feedback.id,
+      rating: feedback.rating,
+      comment: feedback.comment,
       sentimentScore: feedback.sentimentScore || 0,
-      categories: feedback.categories as Record<string, number> | null
+      createdAt: feedback.createdAt,
+      user: {
+        name: feedback.user?.name || null,
+        email: feedback.user?.email || null,
+        image: feedback.user?.image || null
+      }
     }))
   };
 
@@ -127,7 +134,10 @@ export default async function DeploymentPage({ params }: DeploymentPageProps) {
               });
             }}
           />
-          <DeploymentMetrics deploymentId={deployment.id} />
+          <DeploymentMetrics 
+            deploymentId={deployment.id} 
+            socket={null} // We'll handle socket connection in the component
+          />
           <DeploymentLogs deploymentId={deployment.id} />
         </div>
         

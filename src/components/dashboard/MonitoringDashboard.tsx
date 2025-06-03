@@ -72,7 +72,7 @@ export function MonitoringDashboard({ agentId }: MonitoringDashboardProps) {
       setHealth(healthData);
     } catch (error) {
       console.error('Error fetching monitoring data:', error);
-      toast.error('Failed to load monitoring data');
+      toast({ description: 'Failed to load monitoring data', variant: 'destructive' });
     } finally {
       setLoading(false);
     }

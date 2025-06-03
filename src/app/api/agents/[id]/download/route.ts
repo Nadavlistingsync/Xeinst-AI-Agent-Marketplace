@@ -2,47 +2,39 @@ import { NextResponse } from 'next/server';
 import { getServerSession, type Session } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
+import { createErrorResponse } from '@/lib/api';
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions) as Session;
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return createErrorResponse(new Error('Unauthorized'));
     }
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       include: {
-        users: {
+        creator: {
           select: {
             id: true,
-            subscription_tier: true,
+            subscriptionTier: true,
           },
         },
       },
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
+      return createErrorResponse(new Error('Agent not found'));
     }
 
     if (!agent.fileUrl) {
-      return NextResponse.json(
-        { success: false, error: 'Agent file not found' },
-        { status: 404 }
-      );
+      return createErrorResponse(new Error('Agent file not found'));
     }
 
-    const user = session.user as { subscription_tier: string } & typeof session.user;
+    const user = session.user as { subscriptionTier: string } & typeof session.user;
     // Check access level
     const canAccess = () => {
       if (agent.accessLevel === 'public') return true;
@@ -52,10 +44,7 @@ export async function GET(
     };
 
     if (!canAccess()) {
-      return NextResponse.json(
-        { error: 'Subscription required' },
-        { status: 403 }
-      );
+      return createErrorResponse(new Error('Subscription required'));
     }
 
     // Fetch the agent file
@@ -85,9 +74,6 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error downloading agent:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse(error);
   }
 } 

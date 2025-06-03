@@ -1,63 +1,100 @@
-import Image from "next/image";
-import Link from "next/link";
-import { Star, ShieldCheck } from "@heroicons/react/20/solid";
-import { Badge } from "../ui/badge";
-import { Card, CardContent, CardHeader } from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Deployment } from '@/types/deployment';
+import { formatDistanceToNow } from 'date-fns';
 
 interface AgentCardProps {
-  deployment: MarketplaceDeployment;
+  deployment: Deployment;
+  onClick?: () => void;
 }
 
-export function AgentCard({ deployment }: AgentCardProps) {
+export function AgentCard({ deployment, onClick }: AgentCardProps) {
+  const {
+    name,
+    description,
+    version,
+    status,
+    rating,
+    downloadCount,
+    category,
+    accessLevel,
+    licenseType,
+    createdAt,
+  } = deployment;
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500';
+      case 'failed':
+        return 'bg-red-500';
+      case 'deploying':
+        return 'bg-yellow-500';
+      case 'stopped':
+        return 'bg-gray-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
   return (
-    <Link href={`/marketplace/${deployment.id}`}>
-      <Card className="group h-full transition-all duration-200 hover:shadow-lg">
-        <CardHeader className="p-0">
-          <div className="aspect-w-16 aspect-h-9 bg-gray-100 relative">
-            <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-t-lg">
-              <span className="text-gray-400">No image</span>
-            </div>
-            <div className="absolute top-2 right-2 flex gap-2">
-              {deployment.status === 'active' && (
-                <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
-                  <ShieldCheck className="h-4 w-4 mr-1" />
-                  Active
-                </Badge>
-              )}
-              {deployment.downloadCount > 100 && (
-                <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  Popular
-                </Badge>
-              )}
-              {new Date(deployment.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && (
-                <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
-                  <Sparkles className="h-4 w-4 mr-1" />
-                  New
-                </Badge>
-              )}
-            </div>
+    <Card 
+      className="cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={onClick}
+    >
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{name}</CardTitle>
+          <Badge className={getStatusColor(status)}>
+            {status}
+          </Badge>
+        </div>
+        {version && (
+          <div className="text-sm text-gray-500">
+            Version {version}
           </div>
-        </CardHeader>
-
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 line-clamp-1">
-              {deployment.name}
-            </h3>
+        )}
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+          {description}
+        </p>
+        <div className="flex flex-wrap gap-2 mb-4">
+          {category && (
+            <Badge variant="outline">
+              {category}
+            </Badge>
+          )}
+          {accessLevel && (
+            <Badge variant="outline">
+              {accessLevel}
+            </Badge>
+          )}
+          {licenseType && (
+            <Badge variant="outline">
+              {licenseType}
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center justify-between text-sm text-gray-500">
+          <div className="flex items-center space-x-4">
+            {rating > 0 && (
+              <div className="flex items-center">
+                <span className="mr-1">★</span>
+                <span>{rating.toFixed(1)}</span>
+              </div>
+            )}
+            {downloadCount > 0 && (
+              <div>
+                {downloadCount} downloads
+              </div>
+            )}
           </div>
-
-          <p className="text-sm text-gray-600 line-clamp-2 mb-4">
-            {deployment.description}
-          </p>
-
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Badge variant="outline">{deployment.framework}</Badge>
-            <Badge variant="outline">{deployment.modelType}</Badge>
-            <Badge variant="outline">{deployment.accessLevel}</Badge>
+          <div>
+            {formatDistanceToNow(createdAt, { addSuffix: true })}
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+        </div>
+      </CardContent>
+    </Card>
   );
 } 

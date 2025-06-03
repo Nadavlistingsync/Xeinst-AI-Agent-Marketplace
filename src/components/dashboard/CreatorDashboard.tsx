@@ -59,7 +59,7 @@ export function CreatorDashboard() {
       setStats(statsData);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast('Failed to load dashboard data. Please try again.');
+      toast({ description: 'Failed to load dashboard data. Please try again.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }

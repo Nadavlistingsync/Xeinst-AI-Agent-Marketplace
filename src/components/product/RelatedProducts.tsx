@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getRelatedProducts } from '@/lib/product-helpers';
 import { formatCurrency } from '@/lib/utils';
+import { Product } from '@/lib/schema';
 
 interface RelatedProductsProps {
   product_id: string;
@@ -26,7 +27,7 @@ export async function RelatedProducts({ product_id }: RelatedProductsProps) {
           >
             <div className="relative aspect-square mb-2">
               <Image
-                src={product.images[0]}
+                src={product.fileUrl}
                 alt={product.name}
                 fill
                 className="object-cover rounded-lg group-hover:opacity-90 transition-opacity"

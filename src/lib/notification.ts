@@ -1,141 +1,99 @@
-import { PrismaClient, NotificationType as PrismaNotificationType } from '@prisma/client';
+import { PrismaClient, NotificationType, Prisma } from '@prisma/client';
+import { JsonValue } from '@/types/json';
+import { prisma } from './db';
 
-const prisma = new PrismaClient();
+const prismaClient = new PrismaClient();
 
-export type NotificationType = PrismaNotificationType;
-
-export type NotificationSeverity = 'info' | 'warning' | 'error' | 'success';
-
-export type CreateNotificationInput = {
+export interface CreateNotificationInput {
   userId: string;
   type: NotificationType;
-  title: string;
   message: string;
-  severity?: NotificationSeverity;
-  metadata?: Record<string, unknown>;
-};
+  metadata?: Record<string, any>;
+}
 
-export async function createNotification(data: CreateNotificationInput) {
+export interface UpdateNotificationInput {
+  message?: string;
+  type?: NotificationType;
+  metadata?: JsonValue;
+  read?: boolean;
+}
+
+export async function createNotification(data: {
+  userId: string;
+  type: NotificationType;
+  message: string;
+  metadata?: Prisma.InputJsonValue;
+}) {
   return prisma.notification.create({
     data: {
       userId: data.userId,
       type: data.type,
-      title: data.title,
       message: data.message,
-      severity: data.severity || 'info',
-      metadata: data.metadata || {}
-    }
-  });
-}
-
-export async function updateNotification(
-  id: string,
-  data: Partial<CreateNotificationInput>
-): Promise<Notification> {
-  return await prisma.notification.update({
-    where: { id },
-    data: {
-      ...data,
-      metadata: data.metadata || {},
+      metadata: data.metadata || Prisma.JsonNull,
+      read: false,
     },
   });
 }
 
-export async function getNotifications(
-  userId: string,
-  options: {
-    unread_only?: boolean;
-    type?: NotificationType;
-    limit?: number;
-  } = {}
-): Promise<Notification[]> {
-  const where: any = { userId };
-  if (options.unread_only) where.read = false;
-  if (options.type) where.type = options.type;
+export async function updateNotification(id: string, data: UpdateNotificationInput) {
+  return prismaClient.notification.update({
+    where: { id },
+    data: {
+      type: data.type,
+      message: data.message,
+      metadata: data.metadata as any,
+      read: data.read,
+    },
+  });
+}
 
-  return await prisma.notification.findMany({
-    where,
+export async function getNotifications(userId: string) {
+  return prisma.notification.findMany({
+    where: { userId },
     orderBy: { createdAt: 'desc' },
-    take: options.limit,
   });
 }
 
-export async function getNotification(id: string): Promise<Notification | null> {
-  return await prisma.notification.findUnique({
-    where: { id },
-  });
-}
-
-export async function markNotificationAsRead(id: string): Promise<Notification> {
-  return prisma.notification.update({
-    where: { id },
-    data: { read: true }
-  });
-}
-
-export async function markAllNotificationsAsRead(userId: string): Promise<void> {
-  await prisma.notification.updateMany({
-    where: { userId, read: false },
-    data: { read: true },
-  });
-}
-
-export async function deleteNotification(id: string): Promise<void> {
-  await prisma.notification.delete({
+export async function getNotification(id: string) {
+  return prismaClient.notification.findUnique({
     where: { id }
   });
 }
 
-export async function deleteAllNotifications(userId: string): Promise<void> {
-  await prisma.notification.deleteMany({
-    where: { userId },
+export async function markNotificationAsRead(id: string) {
+  return prisma.notification.update({
+    where: { id },
+    data: { read: true },
   });
 }
 
-export async function getNotificationCount(
-  userId: string,
-  options: {
-    unread_only?: boolean;
-    type?: NotificationType;
-  } = {}
-): Promise<number> {
-  const where: any = { userId };
-  if (options.unread_only) where.read = false;
-  if (options.type) where.type = options.type;
-
-  return await prisma.notification.count({ where });
+export async function markAllAsRead(userId: string) {
+  await prismaClient.notification.updateMany({
+    where: { userId, read: false },
+    data: { read: true }
+  });
 }
 
-export async function getNotificationStats(userId: string): Promise<{
-  total: number;
-  unread: number;
-  by_type: Record<NotificationType, number>;
-}> {
-  const [total, unread, byType] = await Promise.all([
-    prisma.notification.count({ where: { userId } }),
-    prisma.notification.count({ where: { userId, read: false } }),
-    prisma.notification.groupBy({
-      by: ['type'],
-      where: { userId },
-      _count: true,
-    }),
-  ]);
+export async function deleteNotification(id: string) {
+  return prisma.notification.delete({
+    where: { id },
+  });
+}
 
-  return {
-    total,
-    unread,
-    by_type: byType.reduce((acc, { type, _count }) => {
-      acc[type as NotificationType] = _count;
+export async function getNotificationStats(userId: string) {
+  const notifications = await prismaClient.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  const stats = {
+    total: notifications.length,
+    unread: notifications.filter(n => !n.read).length,
+    byType: notifications.reduce((acc, notification) => {
+      acc[notification.type] = (acc[notification.type] || 0) + 1;
       return acc;
-    }, {} as Record<NotificationType, number>),
-  };
-}
-
-export async function getNotificationHistory(userId: string) {
-  try {
-    const notifications = await getNotifications(userId);
-
-    const monthly_notifications = notifications.reduce((acc, notification) => {
+    }, {} as Record<string, number>),
+    byMonth: notifications.reduce((acc, notification) => {
       const month = notification.createdAt.toISOString().slice(0, 7);
       if (!acc[month]) {
         acc[month] = { total: 0, unread: 0 };
@@ -145,14 +103,28 @@ export async function getNotificationHistory(userId: string) {
         acc[month].unread += 1;
       }
       return acc;
-    }, {} as Record<string, { total: number; unread: number }>);
+    }, {} as Record<string, { total: number; unread: number }>)
+  };
 
-    return {
-      monthly_notifications,
-      recent_notifications: notifications.slice(0, 10),
-    };
-  } catch (error) {
-    console.error('Error getting notification history:', error);
-    throw new Error('Failed to get notification history');
-  }
+  return stats;
+}
+
+export async function getNotificationHistory(
+  userId: string,
+  options: {
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  } = {}
+): Promise<Notification[]> {
+  const where: Prisma.NotificationWhereInput = { userId };
+
+  if (options.startDate) where.createdAt = { gte: options.startDate };
+  if (options.endDate) where.createdAt = { lte: options.endDate };
+
+  return await prismaClient.notification.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    take: options.limit
+  });
 } 

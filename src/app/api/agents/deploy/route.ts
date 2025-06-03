@@ -36,7 +36,6 @@ export async function POST(req: Request) {
         licenseType: body.licenseType || 'free',
         framework: body.framework,
         version: body.version || '1.0.0',
-        requirements: body.requirements || [],
         modelType: body.modelType || 'standard',
         deployedBy: session.user.id,
         createdBy: session.user.id
@@ -44,7 +43,7 @@ export async function POST(req: Request) {
     });
 
     // Start the deployment process
-    const { success, error } = await deployAgent(deployment.id, session.user.id as string);
+    const { success, error } = await deployAgent(deployment.id);
     if (!success) {
       return NextResponse.json({ error }, { status: 500 });
     }

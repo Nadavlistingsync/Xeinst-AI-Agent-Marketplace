@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { NotificationType } from '@prisma/client';
 
 const responseSchema = z.object({
   response: z.string().min(1).max(1000),
@@ -63,13 +64,13 @@ export async function POST(
     await prisma.notification.create({
       data: {
         userId: feedback.userId,
-        type: 'FEEDBACK_RESPONSE',
-        message: `The creator of ${feedback.deployment.name} has responded to your feedback`,
+        type: NotificationType.feedback_alert,
+        message: `Your feedback for ${feedback.deployment.name} has received a response`,
         metadata: {
           feedbackId: feedback.id,
-          deploymentId: feedback.deployment.id,
-        },
-      },
+          deploymentId: feedback.deployment.id
+        }
+      }
     });
 
     return NextResponse.json({

@@ -1,10 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createErrorResponse, createValidationError } from '@/lib/api';
+import { createErrorResponse } from '@/lib/api';
 import { handleDatabaseError, DatabaseError, withRetry } from '../lib/db';
 import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
+
+async function getResponseBody(response: any) {
+  // NextResponse has a .json() method that returns a Promise
+  return typeof response.json === 'function' ? await response.json() : response;
+}
 
 describe('Error Handling', () => {
   beforeEach(() => {
@@ -12,7 +17,7 @@ describe('Error Handling', () => {
   });
 
   describe('createErrorResponse', () => {
-    it('handles Zod validation errors', () => {
+    it('handles Zod validation errors', async () => {
       const zodError = new ZodError([
         {
           code: 'invalid_type',
@@ -23,31 +28,38 @@ describe('Error Handling', () => {
         }
       ]);
 
-      const response = createErrorResponse(zodError, 'Default error');
-      expect(response.success).toBe(false);
-      expect(response.error).toBe('Validation error');
-      expect(response.details).toBeDefined();
+      const response = createErrorResponse(zodError);
+      const body = await getResponseBody(response);
+      expect(body.statusCode).toBe(400);
+      expect(body.name).toBe('Validation error');
+      expect(body.message).toBe('Invalid input data');
+      expect(body.details).toBeDefined();
       expect(Sentry.captureException).not.toHaveBeenCalled();
     });
 
-    it('handles Prisma errors', () => {
+    it('handles Prisma errors', async () => {
       const prismaError = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
         code: 'P2002',
         clientVersion: '5.0.0',
         meta: { target: ['email'] }
       });
 
-      const response = createErrorResponse(prismaError, 'Default error');
-      expect(response.success).toBe(false);
-      expect(response.error).toBe('Unique constraint violation');
+      const response = createErrorResponse(prismaError);
+      const body = await getResponseBody(response);
+      expect(body.statusCode).toBe(400);
+      expect(body.name).toBe('Database error');
+      expect(body.message).toBe('Unique constraint failed');
+      expect(body.details).toBeDefined();
       expect(Sentry.captureException).not.toHaveBeenCalled();
     });
 
-    it('handles generic errors', () => {
+    it('handles generic errors', async () => {
       const error = new Error('Test error');
-      const response = createErrorResponse(error, 'Default error');
-      expect(response.success).toBe(false);
-      expect(response.error).toBe('Test error');
+      const response = createErrorResponse(error);
+      const body = await getResponseBody(response);
+      expect(body.statusCode).toBe(500);
+      expect(body.name).toBe('Server error');
+      expect(body.message).toBe('Test error');
       expect(Sentry.captureException).not.toHaveBeenCalled();
     });
   });
@@ -131,7 +143,7 @@ describe('Error Handling', () => {
     });
   });
 
-  it('should handle validation errors', () => {
+  it('should handle validation errors', async () => {
     const schema = z.object({
       name: z.string(),
       age: z.number()
@@ -140,35 +152,29 @@ describe('Error Handling', () => {
     try {
       schema.parse({ name: 123, age: 'invalid' });
     } catch (error) {
-      const response = createErrorResponse(error, 'Default error');
-      expect(response.error).toBe('Validation error');
-      expect(response.status).toBe(400);
-      expect(response.details).toBeDefined();
+      const response = createErrorResponse(error);
+      const body = await getResponseBody(response);
+      expect(body.statusCode).toBe(400);
+      expect(body.name).toBe('Validation error');
+      expect(body.message).toBe('Invalid input data');
+      expect(body.details).toBeDefined();
     }
   });
 
-  it('should handle database errors', () => {
+  it('should handle database errors', async () => {
     const error = new Error('Unique constraint violation');
-    const response = createErrorResponse(error, 'Default error');
-    expect(response.error).toBe('Unique constraint violation');
-    expect(response.status).toBe(500);
+    const response = createErrorResponse(error);
+    const body = await getResponseBody(response);
+    expect(body.statusCode).toBe(500);
+    expect(body.name).toBe('Server error');
+    expect(body.message).toBe('Unique constraint violation');
   });
 
-  it('should handle unknown errors', () => {
-    const response = createErrorResponse(null, 'Test error');
-    expect(response.error).toBe('Test error');
-    expect(response.status).toBe(500);
-  });
-
-  it('should create validation errors', () => {
-    const errors = [
-      { field: 'name', message: 'Required', code: 'REQUIRED' },
-      { field: 'age', message: 'Must be a number', code: 'INVALID_TYPE' }
-    ];
-
-    const response = createValidationError(errors);
-    expect(response.error).toBe('Validation error');
-    expect(response.status).toBe(400);
-    expect(response.details).toEqual(errors);
+  it('should handle unknown errors', async () => {
+    const response = createErrorResponse(null);
+    const body = await getResponseBody(response);
+    expect(body.statusCode).toBe(500);
+    expect(body.name).toBe('Unknown error');
+    expect(body.message).toBe('An unexpected error occurred');
   });
 }); 

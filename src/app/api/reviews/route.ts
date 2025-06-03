@@ -8,7 +8,7 @@ import { createErrorResponse } from '@/lib/api';
 const reviewSchema = z.object({
   productId: z.string().uuid(),
   rating: z.number().min(1).max(5),
-  comment: z.string().max(1000).optional(),
+  comment: z.string().max(1000),
   title: z.string().max(100).optional(),
   images: z.array(z.string().url()).max(5).optional(),
   deploymentId: z.string().uuid().optional(),
@@ -62,9 +62,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
   } catch (error) {
     console.error('Error fetching reviews:', error);
-    const errorResponse = createErrorResponse(error, 'Failed to fetch reviews');
+    const errorResponse = createErrorResponse(error);
     return NextResponse.json(
-      { error: errorResponse.message },
+      { error: errorResponse.error },
       { status: errorResponse.status }
     );
   }
@@ -150,9 +150,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const errorResponse = createErrorResponse(error, 'Failed to create review');
+    const errorResponse = createErrorResponse(error);
     return NextResponse.json(
-      { error: errorResponse.message },
+      { error: errorResponse.error },
       { status: errorResponse.status }
     );
   }

@@ -24,14 +24,6 @@ vi.mock('@prisma/client', () => ({
       delete: vi.fn(),
       count: vi.fn(),
     },
-    agent: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      create: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-      deleteMany: vi.fn(),
-    },
     $disconnect: vi.fn(),
   })),
 }));
@@ -67,34 +59,34 @@ describe('Agents API', () => {
       id: '1',
       name: 'Test Agent',
       description: 'Test Description',
-      created_at: new Date(),
-      updated_at: new Date(),
-      deployed_by: 'user1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      createdBy: 'user1',
       status: 'active',
       category: 'test',
-      is_featured: true,
-      is_trending: true,
-      usage_count: 0,
+      isFeatured: true,
+      isTrending: true,
+      usageCount: 0,
       rating: 4.5,
       price: 9.99,
-      earnings_split: 0.7,
-      deployment_count: 0,
-      feedback_count: 0,
-      total_earnings: 0,
-      last_deployed: new Date(),
-      last_used: new Date(),
-      last_updated: new Date(),
-      last_feedback: new Date(),
-      last_rating: 4.5,
-      last_earnings: 0,
-      last_deployment: new Date(),
-      last_usage: new Date(),
-      last_feedback_date: new Date(),
-      last_rating_date: new Date(),
-      last_earnings_date: new Date(),
-      last_deployment_date: new Date(),
-      last_usage_date: new Date(),
-      users: {
+      earningsSplit: 0.7,
+      deploymentCount: 0,
+      feedbackCount: 0,
+      totalEarnings: 0,
+      lastDeployed: new Date(),
+      lastUsed: new Date(),
+      lastUpdated: new Date(),
+      lastFeedback: new Date(),
+      lastRating: 4.5,
+      lastEarnings: 0,
+      lastDeployment: new Date(),
+      lastUsage: new Date(),
+      lastFeedbackDate: new Date(),
+      lastRatingDate: new Date(),
+      lastEarningsDate: new Date(),
+      lastDeploymentDate: new Date(),
+      lastUsageDate: new Date(),
+      creator: {
         id: 'user1',
         email: 'test@example.com',
         name: 'Test User',
@@ -107,8 +99,8 @@ describe('Agents API', () => {
   });
 
   beforeEach(async () => {
-    // Clear the agents table before each test
-    await testPrisma.agent.deleteMany();
+    // Clear the deployments table before each test
+    await testPrisma.deployment.deleteMany();
   });
 
   describe('getFeaturedAgents', () => {
@@ -170,17 +162,17 @@ describe('Agents API', () => {
 
   it('returns all agents when they exist', async () => {
     // Create a test agent
-    const testAgent = await testPrisma.agent.create({
+    const testAgent = await testPrisma.deployment.create({
       data: {
         name: 'Test Agent',
         description: 'Test Description',
         price: 100,
         rating: 4.5,
         imageUrl: '/test-image.jpg',
-        user_id: 'user1',
+        createdBy: 'user1',
         category: 'AI',
         status: 'active',
-        is_featured: true,
+        isFeatured: true,
       },
     });
 
@@ -199,7 +191,7 @@ describe('Agents API', () => {
       imageUrl: testAgent.imageUrl,
       category: testAgent.category,
       status: testAgent.status,
-      is_featured: testAgent.is_featured,
+      isFeatured: testAgent.isFeatured,
     });
   });
 });
@@ -217,13 +209,13 @@ describe('Agent Monitoring', () => {
       const mockLogs = [
         {
           id: '1',
-          agentId: mockAgentId,
+          deploymentId: mockAgentId,
           level: 'info',
           message: 'Test log',
           metadata: null,
           timestamp: mockDate,
-          created_at: mockDate,
-          updated_at: mockDate,
+          createdAt: mockDate,
+          updatedAt: mockDate,
         },
       ];
 
@@ -233,7 +225,7 @@ describe('Agent Monitoring', () => {
 
       expect(prisma.agentLog.findMany).toHaveBeenCalledWith({
         where: {
-          agentId: mockAgentId,
+          deploymentId: mockAgentId,
         },
         orderBy: {
           timestamp: 'desc',
@@ -246,38 +238,36 @@ describe('Agent Monitoring', () => {
       const mockLogs = [
         {
           id: '1',
-          agentId: mockAgentId,
+          deploymentId: mockAgentId,
           level: 'error',
-          message: 'Error log',
-          metadata: { error: 'test error' },
+          message: 'Test error log',
+          metadata: null,
           timestamp: mockDate,
-          created_at: mockDate,
-          updated_at: mockDate,
+          createdAt: mockDate,
+          updatedAt: mockDate,
         },
       ];
 
       (prisma.agentLog.findMany as any).mockResolvedValue(mockLogs);
 
       const logs = await getAgentLogs(mockAgentId, {
-        startDate: mockDate,
+        startDate: new Date('2024-01-01'),
         endDate: new Date('2024-01-02'),
         level: 'error',
-        limit: 10,
       });
 
       expect(prisma.agentLog.findMany).toHaveBeenCalledWith({
         where: {
-          agentId: mockAgentId,
-          level: 'error',
+          deploymentId: mockAgentId,
           timestamp: {
-            gte: mockDate,
+            gte: new Date('2024-01-01'),
             lte: new Date('2024-01-02'),
           },
+          level: 'error',
         },
         orderBy: {
           timestamp: 'desc',
         },
-        take: 10,
       });
       expect(logs).toEqual(mockLogs);
     });

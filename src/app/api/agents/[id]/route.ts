@@ -1,75 +1,89 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { getProductById, updateProduct, deleteProduct } from '@/lib/db-helpers';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
 import prisma from '@/lib/prisma';
+import { createErrorResponse, createSuccessResponse } from '@/lib/api';
+import { z } from 'zod';
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
+
+const updateAgentSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(1000).optional(),
+  accessLevel: z.enum(['public', 'private', 'restricted']),
+  licenseType: z.enum(['free', 'premium', 'enterprise']),
+});
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session?.user) {
+      return createErrorResponse('Unauthorized');
     }
 
     const { id } = params;
     const updates = await request.json();
 
+    // Validate the update data
+    const validatedUpdates = updateAgentSchema.parse(updates);
+
     // Check if user owns the agent
-    const agent = await getProductById(id);
-    if (!agent || agent.uploadedBy !== session.user.id) {
-      return NextResponse.json(
-        { error: 'You do not have permission to edit this agent' },
-        { status: 403 }
-      );
+    const agent = await prisma.deployment.findUnique({
+      where: { id },
+      select: { createdBy: true }
+    });
+
+    if (!agent || agent.createdBy !== session.user.id) {
+      return createErrorResponse('You do not have permission to edit this agent');
     }
 
     // Update the agent
-    const updatedAgent = await updateProduct(id, {
-      name: updates.name,
-      description: updates.description,
-      price: updates.price,
-      features: updates.features,
-      requirements: updates.requirements,
-      isPublic: updates.isPublic,
-      updated_at: new Date(),
+    const updatedAgent = await prisma.deployment.update({
+      where: { id },
+      data: {
+        ...validatedUpdates,
+        updatedAt: new Date(),
+      },
     });
 
-    return NextResponse.json({ agent: updatedAgent });
+    return createSuccessResponse({ agent: updatedAgent });
   } catch (error) {
     console.error('Error updating agent:', error);
-    return NextResponse.json(
-      { error: 'Failed to update agent' },
-      { status: 500 }
-    );
+    if (error instanceof z.ZodError) {
+      return createErrorResponse('Invalid update data');
+    }
+    return createErrorResponse('Internal server error');
   }
 }
 
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!session?.user) {
+      return createErrorResponse('Unauthorized');
     }
 
     const { id } = params;
 
     // Check if user owns the agent
-    const agent = await getProductById(id);
-    if (!agent || agent.uploadedBy !== session.user.id) {
-      return NextResponse.json(
-        { error: 'You do not have permission to delete this agent' },
-        { status: 403 }
-      );
+    const agent = await prisma.deployment.findUnique({
+      where: { id },
+      select: { 
+        createdBy: true,
+        fileUrl: true
+      }
+    });
+
+    if (!agent || agent.createdBy !== session.user.id) {
+      return createErrorResponse('You do not have permission to delete this agent');
     }
 
     // Delete the file from local storage if it exists
@@ -83,35 +97,31 @@ export async function DELETE(
     }
 
     // Delete the agent from the database
-    await deleteProduct(id);
+    await prisma.deployment.delete({
+      where: { id }
+    });
 
-    return NextResponse.json({ success: true });
+    return createSuccessResponse({ success: true });
   } catch (error) {
     console.error('Error deleting agent:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete agent' },
-      { status: 500 }
-    );
+    return createErrorResponse('Internal server error');
   }
 }
 
 export async function GET(
   _req: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return createErrorResponse('Unauthorized');
     }
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       include: {
-        users: {
+        creator: {
           select: {
             id: true,
             name: true,
@@ -123,72 +133,56 @@ export async function GET(
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
+      return createErrorResponse('Agent not found');
     }
 
-    return NextResponse.json(agent);
+    return createSuccessResponse(agent);
   } catch (error) {
     console.error('Error fetching agent details:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return createErrorResponse('Internal server error');
   }
 }
 
 export async function PATCH(
   req: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return createErrorResponse('Unauthorized');
     }
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
+      select: { createdBy: true }
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
+      return createErrorResponse('Agent not found');
     }
 
-    if (agent.deployedBy !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Not authorized to update this agent' },
-        { status: 403 }
-      );
+    if (agent.createdBy !== session.user.id) {
+      return createErrorResponse('Not authorized to update this agent');
     }
 
     const body = await req.json();
+    const validatedUpdates = updateAgentSchema.parse(body);
+
     const updatedAgent = await prisma.deployment.update({
       where: { id: params.id },
       data: {
-        name: body.name,
-        description: body.description,
-        accessLevel: body.accessLevel,
-        licenseType: body.licenseType,
-        priceCents: body.priceCents,
-        updated_at: new Date(),
+        ...validatedUpdates,
+        updatedAt: new Date(),
       },
     });
 
-    return NextResponse.json(updatedAgent);
+    return createSuccessResponse(updatedAgent);
   } catch (error) {
     console.error('Error updating agent:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    if (error instanceof z.ZodError) {
+      return createErrorResponse('Invalid update data');
+    }
+    return createErrorResponse('Internal server error');
   }
 } 

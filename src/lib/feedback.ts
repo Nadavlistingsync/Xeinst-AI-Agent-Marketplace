@@ -1,316 +1,134 @@
-import { prisma } from '@/lib/prisma';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { prisma } from './db';
+import { feedbackSchema } from './schema';
 
-export const feedbackSchema = z.object({
-  deploymentId: z.string().optional(),
-  rating: z.number().min(1).max(5),
-  comment: z.string().nullable(),
-  sentimentScore: z.number().min(-1).max(1).nullable(),
-  categories: z.record(z.number()).nullable(),
-  metadata: z.record(z.unknown()).nullable()
-});
+const prismaClient = new PrismaClient();
 
-export type FeedbackInput = z.infer<typeof feedbackSchema>;
+export type CreateFeedbackInput = z.infer<typeof feedbackSchema> & {
+  deploymentId: string;
+  userId: string;
+};
 
-export interface FeedbackOptions {
+export type UpdateFeedbackInput = Partial<z.infer<typeof feedbackSchema>>;
+
+export async function createFeedback(data: z.infer<typeof feedbackSchema>) {
+  const validatedFeedback = feedbackSchema.parse(data);
+  
+  return prismaClient.agentFeedback.create({
+    data: {
+      ...validatedFeedback,
+      categories: validatedFeedback.categories ? validatedFeedback.categories as Prisma.InputJsonValue : Prisma.JsonNull,
+      metadata: validatedFeedback.metadata ? validatedFeedback.metadata as Prisma.InputJsonValue : Prisma.JsonNull,
+    }
+  });
+}
+
+export async function updateFeedback(id: string, data: Partial<z.infer<typeof feedbackSchema>>) {
+  const validatedFeedback = feedbackSchema.partial().parse(data);
+  
+  return prismaClient.agentFeedback.update({
+    where: { id },
+    data: {
+      ...validatedFeedback,
+      categories: validatedFeedback.categories ? validatedFeedback.categories as Prisma.InputJsonValue : undefined,
+      metadata: validatedFeedback.metadata ? validatedFeedback.metadata as Prisma.InputJsonValue : undefined,
+    }
+  });
+}
+
+export async function getFeedback(id: string) {
+  return prismaClient.agentFeedback.findUnique({
+    where: { id },
+    include: {
+      user: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      deployment: true,
+    },
+  });
+}
+
+export async function getFeedbacks(options: {
+  deploymentId?: string;
+  userId?: string;
   startDate?: Date;
   endDate?: Date;
   limit?: number;
-  offset?: number;
-  deploymentId?: string;
-  userId?: string;
-  type?: 'error' | 'warning' | 'success';
-}
+} = {}) {
+  const where: Prisma.AgentFeedbackWhereInput = {};
 
-export interface FeedbackFilter {
-  where?: {
-    createdAt?: {
-      gte?: Date;
-      lte?: Date;
-    };
-    deploymentId?: string;
-    userId?: string;
-    type?: 'error' | 'warning' | 'success';
-  };
-  take?: number;
-  skip?: number;
-  orderBy?: {
-    [key: string]: 'asc' | 'desc';
-  };
-}
+  if (options.deploymentId) where.deploymentId = options.deploymentId;
+  if (options.userId) where.userId = options.userId;
+  if (options.startDate) where.createdAt = { gte: options.startDate };
+  if (options.endDate) where.createdAt = { lte: options.endDate };
 
-export type FeedbackUser = {
-  name: string | null;
-  image: string | null;
-};
-
-export type Feedback = {
-  id: string;
-  deploymentId?: string;
-  userId?: string;
-  rating?: number;
-  comment?: string | null;
-  sentimentScore?: number | null;
-  categories?: Record<string, number> | null;
-  metadata?: Record<string, unknown>;
-  response?: string | null;
-  responseDate?: Date | null;
-  createdAt?: Date;
-  updatedAt?: Date;
-  user?: FeedbackUser;
-};
-
-export async function createFeedback(data: FeedbackInput) {
-  try {
-    const validatedData = feedbackSchema.parse(data);
-
-    const feedback = await prisma.agentFeedback.create({
-      data: {
-        deploymentId: validatedData.deploymentId,
-        rating: validatedData.rating,
-        comment: validatedData.comment,
-        sentimentScore: validatedData.sentimentScore,
-        ...(validatedData.categories !== null && { categories: validatedData.categories }),
+  return prismaClient.agentFeedback.findMany({
+    where,
+    include: {
+      user: {
+        select: {
+          name: true,
+          image: true,
+        },
       },
-    });
-
-    return feedback;
-  } catch (error) {
-    console.error('Error creating feedback:', error);
-    throw error;
-  }
-}
-
-export async function getFeedbacks(options: FeedbackOptions = {}) {
-  try {
-    const where: any = {};
-    if (options.startDate) where.createdAt = { gte: options.startDate };
-    if (options.endDate) where.createdAt = { lte: options.endDate };
-
-    const feedbacks = await prisma.agentFeedback.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: options.limit,
-      skip: options.offset
-    });
-
-    return feedbacks;
-  } catch (error) {
-    console.error('Error getting feedbacks:', error);
-    throw error;
-  }
-}
-
-export async function getFeedbackById(id: string) {
-  try {
-    const feedback = await prisma.agentFeedback.findUnique({
-      where: { id }
-    });
-
-    return feedback;
-  } catch (error) {
-    console.error('Error getting feedback by ID:', error);
-    throw error;
-  }
-}
-
-export async function updateFeedback(id: string, data: Partial<FeedbackInput>) {
-  try {
-    const validatedData = feedbackSchema.partial().parse(data);
-
-    const feedback = await prisma.agentFeedback.update({
-      where: { id },
-      data: {
-        ...validatedData,
-        updatedAt: new Date()
-      }
-    });
-
-    return feedback;
-  } catch (error) {
-    console.error('Error updating feedback:', error);
-    throw error;
-  }
+      deployment: true,
+    },
+    orderBy: { createdAt: 'desc' },
+    take: options.limit,
+  });
 }
 
 export async function deleteFeedback(id: string) {
-  try {
-    await prisma.agentFeedback.delete({
-      where: { id }
-    });
-
-    return true;
-  } catch (error) {
-    console.error('Error deleting feedback:', error);
-    throw error;
-  }
-}
-
-export async function getFeedbackByDeployment(deploymentId: string, options: FeedbackOptions = {}) {
-  try {
-    const where: any = { deploymentId };
-    if (options.startDate) where.createdAt = { gte: options.startDate };
-    if (options.endDate) where.createdAt = { lte: options.endDate };
-
-    const feedbacks = await prisma.agentFeedback.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: options.limit,
-      skip: options.offset
-    });
-
-    return feedbacks;
-  } catch (error) {
-    console.error('Error getting feedback by deployment:', error);
-    throw error;
-  }
-}
-
-export async function getFeedbackByUser(userId: string, options: FeedbackOptions = {}) {
-  try {
-    const where: any = { userId };
-    if (options.startDate) where.createdAt = { gte: options.startDate };
-    if (options.endDate) where.createdAt = { lte: options.endDate };
-
-    const feedbacks = await prisma.agentFeedback.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: options.limit,
-      skip: options.offset
-    });
-
-    return feedbacks;
-  } catch (error) {
-    console.error('Error getting feedback by user:', error);
-    throw error;
-  }
+  return prismaClient.agentFeedback.delete({
+    where: { id },
+  });
 }
 
 export async function getFeedbackStats(deploymentId: string) {
-  try {
-    const feedbacks = await prisma.agentFeedback.findMany({
-      where: { deploymentId }
-    });
+  const feedbacks = await getFeedbacks({ deploymentId });
 
-    const stats = {
-      total: feedbacks.length,
-      averageRating: 0,
-      ratingDistribution: {
-        1: 0,
-        2: 0,
-        3: 0,
-        4: 0,
-        5: 0
-      },
-      sentimentDistribution: {
-        positive: 0,
-        neutral: 0,
-        negative: 0
-      },
-      categoryDistribution: {} as Record<string, number>,
-      monthlyTrends: {} as Record<string, { total: number; average: number }>
-    };
+  const stats = {
+    total: feedbacks.length,
+    averageRating: feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length,
+    ratingDistribution: feedbacks.reduce((acc, f) => {
+      acc[f.rating] = (acc[f.rating] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>),
+    sentimentDistribution: feedbacks.reduce((acc, f) => {
+      const sentiment = f.sentimentScore ?? 0;
+      const category = sentiment > 0.3 ? 'positive' : sentiment < -0.3 ? 'negative' : 'neutral';
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>),
+  };
 
-    if (feedbacks.length > 0) {
-      // Calculate average rating
-      stats.averageRating = feedbacks.reduce((sum, item) => sum + item.rating, 0) / feedbacks.length;
-
-      // Calculate rating distribution
-      feedbacks.forEach((item) => {
-        stats.ratingDistribution[item.rating as keyof typeof stats.ratingDistribution]++;
-      });
-
-      // Calculate sentiment distribution
-      feedbacks.forEach((item) => {
-        if (item.sentimentScore) {
-          const score = Number(item.sentimentScore);
-          if (score > 0.5) {
-            stats.sentimentDistribution.positive++;
-          } else if (score < -0.5) {
-            stats.sentimentDistribution.negative++;
-          } else {
-            stats.sentimentDistribution.neutral++;
-          }
-        }
-      });
-
-      // Calculate category distribution
-      feedbacks.forEach((item) => {
-        if (item.categories) {
-          const categories = item.categories as Record<string, number>;
-          Object.entries(categories).forEach(([category, value]) => {
-            stats.categoryDistribution[category] = (stats.categoryDistribution[category] || 0) + value;
-          });
-        }
-      });
-
-      // Calculate monthly trends
-      feedbacks.forEach((item) => {
-        const month = item.createdAt.toISOString().slice(0, 7);
-        if (!stats.monthlyTrends[month]) {
-          stats.monthlyTrends[month] = {
-            total: 0,
-            average: 0
-          };
-        }
-        stats.monthlyTrends[month].total++;
-        stats.monthlyTrends[month].average = (stats.monthlyTrends[month].average * (stats.monthlyTrends[month].total - 1) + item.rating) / stats.monthlyTrends[month].total;
-      });
-    }
-
-    return stats;
-  } catch (error) {
-    console.error('Error getting feedback stats:', error);
-    throw error;
-  }
+  return stats;
 }
 
-export async function getFeedbackInsights(deploymentId: string) {
-  try {
-    const feedbacks = await prisma.agentFeedback.findMany({
-      where: { deploymentId }
-    });
+export async function getFeedbackHistory(deploymentId: string) {
+  const feedbacks = await getFeedbacks({ deploymentId });
 
-    const insights = {
-      strengths: [] as string[],
-      weaknesses: [] as string[],
-      recommendations: [] as string[]
-    };
-
-    if (feedbacks.length > 0) {
-      const stats = await getFeedbackStats(deploymentId);
-
-      // Analyze strengths
-      if (stats.averageRating >= 4) {
-        insights.strengths.push('High average rating');
-      }
-      if (stats.sentimentDistribution.positive > stats.sentimentDistribution.negative) {
-        insights.strengths.push('Positive sentiment in feedback');
-      }
-
-      // Analyze weaknesses
-      if (stats.averageRating < 3) {
-        insights.weaknesses.push('Low average rating');
-      }
-      if (stats.sentimentDistribution.negative > stats.sentimentDistribution.positive) {
-        insights.weaknesses.push('Negative sentiment in feedback');
-      }
-
-      // Generate recommendations
-      if (stats.averageRating < 3) {
-        insights.recommendations.push('Improve overall rating');
-      }
-      if (stats.sentimentDistribution.negative > stats.sentimentDistribution.positive) {
-        insights.recommendations.push('Address negative sentiment');
-      }
-      if (Object.keys(stats.categoryDistribution).length === 0) {
-        insights.recommendations.push('Add more category feedback');
-      }
+  const monthlyFeedback = feedbacks.reduce((acc, feedback) => {
+    const month = feedback.createdAt.toISOString().slice(0, 7);
+    if (!acc[month]) {
+      acc[month] = {
+        total: 0,
+        averageRating: 0,
+        sentimentScore: 0,
+      };
     }
+    acc[month].total += 1;
+    acc[month].averageRating = (acc[month].averageRating * (acc[month].total - 1) + feedback.rating) / acc[month].total;
+    acc[month].sentimentScore = (acc[month].sentimentScore * (acc[month].total - 1) + (feedback.sentimentScore ?? 0)) / acc[month].total;
+    return acc;
+  }, {} as Record<string, { total: number; averageRating: number; sentimentScore: number }>);
 
-    return insights;
-  } catch (error) {
-    console.error('Error getting feedback insights:', error);
-    throw error;
-  }
+  return {
+    monthlyFeedback,
+    recentFeedback: feedbacks.slice(0, 10),
+  };
 } 

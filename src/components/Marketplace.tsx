@@ -10,15 +10,11 @@ import { signIn } from 'next-auth/react';
 import { PageSkeleton } from './LoadingSkeleton';
 import { toast } from 'react-hot-toast';
 import { fetchApi } from '@/lib/api';
+import { Agent } from '@prisma/client';
 
-interface Agent {
-  id: number;
-  name: string;
-  description: string;
-  tag: string;
-  rating: number;
-  price?: number;
-  imageUrl?: string;
+interface ApiResponse<T> {
+  data: T;
+  error?: string;
 }
 
 interface MarketplaceProps {
@@ -45,14 +41,14 @@ export default function Marketplace({ session }: MarketplaceProps) {
     try {
       setLoading(true);
       setError(null);
-      const { data, error } = await fetchApi<{ products: Agent[] }>('/api/list-products');
+      const response = await fetchApi<{ products: Agent[] }>('/api/list-products');
       
-      if (error) {
-        throw new Error(error);
+      if (response.error) {
+        throw new Error(response.error);
       }
 
-      if (data) {
-        setAgents(data.products);
+      if (response.data) {
+        setAgents(response.data.products);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch agents';

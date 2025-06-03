@@ -80,24 +80,7 @@ export async function GET(
         name,
         count: data.count,
         percentage: (data.count / total) * 100,
-        examples: data.examples.map((f) => ({
-          id: f.id,
-          deploymentId: f.deploymentId,
-          userId: f.userId,
-          rating: f.rating,
-          comment: f.comment,
-          sentimentScore: f.sentimentScore ? Number(f.sentimentScore) : null,
-          categories: f.categories as Record<string, number> | null,
-          metadata: f.metadata as Record<string, unknown>,
-          response: f.creatorResponse,
-          responseDate: f.responseDate,
-          createdAt: f.createdAt,
-          updatedAt: f.updatedAt,
-          user: {
-            name: f.user.name,
-            image: f.user.image,
-          },
-        })),
+        examples: data.examples.map((f) => f.comment || '').filter(Boolean),
       })
     );
 

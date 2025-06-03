@@ -1,35 +1,56 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, ProductStatus, ProductAccessLevel, ProductLicenseType } from '@prisma/client';
 import { Product } from './schema';
-import { Product as PrismaProduct, ProductStatus, ProductAccessLevel, ProductLicenseType } from '@prisma/client';
+import { Product as PrismaProduct } from '@prisma/client';
+import { prisma } from './db';
 
-const prisma = new PrismaClient();
+const prismaClient = new PrismaClient();
 
-export type CreateProductInput = {
+export interface CreateProductInput {
   name: string;
   description: string;
   price: number;
-  categoryId: string;
-  createdBy: string;
+  category: string;
   imageUrl?: string;
-  status?: 'draft' | 'published' | 'archived';
-};
+  createdBy: string;
+  status?: ProductStatus;
+  accessLevel?: ProductAccessLevel;
+  licenseType?: ProductLicenseType;
+  environment?: string;
+  framework?: string;
+  modelType?: string;
+  version?: string;
+  metadata?: Prisma.JsonValue;
+}
 
-export type UpdateProductInput = {
+export interface UpdateProductInput {
   name?: string;
   description?: string;
   price?: number;
-  categoryId?: string;
+  category?: string;
   imageUrl?: string;
-  status?: 'draft' | 'published' | 'archived';
-};
+  status?: ProductStatus;
+  accessLevel?: ProductAccessLevel;
+  licenseType?: ProductLicenseType;
+  environment?: string;
+  framework?: string;
+  modelType?: string;
+  version?: string;
+  metadata?: Prisma.JsonValue;
+}
 
-export type ProductFilter = {
-  categoryId?: string;
+export interface ProductFilter {
+  search?: string;
+  category?: string;
   minPrice?: number;
   maxPrice?: number;
-  status?: 'draft' | 'published' | 'archived';
-  search?: string;
-};
+  status?: ProductStatus;
+  accessLevel?: ProductAccessLevel;
+  licenseType?: ProductLicenseType;
+  environment?: string;
+  framework?: string;
+  modelType?: string;
+  createdBy?: string;
+}
 
 function toProduct(obj: PrismaProduct): Product {
   return {
@@ -40,82 +61,112 @@ function toProduct(obj: PrismaProduct): Product {
 }
 
 export async function createProduct(data: CreateProductInput) {
-  return prisma.product.create({
+  return prismaClient.product.create({
     data: {
       name: data.name,
       description: data.description,
       price: data.price,
-      categoryId: data.categoryId,
+      category: data.category,
       createdBy: data.createdBy,
-      imageUrl: data.imageUrl,
-      status: data.status || 'draft'
-    }
+      status: data.status || ProductStatus.draft,
+      accessLevel: data.accessLevel || ProductAccessLevel.public,
+      licenseType: data.licenseType || ProductLicenseType.free,
+      environment: data.environment || 'production',
+      framework: data.framework || 'custom',
+      modelType: data.modelType || 'general',
+      version: data.version || '1.0.0',
+      metadata: data.metadata || Prisma.JsonNull,
+    },
   }).then(toProduct);
 }
 
 export async function updateProduct(id: string, data: UpdateProductInput) {
-  return prisma.product.update({
+  return prismaClient.product.update({
     where: { id },
-    data
+    data: {
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      category: data.category,
+      status: data.status,
+      accessLevel: data.accessLevel,
+      licenseType: data.licenseType,
+      environment: data.environment,
+      framework: data.framework,
+      modelType: data.modelType,
+      version: data.version,
+      metadata: data.metadata,
+    },
   }).then(toProduct);
 }
 
 export async function getProduct(id: string) {
-  return prisma.product.findUnique({
+  return prismaClient.product.findUnique({
     where: { id },
     include: {
-      category: true,
-      creator: true,
       reviews: {
         include: {
-          user: true
-        }
-      }
-    }
+          user: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+        },
+      },
+    },
   }).then(product => (product ? toProduct(product) : null));
 }
 
 export async function getProducts(filter: ProductFilter = {}) {
-  const where: Prisma.ProductWhereInput = {
-    status: filter.status || 'published'
-  };
-
-  if (filter.categoryId) {
-    where.categoryId = filter.categoryId;
-  }
-
-  if (filter.minPrice || filter.maxPrice) {
-    where.price = {
-      ...(filter.minPrice && { gte: filter.minPrice }),
-      ...(filter.maxPrice && { lte: filter.maxPrice })
-    };
-  }
+  const where: Prisma.ProductWhereInput = {};
 
   if (filter.search) {
     where.OR = [
       { name: { contains: filter.search, mode: 'insensitive' } },
-      { description: { contains: filter.search, mode: 'insensitive' } }
+      { description: { contains: filter.search, mode: 'insensitive' } },
     ];
   }
 
-  return prisma.product.findMany({
+  if (filter.category) {
+    where.category = filter.category;
+  }
+
+  if (filter.minPrice !== undefined || filter.maxPrice !== undefined) {
+    where.price = {};
+    if (filter.minPrice !== undefined) where.price.gte = filter.minPrice;
+    if (filter.maxPrice !== undefined) where.price.lte = filter.maxPrice;
+  }
+
+  if (filter.status) where.status = filter.status;
+  if (filter.accessLevel) where.accessLevel = filter.accessLevel;
+  if (filter.licenseType) where.licenseType = filter.licenseType;
+  if (filter.environment) where.environment = filter.environment;
+  if (filter.framework) where.framework = filter.framework;
+  if (filter.modelType) where.modelType = filter.modelType;
+  if (filter.createdBy) where.createdBy = filter.createdBy;
+
+  return prismaClient.product.findMany({
     where,
     include: {
-      category: true,
-      creator: true,
-      _count: {
-        select: {
-          reviews: true
-        }
-      }
+      reviews: {
+        include: {
+          user: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+        },
+      },
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   }).then(products => products.map(toProduct));
 }
 
 export async function deleteProduct(id: string): Promise<void> {
   try {
-    await prisma.product.delete({
+    await prismaClient.product.delete({
       where: { id },
     });
   } catch (error) {
@@ -125,28 +176,35 @@ export async function deleteProduct(id: string): Promise<void> {
 }
 
 export async function getProductStats() {
-  try {
-    const products = await getProducts();
+  const [totalProducts, totalRevenue, categoryDistribution, statusDistribution] = await Promise.all([
+    prismaClient.product.count(),
+    prismaClient.product.aggregate({
+      _sum: {
+        price: true,
+      },
+    }),
+    prismaClient.product.groupBy({
+      by: ['category'],
+      _count: true,
+    }),
+    prismaClient.product.groupBy({
+      by: ['status'],
+      _count: true,
+    }),
+  ]);
 
-    const totalProducts = products.length;
-    const totalValue = products.reduce((sum, product) => sum + Number(product.price), 0);
-    const averagePrice = totalValue / totalProducts;
-    const priceDistribution = products.reduce((acc, product) => {
-      const range = Math.floor(Number(product.price) / 100) * 100;
-      acc[range] = (acc[range] || 0) + 1;
+  return {
+    totalProducts,
+    totalRevenue: totalRevenue._sum.price || 0,
+    categoryDistribution: categoryDistribution.reduce((acc, curr) => {
+      acc[curr.category] = curr._count;
       return acc;
-    }, {} as Record<number, number>);
-
-    return {
-      totalProducts,
-      totalValue,
-      averagePrice,
-      priceDistribution,
-    };
-  } catch (error) {
-    console.error('Error getting product stats:', error);
-    throw new Error('Failed to get product stats');
-  }
+    }, {} as Record<string, number>),
+    statusDistribution: statusDistribution.reduce((acc, curr) => {
+      acc[curr.status] = curr._count;
+      return acc;
+    }, {} as Record<string, number>),
+  };
 }
 
 export async function getProductHistory() {
@@ -173,58 +231,50 @@ export async function getProductHistory() {
   }
 }
 
-export async function getProductReviews(
-  product_id: string,
-  options: {
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const where: Prisma.ReviewWhereInput = { productId: product_id };
-
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
-
-  return await prisma.review.findMany({
-    where,
+export async function getProductReviews(productId: string) {
+  return prismaClient.review.findMany({
+    where: { deploymentId: productId },
     include: {
-      user: true,
+      user: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
-    take: options.limit,
   });
 }
 
 export async function createProductReview(data: {
-  productId: string;
+  deploymentId: string;
   userId: string;
   rating: number;
-  comment?: string;
-}): Promise<any> {
-  const review = await prisma.review.create({
+  comment: string;
+}) {
+  const review = await prismaClient.review.create({
     data: {
-      productId: data.productId,
+      deploymentId: data.deploymentId,
       userId: data.userId,
       rating: data.rating,
-      comment: data.comment || '',
+      comment: data.comment,
     },
   });
 
-  await updateProductRating(data.productId);
+  await updateProductRating(data.deploymentId);
 
   return review;
 }
 
 export async function updateProductRating(product_id: string): Promise<void> {
-  const reviews = await prisma.review.findMany({
-    where: { productId: product_id },
+  const reviews = await prismaClient.review.findMany({
+    where: { deploymentId: product_id },
   });
 
   const average_rating =
     reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
 
-  await prisma.product.update({
+  await prismaClient.product.update({
     where: { id: product_id },
     data: { rating: average_rating },
   });
@@ -237,7 +287,7 @@ export async function getRelatedProducts(
   const product = await getProduct(product_id);
   if (!product) return [];
 
-  return await prisma.product.findMany({
+  return await prismaClient.product.findMany({
     where: {
       category: product.category,
       id: { not: product_id },
@@ -259,7 +309,7 @@ export async function getProductPurchases(
   if (options.startDate) where.createdAt = { gte: options.startDate };
   if (options.endDate) where.createdAt = { lte: options.endDate };
 
-  return await prisma.purchase.findMany({
+  return await prismaClient.purchase.findMany({
     where,
     include: {
       user: true,
@@ -272,7 +322,7 @@ export async function getProductPurchases(
 export async function updateProductDownloadCount(
   product_id: string
 ): Promise<void> {
-  await prisma.product.update({
+  await prismaClient.product.update({
     where: { id: product_id },
     data: {
       downloadCount: {

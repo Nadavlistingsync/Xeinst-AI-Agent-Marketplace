@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { FeedbackResponse } from './FeedbackResponse';
 import { formatDistanceToNow } from 'date-fns';
-import { Star, TrendingUp, Clock, MessageSquare } from 'lucide-react';
+import { Star, Clock, MessageSquare } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface FeedbackMetrics {
@@ -48,19 +48,29 @@ interface FeedbackDashboardProps {
 }
 
 export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
-  const [metrics] = useState<FeedbackMetrics | null>(null);
+  const [metrics, setMetrics] = useState<FeedbackMetrics | null>(null);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/feedback/${agentId}`);
-      if (!response.ok) {
+      const [metricsResponse, feedbacksResponse] = await Promise.all([
+        fetch(`/api/feedback/${agentId}/metrics`),
+        fetch(`/api/feedback/${agentId}`)
+      ]);
+      
+      if (!metricsResponse.ok || !feedbacksResponse.ok) {
         throw new Error('Failed to fetch feedback data');
       }
-      const data = await response.json();
-      setFeedbacks(data);
+      
+      const [metricsData, feedbacksData] = await Promise.all([
+        metricsResponse.json(),
+        feedbacksResponse.json()
+      ]);
+      
+      setMetrics(metricsData);
+      setFeedbacks(feedbacksData);
     } catch (error) {
       console.error('Error fetching feedback data:', error);
       toast.error('Failed to load feedback data');
@@ -126,7 +136,7 @@ export function FeedbackDashboard({ agentId }: FeedbackDashboardProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Sentiment Score</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{(metrics.sentimentScore * 100).toFixed(1)}%</div>

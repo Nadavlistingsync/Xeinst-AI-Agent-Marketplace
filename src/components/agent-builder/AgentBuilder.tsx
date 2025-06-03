@@ -32,12 +32,12 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
 
   const handleSave = async () => {
     if (!session) {
-      toast.error('Authentication required. Please sign in to save your agent.');
+      toast({ description: 'Authentication required. Please sign in to save your agent.', variant: 'destructive' });
       return;
     }
 
     if (!name || !code) {
-      toast.error('Missing required fields. Please provide a name and code for your agent.');
+      toast({ description: 'Missing required fields. Please provide a name and code for your agent.', variant: 'destructive' });
       return;
     }
 
@@ -79,10 +79,10 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
         onSave(agentData);
       }
 
-      toast.success('Agent saved successfully. Your agent has been saved and is ready to be deployed.');
+      toast({ description: 'Agent saved successfully. Your agent has been saved and is ready to be deployed.' });
     } catch (error) {
       console.error('Error saving agent:', error);
-      toast.error('There was an error saving your agent. Please try again.');
+      toast({ description: 'There was an error saving your agent. Please try again.', variant: 'destructive' });
     }
   };
 

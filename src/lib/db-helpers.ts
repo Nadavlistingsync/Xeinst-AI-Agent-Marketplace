@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
-import type { Deployment } from './schema';
+import type { Deployment } from '@prisma/client';
 
 // Product operations
 export async function getProduct(id: string) {
@@ -37,7 +37,7 @@ export interface GetProductsParams {
 export async function getProducts(params: GetProductsParams) {
   const { query, category, minPrice, maxPrice } = params;
 
-  const where: any = {};
+  const where: Prisma.ProductWhereInput = {};
 
   if (query) {
     where.OR = [
@@ -230,8 +230,8 @@ export async function getUserProducts(userId: string) {
 export interface DeploymentFilters {
   query?: string;
   framework?: string;
-  minPrice?: string;
-  maxPrice?: string;
+  minPrice?: number;
+  maxPrice?: number;
 }
 
 export async function getDeployments(filters?: DeploymentFilters): Promise<Deployment[]> {
@@ -248,31 +248,13 @@ export async function getDeployments(filters?: DeploymentFilters): Promise<Deplo
 
   return prisma.deployment.findMany({
     where,
-    include: {
-      creator: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
-    },
-    orderBy: [
-      { createdAt: 'desc' },
-    ],
+    orderBy: { createdAt: 'desc' },
   });
 }
 
 export async function getDeploymentById(id: string): Promise<Deployment | null> {
   return prisma.deployment.findUnique({
     where: { id },
-    include: {
-      creator: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
-    },
   });
 }
 
@@ -287,14 +269,14 @@ export async function getDeploymentMetrics(id: string) {
 
 export async function createDeployment(data: Prisma.DeploymentCreateInput) {
   return prisma.deployment.create({
-    data,
-    include: {
-      creator: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
+    data: {
+      ...data,
+      status: 'pending',
+      startDate: new Date(),
+      rating: 0,
+      totalRatings: 0,
+      downloadCount: 0,
+      health: Prisma.JsonNull,
     },
   });
 }
@@ -302,14 +284,9 @@ export async function createDeployment(data: Prisma.DeploymentCreateInput) {
 export async function updateDeployment(id: string, data: Prisma.DeploymentUpdateInput) {
   return prisma.deployment.update({
     where: { id },
-    data,
-    include: {
-      creator: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
+    data: {
+      ...data,
+      updatedAt: new Date(),
     },
   });
 }

@@ -1,176 +1,117 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Play, Square, Trash, RefreshCw } from "lucide-react";
-import Link from "next/link";
-import prisma from "@/lib/prisma";
-import { formatDistanceToNow } from "date-fns";
-import { DeploymentWithMetrics } from '@/types/deployment';
+import { DeploymentStatus } from '@prisma/client';
+import { Deployment as DeploymentType } from '@/types/deployment';
 
 interface DeploymentsListProps {
-  userId: string;
+  deployments: DeploymentType[];
+  onDeploymentAction?: (id: string, action: 'start' | 'stop' | 'restart' | 'delete') => Promise<void>;
 }
 
-export const DeploymentsList = async ({ userId }: DeploymentsListProps) => {
-  const deployments = await prisma.deployment.findMany({
-    where: {
-      createdBy: userId
-    },
-    include: {
-      metrics: {
-        orderBy: {
-          timestamp: 'desc'
-        },
-        take: 1
-      }
-    }
-  });
+export function DeploymentsList({ deployments, onDeploymentAction }: DeploymentsListProps) {
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
 
-  if (deployments.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold">No Deployments Yet</h3>
-            <p className="text-gray-500 mt-2">
-              Deploy your first AI agent to get started
-            </p>
-            <Button asChild className="mt-4">
-              <Link href="/marketplace">Browse Marketplace</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleAction = async (id: string, action: 'start' | 'stop' | 'restart' | 'delete') => {
+    if (!onDeploymentAction) return;
+    
+    setLoading(prev => ({ ...prev, [id]: true }));
+    try {
+      await onDeploymentAction(id, action);
+    } catch (error) {
+      console.error(`Failed to ${action} deployment:`, error);
+    } finally {
+      setLoading(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const getStatusColor = (status: DeploymentStatus) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500';
+      case 'failed':
+        return 'bg-red-500';
+      case 'deploying':
+        return 'bg-yellow-500';
+      case 'stopped':
+        return 'bg-gray-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
 
   return (
-    <div className="grid gap-4">
-      {deployments.map((deployment) => {
-        const isActive = deployment.status === 'active';
-        const isPending = deployment.status === 'pending' || deployment.status === 'deploying';
-        const metrics = deployment.metrics?.[0];
-
-        return (
-          <Card key={deployment.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>{deployment.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{deployment.description}</p>
+    <Card>
+      <CardHeader>
+        <CardTitle>Deployments</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {deployments.map((deployment) => (
+            <div
+              key={deployment.id}
+              className="flex items-center justify-between p-4 border rounded-lg"
+            >
+              <div className="flex items-center space-x-4">
+                <div className="flex-1">
+                  <h3 className="font-medium">{deployment.name}</h3>
+                  <p className="text-sm text-gray-500">{deployment.description}</p>
                 </div>
-                <Badge variant={isActive ? 'success' : isPending ? 'warning' : 'destructive'}>
-                  {deployment.status}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <p className="text-sm font-medium">Environment</p>
-                    <p className="mt-1">{deployment.environment}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Framework</p>
-                    <p className="mt-1">{deployment.framework}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Requests</p>
-                    <p className="mt-1">{metrics?.totalRequests || 0} requests</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Created</p>
-                    <p className="mt-1">{formatDistanceToNow(new Date(deployment.createdAt), { addSuffix: true })}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleStartDeployment(deployment.id)}
-                    disabled={isActive || isPending}
-                  >
-                    <Play className="mr-2 h-4 w-4" />
-                    Start
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleStopDeployment(deployment.id)}
-                    disabled={!isActive || isPending}
-                  >
-                    <Square className="mr-2 h-4 w-4" />
-                    Stop
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRestartDeployment(deployment.id)}
-                    disabled={!isActive || isPending}
-                  >
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Restart
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteDeployment(deployment.id)}
-                    disabled={isPending}
-                  >
-                    <Trash className="mr-2 h-4 w-4" />
-                    Delete
-                  </Button>
+                <div className="flex items-center space-x-2">
+                  <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(deployment.status)}`}>
+                    {deployment.status}
+                  </span>
+                  {deployment.version && (
+                    <span className="text-sm text-gray-500">v{deployment.version}</span>
+                  )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
+              {onDeploymentAction && (
+                <div className="flex items-center space-x-2">
+                  {deployment.status === 'stopped' && (
+                    <button
+                      onClick={() => handleAction(deployment.id, 'start')}
+                      disabled={loading[deployment.id]}
+                      className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+                    >
+                      {loading[deployment.id] ? 'Starting...' : 'Start'}
+                    </button>
+                  )}
+                  {deployment.status === 'active' && (
+                    <button
+                      onClick={() => handleAction(deployment.id, 'stop')}
+                      disabled={loading[deployment.id]}
+                      className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+                    >
+                      {loading[deployment.id] ? 'Stopping...' : 'Stop'}
+                    </button>
+                  )}
+                  {deployment.status === 'failed' && (
+                    <button
+                      onClick={() => handleAction(deployment.id, 'restart')}
+                      disabled={loading[deployment.id]}
+                      className="px-3 py-1 text-sm bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50"
+                    >
+                      {loading[deployment.id] ? 'Restarting...' : 'Restart'}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleAction(deployment.id, 'delete')}
+                    disabled={loading[deployment.id]}
+                    className="px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+                  >
+                    {loading[deployment.id] ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {deployments.length === 0 && (
+            <div className="text-center text-gray-500 py-8">
+              No deployments found
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
-}
-
-async function handleStartDeployment(id: string) {
-  "use server";
-  
-  await prisma.deployment.update({
-    where: { id },
-    data: { status: "active" },
-  });
-}
-
-async function handleStopDeployment(id: string) {
-  "use server";
-  
-  await prisma.deployment.update({
-    where: { id },
-    data: { status: "stopped" },
-  });
-}
-
-async function handleRestartDeployment(id: string) {
-  "use server";
-  
-  await prisma.deployment.update({
-    where: { id },
-    data: { status: "pending" },
-  });
-  
-  // Wait a moment before setting to active
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  
-  await prisma.deployment.update({
-    where: { id },
-    data: { status: "active" },
-  });
-}
-
-async function handleDeleteDeployment(id: string) {
-  "use server";
-  
-  await prisma.deployment.delete({
-    where: { id },
-  });
 } 

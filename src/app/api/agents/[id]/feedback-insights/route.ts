@@ -3,14 +3,13 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { generateFeedbackInsights, analyzeFeedbackTrends } from '@/lib/feedback-analysis';
 import prisma from '@/lib/prisma';
-import { createErrorResponse } from '@/lib/api';
+import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
 
 const insightsQuerySchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   category: z.enum(['all', 'error', 'warning', 'success']).optional(),
-  limit: z.number().min(1).max(100).optional(),
 });
 
 export async function GET(
@@ -20,52 +19,37 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return createErrorResponse('Unauthorized');
     }
 
     // Validate agent ID
     if (!z.string().uuid().safeParse(params.id).success) {
-      return NextResponse.json(
-        { error: 'Invalid agent ID format' },
-        { status: 400 }
-      );
+      return createErrorResponse('Invalid agent ID format');
     }
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        creator: {
           select: {
             id: true,
-            subscription_tier: true
+            subscriptionTier: true
           }
         }
       }
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
+      return createErrorResponse('Agent not found');
     }
 
     // Check if user has access to the agent
-    if (agent.userId !== session.user.id && agent.access_level !== 'public') {
-      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
-        return NextResponse.json(
-          { error: 'Premium subscription required' },
-          { status: 403 }
-        );
+    if (agent.createdBy !== session.user.id && agent.accessLevel !== 'public') {
+      if (agent.accessLevel === 'premium' && session.user.subscriptionTier !== 'premium') {
+        return createErrorResponse('Access denied');
       }
-      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
-        return NextResponse.json(
-          { error: 'Basic subscription required' },
-          { status: 403 }
-        );
+      if (agent.accessLevel === 'basic' && session.user.subscriptionTier !== 'basic') {
+        return createErrorResponse('Access denied');
       }
     }
 
@@ -74,8 +58,7 @@ export async function GET(
     const queryParams = {
       startDate: searchParams.get('startDate'),
       endDate: searchParams.get('endDate'),
-      category: searchParams.get('category') as 'all' | 'error' | 'warning' | 'success' | null,
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
+      category: searchParams.get('category')
     };
 
     const validatedParams = insightsQuerySchema.parse(queryParams);
@@ -91,7 +74,7 @@ export async function GET(
       })
     ]);
 
-    return NextResponse.json({
+    return createSuccessResponse({
       insights,
       trends,
       lastUpdated: new Date().toISOString(),
@@ -106,21 +89,9 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error generating feedback insights:', error);
-    
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: 'Validation error',
-          details: error.errors
-        },
-        { status: 400 }
-      );
+      return createErrorResponse('Invalid query parameters');
     }
-
-    const errorResponse = createErrorResponse(error, 'Failed to generate feedback insights');
-    return NextResponse.json(
-      { error: errorResponse.error },
-      { status: errorResponse.status }
-    );
+    return createErrorResponse('Internal server error');
   }
 } 

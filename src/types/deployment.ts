@@ -1,38 +1,99 @@
-import type { Deployment as PrismaDeployment, DeploymentStatus as PrismaDeploymentStatus } from '@prisma/client';
+import { DeploymentStatus } from '@prisma/client';
+import { JsonValue } from './json';
 
-export type Deployment = PrismaDeployment;
-export type DeploymentStatus = PrismaDeploymentStatus;
-
-export interface DeploymentWithMetrics extends Deployment {
-  metrics: {
-    totalRequests: number;
-    averageResponseTime: number;
-    successRate: number;
-    errorRate: number;
-    timestamp: Date;
-  }[];
-  config?: Record<string, unknown>;
-}
-
-export interface DeploymentCreateInput {
+export interface Deployment {
+  id: string;
   name: string;
+  status: DeploymentStatus;
   description: string;
+  accessLevel: string;
+  licenseType: string;
   environment: string;
   framework: string;
   modelType: string;
-  config?: Record<string, unknown>;
+  category: string;
+  source: string;
+  deployedBy: string;
   createdBy: string;
+  rating: number;
+  totalRatings: number;
+  downloadCount: number;
+  startDate: Date;
+  endDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  isPublic: boolean;
+  version: string;
+  health: JsonValue;
+  tags: string[];
+  earningsSplit: number;
+  config?: Record<string, unknown>;
 }
 
-export interface DeploymentUpdateInput {
+export interface DeploymentWithMetrics extends Deployment {
+  metrics: Array<{
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
+    deploymentId: string;
+    errorRate: number;
+    responseTime: number;
+    successRate: number;
+    totalRequests: number;
+    activeUsers: number;
+    averageResponseTime: number;
+    requestsPerMinute: number;
+    averageTokensUsed: number;
+    costPerRequest: number;
+    totalCost: number;
+    lastUpdated: Date;
+  }>;
+  feedbacks: Array<{
+    id: string;
+    rating: number;
+    comment: string | null;
+    sentimentScore: number;
+    createdAt: Date;
+    user?: {
+      name: string | null;
+      email: string | null;
+      image: string | null;
+    };
+  }>;
+}
+
+export interface CreateDeploymentInput {
+  name: string;
+  description: string;
+  accessLevel: string;
+  licenseType: string;
+  environment: string;
+  framework: string;
+  modelType: string;
+  category: string;
+  isPublic: boolean;
+  version: string;
+  tags: string[];
+  earningsSplit: number;
+  createdBy: string;
+  deployedBy: string;
+}
+
+export interface UpdateDeploymentInput {
   name?: string;
   description?: string;
+  accessLevel?: string;
+  licenseType?: string;
   environment?: string;
   framework?: string;
   modelType?: string;
-  config?: Record<string, unknown>;
+  category?: string;
+  isPublic?: boolean;
+  version?: string;
+  tags?: string[];
+  earningsSplit?: number;
   status?: DeploymentStatus;
-  health?: Record<string, unknown>;
+  health?: JsonValue;
 }
 
 export interface DeploymentMetrics {

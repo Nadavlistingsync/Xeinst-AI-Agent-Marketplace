@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { Deployment } from "@prisma/client";
+import { Deployment } from "@/types/deployment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,18 +12,19 @@ import { useRouter } from "next/navigation";
 
 interface DeploymentActionsProps {
   deployment: Deployment;
+  onActionComplete?: () => void;
 }
 
-export function DeploymentActions({ deployment }: DeploymentActionsProps) {
-  const [isDeploying, setIsDeploying] = useState(false);
+export function DeploymentActions({ deployment, onActionComplete }: DeploymentActionsProps) {
   const [deploymentName, setDeploymentName] = useState("");
   const [environment, setEnvironment] = useState("production");
   const { toast } = useToast();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleDeploy = async () => {
     try {
-      setIsDeploying(true);
+      setIsLoading(true);
       
       const response = await fetch("/api/deployments", {
         method: "POST",
@@ -44,7 +45,6 @@ export function DeploymentActions({ deployment }: DeploymentActionsProps) {
       const data = await response.json();
       
       toast({
-        title: "Success",
         description: "Your agent has been deployed successfully.",
         variant: "default"
       });
@@ -52,12 +52,38 @@ export function DeploymentActions({ deployment }: DeploymentActionsProps) {
       router.push(`/dashboard/deployments/${data.id}`);
     } catch (error) {
       toast({
-        title: "Error",
         description: "There was an error deploying your agent. Please try again.",
         variant: "destructive"
       });
     } finally {
-      setIsDeploying(false);
+      setIsLoading(false);
+    }
+  };
+
+  const handleAction = async (action: 'start' | 'stop' | 'restart') => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/deployments/${deployment.id}/${action}`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${action} deployment`);
+      }
+
+      toast({
+        description: `Deployment ${action}ed successfully`,
+        variant: "default"
+      });
+      onActionComplete?.();
+    } catch (error) {
+      toast({
+        description: `Failed to ${action} deployment`,
+        variant: "destructive"
+      });
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -96,9 +122,9 @@ export function DeploymentActions({ deployment }: DeploymentActionsProps) {
             <Button
               className="w-full"
               onClick={handleDeploy}
-              disabled={isDeploying || !deploymentName}
+              disabled={isLoading || !deploymentName}
             >
-              {isDeploying ? "Deploying..." : "Deploy Agent"}
+              {isLoading ? "Deploying..." : "Deploy Agent"}
             </Button>
           </div>
 
@@ -111,6 +137,30 @@ export function DeploymentActions({ deployment }: DeploymentActionsProps) {
               <li>License Type: {deployment.licenseType}</li>
               <li>Status: {deployment.status}</li>
             </ul>
+          </div>
+
+          <div className="flex space-x-4">
+            <Button
+              onClick={() => handleAction('start')}
+              disabled={isLoading || deployment.status === 'active'}
+              variant="default"
+            >
+              Start
+            </Button>
+            <Button
+              onClick={() => handleAction('stop')}
+              disabled={isLoading || deployment.status === 'stopped'}
+              variant="destructive"
+            >
+              Stop
+            </Button>
+            <Button
+              onClick={() => handleAction('restart')}
+              disabled={isLoading}
+              variant="outline"
+            >
+              Restart
+            </Button>
           </div>
         </div>
       </CardContent>

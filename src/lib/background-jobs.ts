@@ -1,46 +1,79 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from './db';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
+import { AgentFeedback } from '@/types/agent-monitoring';
 
-export async function runFeedbackAnalysisJob() {
-  try {
-    console.log('Starting feedback analysis job...');
-    
-    // Get all active agents
-    const activeAgents = await prisma.deployment.findMany({
-      where: {
-        status: 'active'
+export async function processFeedbackJob() {
+  const feedback = await prisma.agentFeedback.findMany({
+    include: {
+      deployment: true,
+    },
+  });
+
+  for (const f of feedback) {
+    try {
+      await updateAgentBasedOnFeedback(f.deploymentId, f as AgentFeedback);
+    } catch (error) {
+      console.error(`Error processing feedback ${f.id}:`, error);
+    }
+  }
+}
+
+export async function cleanupOldLogs() {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  await prisma.agentLog.deleteMany({
+    where: {
+      timestamp: {
+        lt: thirtyDaysAgo,
       },
-      select: {
-        id: true,
-        name: true,
-        status: true
-      }
-    });
+    },
+  });
+}
 
-    if (!activeAgents || activeAgents.length === 0) {
-      console.log('No active agents found');
-      return;
+export async function updateAgentMetrics() {
+  const deployments = await prisma.deployment.findMany({
+    where: {
+      status: 'active',
+    },
+  });
+
+  for (const deployment of deployments) {
+    try {
+      const logs = await prisma.agentLog.findMany({
+        where: {
+          deploymentId: deployment.id,
+          timestamp: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+          },
+        },
+      });
+
+      const errorCount = logs.filter(log => log.level === 'error').length;
+      const totalRequests = logs.length;
+      const errorRate = totalRequests > 0 ? errorCount / totalRequests : 0;
+      const successRate = 1 - errorRate;
+
+      await prisma.deployment.update({
+        where: { id: deployment.id },
+        data: {
+          health: {
+            status: deployment.status,
+            lastChecked: new Date(),
+            metrics: {
+              errorRate,
+              responseTime: 0,
+              successRate,
+              totalRequests,
+              activeUsers: 0,
+            },
+            logs: [],
+          } as unknown as Prisma.JsonValue,
+        },
+      });
+    } catch (error) {
+      console.error(`Error updating metrics for deployment ${deployment.id}:`, error);
     }
-
-    console.log(`Found ${activeAgents.length} active agents to process`);
-
-    // Process each agent
-    for (const agent of activeAgents) {
-      try {
-        console.log(`Processing feedback for agent: ${agent.name} (${agent.id})`);
-        await updateAgentBasedOnFeedback(agent.id);
-        console.log(`Successfully processed feedback for agent: ${agent.name}`);
-      } catch (error) {
-        console.error(`Error processing agent ${agent.id}:`, error);
-        // Continue with next agent even if one fails
-        continue;
-      }
-    }
-
-    console.log('Feedback analysis job completed successfully');
-  } catch (error) {
-    console.error('Error running feedback analysis job:', error);
-    throw error; // Re-throw to allow proper error handling upstream
   }
 }
 
@@ -52,14 +85,14 @@ export function startBackgroundJobs() {
     // Run feedback analysis every 6 hours
     const interval = setInterval(async () => {
       try {
-        await runFeedbackAnalysisJob();
+        await processFeedbackJob();
       } catch (error) {
         console.error('Error in scheduled feedback analysis:', error);
       }
     }, 6 * 60 * 60 * 1000);
 
     // Run initial analysis
-    runFeedbackAnalysisJob().catch(error => {
+    processFeedbackJob().catch(error => {
       console.error('Error in initial feedback analysis:', error);
     });
 
@@ -71,4 +104,16 @@ export function startBackgroundJobs() {
     console.error('Error starting background jobs:', error);
     throw error;
   }
+}
+
+export async function processFeedback(agentId: string, feedbackId: string) {
+  const feedback = await prisma.agentFeedback.findUnique({
+    where: { id: feedbackId }
+  });
+
+  if (!feedback) {
+    throw new Error('Feedback not found');
+  }
+
+  await updateAgentBasedOnFeedback(agentId, feedback);
 } 

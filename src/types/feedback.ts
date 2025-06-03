@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { JsonValue } from '@prisma/client/runtime/library';
 
 export interface User {
   id: string;
@@ -16,19 +17,25 @@ export interface Deployment {
 
 export interface Feedback {
   id: string;
-  deploymentId: string;
   userId: string;
-  rating: number;
-  comment: string | null;
-  sentimentScore: number | null;
-  categories: Record<string, number> | null;
-  metadata: Record<string, unknown> | null;
   createdAt: Date;
   updatedAt: Date;
+  rating: number;
+  deploymentId: string;
+  comment: string | null;
+  sentimentScore: number;
+  categories: Record<string, any> | null;
   creatorResponse: string | null;
   responseDate: Date | null;
+  metadata?: JsonValue;
   user: User;
   deployment: Deployment;
+}
+
+export interface FeedbackResponse {
+  success: boolean;
+  data?: Feedback;
+  error?: string;
 }
 
 export interface FeedbackSuccess {
@@ -44,7 +51,7 @@ export interface FeedbackError {
   status: number;
 }
 
-export type FeedbackResponse = FeedbackSuccess | FeedbackError;
+export type FeedbackResponseInput = z.infer<typeof feedbackResponseSchema>;
 
 export interface ValidationError {
   path: string;
@@ -87,14 +94,22 @@ export interface FeedbackAnalytics {
 }
 
 export interface FeedbackInsights {
-  sentimentTrend: {
-    positive: number;
-    neutral: number;
-    negative: number;
+  metrics: {
+    averageRating: number;
+    totalFeedbacks: number;
+    sentimentDistribution: Record<string, number>;
   };
-  categoryTrends: Record<string, number>;
-  commonIssues: string[];
-  recommendations: string[];
+  trends: {
+    ratingTrend: Array<{ date: string; rating: number }>;
+    sentimentTrend: Array<{ date: string; score: number }>;
+  };
+  categories: Record<string, number>;
+}
+
+export interface FeedbackInsightsResponse {
+  success: boolean;
+  data?: FeedbackInsights;
+  error?: string;
 }
 
 export interface FeedbackRecommendation {
@@ -129,21 +144,38 @@ export interface FeedbackExport {
   userEmail: string | null;
 }
 
+export interface AgentFeedback {
+  id: string;
+  deploymentId: string;
+  userId: string;
+  rating: number;
+  comment: string | null;
+  sentimentScore: number;
+  categories: Record<string, number> | null;
+  creatorResponse: string | null;
+  responseDate: Date | null;
+  metadata: JsonValue;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface FeedbackMetrics {
   averageRating: number;
-  totalFeedbacks: number;
-  positiveFeedbacks: number;
-  negativeFeedbacks: number;
-  neutralFeedbacks: number;
-  sentimentScore: number;
-  commonIssues: string[];
-  improvementSuggestions: string[];
-  categories: Record<string, number>;
-  responseMetrics: {
-    totalResponses: number;
-    averageResponseTime: number;
-    responseRate: number;
+  totalFeedback: number;
+  sentimentDistribution: {
+    positive: number;
+    neutral: number;
+    negative: number;
   };
+  categoryDistribution: Record<string, number>;
+  responseRate: number;
+  averageSentiment: number;
+  trends: {
+    rating: number;
+    sentiment: number;
+    volume: number;
+  };
+  days: number;
 }
 
 export const feedbackSchema = z.object({
@@ -158,4 +190,18 @@ export const feedbackResponseSchema = z.object({
 });
 
 export type FeedbackInput = z.infer<typeof feedbackSchema>;
-export type FeedbackResponseInput = z.infer<typeof feedbackResponseSchema>; 
+
+export interface CreateFeedbackInput {
+  rating: number;
+  comment?: string;
+  categories?: Record<string, number>;
+  metadata?: JsonValue;
+}
+
+export interface UpdateFeedbackInput {
+  rating?: number;
+  comment?: string;
+  categories?: Record<string, number>;
+  metadata?: JsonValue;
+  creatorResponse?: string;
+} 

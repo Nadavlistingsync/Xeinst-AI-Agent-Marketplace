@@ -6,27 +6,17 @@ interface DashboardStatsProps {
   userId?: string;
 }
 
-export const DashboardStats = async ({ userId }: DashboardStatsProps) => {
+export async function DashboardStats() {
   const [totalRequests, averageResponseTime] = await Promise.all([
-    prisma.deploymentMetrics.aggregate({
+    prisma.agentMetrics.aggregate({
       _sum: {
         totalRequests: true
-      },
-      where: userId ? {
-        deployment: {
-          createdBy: userId
-        }
-      } : undefined
+      }
     }),
-    prisma.deploymentMetrics.aggregate({
+    prisma.agentMetrics.aggregate({
       _avg: {
-        averageResponseTime: true
-      },
-      where: userId ? {
-        deployment: {
-          createdBy: userId
-        }
-      } : undefined
+        responseTime: true
+      }
     })
   ]);
 
@@ -39,7 +29,7 @@ export const DashboardStats = async ({ userId }: DashboardStatsProps) => {
     },
     {
       title: "Average Response Time",
-      value: `${(averageResponseTime._avg.averageResponseTime || 0).toFixed(2)}ms`,
+      value: `${(averageResponseTime._avg.responseTime || 0).toFixed(0)}ms`,
       icon: ClockIcon,
       description: "Average time to process requests"
     }

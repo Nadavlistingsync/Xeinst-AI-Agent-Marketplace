@@ -1,71 +1,81 @@
-import { Suspense } from "react";
-import { getDeployments } from "@/lib/db-helpers";
-import { AgentCard } from "./AgentCard";
-import { LoadingSpinner } from "../ui/loading-spinner";
-import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { AlertCircle } from "lucide-react";
+import { useEffect, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Deployment } from '@/types/deployment';
+import { AgentCard } from './AgentCard';
 
 interface MarketplaceGridProps {
-  searchParams?: {
-    query?: string;
-    framework?: string;
-    category?: string;
-    accessLevel?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    verified?: string;
-    popular?: string;
-    new?: string;
-  };
+  deployments: Deployment[];
+  onDeploymentSelect?: (deployment: Deployment) => void;
 }
 
-// Add a type for the deployment object used in AgentCard
-interface MarketplaceDeployment {
-  id: string;
-  name: string;
-  status: "pending" | "deploying" | "active" | "failed" | "stopped";
-  description: string;
-  accessLevel: string;
-  licenseType: string;
-  environment: string;
-  framework: string;
-  modelType: string;
-  createdAt: Date;
-  updatedAt: Date;
-  // Add more fields here if your backend returns them
-}
+export function MarketplaceGrid({ deployments, onDeploymentSelect }: MarketplaceGridProps) {
+  const [filteredDeployments, setFilteredDeployments] = useState<Deployment[]>(deployments);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-async function AgentGrid({ searchParams }: MarketplaceGridProps) {
-  const deployments: MarketplaceDeployment[] = await getDeployments({
-    query: searchParams?.query,
-    framework: searchParams?.framework,
-  });
+  useEffect(() => {
+    let filtered = deployments;
 
-  if (deployments.length === 0) {
-    return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>No agents found</AlertTitle>
-        <AlertDescription>
-          Try adjusting your search or filters to find what you're looking for.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(d => 
+        d.name.toLowerCase().includes(query) || 
+        d.description.toLowerCase().includes(query)
+      );
+    }
+
+    if (selectedCategory) {
+      filtered = filtered.filter(d => d.category === selectedCategory);
+    }
+
+    setFilteredDeployments(filtered);
+  }, [deployments, searchQuery, selectedCategory]);
+
+  const categories = Array.from(new Set(deployments.map(d => d.category))).filter(Boolean);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {deployments.map((deployment) => (
-        <AgentCard key={deployment.id} deployment={deployment} />
-      ))}
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row gap-4">
+        <input
+          type="text"
+          placeholder="Search agents..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <select
+          value={selectedCategory || ''}
+          onChange={(e) => setSelectedCategory(e.target.value || null)}
+          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">All Categories</option>
+          {categories.map(category => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {filteredDeployments.length === 0 ? (
+        <Card>
+          <CardContent className="py-8">
+            <div className="text-center text-gray-500">
+              No agents found matching your criteria
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredDeployments.map((deployment) => (
+            <AgentCard
+              key={deployment.id}
+              deployment={deployment}
+              onClick={() => onDeploymentSelect?.(deployment)}
+            />
+          ))}
+        </div>
+      )}
     </div>
-  );
-}
-
-export function MarketplaceGrid({ searchParams }: MarketplaceGridProps) {
-  return (
-    <Suspense fallback={<LoadingSpinner />}>
-      <AgentGrid searchParams={searchParams} />
-    </Suspense>
   );
 } 

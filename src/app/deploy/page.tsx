@@ -5,8 +5,6 @@ import { useSession } from "next-auth/react";
 import JSZip from "jszip";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
-import { uploadToS3 } from "@/lib/s3-helpers";
-import { createDeployment } from "@/lib/db-helpers";
 import { uploadFile } from '@/lib/file-helpers';
 import { PrismaClient } from '@prisma/client';
 
@@ -15,9 +13,6 @@ const prisma = new PrismaClient();
 export default function DeployPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const [error, setError] = useState("");
-  const [deploymentStatus, setDeploymentStatus] = useState("");
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -46,34 +41,6 @@ export default function DeployPage() {
     }
   }, [uploadType]);
 
-  const validateForm = () => {
-    if (!formData.name.trim()) {
-      toast.error("Agent name is required");
-      return false;
-    }
-    if (!formData.description.trim()) {
-      toast.error("Description is required");
-      return false;
-    }
-    if (!formData.modelType.trim()) {
-      toast.error("Model type is required");
-      return false;
-    }
-    if (!formData.framework.trim()) {
-      toast.error("Framework is required");
-      return false;
-    }
-    if (uploadType === "file" && !file) {
-      toast.error("Please select a file or folder to upload");
-      return false;
-    }
-    if (uploadType === "github" && !githubUrl) {
-      toast.error("Please enter a GitHub repository URL");
-      return false;
-    }
-    return true;
-  };
-
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -97,29 +64,41 @@ export default function DeployPage() {
     setIsUploading(true);
 
     try {
+      if (!session?.user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       let file_url = '';
       if (uploadType === 'file') {
         if (!file) throw new Error('No file selected');
-        file_url = await uploadFile(file, session?.user?.id!);
+        const uploadedFile = await uploadFile(file, session.user.id);
+        file_url = uploadedFile.url;
       } else if (uploadType === 'github') {
         if (!githubUrl) throw new Error('No GitHub URL provided');
         const zipFile = await fetchGithubRepoAsZip(githubUrl);
-        file_url = await uploadFile(zipFile, session?.user?.id!);
+        const uploadedFile = await uploadFile(zipFile, session.user.id);
+        file_url = uploadedFile.url;
       }
 
       // Create deployment
-      const deployment = await prisma.deployment.create({
+      await prisma.deployment.create({
         data: {
           name: formData.name,
           description: formData.description,
-          accessLevel: formData.accessLevel,
-          licenseType: formData.licenseType,
-          environment: formData.environment,
+          status: 'pending',
           framework: formData.framework,
+          version: formData.version,
+          environment: formData.environment,
           modelType: formData.modelType,
-          source: formData.source,
+          accessLevel: 'public',
+          licenseType: 'standard',
           deployedBy: session.user.id,
-          createdBy: session.user.id
+          createdBy: session.user.id,
+          source: file_url,
+          config: {},
+          health: {},
+          tags: [],
+          earningsSplit: 0
         }
       });
 
@@ -145,42 +124,10 @@ export default function DeployPage() {
     return new File([blob], `${repo}-main.zip`, { type: "application/zip" });
   };
 
-  const zipFolderFiles = async (files: FileList): Promise<File> => {
-    const zip = new JSZip();
-    Array.from(files).forEach((file) => {
-      // file.webkitRelativePath preserves folder structure
-      zip.file(file.webkitRelativePath, file);
-    });
-    const blob = await zip.generateAsync({ type: "blob" });
-    return new File([blob], `folder-upload-${Date.now()}.zip`, { type: "application/zip" });
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-gray-800 py-12 px-4">
       <div className="w-full max-w-3xl mx-auto rounded-2xl shadow-2xl bg-white/10 backdrop-blur-md border border-white/20 p-8 md:p-12">
         <h1 className="text-4xl font-extrabold mb-8 text-center text-white drop-shadow-lg tracking-tight">Deploy Your AI Agent</h1>
-        {error && (
-          <div className="mb-4 p-4 bg-red-400/20 text-red-200 rounded-lg text-center font-semibold" role="alert">
-            {error}
-          </div>
-        )}
-        {deploymentStatus && (
-          <div className="mb-4 p-4 bg-blue-400/20 text-blue-200 rounded-lg text-center font-semibold" role="status">
-            {deploymentStatus}
-            {uploadProgress > 0 && (
-              <div className="mt-2">
-                <div className="w-full bg-gray-700 rounded-full h-2.5">
-                  <motion.div
-                    className="bg-blue-500 h-2.5 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${uploadProgress}%` }}
-                    transition={{ duration: 0.5 }}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -257,110 +204,45 @@ export default function DeployPage() {
             </div>
           </div>
           <div>
-            <label htmlFor="requirements" className="block text-sm font-medium text-gray-200">
-              Requirements
-            </label>
-            <textarea
-              id="requirements"
-              name="requirements"
-              value={formData.requirements}
-              onChange={handleInputChange}
-              rows={3}
-              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Enter your requirements.txt content here"
-            />
-          </div>
-          <div>
-            <label htmlFor="apiEndpoint" className="block text-sm font-medium text-gray-200">
-              API Endpoint
-            </label>
-            <input
-              type="text"
-              id="apiEndpoint"
-              name="apiEndpoint"
-              value={formData.apiEndpoint}
-              onChange={handleInputChange}
-              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="https://api.example.com/endpoint"
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="environment" className="block text-sm font-medium text-gray-200">
-                Environment
-              </label>
-              <select
-                id="environment"
-                name="environment"
-                value={formData.environment}
-                onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              >
-                <option value="production">Production</option>
-                <option value="staging">Staging</option>
-                <option value="development">Development</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-200">
-                Price (USD)
-              </label>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                value={formData.price}
-                onChange={handleInputChange}
-                step="0.01"
-                min="0"
-                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-200 mb-4">
+            <label className="block text-sm font-medium text-gray-200 mb-2">
               Upload Type
             </label>
             <div className="flex space-x-4">
               <button
                 type="button"
-                onClick={() => setUploadType("file")}
+                onClick={() => setUploadType('file')}
                 className={`px-4 py-2 rounded-md ${
-                  uploadType === "file"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-700 text-gray-300"
+                  uploadType === 'file'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300'
                 }`}
               >
                 File Upload
               </button>
               <button
                 type="button"
-                onClick={() => setUploadType("github")}
+                onClick={() => setUploadType('github')}
                 className={`px-4 py-2 rounded-md ${
-                  uploadType === "github"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-700 text-gray-300"
+                  uploadType === 'github'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300'
                 }`}
               >
                 GitHub Repository
               </button>
             </div>
           </div>
-          {uploadType === "file" ? (
+          {uploadType === 'file' ? (
             <div>
-              <label className="block text-sm font-medium text-gray-200 mb-2">
+              <label htmlFor="file" className="block text-sm font-medium text-gray-200">
                 Upload File or Folder
               </label>
               <input
                 type="file"
+                id="file"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                className="block w-full text-sm text-gray-300
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-md file:border-0
-                  file:text-sm file:font-semibold
-                  file:bg-blue-600 file:text-white
-                  hover:file:bg-blue-700"
+                className="mt-1 block w-full text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
               />
             </div>
           ) : (
@@ -373,8 +255,8 @@ export default function DeployPage() {
                 id="githubUrl"
                 value={githubUrl}
                 onChange={handleGithubUrlChange}
-                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
                 placeholder="https://github.com/username/repo"
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
               />
             </div>
           )}
@@ -382,13 +264,9 @@ export default function DeployPage() {
             <button
               type="submit"
               disabled={isUploading}
-              className={`px-6 py-3 rounded-md text-white font-semibold ${
-                isUploading
-                  ? "bg-gray-600 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
+              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isUploading ? "Deploying..." : "Deploy Agent"}
+              {isUploading ? 'Deploying...' : 'Deploy Agent'}
             </button>
           </div>
         </form>

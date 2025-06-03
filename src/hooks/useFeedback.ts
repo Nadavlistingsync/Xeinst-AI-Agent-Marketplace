@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Feedback, FeedbackSummary, FeedbackTrend, FeedbackAnalytics, FeedbackRecommendation, FeedbackSearchResult, FeedbackExport } from '@/types/feedback';
+import { Feedback, FeedbackSummary, FeedbackTrend, FeedbackAnalytics, FeedbackRecommendation, FeedbackSearchResult, FeedbackExport, CreateFeedbackInput, UpdateFeedbackInput } from '@/types/feedback';
 import { ApiError } from '@/lib/errors';
+import { toast } from 'react-hot-toast';
 
 export function useFeedback(agentId: string) {
   const queryClient = useQueryClient();
   const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { data: feedbacks, isLoading: isLoadingFeedbacks } = useQuery<Feedback[]>({
     queryKey: ['feedbacks', agentId],
@@ -126,12 +128,12 @@ export function useFeedback(agentId: string) {
   };
 
   const respondToFeedback = useMutation({
-    mutationFn: async ({ feedbackId, response }: { feedbackId: string; response: string }) => {
+    mutationFn: async ({ feedbackId, responseText }: { feedbackId: string; responseText: string }) => {
       try {
         const response = await fetch(`/api/feedback/${feedbackId}/respond`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ response })
+          body: JSON.stringify({ response: responseText })
         });
         if (!response.ok) {
           const error = await response.json();
@@ -149,6 +151,82 @@ export function useFeedback(agentId: string) {
     }
   });
 
+  const createFeedback = async (input: CreateFeedbackInput): Promise<Feedback | null> => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(input),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create feedback');
+      }
+
+      const data = await response.json();
+      toast.success('Feedback submitted successfully');
+      return data;
+    } catch (error) {
+      toast.error('Failed to submit feedback');
+      console.error(error);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateFeedback = async (id: string, input: UpdateFeedbackInput): Promise<Feedback | null> => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/feedback/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(input),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update feedback');
+      }
+
+      const data = await response.json();
+      toast.success('Feedback updated successfully');
+      return data;
+    } catch (error) {
+      toast.error('Failed to update feedback');
+      console.error(error);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteFeedback = async (id: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/feedback/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete feedback');
+      }
+
+      toast.success('Feedback deleted successfully');
+      return true;
+    } catch (error) {
+      toast.error('Failed to delete feedback');
+      console.error(error);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     feedbacks,
     summary,
@@ -163,6 +241,10 @@ export function useFeedback(agentId: string) {
     searchFeedbacks,
     exportFeedbacks,
     respondToFeedback,
-    error
+    error,
+    isLoading,
+    createFeedback,
+    updateFeedback,
+    deleteFeedback,
   };
 } 

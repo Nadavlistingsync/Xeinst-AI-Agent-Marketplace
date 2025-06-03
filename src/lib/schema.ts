@@ -70,6 +70,17 @@ export const deploymentSchema = z.object({
   source: z.string(),
   deployedBy: z.string(),
   createdBy: z.string(),
+  isPublic: z.boolean().default(true),
+  version: z.string().default(''),
+  tags: z.array(z.string()).default([]),
+  earningsSplit: z.number().default(0),
+  rating: z.number().default(0),
+  totalRatings: z.number().default(0),
+  downloadCount: z.number().default(0),
+  startDate: z.date().default(() => new Date()),
+  endDate: z.date().nullable().default(null),
+  health: z.record(z.any()).default({}),
+  config: z.record(z.any()).optional(),
 });
 
 export const agentFeedbackSchema = z.object({

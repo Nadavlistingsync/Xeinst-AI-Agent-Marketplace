@@ -3,8 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getAgentMetrics } from '@/lib/agent-monitoring';
 import prisma from '@/lib/prisma';
-import { MetricsUpdate } from '@/lib/agent-monitoring';
-import { createErrorResponse } from '@/lib/api';
+import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
 
 const metricsQuerySchema = z.object({
@@ -20,46 +19,39 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return createErrorResponse('Unauthorized');
     }
 
     // Validate agent ID
     if (!z.string().uuid().safeParse(params.id).success) {
-      return NextResponse.json(
-        { error: 'Invalid agent ID format' },
-        { status: 400 }
-      );
+      return createErrorResponse('Invalid agent ID format');
     }
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        creator: {
           select: {
             id: true,
-            subscription_tier: true
+            subscriptionTier: true
           }
         }
       }
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
+      return createErrorResponse('Agent not found');
     }
 
     // Check if user has access to the agent
     if (agent.createdBy !== session.user.id && agent.accessLevel !== 'public') {
-      if (agent.accessLevel === 'premium' && session.user.subscriptionTier !== 'premium') {
-        return NextResponse.json({ error: 'Premium access required' }, { status: 403 });
-      }
-      if (agent.accessLevel === 'basic' && session.user.subscriptionTier !== 'basic') {
-        return NextResponse.json({ error: 'Basic access required' }, { status: 403 });
+      if (agent.accessLevel === 'restricted') {
+        if (agent.creator.subscriptionTier === 'enterprise' && session.user.subscriptionTier !== 'enterprise') {
+          return createErrorResponse('Enterprise access required');
+        }
+        if (agent.creator.subscriptionTier === 'premium' && session.user.subscriptionTier !== 'premium') {
+          return createErrorResponse('Premium access required');
+        }
       }
     }
 
@@ -68,37 +60,22 @@ export async function GET(
     const queryParams = {
       startDate: searchParams.get('startDate'),
       endDate: searchParams.get('endDate'),
-      interval: searchParams.get('interval') as 'hour' | 'day' | 'week' | 'month' | null
+      interval: searchParams.get('interval')
     };
 
     const validatedParams = metricsQuerySchema.parse(queryParams);
 
-    const metrics = await getAgentMetrics(params.id, validatedParams);
+    const metrics = await getAgentMetrics(params.id);
     if (!metrics) {
-      return NextResponse.json(
-        { error: 'Metrics not found' },
-        { status: 404 }
-      );
+      return createErrorResponse('Metrics not found');
     }
 
-    return NextResponse.json(metrics as MetricsUpdate);
+    return createSuccessResponse(metrics);
   } catch (error) {
     console.error('Error fetching agent metrics:', error);
-    
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: 'Validation error',
-          details: error.errors
-        },
-        { status: 400 }
-      );
+      return createErrorResponse('Invalid query parameters');
     }
-
-    const errorResponse = createErrorResponse(error, 'Failed to fetch agent metrics');
-    return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.status }
-    );
+    return createErrorResponse('Internal server error');
   }
 } 

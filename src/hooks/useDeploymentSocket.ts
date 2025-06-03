@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
-import { DeploymentStatus } from '@/lib/websocket';
+import { DeploymentStatus } from '@prisma/client';
 
 interface UseDeploymentSocketProps {
   deploymentId: string;

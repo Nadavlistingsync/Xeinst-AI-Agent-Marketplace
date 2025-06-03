@@ -2,9 +2,9 @@ import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import DashboardStats from '@/components/dashboard/DashboardStats';
-import DeploymentsList from '@/components/dashboard/DeploymentsList';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { DashboardStats } from '@/components/dashboard/DashboardStats';
+import { DeploymentsList } from '@/components/dashboard/DeploymentsList';
 
 export const metadata: Metadata = {
   title: 'Dashboard | AI Agency',

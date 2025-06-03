@@ -2,25 +2,44 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { type Feedback, type FeedbackResponse } from '@/types/feedback';
 import { z } from 'zod';
-import { createErrorResponse } from '@/lib/api';
+import { createErrorResponse, createSuccessResponse } from '@/lib/api';
+import { Prisma } from '@prisma/client';
 
 const feedbackSchema = z.object({
   rating: z.number().min(1).max(5),
-  comment: z.string().optional(),
-  categories: z.record(z.number()).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  comment: z.string().nullable(),
+  categories: z.record(z.number()).nullable(),
+  metadata: z.record(z.unknown()).nullable(),
 });
 
+type FeedbackWithRelations = Prisma.AgentFeedbackGetPayload<{
+  include: {
+    user: {
+      select: {
+        name: true;
+        image: true;
+      };
+    };
+    deployment: {
+      select: {
+        id: true;
+        name: true;
+        description: true;
+        createdBy: true;
+      };
+    };
+  };
+}>;
+
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse<FeedbackResponse>> {
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized', status: 401 }, { status: 401 });
+      return createErrorResponse(new Error('Unauthorized'));
     }
 
     const agent = await prisma.deployment.findUnique({
@@ -37,17 +56,11 @@ export async function GET(
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { success: false, error: 'Agent not found', message: 'Agent not found', status: 404 },
-        { status: 404 }
-      );
+      return createErrorResponse(new Error('Agent not found'));
     }
 
     if (agent.createdBy !== session.user.id && !agent.isPublic) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 403 },
-        { status: 403 }
-      );
+      return createErrorResponse(new Error('Unauthorized'));
     }
 
     const feedback = await prisma.agentFeedback.findMany({
@@ -61,65 +74,65 @@ export async function GET(
             image: true,
           },
         },
-        deployment: true
+        deployment: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            createdBy: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
-    });
+    }) as FeedbackWithRelations[];
 
-    // Return array of Feedback, so wrap in ApiSuccess with array
-    return NextResponse.json({
-      success: true,
-      data: feedback.map(f => ({
-        id: f.id,
-        deploymentId: f.deploymentId,
-        userId: f.userId,
-        rating: f.rating,
-        comment: f.comment,
-        sentimentScore: f.sentimentScore ?? 0,
-        categories: f.categories as Record<string, number> | null,
-        metadata: f.metadata as Record<string, unknown> | null,
-        creatorResponse: f.creatorResponse,
-        responseDate: f.responseDate,
-        createdAt: f.createdAt,
-        updatedAt: f.updatedAt,
-        user: {
-          id: f.userId,
-          name: f.user?.name ?? null,
-          email: null,
-          image: f.user?.image ?? null,
-        },
-        deployment: {
-          id: f.deployment.id,
-          name: f.deployment.name,
-          description: f.deployment.description,
-          createdBy: f.deployment.createdBy,
-        },
-      })),
-    });
+    const formattedFeedback = feedback.map(f => ({
+      id: f.id,
+      deploymentId: f.deploymentId,
+      userId: f.userId,
+      rating: f.rating,
+      comment: f.comment,
+      sentimentScore: f.sentimentScore ?? 0,
+      categories: f.categories as Record<string, number> | null,
+      metadata: f.metadata as Prisma.JsonValue,
+      creatorResponse: f.creatorResponse,
+      responseDate: f.responseDate,
+      createdAt: f.createdAt,
+      updatedAt: f.updatedAt,
+      user: f.user
+        ? {
+            id: f.userId,
+            name: f.user.name ?? null,
+            email: null,
+            image: f.user.image ?? null,
+          }
+        : null,
+      deployment: f.deployment
+        ? {
+            id: f.deployment.id,
+            name: f.deployment.name,
+            description: f.deployment.description,
+            createdBy: f.deployment.createdBy,
+          }
+        : null,
+    }));
+
+    return createSuccessResponse(formattedFeedback);
   } catch (error) {
-    // createErrorResponse returns ApiError, so add status
-    return NextResponse.json({
-      success: false,
-      error: (error instanceof Error ? error.message : 'Unknown error'),
-      message: 'Failed to fetch feedback',
-      status: 500
-    }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
 export async function POST(
   req: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse<FeedbackResponse>> {
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 401 },
-        { status: 401 }
-      );
+      return createErrorResponse(new Error('Unauthorized'));
     }
 
     const validatedData = await feedbackSchema.parseAsync(await req.json());
@@ -129,9 +142,10 @@ export async function POST(
         deploymentId: params.id,
         userId: session.user.id,
         rating: validatedData.rating,
-        comment: validatedData.comment ?? null,
-        categories: validatedData.categories ?? null,
-        metadata: validatedData.metadata ?? null
+        comment: validatedData.comment,
+        categories: validatedData.categories as Prisma.InputJsonValue,
+        metadata: validatedData.metadata as Prisma.InputJsonValue,
+        sentimentScore: 0 // Default value, will be updated by sentiment analysis
       },
       include: {
         user: {
@@ -139,32 +153,59 @@ export async function POST(
             name: true,
             image: true
           }
-        }
+        },
+        deployment: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            createdBy: true,
+          },
+        },
       }
-    });
+    }) as FeedbackWithRelations;
 
-    return NextResponse.json({ success: true, data: feedback });
+    const formattedFeedback = {
+      id: feedback.id,
+      deploymentId: feedback.deploymentId,
+      userId: feedback.userId,
+      rating: feedback.rating,
+      comment: feedback.comment,
+      sentimentScore: feedback.sentimentScore ?? 0,
+      categories: feedback.categories as Record<string, number> | null,
+      metadata: feedback.metadata as Prisma.JsonValue,
+      creatorResponse: feedback.creatorResponse,
+      responseDate: feedback.responseDate,
+      createdAt: feedback.createdAt,
+      updatedAt: feedback.updatedAt,
+      user: feedback.user ? {
+        id: feedback.userId,
+        name: feedback.user.name ?? null,
+        email: null,
+        image: feedback.user.image ?? null,
+      } : null,
+      deployment: feedback.deployment ? {
+        id: feedback.deployment.id,
+        name: feedback.deployment.name,
+        description: feedback.deployment.description,
+        createdBy: feedback.deployment.createdBy,
+      } : null,
+    };
+
+    return createSuccessResponse(formattedFeedback);
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: (error instanceof Error ? error.message : 'Unknown error'),
-      message: 'Failed to create feedback',
-      status: 500
-    }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse<FeedbackResponse>> {
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 401 },
-        { status: 401 }
-      );
+      return createErrorResponse(new Error('Unauthorized'));
     }
 
     const feedback = await prisma.agentFeedback.findUnique({
@@ -175,33 +216,19 @@ export async function DELETE(
     });
 
     if (!feedback) {
-      return NextResponse.json(
-        { success: false, error: 'Feedback not found', message: 'Feedback not found', status: 404 },
-        { status: 404 }
-      );
+      return createErrorResponse(new Error('Feedback not found'));
     }
 
     if (feedback.userId !== session.user.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 403 },
-        { status: 403 }
-      );
+      return createErrorResponse(new Error('Unauthorized'));
     }
 
     await prisma.agentFeedback.delete({
       where: { id: params.id },
     });
 
-    return NextResponse.json({
-      success: true,
-      data: null as any,
-    });
+    return createSuccessResponse(null);
   } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: (error instanceof Error ? error.message : 'Unknown error'),
-      message: 'Internal server error',
-      status: 500
-    }, { status: 500 });
+    return createErrorResponse(error);
   }
 } 

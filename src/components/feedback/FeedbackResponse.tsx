@@ -20,7 +20,7 @@ export function FeedbackResponse({
 
   const handleSubmit = async () => {
     if (!response.trim()) {
-      toast.error('Please enter a response');
+      toast({ description: 'Please enter a response', variant: 'destructive' });
       return;
     }
 
@@ -34,11 +34,11 @@ export function FeedbackResponse({
 
       if (!res.ok) throw new Error('Failed to submit response');
 
-      toast.success('Response submitted successfully');
+      toast({ description: 'Response submitted successfully' });
       onResponseSubmitted();
     } catch (error) {
       console.error('Error submitting response:', error);
-      toast.error('Failed to submit response');
+      toast({ description: 'Failed to submit response', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }

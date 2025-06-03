@@ -48,7 +48,7 @@ export function NotificationCenter({ agentId }: NotificationCenterProps) {
       socketInstance.on('notification', (newNotification: Notification) => {
         setNotifications(prev => [newNotification, ...prev]);
         setUnreadCount(prev => prev + 1);
-        toast(newNotification.message);
+        toast({ description: newNotification.message });
       });
 
       return () => {
@@ -68,7 +68,7 @@ export function NotificationCenter({ agentId }: NotificationCenterProps) {
       setNotifications(data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
-      toast.error('Failed to load notifications');
+      toast({ description: 'Failed to load notifications', variant: 'destructive' });
     }
   }, [agentId, toast]);
 
@@ -87,9 +87,10 @@ export function NotificationCenter({ agentId }: NotificationCenterProps) {
         n.id === notificationId ? { ...n, is_read: true } : n
       ));
       setUnreadCount(prev => Math.max(0, prev - 1));
+      toast({ description: 'Notification marked as read' });
     } catch (error) {
       console.error('Error marking notification as read:', error);
-      toast.error('Failed to mark notification as read');
+      toast({ description: 'Failed to mark notification as read', variant: 'destructive' });
     }
   };
 
@@ -102,9 +103,10 @@ export function NotificationCenter({ agentId }: NotificationCenterProps) {
       
       setNotifications(notifications.map(n => ({ ...n, is_read: true })));
       setUnreadCount(0);
+      toast({ description: 'All notifications marked as read' });
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-      toast.error('Failed to mark all notifications as read');
+      toast({ description: 'Failed to mark all notifications as read', variant: 'destructive' });
     }
   };
 

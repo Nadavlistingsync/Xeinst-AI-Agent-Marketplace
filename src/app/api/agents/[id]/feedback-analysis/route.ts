@@ -2,21 +2,23 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { ApiError } from '@/lib/errors';
 import { analyzeAgentFeedback } from '@/lib/feedback-analysis';
-import { type FeedbackAnalysisApiResponse } from '@/types/feedback-analytics';
+import { createErrorResponse, createSuccessResponse } from '@/lib/api';
+import { z } from 'zod';
+
+const timeRangeSchema = z.object({
+  startDate: z.string().datetime(),
+  endDate: z.string().datetime(),
+}).optional();
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse<FeedbackAnalysisApiResponse>> {
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return createErrorResponse(new Error('Unauthorized'));
     }
 
     const agent = await prisma.deployment.findUnique({
@@ -29,48 +31,28 @@ export async function GET(
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { success: false, error: 'Agent not found' },
-        { status: 404 }
-      );
+      return createErrorResponse(new Error('Agent not found'));
     }
 
     if (agent.createdBy !== session.user.id && agent.accessLevel !== 'public') {
       if (agent.accessLevel === 'premium' && session.user.subscriptionTier !== 'premium') {
-        return NextResponse.json(
-          { success: false, error: 'Premium subscription required' },
-          { status: 403 }
-        );
+        return createErrorResponse(new Error('Premium subscription required'));
       }
       if (agent.accessLevel === 'basic' && session.user.subscriptionTier !== 'basic') {
-        return NextResponse.json(
-          { success: false, error: 'Basic subscription required' },
-          { status: 403 }
-        );
+        return createErrorResponse(new Error('Basic subscription required'));
       }
     }
 
     const { searchParams } = new URL(request.url);
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-
-    const timeRange = startDate && endDate ? {
-      startDate: new Date(startDate),
-      endDate: new Date(endDate)
-    } : undefined;
+    const timeRange = timeRangeSchema.parse({
+      startDate: searchParams.get('startDate'),
+      endDate: searchParams.get('endDate'),
+    });
 
     const analysis = await analyzeAgentFeedback(params.id, timeRange);
-
-    return NextResponse.json({
-      success: true,
-      data: analysis
-    });
+    return createSuccessResponse(analysis);
   } catch (error) {
     console.error('Error analyzing feedback:', error);
-    const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to analyze feedback');
-    return NextResponse.json(
-      { success: false, error: errorResponse.message },
-      { status: errorResponse.statusCode }
-    );
+    return createErrorResponse(error);
   }
 } 

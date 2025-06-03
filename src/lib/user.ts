@@ -1,36 +1,42 @@
-import { Prisma, UserRole, SubscriptionTier } from '@prisma/client';
-import bcrypt from 'bcryptjs';
+import { Prisma, DeploymentStatus, UserRole, SubscriptionTier } from '@prisma/client';
 import { prisma } from './db';
-import { User, Agent, Deployment, AgentFeedback, Earning, Purchase } from './schema';
 
 export interface CreateUserInput {
-  name: string | null;
+  name: string;
   email: string;
-  image: string | null;
-  role: UserRole;
-  subscriptionTier: SubscriptionTier;
-  password: string;
-}
-
-export interface GetUsersOptions {
+  image?: string;
   role?: UserRole;
   subscriptionTier?: SubscriptionTier;
-  startDate?: Date;
-  endDate?: Date;
-  search?: string;
+  metadata?: Prisma.JsonValue;
+}
+
+export interface UpdateUserInput {
+  name?: string;
+  email?: string;
+  image?: string;
+  role?: UserRole;
+  subscriptionTier?: SubscriptionTier;
+  metadata?: Prisma.JsonValue;
+}
+
+export interface GetUserOptions {
+  includeAgents?: boolean;
+  includeDeployments?: boolean;
+  includeFeedbacks?: boolean;
+  includeEarnings?: boolean;
+  includePurchases?: boolean;
 }
 
 export interface GetUserAgentsOptions {
-  status?: string;
-  category?: string;
-  limit?: number;
+  status?: DeploymentStatus;
+  startDate?: Date;
+  endDate?: Date;
 }
 
 export interface GetUserDeploymentsOptions {
-  status?: string;
+  status?: DeploymentStatus;
   startDate?: Date;
   endDate?: Date;
-  limit?: number;
 }
 
 export interface GetUserFeedbacksOptions {
@@ -51,202 +57,189 @@ export interface GetUserPurchasesOptions {
   limit?: number;
 }
 
-export async function createUser(data: CreateUserInput): Promise<User> {
-  try {
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-    return await prisma.user.create({
-      data: {
-        ...data,
-        role: data.role,
-        subscriptionTier: data.subscriptionTier,
-        password: hashedPassword,
-        emailVerified: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    throw new Error('Failed to create user');
-  }
-}
-
-export async function updateUser(id: string, data: Partial<User>): Promise<User> {
-  try {
-    const updateData = { ...data };
-    if (data.password) {
-      updateData.password = await bcrypt.hash(data.password, 10);
-    }
-    return await prisma.user.update({
-      where: { id },
-      data: {
-        ...updateData,
-        updatedAt: new Date(),
-      },
-    });
-  } catch (error) {
-    console.error('Error updating user:', error);
-    throw new Error('Failed to update user');
-  }
-}
-
-export async function getUsers(options: GetUsersOptions = {}): Promise<User[]> {
-  try {
-    const where: Prisma.UserWhereInput = {};
-    
-    if (options.role) where.role = options.role;
-    if (options.subscriptionTier) where.subscriptionTier = options.subscriptionTier;
-    if (options.startDate) where.createdAt = { gte: options.startDate };
-    if (options.endDate) where.createdAt = { lte: options.endDate };
-    if (options.search) {
-      where.OR = [
-        { name: { contains: options.search, mode: 'insensitive' } },
-        { email: { contains: options.search, mode: 'insensitive' } },
-      ];
-    }
-
-    return await prisma.user.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    });
-  } catch (error) {
-    console.error('Error getting users:', error);
-    throw new Error('Failed to get users');
-  }
-}
-
-export async function getUser(id: string): Promise<User | null> {
-  try {
-    return await prisma.user.findUnique({
-      where: { id },
-    });
-  } catch (error) {
-    console.error('Error getting user:', error);
-    throw new Error('Failed to get user');
-  }
-}
-
-export async function getUserByEmail(email: string): Promise<User | null> {
-  return await prisma.user.findUnique({
-    where: { email },
+export async function createUser(data: CreateUserInput) {
+  return prisma.user.create({
+    data: {
+      name: data.name,
+      email: data.email,
+      image: data.image,
+      role: data.role || UserRole.user,
+      subscriptionTier: data.subscriptionTier || SubscriptionTier.free,
+    },
   });
 }
 
-export async function deleteUser(id: string): Promise<void> {
-  try {
-    await prisma.user.delete({
-      where: { id },
-    });
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    throw new Error('Failed to delete user');
+export async function updateUser(id: string, data: UpdateUserInput) {
+  return prisma.user.update({
+    where: { id },
+    data: {
+      name: data.name,
+      email: data.email,
+      image: data.image,
+      role: data.role,
+      subscriptionTier: data.subscriptionTier,
+    },
+  });
+}
+
+export async function getUser(id: string, options: GetUserOptions = {}) {
+  const include: Prisma.UserInclude = {};
+
+  if (options.includeAgents) {
+    include.agents = true;
   }
-}
 
-export async function getUserAgents(
-  userId: string,
-  options: GetUserAgentsOptions = {}
-): Promise<Deployment[]> {
-  const where: any = { createdBy: userId };
+  if (options.includeDeployments) {
+    include.deployments = true;
+  }
 
-  if (options.status) where.status = options.status;
-  if (options.category) where.modelType = options.category;
+  if (options.includeFeedbacks) {
+    include.feedbacks = true;
+  }
 
-  return await prisma.deployment.findMany({
-    where,
-    orderBy: { createdAt: 'desc' },
-    take: options.limit,
+  if (options.includeEarnings) {
+    include.earnings = true;
+  }
+
+  if (options.includePurchases) {
+    include.purchases = true;
+  }
+
+  return prisma.user.findUnique({
+    where: { id },
+    include,
   });
 }
 
-export async function getUserDeployments(
-  userId: string,
-  options: GetUserDeploymentsOptions = {}
-): Promise<Deployment[]> {
-  const where: Prisma.DeploymentWhereInput = { deployedBy: userId };
+export async function getUsers(filter: {
+  search?: string;
+  role?: UserRole;
+  subscriptionTier?: SubscriptionTier;
+} = {}) {
+  const where: Prisma.UserWhereInput = {};
 
-  if (options.status) where.status = options.status;
-  if (options.startDate) where.startDate = { gte: options.startDate };
-  if (options.endDate) where.startDate = { lte: options.endDate };
+  if (filter.search) {
+    where.OR = [
+      { name: { contains: filter.search, mode: 'insensitive' } },
+      { email: { contains: filter.search, mode: 'insensitive' } },
+    ];
+  }
 
-  return await prisma.deployment.findMany({
+  if (filter.role) {
+    where.role = filter.role;
+  }
+
+  if (filter.subscriptionTier) {
+    where.subscriptionTier = filter.subscriptionTier;
+  }
+
+  return prisma.user.findMany({
     where,
-    orderBy: { startDate: 'desc' },
-    take: options.limit,
+    orderBy: { createdAt: 'desc' },
   });
 }
 
-export async function getUserFeedbacks(
-  userId: string,
-  options: GetUserFeedbacksOptions = {}
-): Promise<AgentFeedback[]> {
-  const where: Prisma.AgentFeedbackWhereInput = { userId };
+export async function getUserAgents(userId: string, options: GetUserAgentsOptions = {}) {
+  const where: Prisma.DeploymentWhereInput = {
+    createdBy: userId,
+  };
 
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
+  if (options.status) {
+    where.status = options.status;
+  }
 
-  return await prisma.agentFeedback.findMany({
+  if (options.startDate) {
+    if (!where.createdAt || typeof where.createdAt !== 'object') where.createdAt = {};
+    (where.createdAt as any).gte = options.startDate;
+  }
+
+  if (options.endDate) {
+    if (!where.createdAt || typeof where.createdAt !== 'object') where.createdAt = {};
+    (where.createdAt as any).lte = options.endDate;
+  }
+
+  return prisma.deployment.findMany({
     where,
     orderBy: { createdAt: 'desc' },
-    take: options.limit,
   });
 }
 
-export async function getUserEarnings(
-  userId: string,
-  options: GetUserEarningsOptions = {}
-): Promise<Earning[]> {
-  const where: Prisma.EarningWhereInput = { userId };
+export async function getUserDeployments(userId: string, options: GetUserDeploymentsOptions = {}) {
+  const where: Prisma.DeploymentWhereInput = {
+    createdBy: userId,
+  };
 
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
+  if (options.status) {
+    where.status = options.status;
+  }
 
-  return await prisma.earning.findMany({
+  if (options.startDate) {
+    if (!where.createdAt || typeof where.createdAt !== 'object') where.createdAt = {};
+    (where.createdAt as any).gte = options.startDate;
+  }
+
+  if (options.endDate) {
+    if (!where.createdAt || typeof where.createdAt !== 'object') where.createdAt = {};
+    (where.createdAt as any).lte = options.endDate;
+  }
+
+  return prisma.deployment.findMany({
     where,
     orderBy: { createdAt: 'desc' },
-    take: options.limit,
-  }).then(earnings => earnings.map(e => ({ ...e, amount: Number(e.amount) })));
+  });
 }
 
-export async function getUserPurchases(
-  userId: string,
-  options: GetUserPurchasesOptions = {}
-): Promise<Purchase[]> {
-  const where: Prisma.PurchaseWhereInput = { userId };
-
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
-
-  return await prisma.purchase.findMany({
-    where,
+export async function getUserFeedbacks(userId: string) {
+  return prisma.agentFeedback.findMany({
+    where: { userId },
+    include: {
+      deployment: true,
+    },
     orderBy: { createdAt: 'desc' },
-    take: options.limit,
-  }).then(purchases => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
+  });
+}
+
+export async function getUserEarnings(userId: string) {
+  return prisma.earning.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function getUserPurchases(userId: string) {
+  return prisma.purchase.findMany({
+    where: { userId },
+    include: {
+      product: true,
+    },
+    orderBy: { createdAt: 'desc' },
+  });
 }
 
 export async function getUserStats() {
-  try {
-    const users = await getUsers();
-    const totalUsers = users.length;
-    const roleDistribution = users.reduce((acc, user) => {
-      acc[user.role] = (acc[user.role] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    const subscriptionDistribution = users.reduce((acc, user) => {
-      acc[user.subscriptionTier] = (acc[user.subscriptionTier] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+  const [totalUsers, roleDistribution, subscriptionDistribution] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.groupBy({
+      by: ['role'],
+      _count: true,
+    }),
+    prisma.user.groupBy({
+      by: ['subscriptionTier'],
+      _count: true,
+    }),
+  ]);
 
-    return {
-      totalUsers,
-      roleDistribution,
-      subscriptionDistribution,
-      recentUsers: users.slice(0, 5),
-    };
-  } catch (error) {
-    console.error('Error getting user stats:', error);
-    throw new Error('Failed to get user stats');
-  }
+  return {
+    totalUsers,
+    roleDistribution: roleDistribution.reduce((acc, curr) => {
+      acc[curr.role] = curr._count;
+      return acc;
+    }, {} as Record<string, number>),
+    subscriptionDistribution: subscriptionDistribution.reduce((acc, curr) => {
+      acc[curr.subscriptionTier] = curr._count;
+      return acc;
+    }, {} as Record<string, number>),
+  };
 }
 
 export async function getUserHistory() {

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getFile } from '@/lib/file-helpers';
 import { createErrorResponse } from '@/lib/api';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
@@ -69,7 +68,19 @@ export async function GET(
 
     const validatedParams = fileQuerySchema.parse(queryParams);
 
-    const buffer = Buffer.from(file.data, 'base64');
+    // Get file content from storage
+    const fileContent = await prisma.fileContent.findUnique({
+      where: { fileId: file.id }
+    });
+
+    if (!fileContent) {
+      return NextResponse.json(
+        { error: 'File content not found' },
+        { status: 404 }
+      );
+    }
+
+    const buffer = Buffer.from(fileContent.content, 'base64');
 
     // Set appropriate headers based on query parameters
     const headers: Record<string, string> = {
@@ -96,9 +107,9 @@ export async function GET(
       );
     }
 
-    const errorResponse = createErrorResponse(error, 'Failed to download file');
+    const errorResponse = createErrorResponse(error);
     return NextResponse.json(
-      { error: errorResponse.message },
+      { error: errorResponse.error },
       { status: errorResponse.status }
     );
   }

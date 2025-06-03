@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { type FeedbackRecommendation } from '@/types/feedback';
 
 type Priority = 'high' | 'medium' | 'low';
+type RecommendationStatus = 'pending' | 'in_progress' | 'completed';
 
 const priorityOrder: Record<Priority, number> = {
   high: 3,
@@ -13,7 +14,7 @@ const priorityOrder: Record<Priority, number> = {
 };
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse<{ success: boolean; data?: { recommendations: FeedbackRecommendation[] }; error?: string }>> {
   try {
@@ -61,7 +62,7 @@ export async function GET(
     feedback.forEach((f) => {
       if (f.categories) {
         const categories = f.categories as Record<string, number>;
-        Object.entries(categories).forEach(([category, value]) => {
+        Object.entries(categories).forEach(([category]) => {
           if (!categoryFrequencies[category]) {
             categoryFrequencies[category] = {
               count: 0,
@@ -78,19 +79,23 @@ export async function GET(
       }
     });
 
+    const totalFeedback = feedback.length;
     const recommendations: FeedbackRecommendation[] = Object.entries(categoryFrequencies)
-      .map(([category, frequency]) => ({
-        id: crypto.randomUUID(),
-        title: `Improve ${category}`,
-        description: `Based on feedback analysis, this area needs attention`,
-        priority: frequency > 0.7 ? 'high' : frequency > 0.4 ? 'medium' : 'low' as Priority,
-        category,
-        impact: frequency * 100,
-        effort: 50,
-        status: 'pending',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }))
+      .map(([category, data]) => {
+        const frequency = data.count / totalFeedback;
+        return {
+          id: crypto.randomUUID(),
+          title: `Improve ${category}`,
+          description: `Based on feedback analysis, this area needs attention`,
+          priority: frequency > 0.7 ? 'high' : frequency > 0.4 ? 'medium' : 'low' as Priority,
+          category,
+          impact: Math.round(frequency * 100),
+          effort: 50,
+          status: 'pending' as RecommendationStatus,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+      })
       .sort((a, b) => {
         if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
           return priorityOrder[b.priority] - priorityOrder[a.priority];

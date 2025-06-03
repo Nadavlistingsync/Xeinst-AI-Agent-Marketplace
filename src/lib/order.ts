@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, Purchase } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -6,7 +6,6 @@ export type CreateOrderInput = {
   userId: string;
   productId: string;
   amount: number;
-  currency: string;
   status: 'pending' | 'completed' | 'failed';
   stripeTransferId?: string | null;
 };
@@ -18,12 +17,11 @@ export type UpdateOrderInput = {
 };
 
 export async function createOrder(data: CreateOrderInput) {
-  return prisma.order.create({
+  return prisma.purchase.create({
     data: {
       userId: data.userId,
       productId: data.productId,
       amount: data.amount,
-      currency: data.currency,
       status: data.status,
       stripeTransferId: data.stripeTransferId || null
     }
@@ -31,7 +29,7 @@ export async function createOrder(data: CreateOrderInput) {
 }
 
 export async function updateOrder(id: string, data: UpdateOrderInput) {
-  return prisma.order.update({
+  return prisma.purchase.update({
     where: { id },
     data: {
       status: data.status,
@@ -42,7 +40,7 @@ export async function updateOrder(id: string, data: UpdateOrderInput) {
 }
 
 export async function getOrder(id: string) {
-  return prisma.order.findUnique({
+  return prisma.purchase.findUnique({
     where: { id },
     include: {
       user: true,
@@ -52,7 +50,7 @@ export async function getOrder(id: string) {
 }
 
 export async function getUserOrders(userId: string) {
-  return prisma.order.findMany({
+  return prisma.purchase.findMany({
     where: { userId },
     include: {
       product: true
@@ -66,7 +64,7 @@ export async function getOrders(options: {
   status?: string;
   startDate?: Date;
   endDate?: Date;
-} = {}): Promise<Order[]> {
+} = {}): Promise<Purchase[]> {
   const where: Prisma.PurchaseWhereInput = {};
 
   if (options.userId) where.userId = options.userId;

@@ -15,12 +15,13 @@ const productSchema = z.object({
   category: z.string().min(1),
   tags: z.array(z.string()).optional(),
   version: z.string().optional(),
-  environment: z.string().optional(),
-  framework: z.string().optional(),
-  modelType: z.string().optional(),
+  environment: z.string(),
+  framework: z.string(),
+  modelType: z.string(),
   earningsSplit: z.number().min(0).max(100).optional(),
   isPublic: z.boolean().optional(),
   longDescription: z.string().optional(),
+  requirements: z.array(z.string()).optional(),
 });
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -57,6 +58,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       earningsSplit: Number(formData.get('earningsSplit')) || 0,
       isPublic: formData.get('isPublic') === 'true',
       longDescription: formData.get('longDescription') as string || '',
+      requirements: (formData.get('requirements') as string)?.split(',').map(req => req.trim()) || [],
     };
 
     const validatedData = productSchema.parse(productData);
@@ -76,7 +78,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         environment: validatedData.environment,
         framework: validatedData.framework,
         version: validatedData.version || '1.0.0',
-        modelType: validatedData.modelType || 'standard',
+        modelType: validatedData.modelType,
         earningsSplit: validatedData.earningsSplit || 0
       }
     });

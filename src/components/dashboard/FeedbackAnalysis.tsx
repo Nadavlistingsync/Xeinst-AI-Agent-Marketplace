@@ -74,7 +74,7 @@ export function FeedbackAnalysis({ agentId }: FeedbackAnalysisProps) {
         setInsights(insightsData.insights);
       } catch (error) {
         console.error('Error fetching feedback analysis:', error);
-        toast.error('Failed to load feedback analysis');
+        toast({ description: 'Failed to load feedback analysis', variant: 'destructive' });
       } finally {
         setLoading(false);
       }

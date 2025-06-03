@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
-import { createErrorResponse } from '@/lib/api';
+import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 
 const ProductInputSchema = z.object({
   name: z.string().min(1).max(100),
@@ -40,14 +40,10 @@ export async function GET(): Promise<NextResponse> {
         createdAt: 'desc'
       }
     });
-    return NextResponse.json({ products: allProducts });
+    return createSuccessResponse({ products: allProducts });
   } catch (error) {
     console.error('Error fetching products:', error);
-    const errorResponse = createErrorResponse(error, 'Failed to fetch products');
-    return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.status }
-    );
+    return createErrorResponse(error);
   }
 }
 
@@ -55,10 +51,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return createErrorResponse(new Error('Unauthorized'));
     }
 
     const body = await request.json();
@@ -87,25 +80,13 @@ export async function POST(request: Request): Promise<NextResponse> {
       }
     });
 
-    return NextResponse.json(product);
+    return createSuccessResponse(product);
   } catch (error) {
     console.error('Error creating product:', error);
-    
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: 'Validation error',
-          details: error.errors
-        },
-        { status: 400 }
-      );
+      return createErrorResponse(error);
     }
-
-    const errorResponse = createErrorResponse(error, 'Failed to create product');
-    return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.status }
-    );
+    return createErrorResponse(error);
   }
 }
 
@@ -113,14 +94,14 @@ export async function PUT(request: Request): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return createErrorResponse(new Error('Unauthorized'));
     }
 
     const data = await request.json();
     const { id, ...updateData } = data;
     const parsed = ProductInputSchema.safeParse(updateData);
     if (!id || !parsed.success) {
-      return NextResponse.json({ error: 'Invalid product data', details: parsed.error?.errors }, { status: 400 });
+      return createErrorResponse(new Error('Invalid product data'));
     }
 
     const updatedProduct = await prisma.product.update({
@@ -141,10 +122,10 @@ export async function PUT(request: Request): Promise<NextResponse> {
         updatedAt: new Date()
       }
     });
-    return NextResponse.json(updatedProduct);
+    return createSuccessResponse(updatedProduct);
   } catch (error) {
     console.error('Error updating product:', error);
-    return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
+    return createErrorResponse(error);
   }
 }
 
@@ -152,20 +133,20 @@ export async function DELETE(request: Request): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return createErrorResponse(new Error('Unauthorized'));
     }
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
+      return createErrorResponse(new Error('Product ID is required'));
     }
 
     await prisma.product.delete({ where: { id } });
-    return NextResponse.json({ success: true });
+    return createSuccessResponse({ success: true });
   } catch (error) {
     console.error('Error deleting product:', error);
-    return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
+    return createErrorResponse(error);
   }
 } 

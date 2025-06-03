@@ -1,36 +1,45 @@
 import { z } from 'zod';
 import { DeploymentStatus, NotificationType } from '@prisma/client';
 
+export interface ApiError {
+  statusCode: number;
+  name: string;
+  message: string;
+  details?: unknown;
+}
+
 export interface ApiSuccess<T> {
-  success: true;
+  statusCode: number;
+  name: string;
+  message: string;
   data: T;
 }
 
-export interface ApiError {
-  success: false;
-  error: string;
-  message: string;
-  details?: ValidationError[];
-  status: number;
+export type ApiResponse<T> = ApiError | ApiSuccess<T>;
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
 }
 
-export type ApiResponse<T> = ApiSuccess<T> | ApiError;
+export interface ValidationError {
+  field: string;
+  message: string;
+  path: string;
+}
+
+export interface ValidationErrors {
+  errors: ValidationError[];
+}
 
 export interface PaginationParams {
   page?: number;
   limit?: number;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  pagination: {
-    total: number;
-    pages: number;
-    page: number;
-    limit: number;
-  };
 }
 
 export interface FilterParams {
@@ -46,32 +55,17 @@ export interface DateRange {
   endDate: Date;
 }
 
-export interface ValidationError {
-  path: string;
-  message: string;
-}
-
-export interface ApiErrorResponse {
-  success: false;
-  error: string;
-  message: string;
-  details?: ValidationError[];
-  status: number;
-}
-
 export const apiErrorSchema = z.object({
-  success: z.literal(false),
-  error: z.string(),
+  statusCode: z.number(),
+  name: z.string(),
   message: z.string(),
-  details: z.array(z.object({
-    path: z.string(),
-    message: z.string()
-  })).optional(),
-  status: z.number()
+  details: z.unknown().optional()
 });
 
 export const apiSuccessSchema = <T extends z.ZodType>(dataSchema: T) => z.object({
-  success: z.literal(true),
+  statusCode: z.number(),
+  name: z.string(),
+  message: z.string(),
   data: dataSchema
 });
 
@@ -138,4 +132,28 @@ export const filterSchema = z.object({
   type: z.string().optional(),
   startDate: z.string().optional(),
   endDate: z.string().optional()
-}); 
+});
+
+export function createApiError(error: unknown, statusCode: number = 500): ApiError {
+  if (error instanceof Error) {
+    return {
+      statusCode,
+      name: error.name,
+      message: error.message
+    };
+  }
+  return {
+    statusCode,
+    name: 'Error',
+    message: String(error)
+  };
+}
+
+export function createValidationError(errors: ValidationError[]): ApiError {
+  return {
+    statusCode: 400,
+    name: 'ValidationError',
+    message: 'Validation failed',
+    details: errors
+  };
+} 

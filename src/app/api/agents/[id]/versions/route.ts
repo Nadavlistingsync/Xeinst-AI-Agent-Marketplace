@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getAgentVersions } from '@/lib/agent-deployment';
 import prisma from '@/lib/prisma';
-import { createErrorResponse } from '@/lib/api';
+import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
 
 const versionsQuerySchema = z.object({
@@ -19,18 +19,12 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return createErrorResponse(new Error('Unauthorized'));
     }
 
     // Validate agent ID
     if (!z.string().uuid().safeParse(params.id).success) {
-      return NextResponse.json(
-        { error: 'Invalid agent ID format' },
-        { status: 400 }
-      );
+      return createErrorResponse(new Error('Invalid agent ID format'));
     }
 
     const agent = await prisma.deployment.findUnique({
@@ -47,7 +41,6 @@ export async function GET(
         licenseType: true,
         environment: true,
         source: true,
-        deployedBy: true,
         rating: true,
         totalRatings: true,
         downloadCount: true,
@@ -58,18 +51,12 @@ export async function GET(
     });
 
     if (!agent) {
-      return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
-      );
+      return createErrorResponse(new Error('Agent not found'));
     }
 
     // Only the owner can see version history
     if (agent.createdBy !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Not authorized to view version history' },
-        { status: 403 }
-      );
+      return createErrorResponse(new Error('Not authorized to view version history'));
     }
 
     // Parse and validate query parameters
@@ -84,13 +71,10 @@ export async function GET(
 
     const versions = await getAgentVersions(params.id);
     if (!versions || versions.length === 0) {
-      return NextResponse.json(
-        { error: 'No versions found' },
-        { status: 404 }
-      );
+      return createErrorResponse(new Error('No versions found'));
     }
 
-    return NextResponse.json({
+    return createSuccessResponse({
       versions,
       metadata: {
         agentId: params.id,
@@ -104,21 +88,6 @@ export async function GET(
     });
   } catch (error) {
     console.error('Error fetching agent versions:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: 'Validation error',
-          details: error.errors
-        },
-        { status: 400 }
-      );
-    }
-
-    const errorResponse = createErrorResponse(error);
-    return NextResponse.json(
-      { error: errorResponse.error },
-      { status: errorResponse.status }
-    );
+    return createErrorResponse(error);
   }
 } 

@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { toast } from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +30,15 @@ export default function AgentPage({
 
   const isActive = deployment.status === 'active';
   const isPending = deployment.status === 'pending' || deployment.status === 'deploying';
-  const metrics = deployment.metrics?.[0];
+  const metrics = deployment.metrics?.[0] || {
+    errorRate: 0,
+    responseTime: 0,
+    uptime: 100,
+    usage: {
+      total: 0,
+      last24h: 0
+    }
+  };
 
   const canAccess = () => {
     if (deployment.accessLevel === 'public') return true;
