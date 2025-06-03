@@ -8,7 +8,7 @@ import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
 
 // Set test environment
-process.env.NODE_ENV = 'test';
+process.env.NODE_ENV = 'test' as const;
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test';
 
 // Mock Sentry in tests

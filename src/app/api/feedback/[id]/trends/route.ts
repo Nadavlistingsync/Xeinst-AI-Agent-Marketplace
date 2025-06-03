@@ -1,21 +1,31 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { createErrorResponse } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-const trendsQuerySchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  interval: z.enum(['hour', 'day', 'week', 'month']).optional(),
-  includeDetails: z.boolean().optional()
+const trendsSchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  groupBy: z.enum(['day', 'week', 'month']).optional().default('day')
 });
+
+interface FeedbackTimeRange {
+  start_date?: Date;
+  end_date?: Date;
+}
+
+interface TrendData {
+  date: string;
+  count: number;
+  averageRating: number;
+  averageSentiment: number;
+}
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse> {
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -25,21 +35,21 @@ export async function GET(
       );
     }
 
-    // Validate agent ID
-    if (!z.string().uuid().safeParse(params.id).success) {
-      return NextResponse.json(
-        { error: 'Invalid agent ID format' },
-        { status: 400 }
-      );
-    }
+    const { searchParams } = new URL(request.url);
+    const validatedParams = trendsSchema.parse({
+      startDate: searchParams.get('startDate'),
+      endDate: searchParams.get('endDate'),
+      groupBy: searchParams.get('groupBy')
+    });
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        creator: {
           select: {
             id: true,
-            subscription_tier: true
+            name: true,
+            image: true
           }
         }
       }
@@ -52,132 +62,134 @@ export async function GET(
       );
     }
 
-    // Check if user has access to the agent
-    if (agent.userId !== session.user.id && agent.access_level !== 'public') {
-      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
-        return NextResponse.json(
-          { error: 'Premium subscription required' },
-          { status: 403 }
-        );
-      }
-      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
-        return NextResponse.json(
-          { error: 'Basic subscription required' },
-          { status: 403 }
-        );
-      }
+    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
     }
 
-    // Parse and validate query parameters
-    const { searchParams } = new URL(request.url);
-    const queryParams = {
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-      interval: searchParams.get('interval') as 'hour' | 'day' | 'week' | 'month' | null,
-      includeDetails: searchParams.get('includeDetails') === 'true'
+    const timeRange: FeedbackTimeRange = {
+      start_date: validatedParams.startDate ? new Date(validatedParams.startDate) : undefined,
+      end_date: validatedParams.endDate ? new Date(validatedParams.endDate) : undefined
     };
 
-    const validatedParams = trendsQuerySchema.parse(queryParams);
+    const where = {
+      agentId: params.id,
+      ...(timeRange.start_date && {
+        createdAt: {
+          gte: timeRange.start_date
+        }
+      }),
+      ...(timeRange.end_date && {
+        createdAt: {
+          lte: timeRange.end_date
+        }
+      })
+    };
 
-    // Get feedback entries
-    const feedback = await prisma.feedback.findMany({
-      where: {
-        agentId: params.id,
-        ...(validatedParams.startDate && validatedParams.endDate ? {
-          createdAt: {
-            gte: new Date(validatedParams.startDate),
-            lte: new Date(validatedParams.endDate)
-          }
-        } : {})
-      },
-      orderBy: {
-        createdAt: 'asc'
-      }
+    const feedback = await prisma.agentFeedback.findMany({
+      where,
+      orderBy: { createdAt: 'asc' }
     });
 
-    // Calculate trends based on interval
-    const interval = validatedParams.interval || 'day';
-    const trends = feedback.reduce((acc, item) => {
-      const date = new Date(item.createdAt);
-      let key: string;
+    const trends: TrendData[] = [];
+    const groupedData: Record<string, { count: number; totalRating: number; totalSentiment: number }> = {};
 
-      switch (interval) {
-        case 'hour':
-          key = date.toISOString().slice(0, 13); // YYYY-MM-DDTHH
-          break;
+    feedback.forEach((item) => {
+      let dateKey: string;
+      const date = new Date(item.createdAt);
+
+      switch (validatedParams.groupBy) {
         case 'week':
           const weekStart = new Date(date);
           weekStart.setDate(date.getDate() - date.getDay());
-          key = weekStart.toISOString().slice(0, 10); // YYYY-MM-DD
+          dateKey = weekStart.toISOString().split('T')[0];
           break;
         case 'month':
-          key = date.toISOString().slice(0, 7); // YYYY-MM
+          dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
           break;
         default: // day
-          key = date.toISOString().slice(0, 10); // YYYY-MM-DD
+          dateKey = date.toISOString().split('T')[0];
       }
 
-      if (!acc[key]) {
-        acc[key] = {
+      if (!groupedData[dateKey]) {
+        groupedData[dateKey] = {
           count: 0,
           totalRating: 0,
-          items: validatedParams.includeDetails ? [] : undefined
+          totalSentiment: 0
         };
       }
 
-      acc[key].count++;
-      acc[key].totalRating += item.rating;
-
-      if (validatedParams.includeDetails) {
-        acc[key].items!.push({
-          id: item.id,
-          comment: item.comment,
-          rating: item.rating,
-          createdAt: item.createdAt
-        });
+      groupedData[dateKey].count++;
+      groupedData[dateKey].totalRating += item.rating;
+      if (item.sentimentScore) {
+        groupedData[dateKey].totalSentiment += Number(item.sentimentScore);
       }
+    });
 
-      return acc;
-    }, {} as Record<string, { count: number; totalRating: number; items?: any[] }>);
+    Object.entries(groupedData).forEach(([date, data]) => {
+      trends.push({
+        date,
+        count: data.count,
+        averageRating: data.totalRating / data.count,
+        averageSentiment: data.totalSentiment / data.count
+      });
+    });
 
-    // Calculate averages and format response
-    const trendData = Object.entries(trends).map(([date, data]) => ({
-      date,
-      count: data.count,
-      averageRating: data.totalRating / data.count,
-      ...(validatedParams.includeDetails && { items: data.items })
-    }));
+    // Sort trends by date
+    trends.sort((a, b) => a.date.localeCompare(b.date));
+
+    // Calculate overall trends
+    const overallTrends = {
+      volume: 0,
+      rating: 0,
+      sentiment: 0
+    };
+
+    if (trends.length > 1) {
+      const firstHalf = trends.slice(0, Math.floor(trends.length / 2));
+      const secondHalf = trends.slice(Math.floor(trends.length / 2));
+
+      const firstVolume = firstHalf.reduce((sum, item) => sum + item.count, 0);
+      const secondVolume = secondHalf.reduce((sum, item) => sum + item.count, 0);
+      overallTrends.volume = firstVolume !== 0 ? ((secondVolume - firstVolume) / firstVolume) * 100 : 0;
+
+      const firstRating = firstHalf.reduce((sum, item) => sum + item.averageRating, 0) / firstHalf.length;
+      const secondRating = secondHalf.reduce((sum, item) => sum + item.averageRating, 0) / secondHalf.length;
+      overallTrends.rating = firstRating !== 0 ? ((secondRating - firstRating) / firstRating) * 100 : 0;
+
+      const firstSentiment = firstHalf.reduce((sum, item) => sum + item.averageSentiment, 0) / firstHalf.length;
+      const secondSentiment = secondHalf.reduce((sum, item) => sum + item.averageSentiment, 0) / secondHalf.length;
+      overallTrends.sentiment = firstSentiment !== 0 ? ((secondSentiment - firstSentiment) / firstSentiment) * 100 : 0;
+    }
 
     return NextResponse.json({
-      trends: trendData,
-      metadata: {
-        agentId: params.id,
+      success: true,
+      data: {
+        trends,
+        overallTrends,
         timeRange: {
-          start: validatedParams.startDate,
-          end: validatedParams.endDate
-        },
-        interval,
-        totalFeedback: feedback.length,
-        lastUpdated: new Date().toISOString()
+          start: timeRange.start_date?.toISOString() || feedback[0]?.createdAt.toISOString(),
+          end: timeRange.end_date?.toISOString() || feedback[feedback.length - 1]?.createdAt.toISOString()
+        }
       }
     });
   } catch (error) {
-    console.error('Error analyzing feedback trends:', error);
-    
+    console.error('Error fetching trends:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
+          success: false,
           error: 'Validation error',
           details: error.errors
         },
         { status: 400 }
       );
     }
-
-    const errorResponse = createErrorResponse(error, 'Failed to analyze feedback trends');
     return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.status }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 } 

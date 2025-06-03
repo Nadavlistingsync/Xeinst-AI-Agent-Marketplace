@@ -1,179 +1,153 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { createErrorResponse } from '@/lib/api';
-import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+import { AgentFeedback } from '@prisma/client';
 
-const searchQuerySchema = z.object({
-  query: z.string().min(1).max(1000),
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  minRating: z.number().min(1).max(5).optional(),
-  maxRating: z.number().min(1).max(5).optional(),
-  page: z.number().min(1).optional(),
-  limit: z.number().min(1).max(100).optional(),
-  sortBy: z.enum(['rating', 'createdAt', 'updatedAt']).optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional()
-});
+interface SearchResult {
+  id: string;
+  rating: number;
+  comment: string | null;
+  sentimentScore: number | null;
+  categories: Record<string, number> | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse> {
+) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Validate agent ID
-    if (!z.string().uuid().safeParse(params.id).success) {
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('query');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const minRating = parseInt(searchParams.get('minRating') || '0');
+    const maxRating = parseInt(searchParams.get('maxRating') || '5');
+    const sentiment = searchParams.get('sentiment');
+    const category = searchParams.get('category');
+
+    if (!query) {
       return NextResponse.json(
-        { error: 'Invalid agent ID format' },
+        { error: 'Search query is required' },
         { status: 400 }
       );
     }
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            subscription_tier: true
-          }
-        }
-      }
+      select: {
+        id: true,
+        name: true,
+        createdBy: true,
+        isPublic: true,
+      },
     });
 
     if (!agent) {
+      return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
+    }
+
+    if (agent.createdBy !== session.user.id && !agent.isPublic) {
       return NextResponse.json(
-        { error: 'Agent not found' },
-        { status: 404 }
+        { error: 'Not authorized to search feedback for this agent' },
+        { status: 403 }
       );
     }
 
-    // Check if user has access to the agent
-    if (agent.userId !== session.user.id && agent.access_level !== 'public') {
-      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
-        return NextResponse.json(
-          { error: 'Premium subscription required' },
-          { status: 403 }
-        );
-      }
-      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
-        return NextResponse.json(
-          { error: 'Basic subscription required' },
-          { status: 403 }
-        );
-      }
-    }
-
-    // Parse and validate query parameters
-    const { searchParams } = new URL(request.url);
-    const queryParams = {
-      query: searchParams.get('query'),
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-      minRating: searchParams.get('minRating') ? parseInt(searchParams.get('minRating')!) : undefined,
-      maxRating: searchParams.get('maxRating') ? parseInt(searchParams.get('maxRating')!) : undefined,
-      page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : undefined,
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
-      sortBy: searchParams.get('sortBy') as 'rating' | 'createdAt' | 'updatedAt' | null,
-      sortOrder: searchParams.get('sortOrder') as 'asc' | 'desc' | null
-    };
-
-    const validatedParams = searchQuerySchema.parse(queryParams);
-
-    // Calculate pagination
-    const page = validatedParams.page || 1;
-    const limit = validatedParams.limit || 10;
     const skip = (page - 1) * limit;
 
-    // Build search query
     const where = {
       agentId: params.id,
+      rating: {
+        gte: minRating,
+        lte: maxRating,
+      },
+      ...(sentiment && {
+        sentimentScore: {
+          ...(sentiment === 'positive' && { gt: 0.5 }),
+          ...(sentiment === 'negative' && { lt: -0.5 }),
+          ...(sentiment === 'neutral' && {
+            gte: -0.5,
+            lte: 0.5,
+          }),
+        },
+      }),
+      ...(category && {
+        categories: {
+          path: [category],
+          gt: 0,
+        },
+      }),
       OR: [
-        { comment: { contains: validatedParams.query, mode: 'insensitive' } }
+        {
+          comment: {
+            contains: query,
+            mode: 'insensitive',
+          },
+        },
+        {
+          categories: {
+            path: ['$'],
+            string_contains: query,
+          },
+        },
       ],
-      ...(validatedParams.startDate && validatedParams.endDate ? {
-        createdAt: {
-          gte: new Date(validatedParams.startDate),
-          lte: new Date(validatedParams.endDate)
-        }
-      } : {}),
-      ...(validatedParams.minRating && validatedParams.maxRating ? {
-        rating: {
-          gte: validatedParams.minRating,
-          lte: validatedParams.maxRating
-        }
-      } : validatedParams.minRating ? {
-        rating: { gte: validatedParams.minRating }
-      } : validatedParams.maxRating ? {
-        rating: { lte: validatedParams.maxRating }
-      } : {})
     };
 
-    // Get total count for pagination
-    const total = await prisma.feedback.count({ where });
+    const [results, total] = await Promise.all([
+      prisma.agentFeedback.findMany({
+        where,
+        orderBy: {
+          [sortBy]: sortOrder,
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.agentFeedback.count({ where }),
+    ]);
 
-    // Get feedback entries
-    const feedback = await prisma.feedback.findMany({
-      where,
-      orderBy: {
-        [validatedParams.sortBy || 'createdAt']: validatedParams.sortOrder || 'desc'
-      },
-      skip,
-      take: limit
-    });
+    const searchResults: SearchResult[] = results.map((item) => ({
+      id: item.id,
+      rating: item.rating,
+      comment: item.comment,
+      sentimentScore: item.sentimentScore,
+      categories: item.categories as Record<string, number> | null,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
+    }));
 
     return NextResponse.json({
-      data: feedback,
+      results: searchResults,
       pagination: {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit)
+        totalPages: Math.ceil(total / limit),
       },
       metadata: {
-        agentId: params.id,
-        query: validatedParams.query,
-        timeRange: {
-          start: validatedParams.startDate,
-          end: validatedParams.endDate
-        },
+        query,
         filters: {
-          minRating: validatedParams.minRating,
-          maxRating: validatedParams.maxRating
+          minRating,
+          maxRating,
+          sentiment,
+          category,
         },
-        sort: {
-          by: validatedParams.sortBy,
-          order: validatedParams.sortOrder
-        },
-        lastUpdated: new Date().toISOString()
-      }
+      },
     });
   } catch (error) {
     console.error('Error searching feedback:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: 'Validation error',
-          details: error.errors
-        },
-        { status: 400 }
-      );
-    }
-
-    const errorResponse = createErrorResponse(error, 'Failed to search feedback');
     return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.status }
+      { error: 'Failed to search feedback' },
+      { status: 500 }
     );
   }
 } 

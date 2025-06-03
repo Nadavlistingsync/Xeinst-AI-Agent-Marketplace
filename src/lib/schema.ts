@@ -14,10 +14,10 @@ export const userSchema = z.object({
   email: z.string().email(),
   image: z.string().nullable(),
   role: z.string(),
-  subscription_tier: z.string(),
+  subscriptionTier: z.string(),
   emailVerified: z.date().nullable(),
-  created_at: z.date(),
-  updated_at: z.date(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
 export const deploymentSchema = z.object({
@@ -25,22 +25,22 @@ export const deploymentSchema = z.object({
   name: z.string(),
   description: z.string(),
   status: z.string(),
-  access_level: z.string(),
-  license_type: z.string(),
+  accessLevel: z.string(),
+  licenseType: z.string(),
   environment: z.string(),
   framework: z.string(),
-  file_url: z.string().nullable(),
-  deployed_by: z.string(),
-  created_at: z.date(),
-  updated_at: z.date(),
-  price_cents: z.number(),
+  fileUrl: z.string().nullable(),
+  deployedBy: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  priceCents: z.number(),
   downloads: z.number(),
   rating: z.number().transform(decimalToNumber),
-  rating_count: z.number(),
-  download_count: z.number(),
-  model_type: z.string(),
+  ratingCount: z.number(),
+  downloadCount: z.number(),
+  modelType: z.string(),
   requirements: z.string().nullable(),
-  api_endpoint: z.string().nullable(),
+  apiEndpoint: z.string().nullable(),
   version: z.string(),
   source: z.string(),
 });
@@ -49,39 +49,39 @@ export const agentSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  long_description: z.string().nullable(),
+  longDescription: z.string().nullable(),
   documentation: z.string().nullable(),
   category: z.string(),
   framework: z.string(),
   requirements: z.array(z.string()),
   source: z.string(),
   version: z.string(),
-  created_by: z.string(),
-  access_level: z.string(),
-  license_type: z.string(),
+  createdBy: z.string(),
+  accessLevel: z.string(),
+  licenseType: z.string(),
   environment: z.string(),
-  file_url: z.string(),
+  fileUrl: z.string(),
   imageUrl: z.string().nullable(),
   status: z.string(),
   rating: z.number(),
-  download_count: z.number(),
-  is_public: z.boolean(),
-  created_at: z.date(),
-  updated_at: z.date(),
+  downloadCount: z.number(),
+  isPublic: z.boolean(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
 export const agentFeedbackSchema = z.object({
   id: z.string(),
-  agent_id: z.string(),
-  user_id: z.string(),
+  agentId: z.string(),
+  userId: z.string(),
   rating: z.number(),
   comment: z.string().nullable(),
-  sentiment_score: z.number().nullable().transform(decimalToNumber),
+  sentimentScore: z.number().nullable().transform(decimalToNumber),
   categories: z.record(z.any()).nullable(),
-  creator_response: z.string().nullable(),
-  response_date: z.date().nullable(),
-  created_at: z.date(),
-  updated_at: z.date(),
+  creatorResponse: z.string().nullable(),
+  responseDate: z.date().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
 export const agentLogSchema = z.object({
@@ -90,7 +90,7 @@ export const agentLogSchema = z.object({
   agentId: z.string(),
   level: z.string(),
   message: z.string(),
-  metadata: z.record(z.any()),
+  metadata: z.record(z.any()).nullable(),
   timestamp: z.date(),
   createdAt: z.date(),
   updatedAt: z.date(),
@@ -98,19 +98,19 @@ export const agentLogSchema = z.object({
 
 export const agentMetricsSchema = z.object({
   id: z.string(),
-  agent_id: z.string(),
-  total_requests: z.number(),
-  average_response_time: z.number(),
-  error_rate: z.number(),
-  success_rate: z.number(),
-  active_users: z.number(),
-  requests_per_minute: z.number(),
-  average_tokens_used: z.number(),
-  cost_per_request: z.number(),
-  total_cost: z.number(),
-  last_updated: z.date(),
-  created_at: z.date(),
-  updated_at: z.date(),
+  agentId: z.string(),
+  totalRequests: z.number(),
+  averageResponseTime: z.number(),
+  errorRate: z.number(),
+  successRate: z.number(),
+  activeUsers: z.number(),
+  requestsPerMinute: z.number(),
+  averageTokensUsed: z.number(),
+  costPerRequest: z.number(),
+  totalCost: z.number(),
+  lastUpdated: z.date(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
 export const productSchema = z.object({
@@ -118,65 +118,65 @@ export const productSchema = z.object({
   name: z.string(),
   slug: z.string(),
   description: z.string(),
-  long_description: z.string().nullable(),
+  longDescription: z.string().nullable(),
   category: z.string(),
   price: z.number().transform(decimalToNumber),
   imageUrl: z.string().nullable(),
-  file_url: z.string(),
+  fileUrl: z.string(),
   documentation: z.string().nullable(),
   features: z.array(z.string()),
   requirements: z.array(z.string()),
   rating: z.number(),
-  average_rating: z.number().transform(decimalToNumber),
-  total_ratings: z.number(),
-  created_by: z.string(),
-  uploaded_by: z.string(),
-  created_at: z.date(),
-  updated_at: z.date(),
-  is_public: z.boolean(),
-  is_featured: z.boolean(),
-  download_count: z.number(),
-  earnings_split: z.number().transform(decimalToNumber),
+  averageRating: z.number().transform(decimalToNumber),
+  totalRatings: z.number(),
+  createdBy: z.string(),
+  uploadedBy: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  isPublic: z.boolean(),
+  isFeatured: z.boolean(),
+  downloadCount: z.number(),
+  earningsSplit: z.number().transform(decimalToNumber),
 });
 
 export const reviewSchema = z.object({
   id: z.string(),
-  user_id: z.string(),
-  product_id: z.string(),
+  userId: z.string(),
+  productId: z.string(),
   rating: z.number(),
   comment: z.string().nullable(),
-  created_at: z.date(),
-  updated_at: z.date(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
 export const purchaseSchema = z.object({
   id: z.string(),
-  user_id: z.string(),
-  product_id: z.string(),
+  userId: z.string(),
+  productId: z.string(),
   amount: z.number().transform(decimalToNumber),
   status: z.string(),
-  created_at: z.date(),
-  updated_at: z.date(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
 export const earningSchema = z.object({
   id: z.string(),
-  user_id: z.string(),
-  product_id: z.string(),
+  userId: z.string(),
+  productId: z.string(),
   amount: z.number().transform(decimalToNumber),
   status: z.string(),
-  stripe_transfer_id: z.string().nullable(),
-  paid_at: z.date().nullable(),
-  created_at: z.date(),
-  updated_at: z.date(),
+  stripeTransferId: z.string().nullable(),
+  paidAt: z.date().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
 export const categorySchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string().nullable(),
-  created_at: z.date(),
-  updated_at: z.date(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
 });
 
 // Type exports
@@ -234,10 +234,10 @@ export type ProductOrderByWithRelationInput = Prisma.ProductOrderByWithRelationI
 export type ProductInclude = Prisma.ProductInclude;
 
 export type FeedbackAnalysis = {
-  sentiment_score: number;
-  positive_feedback: number;
-  negative_feedback: number;
-  total_feedbacks: number;
+  sentimentScore: number;
+  positiveFeedback: number;
+  negativeFeedback: number;
+  totalFeedbacks: number;
   sentiment: {
     positive: number;
     negative: number;
@@ -263,12 +263,12 @@ export type Notification = Prisma.NotificationGetPayload<{}>;
 
 export type Order = {
   id: string;
-  user_id: string;
-  product_id: string;
+  userId: string;
+  productId: string;
   amount: number;
   status: string;
-  created_at: Date;
-  updated_at: Date;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export interface PaginationParams {

@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         email,
         password: hashedPassword,
         role: 'user',
-        subscription_tier: 'free'
+        subscriptionTier: 'free'
       }
     });
 

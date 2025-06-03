@@ -18,7 +18,7 @@ export interface CreateProductInput {
   category: string;
   price: number;
   imageUrl?: string;
-  file_url: string;
+  fileUrl: string;
   documentation?: string;
   features: string[];
   requirements: string[];
@@ -40,7 +40,7 @@ export async function createProduct(data: CreateProductInput): Promise<Product> 
         category: data.category,
         price: new Prisma.Decimal(data.price),
         imageUrl: data.imageUrl,
-        file_url: data.file_url,
+        fileUrl: data.fileUrl,
         documentation: data.documentation,
         features: data.features,
         requirements: data.requirements,
@@ -109,7 +109,7 @@ export async function getProducts(options: {
 
     return await prisma.product.findMany({
       where,
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   } catch (error) {
     console.error('Error getting products:', error);
@@ -144,10 +144,10 @@ export async function getProductStats() {
     const products = await getProducts();
 
     const totalProducts = products.length;
-    const totalValue = products.reduce((sum, product) => sum + product.price, 0);
+    const totalValue = products.reduce((sum, product) => sum + Number(product.price), 0);
     const averagePrice = totalValue / totalProducts;
     const priceDistribution = products.reduce((acc, product) => {
-      const range = Math.floor(product.price / 100) * 100;
+      const range = Math.floor(Number(product.price) / 100) * 100;
       acc[range] = (acc[range] || 0) + 1;
       return acc;
     }, {} as Record<number, number>);
@@ -169,7 +169,7 @@ export async function getProductHistory() {
     const products = await getProducts();
 
     const monthlyProducts = products.reduce((acc, product) => {
-      const month = product.created_at.toISOString().slice(0, 7);
+      const month = product.createdAt.toISOString().slice(0, 7);
       if (!acc[month]) {
         acc[month] = { total: 0, categories: {} as Record<string, number> };
       }
@@ -196,39 +196,44 @@ export async function getProductReviews(
     limit?: number;
   } = {}
 ): Promise<any[]> {
-  const where: Prisma.ReviewWhereInput = { product_id };
+  const where: Prisma.ReviewWhereInput = { productId: product_id };
 
-  if (options.startDate) where.created_at = { gte: options.startDate };
-  if (options.endDate) where.created_at = { lte: options.endDate };
+  if (options.startDate) where.createdAt = { gte: options.startDate };
+  if (options.endDate) where.createdAt = { lte: options.endDate };
 
   return await prisma.review.findMany({
     where,
     include: {
       user: true,
     },
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }
 
 export async function createProductReview(data: {
-  product_id: string;
-  user_id: string;
+  productId: string;
+  userId: string;
   rating: number;
   comment?: string;
 }): Promise<any> {
   const review = await prisma.review.create({
-    data,
+    data: {
+      productId: data.productId,
+      userId: data.userId,
+      rating: data.rating,
+      comment: data.comment,
+    },
   });
 
-  await updateProductRating(data.product_id);
+  await updateProductRating(data.productId);
 
   return review;
 }
 
 export async function updateProductRating(product_id: string): Promise<void> {
   const reviews = await prisma.review.findMany({
-    where: { product_id },
+    where: { productId: product_id },
   });
 
   const average_rating =
@@ -264,17 +269,17 @@ export async function getProductPurchases(
     limit?: number;
   } = {}
 ): Promise<any[]> {
-  const where: Prisma.PurchaseWhereInput = { product_id };
+  const where: Prisma.PurchaseWhereInput = { productId: product_id };
 
-  if (options.startDate) where.created_at = { gte: options.startDate };
-  if (options.endDate) where.created_at = { lte: options.endDate };
+  if (options.startDate) where.createdAt = { gte: options.startDate };
+  if (options.endDate) where.createdAt = { lte: options.endDate };
 
   return await prisma.purchase.findMany({
     where,
     include: {
       user: true,
     },
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }

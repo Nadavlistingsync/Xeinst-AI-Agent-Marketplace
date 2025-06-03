@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       );
     }
 
-    if (agent.userId !== session.user.id) {
+    if (agent.createdBy !== session.user.id) {
       return NextResponse.json(
         { error: 'Not authorized to update this agent' },
         { status: 403 }

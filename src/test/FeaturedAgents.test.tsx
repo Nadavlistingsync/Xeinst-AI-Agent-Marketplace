@@ -6,23 +6,31 @@ import { Agent } from '@/types/agent';
 const mockAgents: Agent[] = [
   {
     id: '1',
-    name: 'Test Agent 1',
-    description: 'Test Description 1',
-    image: '/test-image-1.jpg',
+    name: 'Agent 1',
+    description: 'Description for Agent 1',
+    image: 'image1.jpg',
     rating: 4.5,
-    reviews: 100,
+    reviews: 10,
     isFeatured: true,
     isTrending: false,
+    status: 'active',
+    metadata: {},
+    createdAt: new Date(),
+    updatedAt: new Date(),
   },
   {
     id: '2',
-    name: 'Test Agent 2',
-    description: 'Test Description 2',
-    image: '/test-image-2.jpg',
-    rating: 4.8,
-    reviews: 150,
+    name: 'Agent 2',
+    description: 'Description for Agent 2',
+    image: 'image2.jpg',
+    rating: 4.0,
+    reviews: 5,
     isFeatured: false,
     isTrending: true,
+    status: 'active',
+    metadata: {},
+    createdAt: new Date(),
+    updatedAt: new Date(),
   },
 ];
 
@@ -59,16 +67,16 @@ describe('FeaturedAgents', () => {
     });
 
     // Check featured agent
-    expect(screen.getByText('Test Agent 1')).toBeInTheDocument();
-    expect(screen.getByText('Test Description 1')).toBeInTheDocument();
+    expect(screen.getByText('Agent 1')).toBeInTheDocument();
+    expect(screen.getByText('Description for Agent 1')).toBeInTheDocument();
     expect(screen.getByText('4.5')).toBeInTheDocument();
-    expect(screen.getByText('(100 reviews)')).toBeInTheDocument();
+    expect(screen.getByText('(10 reviews)')).toBeInTheDocument();
 
     // Check trending agent
-    expect(screen.getByText('Test Agent 2')).toBeInTheDocument();
-    expect(screen.getByText('Test Description 2')).toBeInTheDocument();
-    expect(screen.getByText('4.8')).toBeInTheDocument();
-    expect(screen.getByText('(150 reviews)')).toBeInTheDocument();
+    expect(screen.getByText('Agent 2')).toBeInTheDocument();
+    expect(screen.getByText('Description for Agent 2')).toBeInTheDocument();
+    expect(screen.getByText('4.0')).toBeInTheDocument();
+    expect(screen.getByText('(5 reviews)')).toBeInTheDocument();
   });
 
   it('renders "No featured agents found" when no featured agents', async () => {

@@ -1,29 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { createErrorResponse } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { Decimal } from '@prisma/client/runtime/library';
 
-const analyticsQuerySchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  interval: z.enum(['hour', 'day', 'week', 'month']).optional(),
-  includeDetails: z.boolean().optional(),
-  groupBy: z.enum(['rating', 'sentiment', 'time']).optional()
+const analyticsSchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  groupBy: z.enum(['day', 'week', 'month']).optional().default('day')
 });
-
-// Helper function to calculate sentiment
-const getSentiment = (rating: number): string => {
-  if (rating >= 4) return 'positive';
-  if (rating >= 3) return 'neutral';
-  return 'negative';
-};
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse> {
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -33,21 +24,21 @@ export async function GET(
       );
     }
 
-    // Validate agent ID
-    if (!z.string().uuid().safeParse(params.id).success) {
-      return NextResponse.json(
-        { error: 'Invalid agent ID format' },
-        { status: 400 }
-      );
-    }
+    const { searchParams } = new URL(request.url);
+    const validatedParams = analyticsSchema.parse({
+      startDate: searchParams.get('startDate'),
+      endDate: searchParams.get('endDate'),
+      groupBy: searchParams.get('groupBy')
+    });
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        creator: {
           select: {
             id: true,
-            subscription_tier: true
+            name: true,
+            image: true
           }
         }
       }
@@ -60,185 +51,103 @@ export async function GET(
       );
     }
 
-    // Check if user has access to the agent
-    if (agent.userId !== session.user.id && agent.access_level !== 'public') {
-      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
-        return NextResponse.json(
-          { error: 'Premium subscription required' },
-          { status: 403 }
-        );
-      }
-      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
-        return NextResponse.json(
-          { error: 'Basic subscription required' },
-          { status: 403 }
-        );
-      }
+    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
     }
 
-    // Parse and validate query parameters
-    const { searchParams } = new URL(request.url);
-    const queryParams = {
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-      interval: searchParams.get('interval') as 'hour' | 'day' | 'week' | 'month' | null,
-      includeDetails: searchParams.get('includeDetails') === 'true',
-      groupBy: searchParams.get('groupBy') as 'rating' | 'sentiment' | 'time' | null
+    const where = {
+      agentId: params.id,
+      ...(validatedParams.startDate && {
+        createdAt: {
+          gte: new Date(validatedParams.startDate)
+        }
+      }),
+      ...(validatedParams.endDate && {
+        createdAt: {
+          lte: new Date(validatedParams.endDate)
+        }
+      })
     };
 
-    const validatedParams = analyticsQuerySchema.parse(queryParams);
+    const feedback = await prisma.agentFeedback.findMany({
+      where,
+      orderBy: { createdAt: 'asc' }
+    });
 
-    // Get feedback entries
-    const feedback = await prisma.feedback.findMany({
-      where: {
-        agentId: params.id,
-        ...(validatedParams.startDate && validatedParams.endDate ? {
-          createdAt: {
-            gte: new Date(validatedParams.startDate),
-            lte: new Date(validatedParams.endDate)
-          }
-        } : {})
-      },
-      orderBy: {
-        createdAt: 'asc'
+    const sentimentAnalysis = {
+      positive: 0,
+      neutral: 0,
+      negative: 0
+    };
+
+    feedback.forEach((item) => {
+      if (item.sentimentScore) {
+        const score = Number(item.sentimentScore);
+        if (score > 0.5) {
+          sentimentAnalysis.positive++;
+        } else if (score < -0.5) {
+          sentimentAnalysis.negative++;
+        } else {
+          sentimentAnalysis.neutral++;
+        }
       }
     });
 
-    // Calculate analytics based on grouping
-    const groupBy = validatedParams.groupBy || 'time';
-    const interval = validatedParams.interval || 'day';
-    let analytics: any = {};
+    const categoryAnalysis: Record<string, number> = {};
+    feedback.forEach((item) => {
+      if (item.categories) {
+        const categories = item.categories as Record<string, number>;
+        Object.entries(categories).forEach(([category, value]) => {
+          categoryAnalysis[category] = (categoryAnalysis[category] || 0) + value;
+        });
+      }
+    });
 
-    switch (groupBy) {
-      case 'rating':
-        analytics = feedback.reduce((acc, item) => {
-          const rating = Math.round(item.rating);
-          if (!acc[rating]) {
-            acc[rating] = {
-              count: 0,
-              total: 0,
-              items: validatedParams.includeDetails ? [] : undefined
-            };
-          }
-          acc[rating].count++;
-          acc[rating].total += item.rating;
-          if (validatedParams.includeDetails) {
-            acc[rating].items!.push(item);
-          }
-          return acc;
-        }, {} as Record<number, { count: number; total: number; items?: any[] }>);
-        break;
+    const totalSentiment = feedback.reduce((sum, item) => {
+      return sum + (item.sentimentScore ? Number(item.sentimentScore) : 0);
+    }, 0);
 
-      case 'sentiment':
-        analytics = feedback.reduce((acc, item) => {
-          const sentiment = getSentiment(item.rating);
-          if (!acc[sentiment]) {
-            acc[sentiment] = {
-              count: 0,
-              total: 0,
-              items: validatedParams.includeDetails ? [] : undefined
-            };
-          }
-          acc[sentiment].count++;
-          acc[sentiment].total += item.rating;
-          if (validatedParams.includeDetails) {
-            acc[sentiment].items!.push(item);
-          }
-          return acc;
-        }, {} as Record<string, { count: number; total: number; items?: any[] }>);
-        break;
+    const averageSentiment = feedback.length > 0 ? totalSentiment / feedback.length : 0;
 
-      case 'time':
-      default:
-        analytics = feedback.reduce((acc, item) => {
-          const date = new Date(item.createdAt);
-          let key: string;
+    const recentFeedback = feedback.slice(-10);
+    const recentSentiment = recentFeedback.reduce((sum, item) => {
+      return sum + (item.sentimentScore ? Number(item.sentimentScore) : 0);
+    }, 0);
 
-          switch (interval) {
-            case 'hour':
-              key = date.toISOString().slice(0, 13); // YYYY-MM-DDTHH
-              break;
-            case 'week':
-              const weekStart = new Date(date);
-              weekStart.setDate(date.getDate() - date.getDay());
-              key = weekStart.toISOString().slice(0, 10); // YYYY-MM-DD
-              break;
-            case 'month':
-              key = date.toISOString().slice(0, 7); // YYYY-MM
-              break;
-            default: // day
-              key = date.toISOString().slice(0, 10); // YYYY-MM-DD
-          }
-
-          if (!acc[key]) {
-            acc[key] = {
-              count: 0,
-              total: 0,
-              sentiment: {
-                positive: 0,
-                neutral: 0,
-                negative: 0
-              },
-              items: validatedParams.includeDetails ? [] : undefined
-            };
-          }
-
-          acc[key].count++;
-          acc[key].total += item.rating;
-          acc[key].sentiment[getSentiment(item.rating)]++;
-          if (validatedParams.includeDetails) {
-            acc[key].items!.push(item);
-          }
-
-          return acc;
-        }, {} as Record<string, {
-          count: number;
-          total: number;
-          sentiment: Record<string, number>;
-          items?: any[];
-        }>);
-    }
-
-    // Calculate averages and format response
-    const analyticsData = Object.entries(analytics).map(([key, data]: [string, any]) => ({
-      key,
-      count: data.count,
-      averageRating: data.total / data.count,
-      ...(data.sentiment && { sentiment: data.sentiment }),
-      ...(validatedParams.includeDetails && { items: data.items })
-    }));
+    const averageRecentSentiment = recentFeedback.length > 0 ? recentSentiment / recentFeedback.length : 0;
 
     return NextResponse.json({
-      analytics: analyticsData,
-      metadata: {
-        agentId: params.id,
-        timeRange: {
-          start: validatedParams.startDate,
-          end: validatedParams.endDate
-        },
-        groupBy,
-        interval,
+      success: true,
+      data: {
         totalFeedback: feedback.length,
-        lastUpdated: new Date().toISOString()
+        sentimentAnalysis,
+        categoryAnalysis,
+        averageSentiment,
+        averageRecentSentiment,
+        sentimentTrend: {
+          current: averageRecentSentiment,
+          previous: averageSentiment
+        }
       }
     });
   } catch (error) {
-    console.error('Error analyzing feedback:', error);
-    
+    console.error('Error fetching analytics:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
+          success: false,
           error: 'Validation error',
           details: error.errors
         },
         { status: 400 }
       );
     }
-
-    const errorResponse = createErrorResponse(error, 'Failed to analyze feedback');
     return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.status }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 } 

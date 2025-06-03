@@ -73,7 +73,7 @@ export async function GET(request: Request) {
 
     // Check if user has purchased the product
     const purchase = await prisma.purchase.findFirst({
-      where: { product_id: productId }
+      where: { productId: productId }
     });
 
     if (!purchase) {

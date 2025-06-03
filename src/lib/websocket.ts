@@ -61,7 +61,7 @@ export function initSocket(res: NextApiResponseWithSocket) {
     // Start periodic health checks for active deployments
     setInterval(async () => {
       try {
-        const activeDeployments = await prisma.deployment.findMany({
+        const activeDeployments = await prisma?.deployment.findMany({
           where: {
             status: 'active',
           },

@@ -31,26 +31,24 @@ export async function POST(req: Request) {
     }
 
     // Check if user has access to deploy this agent
-    if (agent.accessLevel === "private" && agent.deployedBy !== session.user.id) {
-      return new NextResponse("Unauthorized to deploy this agent", { status: 403 });
+    if (agent.isPublic === false && agent.createdBy !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Not authorized to deploy this agent' },
+        { status: 403 }
+      );
     }
 
     // Create the deployment
     const deployment = await prisma.deployment.create({
       data: {
-        name: validatedData.name,
+        name: agent.name,
         description: agent.description,
-        status: "pending",
-        accessLevel: agent.accessLevel,
-        licenseType: agent.licenseType,
-        environment: validatedData.environment,
         framework: agent.framework,
-        fileUrl: agent.fileUrl,
-        deployedBy: session.user.id,
-        modelType: agent.modelType,
-        requirements: agent.requirements,
         version: agent.version,
-        source: agent.source,
+        requirements: agent.requirements,
+        createdBy: session.user.id,
+        deployedBy: session.user.id,
+        status: 'active',
       },
     });
 

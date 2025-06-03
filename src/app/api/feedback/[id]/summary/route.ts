@@ -1,20 +1,24 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { createErrorResponse } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-const summaryQuerySchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  includeDetails: z.boolean().optional()
+const summarySchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  limit: z.number().optional().default(10)
 });
+
+interface FeedbackTimeRange {
+  start_date?: Date;
+  end_date?: Date;
+}
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse> {
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -24,21 +28,21 @@ export async function GET(
       );
     }
 
-    // Validate agent ID
-    if (!z.string().uuid().safeParse(params.id).success) {
-      return NextResponse.json(
-        { error: 'Invalid agent ID format' },
-        { status: 400 }
-      );
-    }
+    const { searchParams } = new URL(request.url);
+    const validatedParams = summarySchema.parse({
+      startDate: searchParams.get('startDate'),
+      endDate: searchParams.get('endDate'),
+      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
+    });
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        creator: {
           select: {
             id: true,
-            subscription_tier: true
+            name: true,
+            image: true
           }
         }
       }
@@ -51,100 +55,116 @@ export async function GET(
       );
     }
 
-    // Check if user has access to the agent
-    if (agent.userId !== session.user.id && agent.access_level !== 'public') {
-      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
-        return NextResponse.json(
-          { error: 'Premium subscription required' },
-          { status: 403 }
-        );
-      }
-      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
-        return NextResponse.json(
-          { error: 'Basic subscription required' },
-          { status: 403 }
-        );
-      }
+    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
     }
 
-    // Parse and validate query parameters
-    const { searchParams } = new URL(request.url);
-    const queryParams = {
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-      includeDetails: searchParams.get('includeDetails') === 'true'
+    const timeRange: FeedbackTimeRange = {
+      start_date: validatedParams.startDate ? new Date(validatedParams.startDate) : undefined,
+      end_date: validatedParams.endDate ? new Date(validatedParams.endDate) : undefined
     };
 
-    const validatedParams = summaryQuerySchema.parse(queryParams);
+    const where = {
+      agentId: params.id,
+      ...(timeRange.start_date && {
+        createdAt: {
+          gte: timeRange.start_date
+        }
+      }),
+      ...(timeRange.end_date && {
+        createdAt: {
+          lte: timeRange.end_date
+        }
+      })
+    };
 
-    // Get feedback entries
-    const feedback = await prisma.feedback.findMany({
-      where: {
-        agentId: params.id,
-        ...(validatedParams.startDate && validatedParams.endDate ? {
-          createdAt: {
-            gte: new Date(validatedParams.startDate),
-            lte: new Date(validatedParams.endDate)
-          }
-        } : {})
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
+    const feedback = await prisma.agentFeedback.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: validatedParams.limit
     });
 
-    // Calculate summary statistics
-    const totalFeedback = feedback.length;
-    const averageRating = feedback.reduce((sum, item) => sum + item.rating, 0) / totalFeedback;
-    
-    const ratingDistribution = feedback.reduce((acc, item) => {
-      const rating = Math.round(item.rating);
-      acc[rating] = (acc[rating] || 0) + 1;
-      return acc;
-    }, {} as Record<number, number>);
+    const summary = {
+      totalFeedback: feedback.length,
+      averageRating: 0,
+      sentimentDistribution: {
+        positive: 0,
+        neutral: 0,
+        negative: 0
+      },
+      topCategories: [] as Array<{ name: string; count: number }>,
+      recentFeedback: feedback.map(item => ({
+        id: item.id,
+        rating: item.rating,
+        sentimentScore: item.sentimentScore ? Number(item.sentimentScore) : null,
+        categories: item.categories as Record<string, number>,
+        createdAt: item.createdAt
+      }))
+    };
 
-    const sentimentDistribution = feedback.reduce((acc, item) => {
-      const sentiment = item.rating >= 4 ? 'positive' : item.rating >= 3 ? 'neutral' : 'negative';
-      acc[sentiment] = (acc[sentiment] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    if (feedback.length > 0) {
+      // Calculate average rating
+      summary.averageRating = feedback.reduce((sum, item) => sum + item.rating, 0) / feedback.length;
 
-    const recentFeedback = validatedParams.includeDetails ? feedback.slice(0, 5) : undefined;
+      // Calculate sentiment distribution
+      feedback.forEach((item) => {
+        if (item.sentimentScore) {
+          const score = Number(item.sentimentScore);
+          if (score > 0.5) {
+            summary.sentimentDistribution.positive++;
+          } else if (score < -0.5) {
+            summary.sentimentDistribution.negative++;
+          } else {
+            summary.sentimentDistribution.neutral++;
+          }
+        }
+      });
+
+      // Calculate top categories
+      const categoryCounts: Record<string, number> = {};
+      feedback.forEach((item) => {
+        if (item.categories) {
+          const categories = item.categories as Record<string, number>;
+          Object.entries(categories).forEach(([category, value]) => {
+            categoryCounts[category] = (categoryCounts[category] || 0) + value;
+          });
+        }
+      });
+
+      summary.topCategories = Object.entries(categoryCounts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+    }
 
     return NextResponse.json({
-      summary: {
-        totalFeedback,
-        averageRating,
-        ratingDistribution,
-        sentimentDistribution,
-        ...(recentFeedback && { recentFeedback })
-      },
-      metadata: {
-        agentId: params.id,
+      success: true,
+      data: {
+        summary,
         timeRange: {
-          start: validatedParams.startDate,
-          end: validatedParams.endDate
-        },
-        lastUpdated: new Date().toISOString()
+          start: timeRange.start_date?.toISOString() || feedback[0]?.createdAt.toISOString(),
+          end: timeRange.end_date?.toISOString() || feedback[feedback.length - 1]?.createdAt.toISOString()
+        }
       }
     });
   } catch (error) {
-    console.error('Error generating feedback summary:', error);
-    
+    console.error('Error fetching summary:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
+          success: false,
           error: 'Validation error',
           details: error.errors
         },
         { status: 400 }
       );
     }
-
-    const errorResponse = createErrorResponse(error, 'Failed to generate feedback summary');
     return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.status }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 } 

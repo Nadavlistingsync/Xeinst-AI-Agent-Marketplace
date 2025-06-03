@@ -40,7 +40,7 @@ export async function GET(req: Request) {
       );
     }
 
-    if (agent.deployed_by !== session.user.id) {
+    if (agent.deployedBy !== session.user.id) {
       return NextResponse.json(
         { error: 'Not authorized to monitor this agent' },
         { status: 403 }

@@ -1,29 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { createErrorResponse } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-const compareQuerySchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  compareWith: z.string().uuid(),
-  interval: z.enum(['hour', 'day', 'week', 'month']).optional(),
-  includeDetails: z.boolean().optional()
+const compareSchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  groupBy: z.enum(['day', 'week', 'month']).optional().default('day')
 });
-
-// Helper function to calculate sentiment
-const getSentiment = (rating: number): string => {
-  if (rating >= 4) return 'positive';
-  if (rating >= 3) return 'neutral';
-  return 'negative';
-};
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse> {
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -33,253 +23,184 @@ export async function GET(
       );
     }
 
-    // Validate agent IDs
-    if (!z.string().uuid().safeParse(params.id).success) {
-      return NextResponse.json(
-        { error: 'Invalid agent ID format' },
-        { status: 400 }
-      );
-    }
-
-    // Parse and validate query parameters
     const { searchParams } = new URL(request.url);
-    const queryParams = {
+    const validatedParams = compareSchema.parse({
       startDate: searchParams.get('startDate'),
       endDate: searchParams.get('endDate'),
-      compareWith: searchParams.get('compareWith'),
-      interval: searchParams.get('interval') as 'hour' | 'day' | 'week' | 'month' | null,
-      includeDetails: searchParams.get('includeDetails') === 'true'
-    };
+      groupBy: searchParams.get('groupBy')
+    });
 
-    const validatedParams = compareQuerySchema.parse(queryParams);
-
-    if (!z.string().uuid().safeParse(validatedParams.compareWith).success) {
-      return NextResponse.json(
-        { error: 'Invalid comparison agent ID format' },
-        { status: 400 }
-      );
-    }
-
-    // Get both agents
-    const [agent, compareAgent] = await Promise.all([
-      prisma.deployment.findUnique({
-        where: { id: params.id },
-        include: {
-          user: {
-            select: {
-              id: true,
-              subscription_tier: true
-            }
+    const agent = await prisma.deployment.findUnique({
+      where: { id: params.id },
+      include: {
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            image: true
           }
         }
-      }),
-      prisma.deployment.findUnique({
-        where: { id: validatedParams.compareWith },
-        include: {
-          user: {
-            select: {
-              id: true,
-              subscription_tier: true
-            }
-          }
-        }
-      })
-    ]);
+      }
+    });
 
-    if (!agent || !compareAgent) {
+    if (!agent) {
       return NextResponse.json(
-        { error: 'One or both agents not found' },
+        { error: 'Agent not found' },
         { status: 404 }
       );
     }
 
-    // Check if user has access to both agents
-    const checkAccess = (agent: any) => {
-      if (agent.userId !== session.user.id && agent.access_level !== 'public') {
-        if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
-          return false;
-        }
-        if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
-          return false;
-        }
-      }
-      return true;
-    };
-
-    if (!checkAccess(agent) || !checkAccess(compareAgent)) {
+    if (agent.createdBy !== session.user.id && !agent.isPublic) {
       return NextResponse.json(
-        { error: 'Insufficient access to one or both agents' },
+        { error: 'Unauthorized' },
         { status: 403 }
       );
     }
 
-    // Get feedback for both agents
-    const [feedback, compareFeedback] = await Promise.all([
-      prisma.feedback.findMany({
-        where: {
-          agentId: params.id,
-          ...(validatedParams.startDate && validatedParams.endDate ? {
-            createdAt: {
-              gte: new Date(validatedParams.startDate),
-              lte: new Date(validatedParams.endDate)
-            }
-          } : {})
-        },
-        orderBy: {
-          createdAt: 'asc'
+    const where = {
+      agentId: params.id,
+      ...(validatedParams.startDate && {
+        createdAt: {
+          gte: new Date(validatedParams.startDate)
         }
       }),
-      prisma.feedback.findMany({
-        where: {
-          agentId: validatedParams.compareWith,
-          ...(validatedParams.startDate && validatedParams.endDate ? {
-            createdAt: {
-              gte: new Date(validatedParams.startDate),
-              lte: new Date(validatedParams.endDate)
-            }
-          } : {})
-        },
-        orderBy: {
-          createdAt: 'asc'
+      ...(validatedParams.endDate && {
+        createdAt: {
+          lte: new Date(validatedParams.endDate)
         }
       })
-    ]);
-
-    // Calculate comparison metrics
-    const interval = validatedParams.interval || 'day';
-    const metrics = {
-      agent: {
-        totalFeedback: feedback.length,
-        averageRating: feedback.reduce((sum, item) => sum + item.rating, 0) / feedback.length,
-        sentiment: feedback.reduce((acc, item) => {
-          const sentiment = getSentiment(item.rating);
-          acc[sentiment] = (acc[sentiment] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
-      },
-      compareAgent: {
-        totalFeedback: compareFeedback.length,
-        averageRating: compareFeedback.reduce((sum, item) => sum + item.rating, 0) / compareFeedback.length,
-        sentiment: compareFeedback.reduce((acc, item) => {
-          const sentiment = getSentiment(item.rating);
-          acc[sentiment] = (acc[sentiment] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
-      }
     };
 
-    // Calculate time-based comparison
-    const timeComparison = feedback.reduce((acc, item) => {
-      const date = new Date(item.createdAt);
-      let key: string;
-
-      switch (interval) {
-        case 'hour':
-          key = date.toISOString().slice(0, 13); // YYYY-MM-DDTHH
-          break;
-        case 'week':
-          const weekStart = new Date(date);
-          weekStart.setDate(date.getDate() - date.getDay());
-          key = weekStart.toISOString().slice(0, 10); // YYYY-MM-DD
-          break;
-        case 'month':
-          key = date.toISOString().slice(0, 7); // YYYY-MM
-          break;
-        default: // day
-          key = date.toISOString().slice(0, 10); // YYYY-MM-DD
-      }
-
-      if (!acc[key]) {
-        acc[key] = {
-          agent: { count: 0, total: 0 },
-          compareAgent: { count: 0, total: 0 }
-        };
-      }
-
-      acc[key].agent.count++;
-      acc[key].agent.total += item.rating;
-
-      return acc;
-    }, {} as Record<string, { agent: { count: number; total: number }; compareAgent: { count: number; total: number } }>);
-
-    // Add comparison agent data
-    compareFeedback.forEach(item => {
-      const date = new Date(item.createdAt);
-      let key: string;
-
-      switch (interval) {
-        case 'hour':
-          key = date.toISOString().slice(0, 13);
-          break;
-        case 'week':
-          const weekStart = new Date(date);
-          weekStart.setDate(date.getDate() - date.getDay());
-          key = weekStart.toISOString().slice(0, 10);
-          break;
-        case 'month':
-          key = date.toISOString().slice(0, 7);
-          break;
-        default:
-          key = date.toISOString().slice(0, 10);
-      }
-
-      if (!timeComparison[key]) {
-        timeComparison[key] = {
-          agent: { count: 0, total: 0 },
-          compareAgent: { count: 0, total: 0 }
-        };
-      }
-
-      timeComparison[key].compareAgent.count++;
-      timeComparison[key].compareAgent.total += item.rating;
+    const feedback = await prisma.agentFeedback.findMany({
+      where,
+      orderBy: { createdAt: 'asc' }
     });
 
-    // Format time comparison data
-    const timeComparisonData = Object.entries(timeComparison).map(([key, data]) => ({
-      date: key,
-      agent: {
-        count: data.agent.count,
-        averageRating: data.agent.total / data.agent.count
+    const metrics = {
+      sentiment: {
+        current: 0,
+        previous: 0,
+        trend: 0
       },
-      compareAgent: {
-        count: data.compareAgent.count,
-        averageRating: data.compareAgent.total / data.compareAgent.count
+      volume: {
+        current: 0,
+        previous: 0,
+        trend: 0
+      },
+      categories: {} as Record<string, { current: number; previous: number; trend: number }>,
+      timeComparison: {} as Record<string, { count: number; sentiment: number }>
+    };
+
+    // Calculate time-based metrics
+    feedback.forEach((item) => {
+      const date = item.createdAt.toISOString().split('T')[0];
+      if (!metrics.timeComparison[date]) {
+        metrics.timeComparison[date] = {
+          count: 0,
+          sentiment: 0
+        };
       }
-    }));
+      metrics.timeComparison[date].count++;
+      if (item.sentimentScore) {
+        metrics.timeComparison[date].sentiment += Number(item.sentimentScore);
+      }
+    });
+
+    // Calculate overall metrics
+    const totalSentiment = feedback.reduce((sum, item) => {
+      return sum + (item.sentimentScore ? Number(item.sentimentScore) : 0);
+    }, 0);
+
+    const averageSentiment = feedback.length > 0 ? totalSentiment / feedback.length : 0;
+
+    // Split feedback into current and previous periods
+    const midPoint = Math.floor(feedback.length / 2);
+    const previousFeedback = feedback.slice(0, midPoint);
+    const currentFeedback = feedback.slice(midPoint);
+
+    // Calculate current period metrics
+    const currentSentiment = currentFeedback.reduce((sum, item) => {
+      return sum + (item.sentimentScore ? Number(item.sentimentScore) : 0);
+    }, 0);
+    metrics.sentiment.current = currentFeedback.length > 0 ? currentSentiment / currentFeedback.length : 0;
+    metrics.volume.current = currentFeedback.length;
+
+    // Calculate previous period metrics
+    const previousSentiment = previousFeedback.reduce((sum, item) => {
+      return sum + (item.sentimentScore ? Number(item.sentimentScore) : 0);
+    }, 0);
+    metrics.sentiment.previous = previousFeedback.length > 0 ? previousSentiment / previousFeedback.length : 0;
+    metrics.volume.previous = previousFeedback.length;
+
+    // Calculate trends
+    metrics.sentiment.trend = metrics.sentiment.previous !== 0
+      ? ((metrics.sentiment.current - metrics.sentiment.previous) / metrics.sentiment.previous) * 100
+      : 0;
+    metrics.volume.trend = metrics.volume.previous !== 0
+      ? ((metrics.volume.current - metrics.volume.previous) / metrics.volume.previous) * 100
+      : 0;
+
+    // Calculate category trends
+    const categoryMetrics = {
+      current: {} as Record<string, number>,
+      previous: {} as Record<string, number>
+    };
+
+    currentFeedback.forEach((item) => {
+      if (item.categories) {
+        const categories = item.categories as Record<string, number>;
+        Object.entries(categories).forEach(([category, value]) => {
+          categoryMetrics.current[category] = (categoryMetrics.current[category] || 0) + value;
+        });
+      }
+    });
+
+    previousFeedback.forEach((item) => {
+      if (item.categories) {
+        const categories = item.categories as Record<string, number>;
+        Object.entries(categories).forEach(([category, value]) => {
+          categoryMetrics.previous[category] = (categoryMetrics.previous[category] || 0) + value;
+        });
+      }
+    });
+
+    // Calculate category trends
+    Object.keys({ ...categoryMetrics.current, ...categoryMetrics.previous }).forEach((category) => {
+      const current = categoryMetrics.current[category] || 0;
+      const previous = categoryMetrics.previous[category] || 0;
+      metrics.categories[category] = {
+        current,
+        previous,
+        trend: previous !== 0 ? ((current - previous) / previous) * 100 : 0
+      };
+    });
 
     return NextResponse.json({
-      comparison: {
+      success: true,
+      data: {
         metrics,
-        timeComparison: timeComparisonData
-      },
-      metadata: {
-        agentId: params.id,
-        compareAgentId: validatedParams.compareWith,
+        totalFeedback: feedback.length,
         timeRange: {
-          start: validatedParams.startDate,
-          end: validatedParams.endDate
-        },
-        interval,
-        lastUpdated: new Date().toISOString()
+          start: validatedParams.startDate || feedback[0]?.createdAt.toISOString(),
+          end: validatedParams.endDate || feedback[feedback.length - 1]?.createdAt.toISOString()
+        }
       }
     });
   } catch (error) {
     console.error('Error comparing feedback:', error);
-    
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
+          success: false,
           error: 'Validation error',
           details: error.errors
         },
         { status: 400 }
       );
     }
-
-    const errorResponse = createErrorResponse(error, 'Failed to compare feedback');
     return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.status }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 } 

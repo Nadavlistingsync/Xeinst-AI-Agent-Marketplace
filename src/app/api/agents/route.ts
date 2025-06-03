@@ -6,7 +6,7 @@ import { agentSchema } from '@/lib/schema';
 
 export async function GET() {
   try {
-    const agents = await prisma.agent.findMany({
+    const agents = await prisma.deployment.findMany({
       where: {
         isPublic: true,
       },
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validatedData = agentSchema.parse(body);
 
-    const agent = await prisma.agent.create({
+    const agent = await prisma.deployment.create({
       data: {
         ...validatedData,
         createdBy: session.user.id,

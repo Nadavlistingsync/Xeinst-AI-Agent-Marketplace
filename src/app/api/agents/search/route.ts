@@ -1,43 +1,81 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/db';
-import { agentSchema } from '@/lib/schema';
-import { eq, and, gte, lte, ilike, or, desc } from 'drizzle-orm';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get('q') || '';
+    const query = searchParams.get('query') || '';
     const category = searchParams.get('category');
     const framework = searchParams.get('framework');
+    const minRating = searchParams.get('minRating');
+    const maxPrice = searchParams.get('maxPrice');
+    const sortBy = searchParams.get('sortBy') || 'rating';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
 
-    const where = {
+    const where: any = {
       isPublic: true,
-      OR: [
-        { name: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-      ],
-      ...(category && { category }),
-      ...(framework && { framework }),
     };
 
-    const agents = await prisma.agent.findMany({
-      where,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    if (query) {
+      where.OR = [
+        { name: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+      ];
+    }
 
-    return NextResponse.json(agents);
+    if (category) {
+      where.category = category;
+    }
+
+    if (framework) {
+      where.framework = framework;
+    }
+
+    if (minRating) {
+      where.rating = { gte: parseFloat(minRating) };
+    }
+
+    if (maxPrice) {
+      where.price = { lte: parseFloat(maxPrice) };
+    }
+
+    const [total, agents] = await Promise.all([
+      prisma.deployment.count({ where }),
+      prisma.deployment.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          [sortBy]: sortOrder,
+        },
+        include: {
+          creator: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return NextResponse.json({
+      agents,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
   } catch (error) {
     console.error('Error searching agents:', error);
     return NextResponse.json(

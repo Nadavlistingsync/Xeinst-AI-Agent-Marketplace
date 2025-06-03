@@ -77,7 +77,7 @@ describe('Error Handling', () => {
     });
 
     it('handles validation errors', () => {
-      const error = new Prisma.PrismaClientValidationError('Validation error');
+      const error = new Prisma.PrismaClientValidationError('Validation error', { clientVersion: '5.22.0' });
       expect(() => handleDatabaseError(error)).toThrow(DatabaseError);
       expect(() => handleDatabaseError(error)).toThrow('Validation error');
       expect(Sentry.captureException).not.toHaveBeenCalled();

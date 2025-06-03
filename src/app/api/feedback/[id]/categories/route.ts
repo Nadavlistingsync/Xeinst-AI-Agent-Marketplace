@@ -1,46 +1,19 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { startOfDay, subDays } from 'date-fns';
-import { createErrorResponse } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-const categoriesQuerySchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  limit: z.number().min(1).max(100).optional(),
+const categoriesSchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+  minCount: z.number().optional().default(1)
 });
-
-// Simple keyword-based categorization
-const categorizeFeedback = (comment: string | null): string => {
-  if (!comment) return 'No Comment';
-  
-  const lowerComment = comment.toLowerCase();
-  
-  if (lowerComment.includes('bug') || lowerComment.includes('error') || lowerComment.includes('issue')) {
-    return 'Bugs & Issues';
-  }
-  if (lowerComment.includes('slow') || lowerComment.includes('performance') || lowerComment.includes('speed')) {
-    return 'Performance';
-  }
-  if (lowerComment.includes('interface') || lowerComment.includes('ui') || lowerComment.includes('ux')) {
-    return 'User Interface';
-  }
-  if (lowerComment.includes('feature') || lowerComment.includes('request') || lowerComment.includes('suggestion')) {
-    return 'Feature Requests';
-  }
-  if (lowerComment.includes('documentation') || lowerComment.includes('guide') || lowerComment.includes('help')) {
-    return 'Documentation';
-  }
-  
-  return 'General Feedback';
-};
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse> {
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -50,21 +23,21 @@ export async function GET(
       );
     }
 
-    // Validate agent ID
-    if (!z.string().uuid().safeParse(params.id).success) {
-      return NextResponse.json(
-        { error: 'Invalid agent ID format' },
-        { status: 400 }
-      );
-    }
+    const { searchParams } = new URL(request.url);
+    const validatedParams = categoriesSchema.parse({
+      startDate: searchParams.get('startDate'),
+      endDate: searchParams.get('endDate'),
+      minCount: searchParams.get('minCount') ? parseInt(searchParams.get('minCount')!) : undefined
+    });
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       include: {
-        user: {
+        creator: {
           select: {
             id: true,
-            subscription_tier: true
+            name: true,
+            image: true
           }
         }
       }
@@ -77,97 +50,100 @@ export async function GET(
       );
     }
 
-    // Check if user has access to the agent
-    if (agent.userId !== session.user.id && agent.access_level !== 'public') {
-      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
-        return NextResponse.json(
-          { error: 'Premium subscription required' },
-          { status: 403 }
-        );
-      }
-      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
-        return NextResponse.json(
-          { error: 'Basic subscription required' },
-          { status: 403 }
-        );
-      }
+    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
     }
 
-    // Parse and validate query parameters
-    const { searchParams } = new URL(request.url);
-    const queryParams = {
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
+    const where = {
+      agentId: params.id,
+      ...(validatedParams.startDate && {
+        createdAt: {
+          gte: new Date(validatedParams.startDate)
+        }
+      }),
+      ...(validatedParams.endDate && {
+        createdAt: {
+          lte: new Date(validatedParams.endDate)
+        }
+      })
     };
 
-    const validatedParams = categoriesQuerySchema.parse(queryParams);
-
-    // Get feedback entries
-    const feedback = await prisma.feedback.findMany({
-      where: {
-        agentId: params.id,
-        ...(validatedParams.startDate && validatedParams.endDate ? {
-          createdAt: {
-            gte: new Date(validatedParams.startDate),
-            lte: new Date(validatedParams.endDate)
-          }
-        } : {})
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: validatedParams.limit
+    const feedback = await prisma.agentFeedback.findMany({
+      where,
+      orderBy: { createdAt: 'desc' }
     });
 
-    // Categorize feedback
-    const categories = feedback.reduce((acc, item) => {
-      const category = categorizeFeedback(item.comment);
-      if (!acc[category]) {
-        acc[category] = {
-          count: 0,
-          items: []
-        };
+    const categoryCounts: Record<string, number> = {};
+    const categorySentiment: Record<string, { positive: number; negative: number; neutral: number }> = {};
+
+    feedback.forEach((item) => {
+      if (item.categories) {
+        const categories = item.categories as Record<string, number>;
+        Object.entries(categories).forEach(([category, value]) => {
+          // Update category counts
+          categoryCounts[category] = (categoryCounts[category] || 0) + 1;
+
+          // Initialize sentiment tracking for category if not exists
+          if (!categorySentiment[category]) {
+            categorySentiment[category] = {
+              positive: 0,
+              negative: 0,
+              neutral: 0
+            };
+          }
+
+          // Update sentiment counts
+          if (item.sentimentScore) {
+            const score = Number(item.sentimentScore);
+            if (score > 0.5) {
+              categorySentiment[category].positive++;
+            } else if (score < -0.5) {
+              categorySentiment[category].negative++;
+            } else {
+              categorySentiment[category].neutral++;
+            }
+          }
+        });
       }
-      acc[category].count++;
-      acc[category].items.push({
-        id: item.id,
-        comment: item.comment,
-        rating: item.rating,
-        createdAt: item.createdAt
-      });
-      return acc;
-    }, {} as Record<string, { count: number; items: any[] }>);
+    });
+
+    // Filter categories by minimum count
+    const filteredCategories = Object.entries(categoryCounts)
+      .filter(([_, count]) => count >= (validatedParams.minCount || 1))
+      .reduce((acc, [category, count]) => {
+        acc[category] = {
+          count,
+          sentiment: categorySentiment[category]
+        };
+        return acc;
+      }, {} as Record<string, { count: number; sentiment: { positive: number; negative: number; neutral: number } }>);
 
     return NextResponse.json({
-      categories,
-      metadata: {
-        agentId: params.id,
-        timeRange: {
-          start: validatedParams.startDate,
-          end: validatedParams.endDate
-        },
-        totalFeedback: feedback.length,
-        lastUpdated: new Date().toISOString()
+      success: true,
+      data: {
+        categories: filteredCategories,
+        totalCategories: Object.keys(filteredCategories).length,
+        totalFeedback: feedback.length
       }
     });
   } catch (error) {
-    console.error('Error categorizing feedback:', error);
-    
+    console.error('Error fetching categories:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
+          success: false,
           error: 'Validation error',
           details: error.errors
         },
         { status: 400 }
       );
     }
-
-    const errorResponse = createErrorResponse(error, 'Failed to categorize feedback');
     return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.status }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 } 

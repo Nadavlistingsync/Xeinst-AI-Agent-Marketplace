@@ -18,8 +18,8 @@ export async function createUser(data: {
         ...data,
         password: hashedPassword,
         emailVerified: null,
-        created_at: new Date(),
-        updated_at: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     });
   } catch (error) {
@@ -38,7 +38,7 @@ export async function updateUser(id: string, data: Partial<User>): Promise<User>
       where: { id },
       data: {
         ...updateData,
-        updated_at: new Date(),
+        updatedAt: new Date(),
       },
     });
   } catch (error) {
@@ -59,8 +59,8 @@ export async function getUsers(options: {
     
     if (options.role) where.role = options.role;
     if (options.subscriptionTier) where.subscriptionTier = options.subscriptionTier;
-    if (options.startDate) where.created_at = { gte: options.startDate };
-    if (options.endDate) where.created_at = { lte: options.endDate };
+    if (options.startDate) where.createdAt = { gte: options.startDate };
+    if (options.endDate) where.createdAt = { lte: options.endDate };
     if (options.search) {
       where.OR = [
         { name: { contains: options.search, mode: 'insensitive' } },
@@ -70,7 +70,7 @@ export async function getUsers(options: {
 
     return await prisma.user.findMany({
       where,
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   } catch (error) {
     console.error('Error getting users:', error);
@@ -121,7 +121,7 @@ export async function getUserAgents(
 
   return await prisma.agent.findMany({
     where,
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }
@@ -158,12 +158,12 @@ export async function getUserFeedbacks(
 ): Promise<any[]> {
   const where: Prisma.AgentFeedbackWhereInput = { user_id: user_id };
 
-  if (options.startDate) where.created_at = { gte: options.startDate };
-  if (options.endDate) where.created_at = { lte: options.endDate };
+  if (options.startDate) where.createdAt = { gte: options.startDate };
+  if (options.endDate) where.createdAt = { lte: options.endDate };
 
   return await prisma.agentFeedback.findMany({
     where,
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }
@@ -178,12 +178,12 @@ export async function getUserEarnings(
 ): Promise<any[]> {
   const where: Prisma.EarningWhereInput = { user_id };
 
-  if (options.startDate) where.created_at = { gte: options.startDate };
-  if (options.endDate) where.created_at = { lte: options.endDate };
+  if (options.startDate) where.createdAt = { gte: options.startDate };
+  if (options.endDate) where.createdAt = { lte: options.endDate };
 
   return await prisma.earning.findMany({
     where,
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }
@@ -198,12 +198,12 @@ export async function getUserPurchases(
 ): Promise<any[]> {
   const where: Prisma.PurchaseWhereInput = { user_id: user_id };
 
-  if (options.startDate) where.created_at = { gte: options.startDate };
-  if (options.endDate) where.created_at = { lte: options.endDate };
+  if (options.startDate) where.createdAt = { gte: options.startDate };
+  if (options.endDate) where.createdAt = { lte: options.endDate };
 
   return await prisma.purchase.findMany({
     where,
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }
@@ -237,7 +237,7 @@ export async function getUserHistory() {
   try {
     const users = await getUsers();
     const monthlyData = users.reduce((acc, user) => {
-      const month = user.created_at.toISOString().slice(0, 7);
+      const month = user.createdAt.toISOString().slice(0, 7);
       acc[month] = (acc[month] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);

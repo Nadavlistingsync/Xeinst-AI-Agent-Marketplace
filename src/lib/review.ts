@@ -25,7 +25,7 @@ export async function createReview(data: CreateReviewInput): Promise<Review> {
         product_id: data.product_id,
         user_id: data.user_id,
         rating: data.rating,
-        comment: data.comment,
+        comment: data.comment || '',
         created_at: new Date(),
       },
     });

@@ -1,21 +1,46 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
-import { createErrorResponse } from '@/lib/api';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-const exportQuerySchema = z.object({
-  startDate: z.string().datetime().optional(),
-  endDate: z.string().datetime().optional(),
-  format: z.enum(['csv', 'json']).default('csv'),
-  includeMetadata: z.boolean().optional()
+const exportSchema = z.object({
+  format: z.enum(['json', 'csv']).optional().default('json'),
+  startDate: z.string().optional(),
+  endDate: z.string().optional()
 });
+
+interface ExportData {
+  agent: {
+    id: string;
+    name: string;
+    description: string;
+    framework: string;
+    version: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  feedback: Array<{
+    id: string;
+    rating: number;
+    comment: string | null;
+    sentimentScore: number | null;
+    categories: Record<string, number> | null;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  metadata: {
+    totalFeedback: number;
+    averageRating: number;
+    averageSentiment: number;
+    exportDate: string;
+  };
+}
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse> {
+) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
@@ -25,23 +50,25 @@ export async function GET(
       );
     }
 
-    // Validate agent ID
-    if (!z.string().uuid().safeParse(params.id).success) {
-      return NextResponse.json(
-        { error: 'Invalid agent ID format' },
-        { status: 400 }
-      );
-    }
+    const { searchParams } = new URL(request.url);
+    const validatedParams = exportSchema.parse({
+      format: searchParams.get('format'),
+      startDate: searchParams.get('startDate'),
+      endDate: searchParams.get('endDate')
+    });
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            subscription_tier: true
-          }
-        }
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        framework: true,
+        version: true,
+        createdAt: true,
+        updatedAt: true,
+        createdBy: true,
+        isPublic: true
       }
     });
 
@@ -52,77 +79,72 @@ export async function GET(
       );
     }
 
-    // Check if user has access to the agent
-    if (agent.userId !== session.user.id && agent.access_level !== 'public') {
-      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
-        return NextResponse.json(
-          { error: 'Premium subscription required' },
-          { status: 403 }
-        );
-      }
-      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
-        return NextResponse.json(
-          { error: 'Basic subscription required' },
-          { status: 403 }
-        );
-      }
+    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
+      );
     }
 
-    // Parse and validate query parameters
-    const { searchParams } = new URL(request.url);
-    const queryParams = {
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-      format: searchParams.get('format') as 'csv' | 'json' | null,
-      includeMetadata: searchParams.get('includeMetadata') === 'true'
+    const where = {
+      agentId: params.id,
+      ...(validatedParams.startDate && {
+        createdAt: {
+          gte: new Date(validatedParams.startDate)
+        }
+      }),
+      ...(validatedParams.endDate && {
+        createdAt: {
+          lte: new Date(validatedParams.endDate)
+        }
+      })
     };
 
-    const validatedParams = exportQuerySchema.parse(queryParams);
-
-    // Get feedback entries
-    const feedback = await prisma.feedback.findMany({
-      where: {
-        agentId: params.id,
-        ...(validatedParams.startDate && validatedParams.endDate ? {
-          createdAt: {
-            gte: new Date(validatedParams.startDate),
-            lte: new Date(validatedParams.endDate)
-          }
-        } : {})
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
+    const feedback = await prisma.agentFeedback.findMany({
+      where,
+      orderBy: { createdAt: 'desc' }
     });
 
-    // Prepare export data
-    const exportData = feedback.map(item => ({
-      id: item.id,
-      rating: item.rating,
-      comment: item.comment,
-      createdAt: item.createdAt.toISOString(),
-      updatedAt: item.updatedAt.toISOString()
-    }));
-
-    // Add metadata if requested
-    const metadata = validatedParams.includeMetadata ? {
-      agentId: params.id,
-      timeRange: {
-        start: validatedParams.startDate,
-        end: validatedParams.endDate
+    const exportData: ExportData = {
+      agent: {
+        id: agent.id,
+        name: agent.name,
+        description: agent.description,
+        framework: agent.framework,
+        version: agent.version,
+        createdAt: agent.createdAt.toISOString(),
+        updatedAt: agent.updatedAt.toISOString()
       },
-      totalFeedback: feedback.length,
-      exportDate: new Date().toISOString(),
-      format: validatedParams.format
-    } : undefined;
+      feedback: feedback.map((item) => ({
+        id: item.id,
+        rating: item.rating,
+        comment: item.comment,
+        sentimentScore: item.sentimentScore ? Number(item.sentimentScore) : null,
+        categories: item.categories as Record<string, number> | null,
+        createdAt: item.createdAt.toISOString(),
+        updatedAt: item.updatedAt.toISOString()
+      })),
+      metadata: {
+        totalFeedback: feedback.length,
+        averageRating: feedback.length > 0
+          ? feedback.reduce((sum, item) => sum + item.rating, 0) / feedback.length
+          : 0,
+        averageSentiment: feedback.length > 0
+          ? feedback.reduce((sum, item) => sum + (item.sentimentScore ? Number(item.sentimentScore) : 0), 0) / feedback.length
+          : 0,
+        exportDate: new Date().toISOString()
+      }
+    };
 
-    // Generate response based on format
     if (validatedParams.format === 'csv') {
-      const headers = ['ID', 'Rating', 'Comment', 'Created At', 'Updated At'];
-      const rows = exportData.map(item => [
+      // Convert to CSV format
+      const headers = ['ID', 'Rating', 'Comment', 'Sentiment Score', 'Categories', 'Created At', 'Updated At'];
+      const rows = exportData.feedback.map(item => [
         item.id,
         item.rating,
-        item.comment,
+        item.comment || '',
+        item.sentimentScore?.toString() || '',
+        item.categories ? JSON.stringify(item.categories) : '',
         item.createdAt,
         item.updatedAt
       ]);
@@ -138,29 +160,27 @@ export async function GET(
           'Content-Disposition': `attachment; filename="feedback-export-${params.id}.csv"`
         }
       });
-    } else {
-      return NextResponse.json({
-        data: exportData,
-        ...(metadata && { metadata })
-      });
     }
+
+    return NextResponse.json({
+      success: true,
+      data: exportData
+    });
   } catch (error) {
     console.error('Error exporting feedback:', error);
-    
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         {
+          success: false,
           error: 'Validation error',
           details: error.errors
         },
         { status: 400 }
       );
     }
-
-    const errorResponse = createErrorResponse(error, 'Failed to export feedback');
     return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.status }
+      { error: 'Internal server error' },
+      { status: 500 }
     );
   }
 } 

@@ -21,8 +21,8 @@ export async function createPurchase(data: {
       data: {
         ...data,
         status: data.status || 'pending',
-        created_at: new Date(),
-        updated_at: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     });
   } catch (error) {
@@ -37,7 +37,7 @@ export async function updatePurchase(id: string, data: Partial<Purchase>): Promi
       where: { id },
       data: {
         ...data,
-        updated_at: new Date(),
+        updatedAt: new Date(),
       },
     });
   } catch (error) {
@@ -50,15 +50,15 @@ export async function getPurchases(options: PurchaseOptions = {}): Promise<Purch
   try {
     const where: Prisma.PurchaseWhereInput = {};
     
-    if (options.user_id) where.user_id = options.user_id;
-    if (options.product_id) where.product_id = options.product_id;
+    if (options.user_id) where.userId = options.user_id;
+    if (options.product_id) where.productId = options.product_id;
     if (options.status) where.status = options.status;
-    if (options.startDate) where.created_at = { gte: options.startDate };
-    if (options.endDate) where.created_at = { lte: options.endDate };
+    if (options.startDate) where.createdAt = { gte: options.startDate };
+    if (options.endDate) where.createdAt = { lte: options.endDate };
 
     return await prisma.purchase.findMany({
       where,
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   } catch (error) {
     console.error('Error getting purchases:', error);
@@ -97,18 +97,18 @@ export async function getUserPurchases(
     limit?: number;
   } = {}
 ): Promise<Purchase[]> {
-  const where: Prisma.PurchaseWhereInput = { user_id };
+  const where: Prisma.PurchaseWhereInput = { userId: user_id };
 
   if (options.status) where.status = options.status;
-  if (options.startDate) where.created_at = { gte: options.startDate };
-  if (options.endDate) where.created_at = { lte: options.endDate };
+  if (options.startDate) where.createdAt = { gte: options.startDate };
+  if (options.endDate) where.createdAt = { lte: options.endDate };
 
   return await prisma.purchase.findMany({
     where,
     include: {
       product: true,
     },
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }
@@ -122,18 +122,18 @@ export async function getProductPurchases(
     limit?: number;
   } = {}
 ): Promise<Purchase[]> {
-  const where: Prisma.PurchaseWhereInput = { product_id };
+  const where: Prisma.PurchaseWhereInput = { productId: product_id };
 
   if (options.status) where.status = options.status;
-  if (options.startDate) where.created_at = { gte: options.startDate };
-  if (options.endDate) where.created_at = { lte: options.endDate };
+  if (options.startDate) where.createdAt = { gte: options.startDate };
+  if (options.endDate) where.createdAt = { lte: options.endDate };
 
   return await prisma.purchase.findMany({
     where,
     include: {
       user: true,
     },
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }
@@ -166,7 +166,7 @@ export async function getPurchaseHistory() {
     const purchases = await getPurchases();
 
     const monthlyPurchases = purchases.reduce((acc, purchase) => {
-      const month = purchase.created_at.toISOString().slice(0, 7);
+      const month = purchase.createdAt.toISOString().slice(0, 7);
       if (!acc[month]) {
         acc[month] = { total: 0, revenue: 0 };
       }
@@ -191,7 +191,7 @@ export async function updateProductDownloadCount(
   await prisma.product.update({
     where: { id: product_id },
     data: {
-      download_count: {
+      downloadCount: {
         increment: 1,
       },
     },

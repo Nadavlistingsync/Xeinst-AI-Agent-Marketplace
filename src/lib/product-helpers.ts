@@ -30,9 +30,7 @@ export async function getProduct(slug: string): Promise<Product | null> {
             },
           },
         },
-        orderBy: {
-          created_at: 'desc',
-        },
+        orderBy: { createdAt: 'desc' },
       },
     },
   });
@@ -114,9 +112,7 @@ export async function getProducts(options: {
           },
         },
       },
-      orderBy: {
-        created_at: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
       take: limit,
       skip: offset,
     }),
@@ -156,9 +152,7 @@ export async function getProductReviews(product_id: string): Promise<any[]> {
     include: {
       user: true,
     },
-    orderBy: {
-      created_at: 'desc',
-    },
+    orderBy: { createdAt: 'desc' },
   });
 }
 
@@ -169,7 +163,12 @@ export async function createProductReview(data: {
   comment?: string;
 }): Promise<any> {
   return await prisma.review.create({
-    data,
+    data: {
+      productId: data.product_id,
+      userId: data.user_id,
+      rating: data.rating,
+      comment: data.comment,
+    },
     include: {
       user: true,
     },

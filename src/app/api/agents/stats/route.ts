@@ -22,17 +22,17 @@ export async function GET() {
       totalDownloads,
       averageRating,
     ] = await Promise.all([
-      prisma.agent.count(),
-      prisma.agent.count({ where: { isPublic: true } }),
-      prisma.agent.count({ where: { isPublic: false } }),
+      prisma.deployment.count(),
+      prisma.deployment.count({ where: { isPublic: true } }),
+      prisma.deployment.count({ where: { isPublic: false } }),
       prisma.deployment.count(),
       prisma.deployment.count({ where: { status: 'active' } }),
-      prisma.agent.aggregate({
+      prisma.deployment.aggregate({
         _sum: {
           downloadCount: true,
         },
       }),
-      prisma.agent.aggregate({
+      prisma.deployment.aggregate({
         _avg: {
           rating: true,
         },
