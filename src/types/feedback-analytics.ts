@@ -106,19 +106,25 @@ export interface FeedbackCategoriesResponse {
   error?: string;
 }
 
-export interface FeedbackAnalyticsError {
+export type FeedbackAnalyticsData = {
+  date: string;
+  count: number;
+  averageRating: number;
+  averageSentiment: number | null;
+};
+
+export type FeedbackAnalyticsSuccess = {
+  success: true;
+  analytics: FeedbackAnalyticsData[];
+};
+
+export type FeedbackAnalyticsError = {
   success: false;
   error: string;
-}
+  details?: unknown;
+};
 
-export interface FeedbackAnalyticsSuccess<T> {
-  success: true;
-  data: T;
-}
-
-export type FeedbackAnalyticsApiResponse<T> = 
-  | FeedbackAnalyticsSuccess<T>
-  | FeedbackAnalyticsError;
+export type FeedbackAnalyticsApiResponse = FeedbackAnalyticsSuccess | FeedbackAnalyticsError;
 
 export type FeedbackInsightsApiResponse = 
   | FeedbackAnalyticsSuccess<FeedbackInsightsResponse['data']>

@@ -1,6 +1,6 @@
-import { prisma } from './db';
-import { Prisma } from '@prisma/client';
-import { AgentLog, AgentMetrics, AgentFeedback } from './schema';
+import { prisma } from '@/lib/prisma';
+import { ApiError } from '@/lib/errors';
+import { type AgentHealth, type AgentMetrics, type AgentLog } from '@/types/agent';
 import { eq, gte, lte, desc, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { createNotification } from './notification';
@@ -42,148 +42,153 @@ export interface MetricsUpdate {
   totalCost?: number;
 }
 
-export interface MonitoringOptions {
+export type MonitoringOptions = {
   startDate?: Date;
   endDate?: Date;
-  limit?: number;
-}
+  interval?: 'hour' | 'day' | 'week' | 'month';
+};
 
 export async function logAgentEvent(
-  agentId: string,
-  level: 'info' | 'warn' | 'error' | 'debug',
+  deploymentId: string,
+  level: 'info' | 'warning' | 'error',
   message: string,
-  metadata?: Record<string, any>
-) {
-  return prisma.agentLog.create({
+  metadata?: Record<string, unknown>
+): Promise<void> {
+  await prisma.agentLog.create({
     data: {
-      agentId,
+      deploymentId,
       level,
       message,
       metadata: metadata || {},
-      timestamp: new Date(),
-    },
+      timestamp: new Date()
+    }
   });
 }
 
 export async function updateAgentMetrics(
-  agentId: string,
-  data: MetricsUpdate
-) {
-  return prisma.agentMetrics.upsert({
-    where: { agentId },
-    update: {
-      ...data,
-      lastUpdated: new Date(),
-    },
-    create: {
-      agentId,
-      ...data,
-      lastUpdated: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
+  deploymentId: string,
+  metrics: AgentMetrics
+): Promise<void> {
+  await prisma.agentMetrics.create({
+    data: {
+      deploymentId,
+      errorRate: metrics.errorRate,
+      responseTime: metrics.responseTime,
+      successRate: metrics.successRate,
+      totalRequests: metrics.totalRequests,
+      activeUsers: metrics.activeUsers,
+      timestamp: metrics.timestamp
+    }
   });
 }
 
 export async function getAgentLogs(
-  agentId: string,
-  options: GetAgentLogsOptions = {}
-) {
-  const { level, startDate, endDate, limit = 100 } = options;
+  deploymentId: string,
+  options: MonitoringOptions = {}
+): Promise<AgentLog[]> {
+  const { startDate, endDate, interval = 'day' } = options;
 
-  const where: Prisma.AgentLogWhereInput = {
-    agentId,
+  const where = {
+    deploymentId,
+    ...(startDate && {
+      timestamp: {
+        gte: startDate
+      }
+    }),
+    ...(endDate && {
+      timestamp: {
+        lte: endDate
+      }
+    })
   };
 
-  if (level) {
-    where.level = level;
-  }
-
-  if (startDate || endDate) {
-    where.timestamp = {};
-    if (startDate) {
-      where.timestamp.gte = startDate;
-    }
-    if (endDate) {
-      where.timestamp.lte = endDate;
-    }
-  }
-
-  return prisma.agentLog.findMany({
+  const logs = await prisma.agentLog.findMany({
     where,
     orderBy: {
-      timestamp: 'desc',
-    },
-    take: limit,
+      timestamp: 'desc'
+    }
   });
+
+  return logs.map(log => ({
+    id: log.id,
+    level: log.level,
+    message: log.message,
+    timestamp: log.timestamp,
+    metadata: log.metadata as Record<string, unknown>
+  }));
 }
 
-export async function getAgentMetrics(agentId: string, options: MonitoringOptions = {}) {
-  const where: Prisma.AgentMetricsWhereInput = { agentId };
+export async function getAgentMetrics(
+  deploymentId: string,
+  options: MonitoringOptions = {}
+): Promise<AgentMetrics[]> {
+  const { startDate, endDate, interval = 'day' } = options;
 
-  if (options.startDate) {
-    where.createdAt = { gte: options.startDate };
-  }
-  if (options.endDate) {
-    where.createdAt = { lte: options.endDate };
-  }
+  const where = {
+    deploymentId,
+    ...(startDate && {
+      timestamp: {
+        gte: startDate
+      }
+    }),
+    ...(endDate && {
+      timestamp: {
+        lte: endDate
+      }
+    })
+  };
 
   const metrics = await prisma.agentMetrics.findMany({
     where,
-    orderBy: { createdAt: "desc" },
+    orderBy: {
+      timestamp: 'desc'
+    }
   });
 
-  if (metrics.length === 0) {
-    return null;
-  }
-
-  return {
-    totalRequests: metrics.reduce((sum, m) => sum + (m.totalRequests || 0), 0),
-    averageResponseTime: metrics.reduce((sum, m) => sum + (m.averageResponseTime || 0), 0) / metrics.length || 0,
-    errorRate: metrics.reduce((sum, m) => sum + (m.errorRate || 0), 0) / metrics.length || 0,
-    successRate: metrics.reduce((sum, m) => sum + (m.successRate || 0), 0) / metrics.length || 0,
-    activeUsers: metrics.reduce((sum, m) => sum + (m.activeUsers || 0), 0),
-    requestsPerMinute: metrics.reduce((sum, m) => sum + (m.requestsPerMinute || 0), 0) / metrics.length || 0,
-    averageTokensUsed: metrics.reduce((sum, m) => sum + (m.averageTokensUsed || 0), 0) / metrics.length || 0,
-    costPerRequest: metrics.reduce((sum, m) => sum + (m.costPerRequest || 0), 0) / metrics.length || 0,
-    totalCost: metrics.reduce((sum, m) => sum + (m.totalCost || 0), 0),
-  };
+  return metrics.map(metric => ({
+    timestamp: metric.timestamp,
+    errorRate: metric.errorRate,
+    responseTime: metric.responseTime,
+    successRate: metric.successRate,
+    totalRequests: metric.totalRequests,
+    activeUsers: metric.activeUsers
+  }));
 }
 
-export async function getAgentAnalytics(agentId: string) {
+export async function getAgentAnalytics(deploymentId: string) {
   const [metrics, logs] = await Promise.all([
-    getAgentMetrics(agentId),
-    getAgentLogs(agentId),
+    getAgentMetrics(deploymentId),
+    getAgentLogs(deploymentId),
   ]);
 
   return {
     metrics,
     logs,
     summary: metrics ? {
-      totalRequests: metrics.totalRequests,
-      averageResponseTime: metrics.averageResponseTime,
-      errorRate: metrics.errorRate,
-      successRate: metrics.successRate,
-      activeUsers: metrics.activeUsers,
+      totalRequests: metrics.reduce((sum, m) => sum + (m.totalRequests || 0), 0),
+      averageResponseTime: metrics.reduce((sum, m) => sum + (m.responseTime || 0), 0) / metrics.length || 0,
+      errorRate: metrics.reduce((sum, m) => sum + (m.errorRate || 0), 0) / metrics.length || 0,
+      successRate: metrics.reduce((sum, m) => sum + (m.successRate || 0), 0) / metrics.length || 0,
+      activeUsers: metrics.reduce((sum, m) => sum + (m.activeUsers || 0), 0),
       lastUpdated: new Date(),
     } : null,
   };
 }
 
-export async function getAgentWarnings(agentId: string): Promise<AgentLog[]> {
+export async function getAgentWarnings(deploymentId: string): Promise<AgentLog[]> {
   return await prisma.agentLog.findMany({
     where: {
-      agentId,
+      deploymentId,
       level: 'warning',
     },
     orderBy: { timestamp: 'desc' },
   });
 }
 
-export async function getAgentErrors(agentId: string): Promise<AgentLog[]> {
+export async function getAgentErrors(deploymentId: string): Promise<AgentLog[]> {
   return await prisma.agentLog.findMany({
     where: {
-      agentId,
+      deploymentId,
       level: 'error',
     },
     orderBy: { timestamp: 'desc' },
@@ -193,7 +198,7 @@ export async function getAgentErrors(agentId: string): Promise<AgentLog[]> {
 export async function getAgentInfo(agentId: string): Promise<AgentLog[]> {
   return await prisma.agentLog.findMany({
     where: {
-      agentId,
+      deploymentId: agentId,
       level: 'info',
     },
     orderBy: { timestamp: 'desc' },
@@ -218,7 +223,7 @@ export async function getAgentFeedback(agentId: string, options: MonitoringOptio
 
 export async function getAgentPerformanceMetrics(agentId: string) {
   const metrics = await prisma.agentMetrics.findUnique({
-    where: { agentId },
+    where: { deploymentId: agentId },
   });
 
   if (!metrics) {
@@ -237,7 +242,7 @@ export async function getAgentPerformanceMetrics(agentId: string) {
 
   return {
     totalRequests: metrics.totalRequests || 0,
-    averageResponseTime: metrics.averageResponseTime || 0,
+    averageResponseTime: metrics.responseTime || 0,
     errorRate: metrics.errorRate || 0,
     successRate: metrics.successRate || 0,
     activeUsers: metrics.activeUsers || 0,
@@ -266,39 +271,59 @@ export async function getAgentUsageStats(agentId: string): Promise<{
   };
 }
 
-export async function getAgentHealth(agentId: string) {
-  const metrics = await getAgentPerformanceMetrics(agentId);
-  const errors = await getAgentErrors(agentId);
-  const warnings = await getAgentWarnings(agentId);
+export async function getAgentHealth(agentId: string): Promise<AgentHealth> {
+  const agent = await prisma.deployment.findUnique({
+    where: { id: agentId },
+    include: {
+      metrics: true,
+      logs: true
+    }
+  });
 
-  const health = {
-    status: 'healthy' as const,
-    issues: [] as string[],
+  if (!agent) {
+    throw new ApiError('Agent not found', 404);
+  }
+
+  const health: AgentHealth = {
+    status: 'healthy',
+    issues: [],
     metrics: {
-      errorRate: metrics.errorRate,
-      responseTime: metrics.averageResponseTime,
-      successRate: metrics.successRate,
-      totalRequests: metrics.totalRequests,
-      activeUsers: metrics.activeUsers,
-    },
+      errorRate: 0,
+      responseTime: 0,
+      successRate: 0,
+      totalRequests: 0,
+      activeUsers: 0
+    }
   };
 
-  if (metrics.errorRate > 0.1) {
-    health.status = 'unhealthy';
-    health.issues.push('High error rate detected');
-  }
+  // Calculate health metrics
+  const metrics = agent.metrics;
+  if (metrics && metrics.length > 0) {
+    const latestMetrics = metrics[metrics.length - 1];
+    health.metrics = {
+      errorRate: latestMetrics.errorRate,
+      responseTime: latestMetrics.responseTime,
+      successRate: latestMetrics.successRate,
+      totalRequests: latestMetrics.totalRequests,
+      activeUsers: latestMetrics.activeUsers
+    };
 
-  if (metrics.averageResponseTime > 1000) {
-    health.status = 'degraded';
-    health.issues.push('Slow response time');
-  }
+    // Check for health issues
+    if (latestMetrics.errorRate > 0.1) {
+      health.status = 'unhealthy';
+      health.issues.push('High error rate detected');
+    } else if (latestMetrics.errorRate > 0.05) {
+      health.status = 'degraded';
+      health.issues.push('Elevated error rate');
+    }
 
-  if (errors.length > 0) {
-    health.issues.push(`${errors.length} errors in the last period`);
-  }
-
-  if (warnings.length > 0) {
-    health.issues.push(`${warnings.length} warnings in the last period`);
+    if (latestMetrics.responseTime > 1000) {
+      health.status = 'unhealthy';
+      health.issues.push('High response time');
+    } else if (latestMetrics.responseTime > 500) {
+      health.status = 'degraded';
+      health.issues.push('Elevated response time');
+    }
   }
 
   return health;
@@ -307,7 +332,7 @@ export async function getAgentHealth(agentId: string) {
 export async function getAgentDeploymentHistory(agentId: string): Promise<any[]> {
   return await prisma.deployment.findMany({
     where: and(
-      eq(agentLogs.agentId, agentId),
+      eq(agentLogs.deploymentId, agentId),
       eq(agentLogs.level, 'info'),
       eq(agentLogs.message, 'Deployment completed')
     ),
@@ -323,7 +348,7 @@ export async function submitAgentFeedback(
 ): Promise<void> {
   await prisma.agentFeedback.create({
     data: {
-      agentId,
+      deploymentId: agentId,
       userId,
       rating,
       comment,
@@ -341,7 +366,7 @@ export async function getAgentFeedbacks(
     limit?: number;
   } = {}
 ): Promise<AgentFeedback[]> {
-  const where: Prisma.AgentFeedbackWhereInput = { agentId };
+  const where: Prisma.AgentFeedbackWhereInput = { deploymentId: agentId };
 
   if (options.startDate) {
     where.createdAt = { gte: options.startDate };
@@ -392,7 +417,7 @@ export async function getAgentFeedbackStats(agentId: string) {
 export async function getAgentDeployments(agentId: string): Promise<any[]> {
   return prisma.agentLog.findMany({
     where: and(
-      eq(agentLogs.agentId, agentId),
+      eq(agentLogs.deploymentId, agentId),
       eq(agentLogs.level, 'info'),
       eq(agentLogs.message, 'Deployment completed')
     ),
@@ -401,7 +426,7 @@ export async function getAgentDeployments(agentId: string): Promise<any[]> {
 }
 
 export async function createAgentFeedback(data: {
-  agentId: string;
+  deploymentId: string;
   userId: string;
   rating: number;
   comment?: string;
@@ -510,7 +535,7 @@ export async function monitorAgentHealth(agentId: string) {
 
 export async function getAgentDeploymentStatus(agentId: string) {
   const deployment = await prisma.deployment.findFirst({
-    where: { agentId },
+    where: { id: agentId },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -531,7 +556,7 @@ export async function getAgentDeploymentStatus(agentId: string) {
 
 export async function getAgentDeploymentMetrics(agentId: string) {
   const deployment = await prisma.deployment.findFirst({
-    where: { agentId },
+    where: { id: agentId },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -560,7 +585,7 @@ export async function getAgentDeploymentFeedback(agentId: string) {
 export async function analyzeAgentDeployment(agentId: string) {
   const [deployment, metrics, feedbacks, logs] = await Promise.all([
     prisma.deployment.findFirst({
-      where: { agentId },
+      where: { id: agentId },
       orderBy: { createdAt: 'desc' },
     }),
     getAgentPerformanceMetrics(agentId),
@@ -612,7 +637,7 @@ export async function analyzeAgentDeployment(agentId: string) {
 export async function monitorAgentDeployment(agentId: string) {
   const [deployment, metrics, logs, feedbacks] = await Promise.all([
     prisma.deployment.findFirst({
-      where: { agentId },
+      where: { id: agentId },
       orderBy: { createdAt: 'desc' },
     }),
     getAgentPerformanceMetrics(agentId),
@@ -674,13 +699,13 @@ export async function monitorAgentDeployment(agentId: string) {
 
 export async function updateAgentDeploymentMetrics(agentId: string, metrics: Partial<AgentMetrics>) {
   return await prisma.agentMetrics.upsert({
-    where: { agentId },
+    where: { deploymentId: agentId },
     update: {
       ...metrics,
       lastUpdated: new Date(),
     },
     create: {
-      agentId,
+      deploymentId: agentId,
       ...metrics,
       lastUpdated: new Date(),
       createdAt: new Date(),
@@ -697,7 +722,7 @@ export async function createAgentDeploymentLog(
 ) {
   return await prisma.agentLog.create({
     data: {
-      agentId,
+      deploymentId: agentId,
       level: level as 'info' | 'warning' | 'error',
       message,
       metadata: metadata || {},
@@ -707,7 +732,7 @@ export async function createAgentDeploymentLog(
 }
 
 export async function createAgentDeploymentFeedback(data: {
-  agentId: string;
+  deploymentId: string;
   userId: string;
   rating: number;
   comment?: string;
@@ -735,7 +760,7 @@ export async function respondToAgentDeploymentFeedback(feedbackId: string, respo
 export async function getAgentDeploymentAnalytics(agentId: string) {
   const [deployment, metrics, feedbacks, logs] = await Promise.all([
     prisma.deployment.findFirst({
-      where: { agentId },
+      where: { id: agentId },
       orderBy: { createdAt: 'desc' },
     }),
     getAgentPerformanceMetrics(agentId),
@@ -763,4 +788,16 @@ export async function getAgentDeploymentAnalytics(agentId: string) {
       warningCount: logs.filter(log => log.level === 'warning').length,
     },
   };
+}
+
+export async function updateAgentHealth(
+  agentId: string,
+  health: AgentHealth
+): Promise<void> {
+  await prisma.deployment.update({
+    where: { id: agentId },
+    data: {
+      health: health as any // TODO: Update Prisma schema to include health field
+    }
+  });
 } 

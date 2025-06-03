@@ -192,7 +192,7 @@ export async function deleteAgentDeployment(id: string) {
   return deployment;
 }
 
-export async function getAgentLogs(agentId: string, options: {
+export async function getAgentLogs(deploymentId: string, options: {
   level?: string;
   startDate?: Date;
   endDate?: Date;
@@ -201,7 +201,7 @@ export async function getAgentLogs(agentId: string, options: {
   const { level, startDate, endDate, limit = 100 } = options;
 
   const where: Prisma.AgentLogWhereInput = {
-    agentId,
+    deploymentId,
   };
 
   if (level) {
@@ -229,20 +229,20 @@ export async function getAgentLogs(agentId: string, options: {
   return logs;
 }
 
-export async function getAgentMetrics(agentId: string) {
+export async function getAgentMetrics(deploymentId: string) {
   const metrics = await prisma.agentMetrics.findUnique({
-    where: { agentId },
+    where: { deploymentId },
   });
 
   return metrics;
 }
 
-export async function updateAgentMetrics(agentId: string, data: Partial<Prisma.AgentMetricsUpdateInput>) {
+export async function updateAgentMetrics(deploymentId: string, data: Partial<Prisma.AgentMetricsUpdateInput>) {
   const metrics = await prisma.agentMetrics.upsert({
-    where: { agentId },
+    where: { deploymentId },
     update: data,
     create: {
-      agentId,
+      deploymentId,
       ...data,
     },
   });
@@ -250,7 +250,7 @@ export async function updateAgentMetrics(agentId: string, data: Partial<Prisma.A
   return metrics;
 }
 
-export async function getAgentFeedback(agentId: string, options: {
+export async function getAgentFeedback(deploymentId: string, options: {
   user_id?: string;
   minRating?: number;
   maxRating?: number;
@@ -261,7 +261,7 @@ export async function getAgentFeedback(agentId: string, options: {
   const { user_id, minRating, maxRating, startDate, endDate, limit = 100 } = options;
 
   const where: Prisma.AgentFeedbackWhereInput = {
-    agentId,
+    deploymentId,
   };
 
   if (user_id) {
@@ -309,7 +309,7 @@ export async function getAgentFeedback(agentId: string, options: {
 }
 
 export async function createAgentFeedback(data: {
-  agentId: string;
+  deploymentId: string;
   user_id: string;
   rating: number;
   comment?: string;
@@ -327,7 +327,7 @@ export async function createAgentFeedback(data: {
     },
   });
 
-  await logAgentEvent(data.agentId, 'info', 'Feedback created', {
+  await logAgentEvent(data.deploymentId, 'info', 'Feedback created', {
     user_id: data.user_id,
     feedbackId: feedback.id,
     rating: data.rating,
@@ -358,7 +358,7 @@ export async function updateAgentFeedback(id: string, data: {
     },
   });
 
-  await logAgentEvent(feedback.agentId, 'info', 'Feedback updated', {
+  await logAgentEvent(feedback.deploymentId, 'info', 'Feedback updated', {
     feedbackId: feedback.id,
     updates: data,
   });
@@ -371,7 +371,7 @@ export async function deleteAgentFeedback(id: string) {
     where: { id },
   });
 
-  await logAgentEvent(feedback.agentId, 'info', 'Feedback deleted', {
+  await logAgentEvent(feedback.deploymentId, 'info', 'Feedback deleted', {
     feedbackId: feedback.id,
   });
 
@@ -423,10 +423,10 @@ export async function deployAgent(data: {
   return deployment;
 }
 
-export async function getAgentVersions(agentId: string) {
+export async function getAgentVersions(deploymentId: string) {
   return prisma.deployment.findMany({
     where: {
-      id: agentId,
+      id: deploymentId,
     },
     select: {
       version: true,

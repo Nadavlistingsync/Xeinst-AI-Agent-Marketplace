@@ -51,7 +51,7 @@ export async function GET(
     }
 
     const feedbacks = await prisma.agentFeedback.findMany({
-      where: { agentId: params.id },
+      where: { deploymentId: params.id },
       include: {
         user: {
           select: {
@@ -69,7 +69,7 @@ export async function GET(
       success: true, 
       feedback: feedbacks.map(f => ({
         id: f.id,
-        agentId: f.agentId,
+        deploymentId: f.deploymentId,
         userId: f.userId,
         rating: f.rating,
         comment: f.comment,
@@ -134,7 +134,7 @@ export async function POST(
 
     const feedback = await prisma.agentFeedback.create({
       data: {
-        agentId: params.id,
+        deploymentId: params.id,
         userId: session.user.id,
         rating: validatedData.rating,
         comment: validatedData.comment,
@@ -159,7 +159,7 @@ export async function POST(
       success: true, 
       feedback: {
         id: feedback.id,
-        agentId: feedback.agentId,
+        deploymentId: feedback.deploymentId,
         userId: feedback.userId,
         rating: feedback.rating,
         comment: feedback.comment,
@@ -210,7 +210,7 @@ export async function DELETE(
       where: { id: feedbackId },
       select: {
         id: true,
-        agentId: true,
+        deploymentId: true,
       },
     });
 
@@ -221,7 +221,7 @@ export async function DELETE(
       );
     }
 
-    if (feedback.agentId !== params.id) {
+    if (feedback.deploymentId !== params.id) {
       return NextResponse.json(
         { success: false, error: 'Feedback does not belong to this agent' },
         { status: 400 }

@@ -2,14 +2,49 @@ import { z } from 'zod';
 import { User } from '../lib/schema';
 
 export const feedbackSchema = z.object({
-  type: z.enum(['error', 'warning', 'success']),
-  message: z.string().min(1).max(1000),
-  agentId: z.string().optional(),
-  userId: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  agentId: z.string(),
+  rating: z.number().min(1).max(5),
+  comment: z.string().nullable(),
+  sentimentScore: z.number().min(-1).max(1).nullable(),
+  categories: z.record(z.number()).nullable(),
+  metadata: z.record(z.unknown()).nullable()
 });
 
 export type FeedbackInput = z.infer<typeof feedbackSchema>;
+
+export type FeedbackUser = {
+  name: string | null;
+  image: string | null;
+};
+
+export type Feedback = {
+  id: string;
+  agentId: string;
+  userId: string;
+  rating: number;
+  comment: string | null;
+  sentimentScore: number | null;
+  categories: Record<string, number> | null;
+  metadata: Record<string, unknown>;
+  response: string | null;
+  responseDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  user: FeedbackUser;
+};
+
+export type FeedbackSuccess = {
+  success: true;
+  feedback: Feedback;
+};
+
+export type FeedbackError = {
+  success: false;
+  error: string;
+  details?: unknown;
+};
+
+export type FeedbackApiResponse = FeedbackSuccess | FeedbackError;
 
 export interface FeedbackResponse {
   success: boolean;
@@ -35,52 +70,6 @@ export interface FeedbackResponse {
   };
   error?: string;
   details?: z.ZodError[];
-}
-
-export interface FeedbackError {
-  success: false;
-  error: string;
-  details?: z.ZodError[];
-}
-
-export interface FeedbackSuccess {
-  success: true;
-  feedback: {
-    id: string;
-    agentId: string;
-    userId: string;
-    rating: number;
-    comment: string | null;
-    sentimentScore: number | null;
-    categories: Record<string, number> | null;
-    metadata: Record<string, unknown>;
-    createdAt: Date;
-    updatedAt: Date;
-    response: string | null;
-    responseDate: Date | null;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      image: string | null;
-    };
-  };
-}
-
-export type FeedbackApiResponse = FeedbackSuccess | FeedbackError;
-
-export interface Feedback {
-  id: string;
-  rating: number;
-  comment: string | null;
-  sentimentScore: number | null;
-  categories: Record<string, number> | null;
-  createdAt: Date;
-  updatedAt: Date;
-  response: string | null;
-  responseDate: Date | null;
-  user: User;
-  agentId: string;
 }
 
 export interface FeedbackSummary {

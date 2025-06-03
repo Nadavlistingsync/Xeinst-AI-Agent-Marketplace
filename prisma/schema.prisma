@@ -141,7 +141,7 @@ model Purchase {
 
 model AgentFeedback {
   id             String    @id @default(uuid())
-  agentId        String
+  deploymentId   String
   userId         String
   rating         Int
   comment        String?
@@ -151,7 +151,7 @@ model AgentFeedback {
   responseDate   DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  agent          Deployment @relation(fields: [agentId], references: [id])
+  deployment     Deployment @relation(fields: [deploymentId], references: [id])
   user           User      @relation(fields: [userId], references: [id])
 
   @@map("agent_feedbacks")
@@ -174,7 +174,7 @@ model Notification {
 
 model AgentMetrics {
   id                String    @id @default(uuid())
-  agentId          String    @unique
+  deploymentId      String
   totalRequests    Int       @default(0)
   averageResponseTime Int     @default(0)
   errorRate        Float     @default(0)
@@ -187,21 +187,21 @@ model AgentMetrics {
   lastUpdated      DateTime  @default(now())
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
-  agent            Deployment @relation(fields: [agentId], references: [id])
+  deployment       Deployment @relation(fields: [deploymentId], references: [id])
 
   @@map("agent_metrics")
 }
 
 model AgentLog {
-  id        String   @id @default(uuid())
-  agentId   String
-  level     String
-  message   String
-  metadata  Json?
-  timestamp DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  agent     Deployment @relation(fields: [agentId], references: [id])
+  id           String   @id @default(uuid())
+  deploymentId String
+  level        String
+  message      String
+  metadata     Json?
+  timestamp    DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deployment   Deployment @relation(fields: [deploymentId], references: [id])
 
   @@map("agent_logs")
 }

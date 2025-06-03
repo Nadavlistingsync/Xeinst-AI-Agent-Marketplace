@@ -1,86 +1,68 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import { createErrorResponse } from '@/lib/api';
-import { feedbackSchema, type FeedbackInput, type FeedbackApiResponse } from '@/types/feedback';
-import { z } from 'zod';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { feedbackSchema, type FeedbackApiResponse } from '@/types/feedback';
+import { ApiError } from '@/lib/errors';
 
 export async function POST(request: Request): Promise<NextResponse<FeedbackApiResponse>> {
   try {
-    const data = await request.json();
-    
-    // Validate required fields
-    const validatedData = feedbackSchema.parse(data);
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      throw new ApiError('Unauthorized', 401);
+    }
 
-    // Calculate rating based on type
-    const rating = validatedData.type === 'error' ? 1 : validatedData.type === 'warning' ? 2 : 5;
-    
-    // Store feedback in database using Prisma
+    const body = await request.json();
+    const validatedData = feedbackSchema.parse(body);
+
     const feedback = await prisma.agentFeedback.create({
       data: {
-        agentId: validatedData.agentId || 'system',
-        userId: validatedData.userId || 'system',
-        rating,
-        comment: validatedData.message,
-        metadata: validatedData.metadata || {},
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        deploymentId: validatedData.agentId,
+        userId: session.user.id,
+        rating: validatedData.rating,
+        comment: validatedData.comment,
+        sentimentScore: validatedData.sentimentScore,
+        categories: validatedData.categories || {},
+        metadata: validatedData.metadata || {}
       },
       include: {
         user: {
           select: {
-            id: true,
             name: true,
-            email: true,
             image: true
-          },
-        },
-      },
+          }
+        }
+      }
     });
 
-    // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Feedback received:', feedback);
-    }
-
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       feedback: {
         id: feedback.id,
-        agentId: feedback.agentId,
+        agentId: feedback.deploymentId,
         userId: feedback.userId,
         rating: feedback.rating,
         comment: feedback.comment,
-        sentimentScore: feedback.sentimentScore,
-        categories: feedback.categories,
-        metadata: feedback.metadata,
+        sentimentScore: feedback.sentimentScore ? Number(feedback.sentimentScore) : null,
+        categories: feedback.categories as Record<string, number>,
+        metadata: feedback.metadata as Record<string, unknown>,
+        response: feedback.creatorResponse,
+        responseDate: feedback.responseDate,
         createdAt: feedback.createdAt,
         updatedAt: feedback.updatedAt,
-        response: feedback.response,
-        responseDate: feedback.responseDate,
-        user: feedback.user,
+        user: feedback.user
       }
     });
   } catch (error) {
-    console.error('Error processing feedback:', error);
-    
-    if (error instanceof z.ZodError) {
+    if (error instanceof Error) {
       return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Validation error',
-          details: error.errors 
-        },
+        { success: false, error: error.message },
         { status: 400 }
       );
     }
-
-    const errorResponse = createErrorResponse(error, 'Failed to process feedback');
     return NextResponse.json(
-      { 
-        success: false, 
-        error: errorResponse.error 
-      },
-      { status: errorResponse.status }
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
     );
   }
 } 
