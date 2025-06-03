@@ -70,7 +70,8 @@ export async function createFeedback(data: FeedbackInput) {
         rating: validatedData.rating,
         comment: validatedData.comment,
         sentimentScore: validatedData.sentimentScore,
-        categories: validatedData.categories,
+        ...(validatedData.categories !== null && { categories: validatedData.categories }),
+        metadata: validatedData.metadata,
         createdAt: new Date(),
         updatedAt: new Date()
       }
