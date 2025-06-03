@@ -71,10 +71,7 @@ export async function createFeedback(data: FeedbackInput) {
         comment: validatedData.comment,
         sentimentScore: validatedData.sentimentScore,
         ...(validatedData.categories !== null && { categories: validatedData.categories }),
-        metadata: validatedData.metadata,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
+      },
     });
 
     return feedback;
