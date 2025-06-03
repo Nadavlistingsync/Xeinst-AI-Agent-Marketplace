@@ -521,7 +521,7 @@ export async function getDeployment(id: string) {
 
 export async function getDeploymentFeedbacks(id: string) {
   return prisma.agentFeedback.findMany({
-    where: { agentId: id },
+    where: { deploymentId: id },
     include: {
       user: {
         select: {
