@@ -283,7 +283,7 @@ export async function notifyAgentCreator(
       categories: feedback.categories
     },
     severity: 'info',
-    user_id: agentId // or the correct userId if available
+    userId: agentId // or the correct userId if available
   });
 }
 
