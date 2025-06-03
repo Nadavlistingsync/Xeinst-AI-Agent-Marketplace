@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { prisma } from "./db";
-import { Deployment, AgentLog, AgentMetrics, AgentFeedback, DeploymentStatus } from "@prisma/client";
+import { DeploymentStatus } from "@prisma/client";
 import { Deployment as DeploymentSchema } from './schema';
 import JSZip from 'jszip';
 import { logAgentEvent } from './agent-monitoring';
@@ -122,7 +122,7 @@ export async function getAgentDeploymentById(id: string) {
           },
         },
         orderBy: {
-          created_at: 'desc',
+          createdAt: 'desc',
         },
       },
     },
@@ -134,9 +134,19 @@ export async function getAgentDeploymentById(id: string) {
 export async function createAgentDeployment(data: AgentValidationType, userId: string) {
   const deployment = await prisma.deployment.create({
     data: {
-      ...data,
+      name: data.name,
+      description: data.description ?? '',
+      modelType: data.modelType,
+      framework: data.framework,
+      fileUrl: data.file_url,
+      source: data.source,
+      version: data.version,
       deployedBy: userId,
+      createdBy: userId,
       status: DeploymentStatus.pending,
+      accessLevel: 'public',
+      licenseType: 'free',
+      environment: 'production',
     },
     include: {
       deployer: {
@@ -230,7 +240,7 @@ export async function getAgentLogs(deploymentId: string, options: {
 }
 
 export async function getAgentMetrics(deploymentId: string) {
-  const metrics = await prisma.agentMetrics.findUnique({
+  const metrics = await prisma.agentMetrics.findFirst({
     where: { deploymentId },
   });
 
@@ -238,34 +248,49 @@ export async function getAgentMetrics(deploymentId: string) {
 }
 
 export async function updateAgentMetrics(deploymentId: string, data: Partial<Prisma.AgentMetricsUpdateInput>) {
-  const metrics = await prisma.agentMetrics.upsert({
-    where: { deploymentId },
-    update: data,
-    create: {
-      deploymentId,
-      ...data,
-    },
-  });
-
+  const existing = await prisma.agentMetrics.findFirst({ where: { deploymentId } });
+  let metrics;
+  if (existing) {
+    metrics = await prisma.agentMetrics.update({
+      where: { id: existing.id },
+      data,
+    });
+  } else {
+    metrics = await prisma.agentMetrics.create({
+      data: {
+        deploymentId,
+        errorRate: typeof data.errorRate === 'number' ? data.errorRate : 0,
+        responseTime: typeof data.responseTime === 'number' ? data.responseTime : 0,
+        successRate: typeof data.successRate === 'number' ? data.successRate : 0,
+        totalRequests: typeof data.totalRequests === 'number' ? data.totalRequests : 0,
+        activeUsers: typeof data.activeUsers === 'number' ? data.activeUsers : 0,
+        averageResponseTime: typeof data.averageResponseTime === 'number' ? data.averageResponseTime : 0,
+        requestsPerMinute: typeof data.requestsPerMinute === 'number' ? data.requestsPerMinute : 0,
+        averageTokensUsed: typeof data.averageTokensUsed === 'number' ? data.averageTokensUsed : 0,
+        costPerRequest: typeof data.costPerRequest === 'number' ? data.costPerRequest : 0,
+        totalCost: typeof data.totalCost === 'number' ? data.totalCost : 0,
+      },
+    });
+  }
   return metrics;
 }
 
 export async function getAgentFeedback(deploymentId: string, options: {
-  user_id?: string;
+  userId?: string;
   minRating?: number;
   maxRating?: number;
   startDate?: Date;
   endDate?: Date;
   limit?: number;
 } = {}) {
-  const { user_id, minRating, maxRating, startDate, endDate, limit = 100 } = options;
+  const { userId, minRating, maxRating, startDate, endDate, limit = 100 } = options;
 
   const where: Prisma.AgentFeedbackWhereInput = {
     deploymentId,
   };
 
-  if (user_id) {
-    where.user_id = user_id;
+  if (userId) {
+    where.userId = userId;
   }
 
   if (minRating !== undefined || maxRating !== undefined) {
@@ -279,12 +304,12 @@ export async function getAgentFeedback(deploymentId: string, options: {
   }
 
   if (startDate || endDate) {
-    where.created_at = {};
+    where.createdAt = {};
     if (startDate) {
-      where.created_at.gte = startDate;
+      where.createdAt.gte = startDate;
     }
     if (endDate) {
-      where.created_at.lte = endDate;
+      where.createdAt.lte = endDate;
     }
   }
 
@@ -300,7 +325,7 @@ export async function getAgentFeedback(deploymentId: string, options: {
       },
     },
     orderBy: {
-      created_at: 'desc',
+      createdAt: 'desc',
     },
     take: limit,
   });
@@ -310,7 +335,7 @@ export async function getAgentFeedback(deploymentId: string, options: {
 
 export async function createAgentFeedback(data: {
   deploymentId: string;
-  user_id: string;
+  userId: string;
   rating: number;
   comment?: string;
 }) {
@@ -328,7 +353,7 @@ export async function createAgentFeedback(data: {
   });
 
   await logAgentEvent(data.deploymentId, 'info', 'Feedback created', {
-    user_id: data.user_id,
+    userId: data.userId,
     feedbackId: feedback.id,
     rating: data.rating,
   });
@@ -398,20 +423,23 @@ export async function validateAgentCode(code: string): Promise<boolean> {
 export async function deployAgent(data: {
   name: string;
   description: string;
-  code: string;
   userId: string;
   version: string;
-}): Promise<Deployment> {
+}): Promise<any> {
   const deployment = await prisma.deployment.create({
     data: {
       name: data.name,
       description: data.description,
-      code: data.code,
-      deployed_by: data.userId,
-      version: data.version,
+      deployedBy: data.userId,
+      createdBy: data.userId,
       status: 'active',
-      created_at: new Date(),
-      updated_at: new Date(),
+      accessLevel: 'public',
+      licenseType: 'free',
+      environment: 'production',
+      modelType: '',
+      framework: '',
+      source: '',
+      fileUrl: '',
     },
   });
 
@@ -429,12 +457,11 @@ export async function getAgentVersions(deploymentId: string) {
       id: deploymentId,
     },
     select: {
-      version: true,
-      created_at: true,
+      createdAt: true,
       status: true,
     },
     orderBy: {
-      created_at: 'desc',
+      createdAt: 'desc',
     },
   });
 } 
