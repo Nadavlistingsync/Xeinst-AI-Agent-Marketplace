@@ -5,6 +5,13 @@ import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
 import { type FeedbackAnalyticsApiResponse } from '@/types/feedback-analytics';
 
+interface AnalyticsData {
+  date: string;
+  count: number;
+  averageRating: number;
+  averageSentiment: number | null;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -39,7 +46,7 @@ export async function GET(
 
     const feedback = await prisma.agentFeedback.findMany({
       where: {
-        agentId: params.id,
+        deploymentId: params.id,
         ...(startDate && endDate
           ? {
               createdAt: {
@@ -98,7 +105,7 @@ export async function GET(
     }, {} as Record<string, { count: number; totalRating: number; sentimentScores: number[] }>);
 
     // Calculate averages and format response
-    const analytics = Object.entries(groupedFeedback).map(([date, data]) => ({
+    const analytics: AnalyticsData[] = Object.entries(groupedFeedback).map(([date, data]) => ({
       date,
       count: data.count,
       averageRating: data.totalRating / data.count,
@@ -114,7 +121,7 @@ export async function GET(
   } catch (error) {
     const errorResponse = error instanceof ApiError ? error : new ApiError('Internal server error');
     return NextResponse.json(
-      { error: errorResponse.message },
+      { success: false, error: errorResponse.message },
       { status: errorResponse.statusCode }
     );
   }

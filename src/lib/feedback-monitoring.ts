@@ -18,6 +18,8 @@ export interface FeedbackMetrics {
     sentiment: number;
     volume: number;
   };
+  responseRate: number;
+  averageResponseTime: number;
 }
 
 export interface FeedbackTimeRange {
@@ -119,7 +121,9 @@ export async function getFeedbackMetrics(
       rating: 0,
       sentiment: 0,
       volume: 0
-    }
+    },
+    responseRate,
+    averageResponseTime
   };
 }
 

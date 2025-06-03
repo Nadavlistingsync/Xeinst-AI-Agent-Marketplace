@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
-import { Prisma } from '@prisma/client';
 
 interface Recommendation {
   id: string;
@@ -17,6 +16,13 @@ interface Recommendation {
   createdAt: string;
   updatedAt: string;
 }
+
+type PriorityLevel = 'high' | 'medium' | 'low';
+const priorityOrder: Record<PriorityLevel, number> = {
+  high: 3,
+  medium: 2,
+  low: 1
+};
 
 export async function GET(
   request: Request,
@@ -46,7 +52,8 @@ export async function GET(
         createdBy: true,
         deployedBy: true,
         createdAt: true,
-        updatedAt: true
+        updatedAt: true,
+        isPublic: true
       }
     });
 
@@ -65,7 +72,7 @@ export async function GET(
     }
 
     const feedbacks = await prisma.agentFeedback.findMany({
-      where: { agentId: params.id },
+      where: { deploymentId: params.id },
       include: {
         user: {
           select: {
@@ -94,7 +101,7 @@ export async function GET(
     const recommendations: Recommendation[] = Object.entries(categoryFrequencies)
       .map(([category, count]) => {
         const ratio = count / totalFeedback;
-        const priority = ratio > 0.7 ? 'high' : ratio > 0.4 ? 'medium' : 'low';
+        const priority: PriorityLevel = ratio > 0.7 ? 'high' : ratio > 0.4 ? 'medium' : 'low';
         const impact = ratio * 100;
         const effort = Math.random() * 50 + 50; // Random effort between 50-100
 
@@ -112,7 +119,6 @@ export async function GET(
         };
       })
       .sort((a, b) => {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
         if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
           return priorityOrder[b.priority] - priorityOrder[a.priority];
         }

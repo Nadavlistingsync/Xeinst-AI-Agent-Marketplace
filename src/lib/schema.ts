@@ -1,49 +1,158 @@
 import { z } from 'zod';
-import { Prisma, Decimal } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 // Helper function to convert Decimal to number
-const decimalToNumber = (value: Decimal | number | null): number => {
-  if (value === null) return 0;
-  return typeof value === 'number' ? value : Number(value);
+const decimalToNumber = (value: any): number => {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseFloat(value);
+  if (value instanceof Prisma.Decimal) return value.toNumber();
+  return 0;
 };
 
-// Schema definitions
+// Enum types
+export const SubscriptionTier = z.enum(['free', 'basic', 'premium']);
+export const UserRole = z.enum(['user', 'admin', 'agent']);
+export const DeploymentStatus = z.enum(['pending', 'deploying', 'active', 'failed', 'stopped']);
+export const NotificationType = z.enum(['feedback_received', 'deployment_status', 'system_alert']);
+
+// Base schemas
 export const userSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
   email: z.string().email(),
   image: z.string().nullable(),
-  role: z.string(),
-  subscriptionTier: z.string(),
+  role: UserRole,
+  subscriptionTier: SubscriptionTier,
   emailVerified: z.date().nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
+  password: z.string().nullable(),
 });
 
-export const deploymentSchema = z.object({
+export const productSchema = z.object({
   id: z.string(),
   name: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
   description: z.string(),
+  fileUrl: z.string(),
+  rating: z.number(),
+  downloadCount: z.number(),
+  requirements: z.array(z.string()),
+  longDescription: z.string().nullable(),
+  price: z.number().transform(decimalToNumber),
+  category: z.string(),
+  tags: z.array(z.string()),
+  version: z.string(),
   status: z.string(),
   accessLevel: z.string(),
   licenseType: z.string(),
   environment: z.string(),
   framework: z.string(),
-  fileUrl: z.string().nullable(),
-  deployedBy: z.string(),
+  modelType: z.string(),
+  createdBy: z.string(),
+  earningsSplit: z.number().transform(decimalToNumber),
+});
+
+export const deploymentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: DeploymentStatus,
   createdAt: z.date(),
   updatedAt: z.date(),
-  priceCents: z.number(),
-  downloads: z.number(),
-  rating: z.number().transform(decimalToNumber),
-  ratingCount: z.number(),
-  downloadCount: z.number(),
+  description: z.string(),
+  accessLevel: z.string(),
+  licenseType: z.string(),
+  environment: z.string(),
+  framework: z.string(),
   modelType: z.string(),
-  requirements: z.string().nullable(),
-  apiEndpoint: z.string().nullable(),
-  version: z.string(),
   source: z.string(),
+  deployedBy: z.string(),
+  createdBy: z.string(),
 });
+
+export const agentFeedbackSchema = z.object({
+  id: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  rating: z.number(),
+  deploymentId: z.string(),
+  userId: z.string(),
+  comment: z.string().nullable(),
+  sentimentScore: z.number().nullable().transform(decimalToNumber),
+  categories: z.record(z.any()).nullable(),
+  creatorResponse: z.string().nullable(),
+  responseDate: z.date().nullable(),
+});
+
+export const reviewSchema = z.object({
+  id: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  rating: z.number(),
+  deploymentId: z.string(),
+  userId: z.string(),
+  comment: z.string(),
+});
+
+export const purchaseSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  userId: z.string(),
+  productId: z.string(),
+  amount: z.number().transform(decimalToNumber),
+  stripeTransferId: z.string().nullable(),
+  paidAt: z.date().nullable(),
+});
+
+export const earningSchema = z.object({
+  id: z.string(),
+  status: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  userId: z.string(),
+  productId: z.string(),
+  amount: z.number().transform(decimalToNumber),
+  stripeTransferId: z.string().nullable(),
+  paidAt: z.date().nullable(),
+});
+
+// Type exports
+export type User = z.infer<typeof userSchema>;
+export type Product = z.infer<typeof productSchema>;
+export type Deployment = z.infer<typeof deploymentSchema>;
+export type AgentFeedback = z.infer<typeof agentFeedbackSchema>;
+export type Review = z.infer<typeof reviewSchema>;
+export type Purchase = z.infer<typeof purchaseSchema>;
+export type Earning = z.infer<typeof earningSchema>;
+
+// Input types
+export type UserInput = z.infer<typeof userSchema>;
+export type ProductInput = z.infer<typeof productSchema>;
+export type DeploymentInput = z.infer<typeof deploymentSchema>;
+export type AgentFeedbackInput = z.infer<typeof agentFeedbackSchema>;
+export type ReviewInput = z.infer<typeof reviewSchema>;
+export type PurchaseInput = z.infer<typeof purchaseSchema>;
+export type EarningInput = z.infer<typeof earningSchema>;
+
+// Pagination and filtering
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export interface FilterParams {
+  search?: string;
+  category?: string;
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+}
 
 export const agentSchema = z.object({
   id: z.string(),
@@ -70,20 +179,6 @@ export const agentSchema = z.object({
   updatedAt: z.date(),
 });
 
-export const agentFeedbackSchema = z.object({
-  id: z.string(),
-  agentId: z.string(),
-  userId: z.string(),
-  rating: z.number(),
-  comment: z.string().nullable(),
-  sentimentScore: z.number().nullable().transform(decimalToNumber),
-  categories: z.record(z.any()).nullable(),
-  creatorResponse: z.string().nullable(),
-  responseDate: z.date().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
 export const agentLogSchema = z.object({
   id: z.string(),
   deploymentId: z.string(),
@@ -98,7 +193,7 @@ export const agentLogSchema = z.object({
 
 export const agentMetricsSchema = z.object({
   id: z.string(),
-  agentId: z.string(),
+  deploymentId: z.string(),
   totalRequests: z.number(),
   averageResponseTime: z.number(),
   errorRate: z.number(),
@@ -113,64 +208,6 @@ export const agentMetricsSchema = z.object({
   updatedAt: z.date(),
 });
 
-export const productSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  slug: z.string(),
-  description: z.string(),
-  longDescription: z.string().nullable(),
-  category: z.string(),
-  price: z.number().transform(decimalToNumber),
-  imageUrl: z.string().nullable(),
-  fileUrl: z.string(),
-  documentation: z.string().nullable(),
-  features: z.array(z.string()),
-  requirements: z.array(z.string()),
-  rating: z.number(),
-  averageRating: z.number().transform(decimalToNumber),
-  totalRatings: z.number(),
-  createdBy: z.string(),
-  uploadedBy: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-  isPublic: z.boolean(),
-  isFeatured: z.boolean(),
-  downloadCount: z.number(),
-  earningsSplit: z.number().transform(decimalToNumber),
-});
-
-export const reviewSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  productId: z.string(),
-  rating: z.number(),
-  comment: z.string().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const purchaseSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  productId: z.string(),
-  amount: z.number().transform(decimalToNumber),
-  status: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
-export const earningSchema = z.object({
-  id: z.string(),
-  userId: z.string(),
-  productId: z.string(),
-  amount: z.number().transform(decimalToNumber),
-  status: z.string(),
-  stripeTransferId: z.string().nullable(),
-  paidAt: z.date().nullable(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
-});
-
 export const categorySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -180,29 +217,15 @@ export const categorySchema = z.object({
 });
 
 // Type exports
-export type User = Prisma.UserGetPayload<{}>;
-export type Deployment = Prisma.DeploymentGetPayload<{}>;
 export type Agent = z.infer<typeof agentSchema>;
-export type AgentFeedback = Prisma.AgentFeedbackGetPayload<{}>;
-export type AgentLog = Prisma.AgentLogGetPayload<{}>;
-export type AgentMetrics = Prisma.AgentMetricsGetPayload<{}>;
-export type Product = Prisma.ProductGetPayload<{}>;
-export type Review = Prisma.ReviewGetPayload<{}>;
-export type Purchase = Prisma.PurchaseGetPayload<{}>;
-export type Earning = Prisma.EarningGetPayload<{}>;
+export type AgentLog = z.infer<typeof agentLogSchema>;
+export type AgentMetrics = z.infer<typeof agentMetricsSchema>;
 export type Category = z.infer<typeof categorySchema>;
 
 // Input types
-export type UserInput = z.infer<typeof userSchema>;
-export type DeploymentInput = z.infer<typeof deploymentSchema>;
 export type AgentInput = z.infer<typeof agentSchema>;
-export type AgentFeedbackInput = z.infer<typeof agentFeedbackSchema>;
 export type AgentLogInput = z.infer<typeof agentLogSchema>;
 export type AgentMetricsInput = z.infer<typeof agentMetricsSchema>;
-export type ProductInput = z.infer<typeof productSchema>;
-export type ReviewInput = z.infer<typeof reviewSchema>;
-export type PurchaseInput = z.infer<typeof purchaseSchema>;
-export type EarningInput = z.infer<typeof earningSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 
 export type DeploymentCreateInput = Prisma.DeploymentCreateInput;
@@ -257,8 +280,6 @@ export type FeedbackCategory = {
   description: string;
 };
 
-export type NotificationType = 'info' | 'success' | 'warning' | 'error';
-
 export type Notification = Prisma.NotificationGetPayload<{}>;
 
 export type Order = {
@@ -270,13 +291,6 @@ export type Order = {
   createdAt: Date;
   updatedAt: Date;
 };
-
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-  orderBy?: string;
-  order?: 'asc' | 'desc';
-}
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -295,17 +309,6 @@ export interface SearchParams {
   maxPrice?: number;
   rating?: number;
   status?: string;
-  startDate?: Date;
-  endDate?: Date;
-}
-
-export interface FilterParams {
-  userId?: string;
-  productId?: string;
-  agentId?: string;
-  status?: string;
-  type?: string;
-  level?: string;
   startDate?: Date;
   endDate?: Date;
 }

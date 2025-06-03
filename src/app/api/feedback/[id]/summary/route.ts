@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
-import { Prisma } from '@prisma/client';
 import { type FeedbackSummaryApiResponse } from '@/types/feedback-analytics';
 
 interface FeedbackSummary {
@@ -60,7 +59,7 @@ export async function GET(
     }
 
     const feedbacks = await prisma.agentFeedback.findMany({
-      where: { agentId: params.id },
+      where: { deploymentId: params.id },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -109,7 +108,7 @@ export async function GET(
       });
 
       // Calculate recent activity
-      const respondedFeedbacks = feedbacks.filter(f => f.response);
+      const respondedFeedbacks = feedbacks.filter(f => f.creatorResponse);
       summary.recentActivity.lastFeedback = feedbacks[0].createdAt.toISOString();
       summary.recentActivity.responseRate = (respondedFeedbacks.length / feedbacks.length) * 100;
 

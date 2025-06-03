@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
 import { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { type FeedbackApiResponse } from '@/types/feedback';
+import { type FeedbackApiResponse, type Feedback } from '@/types/feedback';
 
 const feedbackSchema = z.object({
   rating: z.number().min(1).max(5),
@@ -65,23 +65,25 @@ export async function GET(
       orderBy: { createdAt: 'desc' }
     });
 
+    const formattedFeedbacks: Feedback[] = feedbacks.map(f => ({
+      id: f.id,
+      deploymentId: f.deploymentId,
+      userId: f.userId,
+      rating: f.rating,
+      comment: f.comment,
+      sentimentScore: f.sentimentScore ? Number(f.sentimentScore) : null,
+      categories: f.categories as Record<string, number> | null,
+      metadata: {},
+      response: f.creatorResponse,
+      responseDate: f.responseDate,
+      createdAt: f.createdAt,
+      updatedAt: f.updatedAt,
+      user: f.user
+    }));
+
     return NextResponse.json({ 
       success: true, 
-      feedback: feedbacks.map(f => ({
-        id: f.id,
-        deploymentId: f.deploymentId,
-        userId: f.userId,
-        rating: f.rating,
-        comment: f.comment,
-        sentimentScore: f.sentimentScore ? Number(f.sentimentScore) : null,
-        categories: f.categories as Record<string, number> | null,
-        metadata: {},
-        response: f.creatorResponse,
-        responseDate: f.responseDate,
-        createdAt: f.createdAt,
-        updatedAt: f.updatedAt,
-        user: f.user
-      }))
+      feedback: formattedFeedbacks
     });
   } catch (error) {
     console.error('Error fetching feedback:', error);
@@ -155,23 +157,25 @@ export async function POST(
       }
     });
 
+    const formattedFeedback: Feedback = {
+      id: feedback.id,
+      deploymentId: feedback.deploymentId,
+      userId: feedback.userId,
+      rating: feedback.rating,
+      comment: feedback.comment,
+      sentimentScore: feedback.sentimentScore ? Number(feedback.sentimentScore) : null,
+      categories: feedback.categories as Record<string, number> | null,
+      metadata: {},
+      response: feedback.creatorResponse,
+      responseDate: feedback.responseDate,
+      createdAt: feedback.createdAt,
+      updatedAt: feedback.updatedAt,
+      user: feedback.user
+    };
+
     return NextResponse.json({ 
       success: true, 
-      feedback: {
-        id: feedback.id,
-        deploymentId: feedback.deploymentId,
-        userId: feedback.userId,
-        rating: feedback.rating,
-        comment: feedback.comment,
-        sentimentScore: feedback.sentimentScore ? Number(feedback.sentimentScore) : null,
-        categories: feedback.categories as Record<string, number> | null,
-        metadata: {},
-        response: feedback.creatorResponse,
-        responseDate: feedback.responseDate,
-        createdAt: feedback.createdAt,
-        updatedAt: feedback.updatedAt,
-        user: feedback.user
-      }
+      feedback: formattedFeedback
     });
   } catch (error) {
     console.error('Error creating feedback:', error);
@@ -250,10 +254,13 @@ export async function DELETE(
     }
 
     await prisma.agentFeedback.delete({
-      where: { id: feedbackId },
+      where: { id: feedbackId }
     });
 
-    return NextResponse.json({ success: true, feedback: null });
+    return NextResponse.json({ 
+      success: true, 
+      feedback: null 
+    });
   } catch (error) {
     console.error('Error deleting feedback:', error);
     const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to delete feedback');

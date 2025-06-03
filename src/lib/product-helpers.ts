@@ -2,18 +2,11 @@ import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { Product } from './schema';
 
-export async function getProduct(slug: string): Promise<Product | null> {
+export async function getProduct(id: string): Promise<Product | null> {
   return prisma.product.findUnique({
-    where: { slug },
+    where: { id },
     include: {
       creator: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      uploader: {
         select: {
           id: true,
           name: true,
@@ -41,8 +34,6 @@ export async function getProducts(options: {
   minPrice?: number;
   maxPrice?: number;
   rating?: number;
-  isPublic?: boolean;
-  isFeatured?: boolean;
   limit?: number;
   offset?: number;
 } = {}) {
@@ -51,8 +42,6 @@ export async function getProducts(options: {
     minPrice,
     maxPrice,
     rating,
-    isPublic,
-    isFeatured,
     limit = 10,
     offset = 0,
   } = options;
@@ -74,17 +63,9 @@ export async function getProducts(options: {
   }
 
   if (rating !== undefined) {
-    where.average_rating = {
+    where.rating = {
       gte: rating,
     };
-  }
-
-  if (isPublic !== undefined) {
-    where.isPublic = isPublic;
-  }
-
-  if (isFeatured !== undefined) {
-    where.isFeatured = isFeatured;
   }
 
   const [products, total] = await Promise.all([
@@ -92,13 +73,6 @@ export async function getProducts(options: {
       where,
       include: {
         creator: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        uploader: {
           select: {
             id: true,
             name: true,
@@ -126,28 +100,22 @@ export async function getProducts(options: {
   };
 }
 
-export async function getRelatedProducts(product_id: string, category: string): Promise<Product[]> {
+export async function getRelatedProducts(productId: string, category: string): Promise<Product[]> {
   return await prisma.product.findMany({
     where: {
-      category: {
-        name: category,
-      },
+      category,
       NOT: {
-        id: product_id,
+        id: productId,
       },
     },
     take: 4,
-    include: {
-      category: true,
-      seller: true,
-    },
   });
 }
 
-export async function getProductReviews(product_id: string): Promise<any[]> {
+export async function getProductReviews(productId: string): Promise<any[]> {
   return await prisma.review.findMany({
     where: {
-      product_id,
+      productId,
     },
     include: {
       user: true,
@@ -157,15 +125,15 @@ export async function getProductReviews(product_id: string): Promise<any[]> {
 }
 
 export async function createProductReview(data: {
-  product_id: string;
-  user_id: string;
+  productId: string;
+  userId: string;
   rating: number;
   comment?: string;
 }): Promise<any> {
   return await prisma.review.create({
     data: {
-      productId: data.product_id,
-      userId: data.user_id,
+      productId: data.productId,
+      userId: data.userId,
       rating: data.rating,
       comment: data.comment,
     },
@@ -175,15 +143,15 @@ export async function createProductReview(data: {
   });
 }
 
-export async function updateProductRating(product_id: string): Promise<void> {
+export async function updateProductRating(productId: string): Promise<void> {
   const reviews = await prisma.review.findMany({
-    where: { product_id },
+    where: { productId },
   });
 
-  const average_rating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+  const average_rating = reviews.length > 0 ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length : 0;
 
   await prisma.product.update({
-    where: { id: product_id },
+    where: { id: productId },
     data: {
       rating: average_rating,
     },
