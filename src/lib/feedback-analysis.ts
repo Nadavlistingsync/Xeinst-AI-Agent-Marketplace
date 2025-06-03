@@ -161,7 +161,7 @@ export async function updateFeedbackAnalysis(
 
 export async function analyzeFeedbackTrends(
   agentId: string,
-  timeRange?: { start: Date; end: Date; category?: 'all' | 'error' | 'warning' | 'success' }
+  timeRange?: { start?: Date; end?: Date; category?: 'all' | 'error' | 'warning' | 'success' }
 ): Promise<{
   sentimentTrend: { date: string; score: number }[];
   categoryTrend: { date: string; categories: { [key: string]: number } }[];
@@ -169,14 +169,14 @@ export async function analyzeFeedbackTrends(
   const feedbacks = await prisma.agentFeedback.findMany({
     where: {
       agentId,
-      ...(timeRange ? {
+      ...(timeRange?.start && timeRange?.end ? {
         created_at: {
           gte: timeRange.start,
           lte: timeRange.end
-        },
-        ...(timeRange.category && timeRange.category !== 'all' ? {
-          category: timeRange.category
-        } : {})
+        }
+      } : {}),
+      ...(timeRange?.category && timeRange.category !== 'all' ? {
+        category: timeRange.category
       } : {})
     },
     orderBy: {

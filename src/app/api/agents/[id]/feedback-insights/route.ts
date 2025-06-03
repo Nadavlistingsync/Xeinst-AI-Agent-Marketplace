@@ -83,8 +83,10 @@ export async function GET(
     const [insights, trends] = await Promise.all([
       generateFeedbackInsights(params.id),
       analyzeFeedbackTrends(params.id, {
-        start: validatedParams.startDate ? new Date(validatedParams.startDate) : undefined,
-        end: validatedParams.endDate ? new Date(validatedParams.endDate) : undefined,
+        ...(validatedParams.startDate && validatedParams.endDate ? {
+          start: new Date(validatedParams.startDate),
+          end: new Date(validatedParams.endDate)
+        } : {}),
         category: validatedParams.category
       })
     ]);
