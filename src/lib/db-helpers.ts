@@ -13,12 +13,6 @@ export async function getProduct(id: string) {
           image: true,
         },
       },
-      uploader: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
       reviews: {
         include: {
           user: {
@@ -30,7 +24,7 @@ export async function getProduct(id: string) {
         },
       },
     },
-  });
+  }).then(product => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
 }
 
 export interface GetProductsParams {
@@ -43,9 +37,7 @@ export interface GetProductsParams {
 export async function getProducts(params: GetProductsParams) {
   const { query, category, minPrice, maxPrice } = params;
 
-  const where: Prisma.ProductWhereInput = {
-    isPublic: true,
-  };
+  const where: any = {};
 
   if (query) {
     where.OR = [
@@ -77,17 +69,11 @@ export async function getProducts(params: GetProductsParams) {
           image: true,
         },
       },
-      uploader: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
     },
     orderBy: {
       createdAt: "desc",
     },
-  });
+  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 }
 
 export async function getFeaturedProducts() {
@@ -132,14 +118,8 @@ export async function createProduct(data: Prisma.ProductCreateInput) {
           image: true,
         },
       },
-      uploader: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
     },
-  });
+  }).then(product => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
 }
 
 export async function updateProduct(id: string, data: Prisma.ProductUpdateInput) {
@@ -153,14 +133,8 @@ export async function updateProduct(id: string, data: Prisma.ProductUpdateInput)
           image: true,
         },
       },
-      uploader: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
     },
-  });
+  }).then(product => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
 }
 
 export async function deleteProduct(id: string) {
@@ -463,12 +437,6 @@ export async function getProductById(id: string) {
     where: { id },
     include: {
       creator: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
-      uploader: {
         select: {
           name: true,
           image: true,
