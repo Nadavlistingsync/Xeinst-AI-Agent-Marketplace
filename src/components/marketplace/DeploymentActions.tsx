@@ -44,16 +44,17 @@ export function DeploymentActions({ deployment }: DeploymentActionsProps) {
       const data = await response.json();
       
       toast({
-        title: "Deployment Successful",
+        title: "Success",
         description: "Your agent has been deployed successfully.",
+        variant: "default"
       });
 
       router.push(`/dashboard/deployments/${data.id}`);
     } catch (error) {
       toast({
-        title: "Deployment Failed",
+        title: "Error",
         description: "There was an error deploying your agent. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsDeploying(false);
@@ -105,9 +106,10 @@ export function DeploymentActions({ deployment }: DeploymentActionsProps) {
             <p className="mb-2">Deployment Details:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>Framework: {deployment.framework}</li>
-              <li>Version: {deployment.version}</li>
+              <li>Model Type: {deployment.modelType}</li>
               <li>Access Level: {deployment.accessLevel}</li>
               <li>License Type: {deployment.licenseType}</li>
+              <li>Status: {deployment.status}</li>
             </ul>
           </div>
         </div>

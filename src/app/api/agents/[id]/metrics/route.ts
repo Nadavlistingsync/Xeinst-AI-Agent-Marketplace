@@ -54,18 +54,12 @@ export async function GET(
     }
 
     // Check if user has access to the agent
-    if (agent.userId !== session.user.id && agent.access_level !== 'public') {
-      if (agent.access_level === 'premium' && session.user.subscription_tier !== 'premium') {
-        return NextResponse.json(
-          { error: 'Premium subscription required' },
-          { status: 403 }
-        );
+    if (agent.createdBy !== session.user.id && agent.accessLevel !== 'public') {
+      if (agent.accessLevel === 'premium' && session.user.subscriptionTier !== 'premium') {
+        return NextResponse.json({ error: 'Premium access required' }, { status: 403 });
       }
-      if (agent.access_level === 'basic' && session.user.subscription_tier !== 'basic') {
-        return NextResponse.json(
-          { error: 'Basic subscription required' },
-          { status: 403 }
-        );
+      if (agent.accessLevel === 'basic' && session.user.subscriptionTier !== 'basic') {
+        return NextResponse.json({ error: 'Basic access required' }, { status: 403 });
       }
     }
 

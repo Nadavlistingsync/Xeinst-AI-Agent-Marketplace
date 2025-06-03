@@ -1,132 +1,135 @@
-import { Deployment } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Square, RefreshCw } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { DeploymentWithMetrics } from "@/types/deployment";
+import { DeploymentStatus } from "@prisma/client";
+import { prisma } from '@/lib/prisma';
 
 interface DeploymentOverviewProps {
-  deployment: Deployment;
+  deployment: DeploymentWithMetrics;
+  onStart: (id: string) => Promise<void>;
+  onStop: (id: string) => Promise<void>;
+  onRestart: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
-export function DeploymentOverview({ deployment }: DeploymentOverviewProps) {
+export function DeploymentOverview({
+  deployment,
+  onStart,
+  onStop,
+  onRestart,
+  onDelete,
+}: DeploymentOverviewProps) {
+  const getStatusColor = (status: DeploymentStatus) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500';
+      case 'stopped':
+        return 'bg-red-500';
+      case 'pending':
+        return 'bg-yellow-500';
+      case 'failed':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>{deployment.name}</CardTitle>
-            <p className="text-sm text-gray-500 mt-1">
-              Created {formatDistanceToNow(deployment.createdAt, { addSuffix: true })}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge
-              variant={
-                deployment.status === "active"
-                  ? "success"
-                  : deployment.status === "failed"
-                  ? "destructive"
-                  : "secondary"
-              }
-            >
-              {deployment.status}
-            </Badge>
-            {deployment.status === "active" ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-red-600 hover:text-red-700"
-                onClick={() => handleStopDeployment(deployment.id)}
-              >
-                <Square className="h-4 w-4 mr-2" />
-                Stop
-              </Button>
-            ) : (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleStartDeployment(deployment.id)}
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Start
-              </Button>
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleRestartDeployment(deployment.id)}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Restart
-            </Button>
-          </div>
+          <CardTitle>Deployment Overview</CardTitle>
+          <Badge className={getStatusColor(deployment.status)}>
+            {deployment.status}
+          </Badge>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">Framework</h3>
-            <p className="mt-1">{deployment.framework}</p>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Name</h3>
+              <p className="mt-1">{deployment.name}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Created</h3>
+              <p className="mt-1">
+                {new Date(deployment.createdAt).toLocaleDateString()}
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">Version</h3>
-            <p className="mt-1">{deployment.version}</p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Environment</h3>
+              <p className="mt-1">{deployment.environment}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-500">Framework</h3>
+              <p className="mt-1">{deployment.framework}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">Environment</h3>
-            <p className="mt-1 capitalize">{deployment.environment}</p>
-          </div>
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">Access Level</h3>
-            <p className="mt-1 capitalize">{deployment.accessLevel}</p>
+
+          <div className="flex space-x-2">
+            {deployment.status === 'stopped' && (
+              <Button onClick={() => onStart(deployment.id)}>Start</Button>
+            )}
+            {deployment.status === 'active' && (
+              <Button onClick={() => onStop(deployment.id)}>Stop</Button>
+            )}
+            {deployment.status === 'active' && (
+              <Button onClick={() => onRestart(deployment.id)}>Restart</Button>
+            )}
+            <Button
+              variant="destructive"
+              onClick={() => onDelete(deployment.id)}
+            >
+              Delete
+            </Button>
           </div>
         </div>
-
-        <div className="mt-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">Description</h3>
-          <p className="text-gray-600">{deployment.description}</p>
-        </div>
-
-        {deployment.requirements && (
-          <div className="mt-6">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Requirements</h3>
-            <ul className="list-disc list-inside text-gray-600">
-              {deployment.requirements.split("\n").map((req, index) => (
-                <li key={index}>{req}</li>
-              ))}
-            </ul>
-          </div>
-        )}
       </CardContent>
     </Card>
   );
 }
 
-async function handleStartDeployment(id: string) {
+export async function handleStartDeployment(id: string) {
   "use server";
   
+  if (!prisma) {
+    throw new Error('Prisma client not initialized');
+  }
+
   await prisma.deployment.update({
     where: { id },
-    data: { status: "active" },
+    data: { status: 'active' },
   });
 }
 
-async function handleStopDeployment(id: string) {
+export async function handleStopDeployment(id: string) {
   "use server";
   
+  if (!prisma) {
+    throw new Error('Prisma client not initialized');
+  }
+
   await prisma.deployment.update({
     where: { id },
-    data: { status: "stopped" },
+    data: { status: 'stopped' },
   });
 }
 
-async function handleRestartDeployment(id: string) {
+export async function handleRestartDeployment(id: string) {
   "use server";
   
+  if (!prisma) {
+    throw new Error('Prisma client not initialized');
+  }
+
   await prisma.deployment.update({
     where: { id },
-    data: { status: "pending" },
+    data: { status: 'pending' },
   });
   
   // Wait a moment before setting to active
@@ -134,6 +137,6 @@ async function handleRestartDeployment(id: string) {
   
   await prisma.deployment.update({
     where: { id },
-    data: { status: "active" },
+    data: { status: 'active' },
   });
 } 

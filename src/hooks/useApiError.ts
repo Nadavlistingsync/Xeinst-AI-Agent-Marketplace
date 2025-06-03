@@ -51,9 +51,9 @@ export function useApiError() {
 
     // Show toast notification
     toast({
-      variant: 'destructive',
-      title: 'Error',
+      title: "Error",
       description: apiError.message,
+      variant: "destructive"
     });
 
     setError(apiError);

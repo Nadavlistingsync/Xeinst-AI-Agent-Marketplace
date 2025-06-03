@@ -1,11 +1,84 @@
 import { z } from 'zod';
-import { type Agent } from './database';
+
+export type DeploymentStatus = 'pending' | 'deploying' | 'active' | 'failed' | 'stopped';
+
+export interface Agent {
+  id: string;
+  name: string;
+  description: string;
+  version: string;
+  framework: string;
+  modelType: string;
+  status: DeploymentStatus;
+  isPublic: boolean;
+  createdBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+  metadata: Record<string, any>;
+}
+
+export interface AgentMetrics {
+  id: string;
+  deploymentId: string;
+  responseTime: number;
+  requestsPerMinute: number;
+  averageTokensUsed: number;
+  costPerRequest: number;
+  totalCost: number;
+  errorRate: number;
+  successRate: number;
+  totalRequests: number;
+  activeUsers: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface AgentHealth {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  issues: string[];
+  metrics: {
+    errorRate: number;
+    responseTime: number;
+    successRate: number;
+    totalRequests: number;
+    activeUsers: number;
+  };
+  lastUpdated: Date;
+}
 
 export const agentSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().min(1).max(1000),
-  status: z.enum(['active', 'inactive', 'pending', 'error']),
-  metadata: z.record(z.unknown()).optional(),
+  version: z.string().min(1),
+  framework: z.string().min(1),
+  modelType: z.string().min(1),
+  isPublic: z.boolean().default(false),
+  metadata: z.record(z.any()).optional(),
+});
+
+export const agentMetricsSchema = z.object({
+  responseTime: z.number().min(0),
+  requestsPerMinute: z.number().min(0),
+  averageTokensUsed: z.number().min(0),
+  costPerRequest: z.number().min(0),
+  totalCost: z.number().min(0),
+  errorRate: z.number().min(0).max(1),
+  successRate: z.number().min(0).max(1),
+  totalRequests: z.number().min(0),
+  activeUsers: z.number().min(0),
+});
+
+export const agentHealthSchema = z.object({
+  status: z.enum(['healthy', 'degraded', 'unhealthy']),
+  issues: z.array(z.string()),
+  metrics: z.object({
+    errorRate: z.number().min(0).max(1),
+    responseTime: z.number().min(0),
+    successRate: z.number().min(0).max(1),
+    totalRequests: z.number().min(0),
+    activeUsers: z.number().min(0),
+  }),
+  lastUpdated: z.date(),
 });
 
 export const agentUpdateSchema = agentSchema.partial();

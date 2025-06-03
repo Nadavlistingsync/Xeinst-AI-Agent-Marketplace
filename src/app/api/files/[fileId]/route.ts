@@ -33,17 +33,30 @@ export async function GET(
     }
 
     // Check if user has access to the file
-    const fileAccess = await prisma.fileAccess.findFirst({
-      where: {
-        fileId: params.fileId,
-        userId: session.user.id
+    const file = await prisma.file.findUnique({
+      where: { id: params.fileId },
+      include: {
+        product: {
+          select: {
+            accessLevel: true,
+            createdBy: true
+          }
+        }
       }
     });
 
-    if (!fileAccess) {
+    if (!file) {
       return NextResponse.json(
-        { error: 'File not found or access denied' },
+        { error: 'File not found' },
         { status: 404 }
+      );
+    }
+
+    // Check access based on product's access level
+    if (file.product?.accessLevel !== 'public' && file.product?.createdBy !== session.user.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
       );
     }
 
@@ -55,14 +68,6 @@ export async function GET(
     };
 
     const validatedParams = fileQuerySchema.parse(queryParams);
-
-    const file = await getFile(params.fileId);
-    if (!file) {
-      return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
-      );
-    }
 
     const buffer = Buffer.from(file.data, 'base64');
 

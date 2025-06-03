@@ -1,73 +1,62 @@
 import { z } from 'zod';
-import { User } from '../lib/schema';
 
-export const feedbackSchema = z.object({
-  deploymentId: z.string(),
-  rating: z.number().min(1).max(5),
-  comment: z.string().nullable(),
-  sentimentScore: z.number().min(-1).max(1).nullable(),
-  categories: z.record(z.number()).nullable(),
-  metadata: z.record(z.unknown()).nullable()
-});
-
-export type FeedbackInput = z.infer<typeof feedbackSchema>;
-
-export type FeedbackUser = {
+export interface User {
+  id: string;
   name: string | null;
+  email: string | null;
   image: string | null;
-};
+}
 
-export type Feedback = {
+export interface Deployment {
+  id: string;
+  name: string;
+  description: string | null;
+  createdBy: string;
+}
+
+export interface Feedback {
   id: string;
   deploymentId: string;
   userId: string;
   rating: number;
   comment: string | null;
-  sentimentScore: number | null;
+  sentimentScore: number;
   categories: Record<string, number> | null;
   metadata: Record<string, unknown>;
-  response: string | null;
-  responseDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  user: FeedbackUser;
-};
+  creatorResponse: string | null;
+  responseDate: Date | null;
+  user: User;
+  deployment: Deployment;
+}
 
-export type FeedbackSuccess = {
+export interface FeedbackSuccess<T = Feedback> {
   success: true;
-  feedback: Feedback;
-};
+  data: T;
+}
 
-export type FeedbackError = {
+export interface FeedbackError {
   success: false;
   error: string;
-  details?: unknown;
-};
+  details?: z.ZodError[];
+}
 
-export type FeedbackApiResponse = FeedbackSuccess | FeedbackError;
+export type FeedbackApiResponse<T = Feedback> = FeedbackSuccess<T> | FeedbackError;
+
+export const feedbackSchema = z.object({
+  deploymentId: z.string(),
+  rating: z.number().min(1).max(5),
+  comment: z.string().optional(),
+  categories: z.array(z.string()).optional(),
+  metadata: z.record(z.any()).optional(),
+});
+
+export type FeedbackInput = z.infer<typeof feedbackSchema>;
 
 export interface FeedbackResponse {
   success: boolean;
-  feedback?: {
-    id: string;
-    deploymentId: string;
-    userId: string;
-    rating: number;
-    comment: string | null;
-    sentimentScore: number | null;
-    categories: Record<string, number> | null;
-    metadata: Record<string, unknown>;
-    createdAt: Date;
-    updatedAt: Date;
-    response: string | null;
-    responseDate: Date | null;
-    user: {
-      id: string;
-      name: string;
-      email: string;
-      image: string | null;
-    };
-  };
+  feedback?: Feedback;
   error?: string;
   details?: z.ZodError[];
 }
@@ -156,7 +145,6 @@ export interface FeedbackExport {
   comment: string | null;
   sentimentScore: number | null;
   categories: Record<string, number> | null;
-  createdAt: Date;
   response: string | null;
   responseDate: Date | null;
   userName: string | null;

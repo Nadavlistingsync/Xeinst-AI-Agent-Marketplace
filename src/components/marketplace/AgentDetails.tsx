@@ -1,7 +1,6 @@
 import Image from "next/image";
 import { Deployment } from "@prisma/client";
-import { Star, ShieldCheck, TrendingUp, Sparkles, ArrowDownTray, Clock } from "@heroicons/react/20/solid";
-import { formatPrice } from "@/lib/utils";
+import { Star, ShieldCheck, ArrowDownTray, Clock } from "@heroicons/react/24/outline";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader } from "../ui/card";
@@ -11,7 +10,7 @@ import { DeploymentMetrics } from "./DeploymentMetrics";
 import { DeploymentFeedback } from "./DeploymentFeedback";
 
 interface AgentDetailsProps {
-  deployment: any; // Temporarily use 'any' to avoid type errors until all property mismatches are fixed
+  deployment: Deployment;
 }
 
 export function AgentDetails({ deployment }: AgentDetailsProps) {
@@ -33,14 +32,15 @@ export function AgentDetails({ deployment }: AgentDetailsProps) {
               <div className="flex items-center">
                 <Star className="h-6 w-6 text-yellow-400" />
                 <span className="ml-1 text-lg text-gray-600">
-                  {deployment.rating?.toFixed ? deployment.rating.toFixed(1) : deployment.rating}
+                  {deployment.rating.toFixed(1)}
                 </span>
               </div>
             </div>
 
             <div className="flex flex-wrap gap-2 mb-6">
               <Badge variant="outline">{deployment.framework}</Badge>
-              <Badge variant="outline">v{deployment.version}</Badge>
+              <Badge variant="outline">{deployment.modelType}</Badge>
+              <Badge variant="outline">{deployment.accessLevel}</Badge>
             </div>
 
             <p className="text-gray-600 mb-6">{deployment.description}</p>
@@ -48,55 +48,28 @@ export function AgentDetails({ deployment }: AgentDetailsProps) {
             <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
               <div className="flex items-center">
                 <ArrowDownTray className="h-4 w-4 mr-1" />
+                {deployment.downloadCount} downloads
               </div>
               <div className="flex items-center">
                 <Clock className="h-4 w-4 mr-1" />
-                Updated {deployment.updatedAt ? new Date(deployment.updatedAt).toLocaleDateString() : ''}
+                Updated {new Date(deployment.updatedAt).toLocaleDateString()}
               </div>
             </div>
 
             <div className="flex items-center justify-between">
-              <div className="text-2xl font-bold text-gray-900">
-                {/* Remove priceCents if not present */}
+              <div className="text-sm text-gray-500">
+                {deployment.totalRatings} ratings
               </div>
               <Button size="lg">Deploy Now</Button>
             </div>
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="features">
+        <Tabs defaultValue="metrics">
           <TabsList>
-            <TabsTrigger value="features">Features</TabsTrigger>
-            <TabsTrigger value="requirements">Requirements</TabsTrigger>
             <TabsTrigger value="metrics">Metrics</TabsTrigger>
             <TabsTrigger value="feedback">Feedback</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="features" className="mt-6">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Features</h2>
-                <ul className="list-disc list-inside space-y-2 text-gray-600">
-                  {(deployment.features || []).map((feature: string, index: number) => (
-                    <li key={index}>{feature}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="requirements" className="mt-6">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold mb-4">Requirements</h2>
-                <ul className="list-disc list-inside space-y-2 text-gray-600">
-                  {(deployment.requirements || []).map((requirement: string, index: number) => (
-                    <li key={index}>{requirement}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="metrics" className="mt-6">
             <DeploymentMetrics deploymentId={deployment.id} />

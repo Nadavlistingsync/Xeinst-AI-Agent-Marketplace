@@ -21,10 +21,8 @@ export async function GET(
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       select: {
-        id: true,
-        name: true,
         createdBy: true,
-        isPublic: true
+        accessLevel: true
       }
     });
 
@@ -35,7 +33,7 @@ export async function GET(
       );
     }
 
-    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+    if (agent.createdBy !== session.user.id && agent.accessLevel !== 'public') {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -49,7 +47,7 @@ export async function GET(
     const skip = (page - 1) * limit;
 
     const where: Prisma.AgentFeedbackWhereInput = {
-      agentId: params.id,
+      deploymentId: params.id,
       OR: [
         {
           comment: {

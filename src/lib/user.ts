@@ -146,13 +146,13 @@ export async function deleteUser(id: string): Promise<void> {
 export async function getUserAgents(
   userId: string,
   options: GetUserAgentsOptions = {}
-): Promise<Agent[]> {
-  const where: Prisma.AgentWhereInput = { createdBy: userId };
+): Promise<Deployment[]> {
+  const where: any = { createdBy: userId };
 
   if (options.status) where.status = options.status;
-  if (options.category) where.category = options.category;
+  if (options.category) where.modelType = options.category;
 
-  return await prisma.agent.findMany({
+  return await prisma.deployment.findMany({
     where,
     orderBy: { createdAt: 'desc' },
     take: options.limit,

@@ -1,13 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Deployment } from "@prisma/client";
 import { Star, ShieldCheck, TrendingUp, Sparkles } from "@heroicons/react/20/solid";
 import { formatPrice } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
+import type { MarketplaceDeployment } from "./MarketplaceGrid";
 
 interface AgentCardProps {
-  deployment: Deployment;
+  deployment: MarketplaceDeployment;
 }
 
 export function AgentCard({ deployment }: AgentCardProps) {
@@ -16,32 +16,23 @@ export function AgentCard({ deployment }: AgentCardProps) {
       <Card className="group h-full transition-all duration-200 hover:shadow-lg">
         <CardHeader className="p-0">
           <div className="aspect-w-16 aspect-h-9 bg-gray-100 relative">
-            {deployment.imageUrl ? (
-              <Image
-                src={deployment.imageUrl}
-                alt={deployment.name}
-                fill
-                className="object-cover rounded-t-lg"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-t-lg">
-                <span className="text-gray-400">No image</span>
-              </div>
-            )}
+            <div className="w-full h-full flex items-center justify-center bg-gray-100 rounded-t-lg">
+              <span className="text-gray-400">No image</span>
+            </div>
             <div className="absolute top-2 right-2 flex gap-2">
-              {deployment.isVerified && (
+              {deployment.status === 'active' && (
                 <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
                   <ShieldCheck className="h-4 w-4 mr-1" />
-                  Verified
+                  Active
                 </Badge>
               )}
-              {deployment.isPopular && (
+              {deployment.downloadCount > 100 && (
                 <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
                   <TrendingUp className="h-4 w-4 mr-1" />
                   Popular
                 </Badge>
               )}
-              {deployment.isNew && (
+              {new Date(deployment.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000 && (
                 <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
                   <Sparkles className="h-4 w-4 mr-1" />
                   New
@@ -56,12 +47,6 @@ export function AgentCard({ deployment }: AgentCardProps) {
             <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 line-clamp-1">
               {deployment.name}
             </h3>
-            <div className="flex items-center">
-              <Star className="h-5 w-5 text-yellow-400" />
-              <span className="ml-1 text-sm text-gray-600">
-                {deployment.rating.toFixed(1)}
-              </span>
-            </div>
           </div>
 
           <p className="text-sm text-gray-600 line-clamp-2 mb-4">
@@ -70,19 +55,10 @@ export function AgentCard({ deployment }: AgentCardProps) {
 
           <div className="flex flex-wrap gap-2 mb-4">
             <Badge variant="outline">{deployment.framework}</Badge>
-            <Badge variant="outline">{deployment.category}</Badge>
+            <Badge variant="outline">{deployment.modelType}</Badge>
             <Badge variant="outline">{deployment.accessLevel}</Badge>
           </div>
         </CardContent>
-
-        <CardFooter className="p-4 pt-0 flex items-center justify-between">
-          <div className="text-lg font-semibold text-gray-900">
-            {formatPrice(deployment.priceCents)}
-          </div>
-          <div className="text-sm text-gray-500">
-            {deployment.downloadCount} downloads
-          </div>
-        </CardFooter>
       </Card>
     </Link>
   );

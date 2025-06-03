@@ -138,7 +138,6 @@ export async function createAgentDeployment(data: AgentValidationType, userId: s
       description: data.description ?? '',
       modelType: data.modelType,
       framework: data.framework,
-      fileUrl: data.file_url,
       source: data.source,
       version: data.version,
       deployedBy: userId,
@@ -439,7 +438,6 @@ export async function deployAgent(data: {
       modelType: '',
       framework: '',
       source: '',
-      fileUrl: '',
     },
   });
 

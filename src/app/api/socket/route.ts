@@ -29,10 +29,7 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const validatedParams = socketQuerySchema.parse(queryParams);
 
-    const socket = await initializeSocket(session.user.id, {
-      reconnect: validatedParams.reconnect,
-      forceNew: validatedParams.forceNew
-    });
+    const socket = await initializeSocket(session.user.id);
 
     return NextResponse.json({
       socket,

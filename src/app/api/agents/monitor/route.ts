@@ -23,13 +23,25 @@ export async function GET(req: Request) {
     const agent = await prisma.deployment.findUnique({
       where: { id: agentId },
       include: {
-        users: {
+        deployer: {
           select: {
             id: true,
             email: true,
             name: true,
           },
         },
+        metrics: {
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 1
+        },
+        logs: {
+          orderBy: {
+            createdAt: 'desc'
+          },
+          take: 10
+        }
       },
     });
 
@@ -47,26 +59,46 @@ export async function GET(req: Request) {
       );
     }
 
-    // TODO: Implement actual health check
-    // This could involve:
-    // 1. Checking if the agent is responding to requests
-    // 2. Monitoring resource usage
-    // 3. Checking error rates
-    // 4. Validating API endpoints
-
+    const latestMetrics = agent.metrics[0];
     const health = {
-      status: 'unknown', // Placeholder since agent.status does not exist
-      last_checked: new Date().toISOString(),
-      is_healthy: false, // Placeholder
-      metrics: {
-        uptime: '100%', // Placeholder
-        response_time: '50ms', // Placeholder
-        error_rate: '0%', // Placeholder
-      },
+      status: agent.status,
+      lastChecked: new Date().toISOString(),
+      isHealthy: agent.status === 'active',
+      metrics: latestMetrics ? {
+        errorRate: latestMetrics.errorRate,
+        responseTime: latestMetrics.responseTime,
+        successRate: latestMetrics.successRate,
+        totalRequests: latestMetrics.totalRequests,
+        activeUsers: latestMetrics.activeUsers,
+        averageResponseTime: latestMetrics.averageResponseTime,
+        requestsPerMinute: latestMetrics.requestsPerMinute,
+        averageTokensUsed: latestMetrics.averageTokensUsed,
+        costPerRequest: latestMetrics.costPerRequest,
+        totalCost: latestMetrics.totalCost
+      } : null,
+      recentLogs: agent.logs.map(log => ({
+        level: log.level,
+        message: log.message,
+        timestamp: log.createdAt
+      }))
     };
 
     return NextResponse.json({
-      agent,
+      agent: {
+        id: agent.id,
+        name: agent.name,
+        status: agent.status,
+        description: agent.description,
+        framework: agent.framework,
+        modelType: agent.modelType,
+        environment: agent.environment,
+        rating: agent.rating,
+        totalRatings: agent.totalRatings,
+        downloadCount: agent.downloadCount,
+        startDate: agent.startDate,
+        createdAt: agent.createdAt,
+        updatedAt: agent.updatedAt
+      },
       health,
     });
   } catch (error) {

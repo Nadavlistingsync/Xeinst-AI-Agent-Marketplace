@@ -1,39 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { products } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get('id');
-
   try {
-    if (id) {
-      // Fetch single product
-      const product = await db
-        .select()
-        .from(products)
-        .where(eq(products.id, id))
-        .limit(1);
+    const session = await getServerSession(authOptions);
 
-      if (!product.length) {
-        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (id) {
+      const product = await prisma.product.findUnique({
+        where: { id },
+        include: {
+          creator: {
+            select: {
+              name: true,
+              image: true
+            }
+          }
+        }
+      });
+
+      if (!product) {
+        return NextResponse.json(
+          { success: false, error: 'Product not found' },
+          { status: 404 }
+        );
       }
 
-      return NextResponse.json({ products: [product[0]] });
-    } else {
-      // Fetch all products
-      const allProducts = await db
-        .select()
-        .from(products)
-        .orderBy(products.created_at);
-
-      return NextResponse.json({ products: allProducts });
+      return NextResponse.json({
+        success: true,
+        data: product
+      });
     }
+
+    const products = await prisma.product.findMany({
+      where: {
+        OR: [
+          { createdBy: session.user.id },
+          { accessLevel: 'public' }
+        ]
+      },
+      include: {
+        creator: {
+          select: {
+            name: true,
+            image: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: products
+    });
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('Error listing products:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

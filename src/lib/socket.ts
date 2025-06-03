@@ -1,8 +1,23 @@
 import { Server } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 
-export function initializeSocket(httpServer: HTTPServer) {
-  const io = new Server(httpServer, {
+let io: Server | null = null;
+
+export function initializeSocket(userId: string) {
+  if (!io) {
+    throw new Error('Socket server not initialized');
+  }
+
+  const socket = io.sockets.sockets.get(userId);
+  if (socket) {
+    return socket;
+  }
+
+  return io.sockets.sockets.get(userId) || null;
+}
+
+export function setupSocketServer(httpServer: HTTPServer) {
+  io = new Server(httpServer, {
     cors: {
       origin: process.env.NEXT_PUBLIC_APP_URL,
       methods: ['GET', 'POST'],

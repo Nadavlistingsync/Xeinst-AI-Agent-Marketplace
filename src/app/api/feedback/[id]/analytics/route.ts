@@ -25,9 +25,8 @@ export async function GET(
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       select: {
-        id: true,
         createdBy: true,
-        isPublic: true
+        accessLevel: true
       }
     });
 
@@ -35,7 +34,7 @@ export async function GET(
       throw new ApiError('Agent not found', 404);
     }
 
-    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+    if (agent.createdBy !== session.user.id && agent.accessLevel !== 'public') {
       throw new ApiError('Unauthorized', 403);
     }
 

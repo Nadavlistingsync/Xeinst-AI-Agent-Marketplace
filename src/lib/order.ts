@@ -1,152 +1,102 @@
 import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import { Order } from './schema';
 
-export interface CreateOrderInput {
-  user_id: string;
-  product_id: string;
+export interface Order {
+  id: string;
+  userId: string;
+  productId: string;
+  status: string;
   amount: number;
-  status?: string;
-  stripe_payment_intent_id?: string;
+  stripeTransferId?: string;
+  paidAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export async function createOrder(data: CreateOrderInput): Promise<Order> {
-  try {
-    return await prisma.order.create({
-      data: {
-        user_id: data.user_id,
-        product_id: data.product_id,
-        amount: new Prisma.Decimal(data.amount),
-        status: data.status || 'pending',
-        stripe_payment_intent_id: data.stripe_payment_intent_id,
-        created_at: new Date(),
-        updated_at: new Date(),
-      },
-    });
-  } catch (error) {
-    console.error('Error creating order:', error);
-    throw new Error('Failed to create order');
-  }
+export async function createOrder(data: {
+  userId: string;
+  productId: string;
+  amount: number;
+  stripeTransferId?: string;
+}): Promise<Order> {
+  return await prisma.purchase.create({
+    data: {
+      userId: data.userId,
+      productId: data.productId,
+      amount: data.amount,
+      stripeTransferId: data.stripeTransferId,
+      status: 'pending'
+    }
+  });
 }
 
 export async function updateOrder(
   id: string,
   data: {
-    amount?: number;
     status?: string;
-    stripe_payment_intent_id?: string;
+    stripeTransferId?: string;
+    paidAt?: Date;
   }
 ): Promise<Order> {
-  try {
-    const updateData: any = { ...data };
-    if (data.amount !== undefined) {
-      updateData.amount = new Prisma.Decimal(data.amount);
-    }
-    updateData.updated_at = new Date();
-
-    return await prisma.order.update({
-      where: { id },
-      data: updateData,
-    });
-  } catch (error) {
-    console.error('Error updating order:', error);
-    throw new Error('Failed to update order');
-  }
+  return await prisma.purchase.update({
+    where: { id },
+    data
+  });
 }
 
 export async function getOrders(options: {
-  user_id?: string;
-  product_id?: string;
+  userId?: string;
   status?: string;
-  start_date?: Date;
-  end_date?: Date;
+  startDate?: Date;
+  endDate?: Date;
 } = {}): Promise<Order[]> {
-  try {
-    const where: Prisma.OrderWhereInput = {};
-    
-    if (options.user_id) where.user_id = options.user_id;
-    if (options.product_id) where.product_id = options.product_id;
-    if (options.status) where.status = options.status;
-    if (options.start_date) where.created_at = { gte: options.start_date };
-    if (options.end_date) where.created_at = { lte: options.end_date };
+  const where: Prisma.PurchaseWhereInput = {};
 
-    return await prisma.order.findMany({
-      where,
-      orderBy: { created_at: 'desc' },
-    });
-  } catch (error) {
-    console.error('Error getting orders:', error);
-    throw new Error('Failed to get orders');
+  if (options.userId) where.userId = options.userId;
+  if (options.status) where.status = options.status;
+  if (options.startDate || options.endDate) {
+    where.createdAt = {};
+    if (options.startDate) where.createdAt.gte = options.startDate;
+    if (options.endDate) where.createdAt.lte = options.endDate;
   }
+
+  return await prisma.purchase.findMany({
+    where,
+    orderBy: { createdAt: 'desc' }
+  });
 }
 
 export async function getOrder(id: string): Promise<Order | null> {
-  try {
-    return await prisma.order.findUnique({
-      where: { id },
-    });
-  } catch (error) {
-    console.error('Error getting order:', error);
-    throw new Error('Failed to get order');
-  }
+  return await prisma.purchase.findUnique({
+    where: { id }
+  });
 }
 
 export async function deleteOrder(id: string): Promise<void> {
-  try {
-    await prisma.order.delete({
-      where: { id },
+  await prisma.purchase.delete({
+    where: { id }
+  });
+}
+
+export async function getMonthlyOrderStats(userId: string): Promise<{
+  month: string;
+  total: number;
+  count: number;
+}[]> {
+  const orders = await getOrders({ userId });
+  const monthlyStats = new Map<string, { total: number; count: number }>();
+
+  orders.forEach(order => {
+    const month = order.createdAt.toISOString().slice(0, 7);
+    const current = monthlyStats.get(month) || { total: 0, count: 0 };
+    monthlyStats.set(month, {
+      total: current.total + Number(order.amount),
+      count: current.count + 1
     });
-  } catch (error) {
-    console.error('Error deleting order:', error);
-    throw new Error('Failed to delete order');
-  }
-}
+  });
 
-export async function getOrderStats(user_id: string) {
-  try {
-    const orders = await getOrders({ user_id });
-
-    const total_orders = orders.length;
-    const total_spent = orders.reduce((sum, order) => sum + Number(order.amount), 0);
-    const status_distribution = orders.reduce((acc, order) => {
-      acc[order.status] = (acc[order.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const recent_orders = orders.slice(0, 5);
-
-    return {
-      total_orders,
-      total_spent,
-      status_distribution,
-      recent_orders,
-    };
-  } catch (error) {
-    console.error('Error getting order stats:', error);
-    throw new Error('Failed to get order stats');
-  }
-}
-
-export async function getOrderHistory(user_id: string) {
-  try {
-    const orders = await getOrders({ user_id });
-
-    const monthly_orders = orders.reduce((acc, order) => {
-      const month = order.created_at.toISOString().slice(0, 7);
-      if (!acc[month]) {
-        acc[month] = { total: 0, amount: 0 };
-      }
-      acc[month].total += 1;
-      acc[month].amount += Number(order.amount);
-      return acc;
-    }, {} as Record<string, { total: number; amount: number }>);
-
-    return {
-      monthly_orders,
-      recent_orders: orders.slice(0, 10),
-    };
-  } catch (error) {
-    console.error('Error getting order history:', error);
-    throw new Error('Failed to get order history');
-  }
+  return Array.from(monthlyStats.entries()).map(([month, stats]) => ({
+    month,
+    ...stats
+  }));
 } 

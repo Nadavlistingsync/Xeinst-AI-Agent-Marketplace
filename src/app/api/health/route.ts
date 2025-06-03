@@ -42,10 +42,11 @@ export async function GET(): Promise<NextResponse<HealthCheckApiResponse>> {
     });
   } catch (error) {
     console.error('Health check failed:', error);
-    return NextResponse.json(
-      createErrorResponse(error, 'Health check failed'),
-      { status: 500 }
-    );
+    const errorResponse = createErrorResponse(error, 'Health check failed');
+    return NextResponse.json({
+      success: false,
+      error: errorResponse.message
+    } as HealthCheckApiResponse);
   }
 }
 

@@ -1,86 +1,76 @@
 import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import { Category } from './schema';
+
+export interface Category {
+  id: string;
+  name: string;
+  description: string | null;
+  parentId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 export async function createCategory(data: {
   name: string;
-  description: string;
+  description?: string;
   parentId?: string;
 }): Promise<Category> {
-  try {
-    return await prisma.category.create({
-      data: {
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-    });
-  } catch (error) {
-    console.error('Error creating category:', error);
-    throw new Error('Failed to create category');
-  }
+  return await prisma.category.create({
+    data: {
+      name: data.name,
+      description: data.description,
+      parentId: data.parentId
+    }
+  });
 }
 
-export async function updateCategory(id: string, data: Partial<Category>): Promise<Category> {
-  try {
-    return await prisma.category.update({
-      where: { id },
-      data: {
-        ...data,
-        updatedAt: new Date(),
-      },
-    });
-  } catch (error) {
-    console.error('Error updating category:', error);
-    throw new Error('Failed to update category');
+export async function updateCategory(
+  id: string,
+  data: {
+    name?: string;
+    description?: string;
+    parentId?: string;
   }
+): Promise<Category> {
+  return await prisma.category.update({
+    where: { id },
+    data
+  });
 }
 
 export async function getCategories(options: {
-  parentId?: string;
+  parentId?: string | null;
   search?: string;
 } = {}): Promise<Category[]> {
-  try {
-    const where: Prisma.CategoryWhereInput = {};
-    
-    if (options.parentId) where.parentId = options.parentId;
-    if (options.search) {
-      where.OR = [
-        { name: { contains: options.search, mode: 'insensitive' } },
-        { description: { contains: options.search, mode: 'insensitive' } },
-      ];
-    }
+  const where: Prisma.CategoryWhereInput = {};
 
-    return await prisma.category.findMany({
-      where,
-      orderBy: { name: 'asc' },
-    });
-  } catch (error) {
-    console.error('Error getting categories:', error);
-    throw new Error('Failed to get categories');
+  if (options.parentId !== undefined) {
+    where.parentId = options.parentId;
   }
+
+  if (options.search) {
+    where.OR = [
+      { name: { contains: options.search, mode: 'insensitive' } },
+      { description: { contains: options.search, mode: 'insensitive' } }
+    ];
+  }
+
+  return await prisma.category.findMany({
+    where,
+    orderBy: { name: 'asc' }
+  });
 }
 
 export async function getCategory(id: string): Promise<Category | null> {
-  try {
-    return await prisma.category.findUnique({
-      where: { id },
-    });
-  } catch (error) {
-    console.error('Error getting category:', error);
-    throw new Error('Failed to get category');
-  }
+  return await prisma.category.findUnique({
+    where: { id }
+  });
 }
 
 export async function deleteCategory(id: string): Promise<void> {
-  try {
-    await prisma.category.delete({
-      where: { id },
-    });
-  } catch (error) {
-    console.error('Error deleting category:', error);
-    throw new Error('Failed to delete category');
-  }
+  await prisma.category.delete({
+    where: { id }
+  });
 }
 
 export async function getCategoryStats(categoryId: string) {
@@ -105,34 +95,32 @@ export async function getCategoryStats(categoryId: string) {
   }
 }
 
-export async function getCategoryHierarchy() {
-  try {
-    const categories = await getCategories();
-    const hierarchy: Record<string, { category: Category; children: Category[] }> = {};
+export interface CategoryHierarchy extends Category {
+  children: CategoryHierarchy[];
+}
 
-    // First, create entries for all categories
-    categories.forEach(category => {
-      hierarchy[category.id] = {
-        category,
-        children: [],
-      };
-    });
+export function buildCategoryHierarchy(categories: Category[]): CategoryHierarchy[] {
+  const hierarchy: Record<string, CategoryHierarchy> = {};
+  const roots: CategoryHierarchy[] = [];
 
-    // Then, build the hierarchy
-    categories.forEach(category => {
-      if (category.parentId && hierarchy[category.parentId]) {
-        hierarchy[category.parentId].children.push(category);
-      }
-    });
+  // First pass: Create all nodes
+  categories.forEach(category => {
+    hierarchy[category.id] = {
+      ...category,
+      children: []
+    };
+  });
 
-    // Return only root categories with their children
-    return Object.values(hierarchy).filter(
-      ({ category }) => !category.parentId
-    );
-  } catch (error) {
-    console.error('Error getting category hierarchy:', error);
-    throw new Error('Failed to get category hierarchy');
-  }
+  // Second pass: Build the tree
+  categories.forEach(category => {
+    if (category.parentId && hierarchy[category.parentId]) {
+      hierarchy[category.parentId].children.push(hierarchy[category.id]);
+    } else {
+      roots.push(hierarchy[category.id]);
+    }
+  });
+
+  return roots;
 }
 
 export async function getCategoryProducts(
@@ -155,9 +143,9 @@ export async function getCategoryProducts(
   });
 }
 
-export async function getCategoryPath(categoryId: string): Promise<Category[]> {
+export async function getCategoryPath(id: string): Promise<Category[]> {
   const path: Category[] = [];
-  let currentCategory = await getCategory(categoryId);
+  let currentCategory = await getCategory(id);
 
   while (currentCategory) {
     path.unshift(currentCategory);

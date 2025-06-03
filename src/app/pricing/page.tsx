@@ -6,16 +6,15 @@ import PricingCard from '@/components/PricingCard';
 const pricingPlans = [
   {
     name: 'Free',
-    price: '$0',
-    description: 'Perfect for getting started',
+    price: '0',
+    description: 'Basic features for individuals',
     features: [
-      'Basic AI agent creation',
-      'Up to 3 agents',
-      'Community support',
+      '1 active deployment',
       'Basic analytics',
+      'Community support'
     ],
     buttonText: 'Get Started',
-    buttonVariant: 'outline',
+    buttonVariant: 'default' as const,
     current: false,
   },
   {
@@ -62,7 +61,7 @@ export default async function PricingPage() {
   // Update current plan based on user's subscription
   const updatedPlans = pricingPlans.map(plan => ({
     ...plan,
-    current: plan.name.toLowerCase() === session.user.subscription_tier,
+    current: plan.name.toLowerCase() === session.user.subscriptionTier,
   }));
 
   return (
@@ -76,7 +75,16 @@ export default async function PricingPage() {
 
       <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
         {updatedPlans.map((plan) => (
-          <PricingCard key={plan.name} {...plan} />
+          <PricingCard
+            key={plan.name}
+            name={plan.name}
+            price={plan.price}
+            description={plan.description}
+            features={plan.features}
+            buttonText={plan.buttonText}
+            buttonVariant={plan.buttonVariant}
+            current={plan.current}
+          />
         ))}
       </div>
     </div>

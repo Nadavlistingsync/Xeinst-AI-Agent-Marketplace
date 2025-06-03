@@ -13,7 +13,7 @@ const feedbackSchema = z.object({
   metadata: z.record(z.any()).optional(),
 });
 
-export async function GET(): Promise<NextResponse<FeedbackApiResponse>> {
+export async function GET(): Promise<NextResponse<FeedbackApiResponse<Feedback[]>>> {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
@@ -23,64 +23,56 @@ export async function GET(): Promise<NextResponse<FeedbackApiResponse>> {
       );
     }
 
-    const feedback = await prisma.agentFeedback.findMany({
+    const deployments = await prisma.deployment.findMany({
       where: {
-        userId: session.user.id,
+        OR: [
+          { createdBy: session.user.id },
+          { accessLevel: 'public' }
+        ]
       },
       include: {
-        deployment: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            createdBy: true,
-          },
-        },
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
+        feedbacks: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                image: true
+              }
+            }
+          }
+        }
+      }
     });
 
-    const formattedFeedback: Feedback[] = feedback.map((item) => ({
-      id: item.id,
-      deploymentId: item.deploymentId,
-      userId: item.userId,
-      rating: item.rating,
-      comment: item.comment || null,
-      sentimentScore: item.sentimentScore ? Number(item.sentimentScore) : 0,
-      categories: item.categories as Record<string, number> | null,
-      metadata: item.metadata as Record<string, unknown>,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-      creatorResponse: item.creatorResponse || null,
-      responseDate: item.responseDate,
-      user: {
-        id: item.user.id,
-        name: item.user.name,
-        email: item.user.email,
-        image: item.user.image,
-      },
-      deployment: {
-        id: item.deployment.id,
-        name: item.deployment.name,
-        description: item.deployment.description,
-        createdBy: item.deployment.createdBy,
-      },
-    }));
+    const feedback = deployments.flatMap(deployment => 
+      deployment.feedbacks.map(feedback => ({
+        id: feedback.id,
+        deploymentId: feedback.deploymentId,
+        userId: feedback.userId,
+        rating: feedback.rating,
+        comment: feedback.comment,
+        sentimentScore: feedback.sentimentScore,
+        categories: feedback.categories,
+        metadata: feedback.metadata,
+        createdAt: feedback.createdAt,
+        updatedAt: feedback.updatedAt,
+        user: {
+          name: feedback.user.name,
+          image: feedback.user.image
+        },
+        deployment: {
+          id: deployment.id,
+          name: deployment.name,
+          description: deployment.description,
+          createdBy: deployment.createdBy
+        }
+      }))
+    );
 
     return NextResponse.json({
       success: true,
-      data: formattedFeedback,
-    });
+      data: feedback
+    } as FeedbackApiResponse<Feedback[]>);
   } catch (error) {
     console.error('Error fetching feedback:', error);
     return NextResponse.json(

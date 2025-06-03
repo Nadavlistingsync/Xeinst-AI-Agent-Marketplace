@@ -35,13 +35,25 @@ export async function GET(
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
-      include: {
-        user: {
-          select: {
-            id: true,
-            subscription_tier: true
-          }
-        }
+      select: {
+        id: true,
+        createdBy: true,
+        status: true,
+        name: true,
+        description: true,
+        framework: true,
+        modelType: true,
+        accessLevel: true,
+        licenseType: true,
+        environment: true,
+        source: true,
+        deployedBy: true,
+        rating: true,
+        totalRatings: true,
+        downloadCount: true,
+        startDate: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
 
@@ -53,7 +65,7 @@ export async function GET(
     }
 
     // Only the owner can see version history
-    if (agent.userId !== session.user.id) {
+    if (agent.createdBy !== session.user.id) {
       return NextResponse.json(
         { error: 'Not authorized to view version history' },
         { status: 403 }
@@ -70,7 +82,7 @@ export async function GET(
 
     const validatedParams = versionsQuerySchema.parse(queryParams);
 
-    const versions = await getAgentVersions(params.id, validatedParams);
+    const versions = await getAgentVersions(params.id);
     if (!versions || versions.length === 0) {
       return NextResponse.json(
         { error: 'No versions found' },
@@ -83,7 +95,7 @@ export async function GET(
       metadata: {
         agentId: params.id,
         totalVersions: versions.length,
-        currentVersion: versions[0].version,
+        currentVersion: versions[0].id,
         pagination: {
           limit: validatedParams.limit,
           offset: validatedParams.offset
@@ -103,9 +115,9 @@ export async function GET(
       );
     }
 
-    const errorResponse = createErrorResponse(error, 'Failed to fetch agent versions');
+    const errorResponse = createErrorResponse(error);
     return NextResponse.json(
-      { error: errorResponse.message },
+      { error: errorResponse.error },
       { status: errorResponse.status }
     );
   }

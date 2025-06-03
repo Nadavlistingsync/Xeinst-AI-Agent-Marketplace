@@ -19,8 +19,27 @@ interface MarketplaceGridProps {
   };
 }
 
+// Add a type for the deployment object used in AgentCard
+interface MarketplaceDeployment {
+  id: string;
+  name: string;
+  status: "pending" | "deploying" | "active" | "failed" | "stopped";
+  description: string;
+  accessLevel: string;
+  licenseType: string;
+  environment: string;
+  framework: string;
+  modelType: string;
+  createdAt: Date;
+  updatedAt: Date;
+  // Add more fields here if your backend returns them
+}
+
 async function AgentGrid({ searchParams }: MarketplaceGridProps) {
-  const deployments = await getDeployments(searchParams);
+  const deployments: MarketplaceDeployment[] = await getDeployments({
+    query: searchParams?.query,
+    framework: searchParams?.framework,
+  });
 
   if (deployments.length === 0) {
     return (

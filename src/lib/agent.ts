@@ -1,6 +1,5 @@
 import { prisma } from './db';
-import { Prisma } from '@prisma/client';
-import { Agent } from './schema';
+import { Prisma, Deployment } from '@prisma/client';
 
 export interface CreateAgentInput {
   name: string;
@@ -54,7 +53,7 @@ export async function updateAgent(id: string, data: UpdateAgentInput) {
   });
 }
 
-export async function getAgents(options: AgentOptions = {}) {
+export async function getAgents(options: any = {}): Promise<Deployment[]> {
   const where: Prisma.DeploymentWhereInput = {};
 
   if (options.startDate) {
@@ -85,7 +84,7 @@ export async function deleteAgent(id: string) {
   });
 }
 
-export async function getAgentDeployments(deploymentId: string) {
+export async function getAgentDeployments(deploymentId: string): Promise<Deployment[]> {
   return await prisma.deployment.findMany({
     where: { id: deploymentId },
     orderBy: { createdAt: "desc" },

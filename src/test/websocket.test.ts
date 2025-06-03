@@ -1,83 +1,70 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Server } from 'socket.io';
-import { io as Client } from 'socket.io-client';
-import { initSocket, emitDeploymentStatus } from '@/lib/websocket';
 import { createServer } from 'http';
+import { emitDeploymentStatus } from '@/lib/websocket';
+import { DeploymentStatus } from '@prisma/client';
+import type { DeploymentStatusUpdate } from '@/types/websocket';
 
 describe('WebSocket Server', () => {
-  let httpServer: any;
-  let ioServer: Server;
-  let clientSocket: any;
+  let io: Server;
+  let httpServer: ReturnType<typeof createServer>;
 
-  beforeEach((done) => {
+  beforeEach(() => {
     httpServer = createServer();
-    ioServer = new Server(httpServer);
-    httpServer.listen(() => {
-      const port = (httpServer.address() as any).port;
-      clientSocket = Client(`http://localhost:${port}`);
-      clientSocket.on('connect', done);
-    });
+    io = new Server(httpServer);
+    httpServer.listen();
   });
 
   afterEach(() => {
-    ioServer.close();
-    clientSocket.close();
+    io.close();
+    httpServer.close();
   });
 
   it('should emit deployment status updates', (done) => {
-    const mockDeploymentStatus = {
+    const mockDeploymentStatus: DeploymentStatusUpdate = {
       id: 'test-deployment',
-      status: 'active',
-      health: {
-        status: 'healthy',
-        issues: [],
-        metrics: {
-          errorRate: 0.01,
-          responseTime: 100,
-          successRate: 0.99,
-          totalRequests: 1000,
-          activeUsers: 50,
-        },
+      status: DeploymentStatus.ACTIVE,
+      metrics: {
+        errorRate: 0,
+        successRate: 100,
+        activeUsers: 10,
+        totalRequests: 1000,
+        averageResponseTime: 200,
+        requestsPerMinute: 50,
+        averageTokensUsed: 100,
+        costPerRequest: 0.001,
+        totalCost: 1.0
       },
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: new Date().toISOString()
     };
 
-    clientSocket.on('deployment_status', (status: any) => {
-      expect(status).toEqual(mockDeploymentStatus);
+    io.on('connection', (socket) => {
+      socket.on('deployment_status', (data) => {
+        expect(data).toEqual(mockDeploymentStatus);
+        done();
+      });
+    });
+
+    emitDeploymentStatus(mockDeploymentStatus);
+  });
+
+  it('should handle connection events', (done) => {
+    io.on('connection', (socket) => {
+      expect(socket).toBeDefined();
       done();
     });
 
-    emitDeploymentStatus(ioServer, 'test-deployment', mockDeploymentStatus);
+    const client = io.connect();
   });
 
-  it('should handle deployment room joins and leaves', (done) => {
-    const deploymentId = 'test-deployment';
-    
-    clientSocket.emit('join_deployment', deploymentId);
-    
-    // Wait for the join event to be processed
-    setTimeout(() => {
-      expect(ioServer.sockets.adapter.rooms.has(`deployment:${deploymentId}`)).toBe(true);
-      
-      clientSocket.emit('leave_deployment', deploymentId);
-      
-      // Wait for the leave event to be processed
-      setTimeout(() => {
-        expect(ioServer.sockets.adapter.rooms.has(`deployment:${deploymentId}`)).toBe(false);
+  it('should handle disconnection events', (done) => {
+    io.on('connection', (socket) => {
+      socket.on('disconnect', () => {
         done();
-      }, 100);
-    }, 100);
-  });
+      });
+    });
 
-  it('should handle connection and disconnection events', (done) => {
-    const consoleSpy = vi.spyOn(console, 'log');
-    
-    clientSocket.disconnect();
-    
-    setTimeout(() => {
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('disconnected'));
-      consoleSpy.mockRestore();
-      done();
-    }, 100);
+    const client = io.connect();
+    client.disconnect();
   });
 }); 

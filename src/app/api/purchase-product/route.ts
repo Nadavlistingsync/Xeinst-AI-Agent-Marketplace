@@ -22,16 +22,28 @@ export async function POST(req: NextRequest) {
     const product = await prisma.product.findUnique({
       where: { id: productId },
       include: {
-        user: true,
-      },
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            image: true
+          }
+        }
+      }
     });
 
     if (!product) {
-      return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Product not found' },
+        { status: 404 }
+      );
     }
 
-    if (!product.user) {
-      return NextResponse.json({ error: 'Product creator not found' }, { status: 404 });
+    if (product.accessLevel !== 'public' && product.createdBy !== session.user.id) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 403 }
+      );
     }
 
     // Calculate earnings
@@ -41,7 +53,7 @@ export async function POST(req: NextRequest) {
     const result = await prisma.$transaction([
       prisma.earning.create({
         data: {
-          userId: product.user.id,
+          userId: product.creator.id,
           productId: product.id,
           amount: parseFloat(earningsAmount),
           status: 'pending',
@@ -58,6 +70,15 @@ export async function POST(req: NextRequest) {
         },
       }),
     ]);
+
+    const purchase = await prisma.purchase.create({
+      data: {
+        status: 'pending',
+        userId: session.user.id,
+        productId: product.id,
+        amount: product.price
+      }
+    });
 
     return NextResponse.json({
       success: true,

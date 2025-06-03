@@ -4,185 +4,151 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Play, Pause, RefreshCw, Trash2 } from 'lucide-react';
+import { DeploymentWithMetrics } from '@/types/deployment';
+import { formatDistanceToNow } from 'date-fns';
 
 interface AgentPageProps {
-  agentId: string;
+  deployment: DeploymentWithMetrics;
+  onStart: (id: string) => Promise<void>;
+  onStop: (id: string) => Promise<void>;
+  onRestart: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
-interface Agent {
-  id: string;
-  name: string;
-  description: string;
-  framework: string;
-  version: string;
-  status: string;
-  api_endpoint?: string;
-  access_level: 'public' | 'basic' | 'premium';
-  license_type: 'full-access' | 'limited-use' | 'view-only' | 'non-commercial';
-  price_cents: number;
-  uploaded_by: string;
-  users: {
-    email: string;
-    name: string;
-  };
-}
-
-export function AgentPage({ agentId }: AgentPageProps) {
+export default function AgentPage({
+  deployment,
+  onStart,
+  onStop,
+  onRestart,
+  onDelete
+}: AgentPageProps) {
   const { data: session } = useSession();
-  const [agent, setAgent] = useState<Agent | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showSubscribeDialog, setShowSubscribeDialog] = useState(false);
-
-  const fetchAgentDetails = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/agents/${agentId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch agent details');
-      }
-      const data = await response.json();
-      setAgent(data);
-    } catch (error) {
-      console.error('Error fetching agent details:', error);
-      toast.error('Failed to load agent details. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [agentId]);
-
-  useEffect(() => {
-    fetchAgentDetails();
-  }, [fetchAgentDetails]);
-
-  const handleDownload = async () => {
-    if (!session) {
-      setShowSubscribeDialog(true);
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/agents/${agentId}/download`);
-      if (!response.ok) {
-        throw new Error('Failed to download agent');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${agent?.name || 'agent'}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast.success('Your agent is being downloaded.');
-    } catch (error) {
-      console.error('Error downloading agent:', error);
-      toast.error('Failed to download the agent. Please try again.');
-    }
-  };
-
-  if (loading) {
-    return <div>Loading agent details...</div>;
+  if (!session) {
+    return null;
   }
 
-  if (!agent) {
-    return <div>Agent not found</div>;
-  }
+  const isActive = deployment.status === 'active';
+  const isPending = deployment.status === 'pending' || deployment.status === 'deploying';
+  const metrics = deployment.metrics?.[0];
 
   const canAccess = () => {
-    if (!session) return false;
-    if (agent.access_level === 'public') return true;
-    if (agent.access_level === 'basic' && session.user.subscription_tier === 'basic') return true;
-    if (agent.access_level === 'premium' && session.user.subscription_tier === 'premium') return true;
+    if (deployment.accessLevel === 'public') return true;
+    if (deployment.createdBy === session.user.id) return true;
+    if (deployment.accessLevel === 'basic' && session.user.subscriptionTier === 'basic') return true;
+    if (deployment.accessLevel === 'premium' && session.user.subscriptionTier === 'premium') return true;
     return false;
   };
 
+  if (!canAccess()) {
+    return null;
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-3xl font-bold">{agent.name}</h1>
-          <p className="text-gray-500">by {agent.users.name}</p>
-        </div>
-        <div className="flex space-x-4">
-          <Button
-            variant="outline"
-            onClick={() => window.location.href = `/agent/${agentId}/edit`}
-          >
-            Edit
-          </Button>
-          <Button onClick={handleDownload} disabled={!canAccess()}>
-            Download
-          </Button>
-        </div>
-      </div>
-
-      <Card className="p-6">
-        <div className="space-y-4">
+    <div className="container mx-auto py-8">
+      <div className="grid gap-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Description</h2>
-            <p className="text-gray-600">{agent.description}</p>
+            <h1 className="text-3xl font-bold">{deployment.name}</h1>
+            <p className="text-muted-foreground">{deployment.description}</p>
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-medium">Framework</h3>
-              <p className="text-gray-600">{agent.framework}</p>
-            </div>
-            <div>
-              <h3 className="font-medium">Version</h3>
-              <p className="text-gray-600">{agent.version}</p>
-            </div>
-            <div>
-              <h3 className="font-medium">License</h3>
-              <p className="text-gray-600">{agent.license_type}</p>
-            </div>
-            <div>
-              <h3 className="font-medium">Access Level</h3>
-              <p className="text-gray-600">{agent.access_level}</p>
-            </div>
-          </div>
-
-          {agent.api_endpoint && (
-            <div>
-              <h3 className="font-medium">API Endpoint</h3>
-              <p className="text-gray-600">{agent.api_endpoint}</p>
-            </div>
-          )}
+          <Badge variant={isActive ? 'success' : isPending ? 'warning' : 'destructive'}>
+            {deployment.status}
+          </Badge>
         </div>
-      </Card>
 
-      <Dialog open={showSubscribeDialog} onOpenChange={setShowSubscribeDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Subscription Required</DialogTitle>
-            <DialogDescription>
-              This agent requires a {agent.access_level} subscription to access.
-              Would you like to upgrade your subscription?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end space-x-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Total Requests</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{metrics?.totalRequests || 0}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Average Response Time</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{metrics?.averageResponseTime || 0}ms</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Error Rate</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{metrics?.errorRate || 0}%</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Success Rate</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold">{metrics?.successRate || 0}%</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Configuration</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <pre className="rounded-lg bg-muted p-4">
+              {JSON.stringify(deployment.config || {}, null, 2)}
+            </pre>
+          </CardContent>
+        </Card>
+
+        {deployment.createdBy === session.user.id && (
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => setShowSubscribeDialog(false)}
+              size="sm"
+              onClick={() => onStart(deployment.id)}
+              disabled={isActive || isPending}
             >
-              Cancel
+              <Play className="mr-2 h-4 w-4" />
+              Start
             </Button>
-            <Button onClick={() => window.location.href = '/pricing'}>
-              Upgrade
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onStop(deployment.id)}
+              disabled={!isActive || isPending}
+            >
+              <Pause className="mr-2 h-4 w-4" />
+              Stop
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onRestart(deployment.id)}
+              disabled={!isActive || isPending}
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Restart
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => onDelete(deployment.id)}
+              disabled={isPending}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        )}
+      </div>
     </div>
   );
 } 

@@ -37,15 +37,6 @@ export default async function Page({ params }: AgentPageProps) {
 
   const agent = await prisma.deployment.findUnique({
     where: { id: params.id },
-    include: {
-      users: {
-        select: {
-          id: true,
-          email: true,
-          name: true,
-        },
-      },
-    },
   });
 
   if (!agent) {

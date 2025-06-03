@@ -11,22 +11,23 @@ import {
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { formatDistanceToNow } from "date-fns";
+import { DeploymentWithMetrics } from '@/types/deployment';
 
 interface DeploymentsListProps {
-  userId: string;
+  deployments: DeploymentWithMetrics[];
+  onStart: (id: string) => Promise<void>;
+  onStop: (id: string) => Promise<void>;
+  onRestart: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
 }
 
-export async function DeploymentsList({ userId }: DeploymentsListProps) {
-  const deployments = await prisma.deployment.findMany({
-    where: { deployedBy: userId },
-    include: {
-      metrics: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
+export default function DeploymentsList({
+  deployments,
+  onStart,
+  onStop,
+  onRestart,
+  onDelete
+}: DeploymentsListProps) {
   if (deployments.length === 0) {
     return (
       <Card>
@@ -46,84 +47,90 @@ export async function DeploymentsList({ userId }: DeploymentsListProps) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Your Deployments</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {deployments.map((deployment) => (
-            <div
-              key={deployment.id}
-              className="flex items-center justify-between p-4 border rounded-lg"
-            >
-              <div className="flex items-center space-x-4">
+    <div className="grid gap-4">
+      {deployments.map((deployment) => {
+        const isActive = deployment.status === 'active';
+        const isPending = deployment.status === 'pending' || deployment.status === 'deploying';
+        const metrics = deployment.metrics?.[0];
+
+        return (
+          <Card key={deployment.id}>
+            <CardHeader>
+              <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium">{deployment.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    Created {formatDistanceToNow(deployment.createdAt, { addSuffix: true })}
-                  </p>
+                  <CardTitle>{deployment.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{deployment.description}</p>
                 </div>
-                <Badge
-                  variant={
-                    deployment.status === "active"
-                      ? "success"
-                      : deployment.status === "failed"
-                      ? "destructive"
-                      : "secondary"
-                  }
-                >
+                <Badge variant={isActive ? 'success' : isPending ? 'warning' : 'destructive'}>
                   {deployment.status}
                 </Badge>
               </div>
-
-              <div className="flex items-center space-x-2">
-                <div className="text-sm text-gray-500">
-                  {deployment.metrics?.totalRequests || 0} requests
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Environment</p>
+                    <p className="mt-1">{deployment.environment}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Framework</p>
+                    <p className="mt-1">{deployment.framework}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Requests</p>
+                    <p className="mt-1">{metrics?.totalRequests || 0} requests</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Created</p>
+                    <p className="mt-1">{formatDistanceToNow(new Date(deployment.createdAt), { addSuffix: true })}</p>
+                  </div>
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link href={`/dashboard/deployments/${deployment.id}`}>
-                        View Details
-                      </Link>
-                    </DropdownMenuItem>
-                    {deployment.status === "active" ? (
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => handleStopDeployment(deployment.id)}
-                      >
-                        <Square className="h-4 w-4 mr-2" />
-                        Stop Deployment
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem
-                        onClick={() => handleStartDeployment(deployment.id)}
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        Start Deployment
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem
-                      className="text-red-600"
-                      onClick={() => handleDeleteDeployment(deployment.id)}
-                    >
-                      <Trash className="h-4 w-4 mr-2" />
-                      Delete Deployment
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onStart(deployment.id)}
+                    disabled={isActive || isPending}
+                  >
+                    <Play className="mr-2 h-4 w-4" />
+                    Start
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onStop(deployment.id)}
+                    disabled={!isActive || isPending}
+                  >
+                    <Square className="mr-2 h-4 w-4" />
+                    Stop
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onRestart(deployment.id)}
+                    disabled={!isActive || isPending}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Restart
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => onDelete(deployment.id)}
+                    disabled={isPending}
+                  >
+                    <Trash className="mr-2 h-4 w-4" />
+                    Delete
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 

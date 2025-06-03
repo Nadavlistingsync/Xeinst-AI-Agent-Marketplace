@@ -1,205 +1,107 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { z } from 'zod';
-
-const compareSchema = z.object({
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  groupBy: z.enum(['day', 'week', 'month']).optional().default('day')
-});
+import prisma from '@/lib/prisma';
+import { type FeedbackTrend } from '@/types/feedback';
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse<{ success: boolean; data?: { trends: FeedbackTrend[] }; error?: string }>> {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const validatedParams = compareSchema.parse({
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-      groupBy: searchParams.get('groupBy')
-    });
-
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        }
+      select: {
+        createdBy: true,
+        accessLevel: true
       }
     });
 
     if (!agent) {
       return NextResponse.json(
-        { error: 'Agent not found' },
+        { success: false, error: 'Agent not found' },
         { status: 404 }
       );
     }
 
-    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+    if (agent.createdBy !== session.user.id && agent.accessLevel !== 'public') {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 403 }
       );
     }
 
-    const where = {
-      agentId: params.id,
-      ...(validatedParams.startDate && {
-        createdAt: {
-          gte: new Date(validatedParams.startDate)
-        }
-      }),
-      ...(validatedParams.endDate && {
-        createdAt: {
-          lte: new Date(validatedParams.endDate)
-        }
-      })
-    };
-
     const feedback = await prisma.agentFeedback.findMany({
-      where,
-      orderBy: { createdAt: 'asc' }
+      where: {
+        deploymentId: params.id,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
     });
 
-    const metrics = {
-      sentiment: {
-        current: 0,
-        previous: 0,
-        trend: 0
-      },
-      volume: {
-        current: 0,
-        previous: 0,
-        trend: 0
-      },
-      categories: {} as Record<string, { current: number; previous: number; trend: number }>,
-      timeComparison: {} as Record<string, { count: number; sentiment: number }>
-    };
+    const trends: FeedbackTrend[] = [];
+    const dateMap = new Map<string, {
+      count: number;
+      totalRating: number;
+      totalSentiment: number;
+      categories: Record<string, number>;
+    }>();
 
-    // Calculate time-based metrics
-    feedback.forEach((item) => {
-      const date = item.createdAt.toISOString().split('T')[0];
-      if (!metrics.timeComparison[date]) {
-        metrics.timeComparison[date] = {
+    feedback.forEach((f) => {
+      const date = f.createdAt.toISOString().split('T')[0];
+      if (!dateMap.has(date)) {
+        dateMap.set(date, {
           count: 0,
-          sentiment: 0
-        };
+          totalRating: 0,
+          totalSentiment: 0,
+          categories: {},
+        });
       }
-      metrics.timeComparison[date].count++;
-      if (item.sentimentScore) {
-        metrics.timeComparison[date].sentiment += Number(item.sentimentScore);
+
+      const dayData = dateMap.get(date)!;
+      dayData.count++;
+      dayData.totalRating += f.rating;
+      if (f.sentimentScore) {
+        dayData.totalSentiment += Number(f.sentimentScore);
       }
-    });
 
-    // Calculate overall metrics
-    const totalSentiment = feedback.reduce((sum, item) => {
-      return sum + (item.sentimentScore ? Number(item.sentimentScore) : 0);
-    }, 0);
-
-    const averageSentiment = feedback.length > 0 ? totalSentiment / feedback.length : 0;
-
-    // Split feedback into current and previous periods
-    const midPoint = Math.floor(feedback.length / 2);
-    const previousFeedback = feedback.slice(0, midPoint);
-    const currentFeedback = feedback.slice(midPoint);
-
-    // Calculate current period metrics
-    const currentSentiment = currentFeedback.reduce((sum, item) => {
-      return sum + (item.sentimentScore ? Number(item.sentimentScore) : 0);
-    }, 0);
-    metrics.sentiment.current = currentFeedback.length > 0 ? currentSentiment / currentFeedback.length : 0;
-    metrics.volume.current = currentFeedback.length;
-
-    // Calculate previous period metrics
-    const previousSentiment = previousFeedback.reduce((sum, item) => {
-      return sum + (item.sentimentScore ? Number(item.sentimentScore) : 0);
-    }, 0);
-    metrics.sentiment.previous = previousFeedback.length > 0 ? previousSentiment / previousFeedback.length : 0;
-    metrics.volume.previous = previousFeedback.length;
-
-    // Calculate trends
-    metrics.sentiment.trend = metrics.sentiment.previous !== 0
-      ? ((metrics.sentiment.current - metrics.sentiment.previous) / metrics.sentiment.previous) * 100
-      : 0;
-    metrics.volume.trend = metrics.volume.previous !== 0
-      ? ((metrics.volume.current - metrics.volume.previous) / metrics.volume.previous) * 100
-      : 0;
-
-    // Calculate category trends
-    const categoryMetrics = {
-      current: {} as Record<string, number>,
-      previous: {} as Record<string, number>
-    };
-
-    currentFeedback.forEach((item) => {
-      if (item.categories) {
-        const categories = item.categories as Record<string, number>;
+      if (f.categories) {
+        const categories = f.categories as Record<string, number>;
         Object.entries(categories).forEach(([category, value]) => {
-          categoryMetrics.current[category] = (categoryMetrics.current[category] || 0) + value;
+          dayData.categories[category] = (dayData.categories[category] || 0) + value;
         });
       }
     });
 
-    previousFeedback.forEach((item) => {
-      if (item.categories) {
-        const categories = item.categories as Record<string, number>;
-        Object.entries(categories).forEach(([category, value]) => {
-          categoryMetrics.previous[category] = (categoryMetrics.previous[category] || 0) + value;
-        });
-      }
-    });
-
-    // Calculate category trends
-    Object.keys({ ...categoryMetrics.current, ...categoryMetrics.previous }).forEach((category) => {
-      const current = categoryMetrics.current[category] || 0;
-      const previous = categoryMetrics.previous[category] || 0;
-      metrics.categories[category] = {
-        current,
-        previous,
-        trend: previous !== 0 ? ((current - previous) / previous) * 100 : 0
-      };
+    dateMap.forEach((data, date) => {
+      trends.push({
+        date,
+        count: data.count,
+        averageRating: data.totalRating / data.count,
+        sentiment: data.totalSentiment / data.count,
+        categories: data.categories,
+      });
     });
 
     return NextResponse.json({
       success: true,
       data: {
-        metrics,
-        totalFeedback: feedback.length,
-        timeRange: {
-          start: validatedParams.startDate || feedback[0]?.createdAt.toISOString(),
-          end: validatedParams.endDate || feedback[feedback.length - 1]?.createdAt.toISOString()
-        }
-      }
+        trends,
+      },
     });
   } catch (error) {
     console.error('Error comparing feedback:', error);
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation error',
-          details: error.errors
-        },
-        { status: 400 }
-      );
-    }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

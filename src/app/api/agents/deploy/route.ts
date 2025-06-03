@@ -27,10 +27,20 @@ export async function POST(req: Request) {
     // Create the deployment record
     const deployment = await prisma.deployment.create({
       data: {
-        ...validatedData,
-        deployed_by: session.user.id as string,
-        description: validatedData.description ?? '',
-      },
+        name: body.name,
+        description: body.description,
+        environment: body.environment || 'production',
+        source: body.source,
+        status: 'pending',
+        accessLevel: body.accessLevel || 'public',
+        licenseType: body.licenseType || 'free',
+        framework: body.framework,
+        version: body.version || '1.0.0',
+        requirements: body.requirements || [],
+        modelType: body.modelType || 'standard',
+        deployedBy: session.user.id,
+        createdBy: session.user.id
+      }
     });
 
     // Start the deployment process

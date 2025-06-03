@@ -1,36 +1,40 @@
-import { prisma } from './db';
+import { writeFile, mkdir } from 'fs/promises';
+import { join } from 'path';
+import { v4 as uuidv4 } from 'uuid';
+import { prisma } from '@/lib/prisma';
 import { File } from '@prisma/client';
 
-export async function uploadFile(
-  file: File,
-  user_id: string
-): Promise<string> {
-  const fileRecord = await prisma.file.create({
+export async function uploadFile(file: { name: string; size: number; type: string; arrayBuffer: () => Promise<ArrayBuffer> }, userId: string) {
+  const uploadDir = join(process.cwd(), 'public', 'uploads');
+  await mkdir(uploadDir, { recursive: true });
+
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  const uniqueId = uuidv4();
+  const fileName = `${uniqueId}-${file.name}`;
+  const filePath = join(uploadDir, fileName);
+  const fileUrl = `/uploads/${fileName}`;
+
+  await writeFile(filePath, buffer);
+
+  const savedFile = await prisma.file.create({
     data: {
       name: file.name,
-      type: file.type,
+      path: filePath,
       size: file.size,
-      uploadedBy: user_id,
-      path: '', // This will be updated after actual upload
-    },
+      type: file.type,
+      url: fileUrl,
+      uploadedBy: userId
+    }
   });
 
-  // Here you would implement the actual file upload logic
-  // For example, using AWS S3, Google Cloud Storage, etc.
-  const file_url = `/api/files/${fileRecord.id}`;
-
-  // Update the file record with the URL
-  await prisma.file.update({
-    where: { id: fileRecord.id },
-    data: { path: file_url },
-  });
-
-  return file_url;
+  return savedFile;
 }
 
-export async function getFile(id: string): Promise<File | null> {
+export async function getFile(fileId: string) {
   return prisma.file.findUnique({
-    where: { id },
+    where: { id: fileId }
   });
 }
 

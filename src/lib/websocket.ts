@@ -70,16 +70,18 @@ export function initSocket(res: NextApiResponseWithSocket) {
           },
         });
 
-        for (const deployment of activeDeployments) {
-          const health = await getAgentHealth(deployment.id);
-          const status: DeploymentStatus = {
-            id: deployment.id,
-            status: 'active',
-            health,
-            lastUpdated: new Date().toISOString(),
-          };
+        if (activeDeployments) {
+          for (const deployment of activeDeployments) {
+            const health = await getAgentHealth(deployment.id);
+            const status: DeploymentStatus = {
+              id: deployment.id,
+              status: 'active',
+              health,
+              lastUpdated: new Date().toISOString(),
+            };
 
-          io.to(`deployment:${deployment.id}`).emit('deployment_status', status);
+            io.to(`deployment:${deployment.id}`).emit('deployment_status', status);
+          }
         }
       } catch (error) {
         console.error('Error in deployment health check:', error);

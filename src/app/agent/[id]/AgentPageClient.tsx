@@ -22,9 +22,9 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
     <div className="container mx-auto px-4 py-8">
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="relative h-96 w-full">
-          {product.imageUrl && (
+          {product.fileUrl && (
             <Image
-              src={product.imageUrl}
+              src={product.fileUrl}
               alt={product.name}
               fill
               className="object-cover"
@@ -37,10 +37,7 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
               <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
               <div className="flex items-center mb-4">
                 <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                <span className="ml-1">{formatDecimal(product.averageRating)}</span>
-                <span className="ml-2 text-gray-500">
-                  ({product.totalRatings} reviews)
-                </span>
+                <span className="ml-1">{formatDecimal(product.rating)}</span>
               </div>
             </div>
             <div className="text-2xl font-bold text-blue-600">${formatDecimal(product.price)}</div>
@@ -51,18 +48,7 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
             <p className="text-gray-600">{product.longDescription || product.description}</p>
           </div>
 
-          {product.features && product.features.length > 0 && (
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-2">Features</h2>
-              <ul className="list-disc list-inside text-gray-600">
-                {product.features.map((feature: string, index: number) => (
-                  <li key={index}>{feature}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {product.requirements && product.requirements.length > 0 && (
+          {Array.isArray(product.requirements) && product.requirements.length > 0 && (
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-2">Requirements</h2>
               <ul className="list-disc list-inside text-gray-600">
@@ -99,8 +85,7 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
       <div className="mt-8">
         <AgentReviews
           product_id={product.id}
-          average_rating={formatDecimal(product.averageRating)}
-          total_ratings={product.totalRatings}
+          average_rating={formatDecimal(product.rating)}
         />
       </div>
     </div>

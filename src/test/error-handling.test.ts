@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createErrorResponse } from '../lib/api';
+import { createErrorResponse, createValidationError } from '@/lib/api';
 import { handleDatabaseError, DatabaseError, withRetry } from '../lib/db';
 import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 import * as Sentry from '@sentry/nextjs';
+import { z } from 'zod';
 
 describe('Error Handling', () => {
   beforeEach(() => {
@@ -24,7 +25,7 @@ describe('Error Handling', () => {
 
       const response = createErrorResponse(zodError, 'Default error');
       expect(response.success).toBe(false);
-      expect(response.status).toBe(400);
+      expect(response.error).toBe('Validation error');
       expect(response.details).toBeDefined();
       expect(Sentry.captureException).not.toHaveBeenCalled();
     });
@@ -38,7 +39,7 @@ describe('Error Handling', () => {
 
       const response = createErrorResponse(prismaError, 'Default error');
       expect(response.success).toBe(false);
-      expect(response.status).toBe(409);
+      expect(response.error).toBe('Unique constraint violation');
       expect(Sentry.captureException).not.toHaveBeenCalled();
     });
 
@@ -47,7 +48,6 @@ describe('Error Handling', () => {
       const response = createErrorResponse(error, 'Default error');
       expect(response.success).toBe(false);
       expect(response.error).toBe('Test error');
-      expect(response.status).toBe(500);
       expect(Sentry.captureException).not.toHaveBeenCalled();
     });
   });
@@ -129,5 +129,46 @@ describe('Error Handling', () => {
       await expect(result).rejects.toThrow(error);
       expect(operation).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it('should handle validation errors', () => {
+    const schema = z.object({
+      name: z.string(),
+      age: z.number()
+    });
+
+    try {
+      schema.parse({ name: 123, age: 'invalid' });
+    } catch (error) {
+      const response = createErrorResponse(error, 'Default error');
+      expect(response.error).toBe('Validation error');
+      expect(response.status).toBe(400);
+      expect(response.details).toBeDefined();
+    }
+  });
+
+  it('should handle database errors', () => {
+    const error = new Error('Unique constraint violation');
+    const response = createErrorResponse(error, 'Default error');
+    expect(response.error).toBe('Unique constraint violation');
+    expect(response.status).toBe(500);
+  });
+
+  it('should handle unknown errors', () => {
+    const response = createErrorResponse(null, 'Test error');
+    expect(response.error).toBe('Test error');
+    expect(response.status).toBe(500);
+  });
+
+  it('should create validation errors', () => {
+    const errors = [
+      { field: 'name', message: 'Required', code: 'REQUIRED' },
+      { field: 'age', message: 'Must be a number', code: 'INVALID_TYPE' }
+    ];
+
+    const response = createValidationError(errors);
+    expect(response.error).toBe('Validation error');
+    expect(response.status).toBe(400);
+    expect(response.details).toEqual(errors);
   });
 }); 

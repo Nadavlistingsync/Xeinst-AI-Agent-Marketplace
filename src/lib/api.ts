@@ -2,6 +2,7 @@ import { type ApiError, type ApiResponse, type ApiSuccess, type ValidationError 
 import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
 import * as Sentry from '@sentry/nextjs';
+import { z } from 'zod';
 
 const MAX_RETRIES = 3;
 const INITIAL_RETRY_DELAY = 1000;
@@ -40,57 +41,25 @@ export function createErrorResponse(error: unknown, defaultMessage: string): Api
     Sentry.captureException(error);
   }
 
-  // Handle Zod validation errors
-  if (error instanceof ZodError) {
-    const validationErrors: ValidationError[] = error.errors.map(err => ({
-      field: err.path.join('.'),
-      message: err.message,
-      code: 'VALIDATION_ERROR'
-    }));
-    
+  if (error instanceof z.ZodError) {
     return {
-      success: false,
       error: 'Validation error',
-      details: validationErrors,
+      details: error.errors.map(err => ({
+        path: err.path.join('.'),
+        message: err.message
+      })),
       status: 400
     };
   }
 
-  // Handle Prisma errors
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    switch (error.code) {
-      case 'P2002':
-        return {
-          success: false,
-          error: 'Unique constraint violation',
-          status: 409
-        };
-      case 'P2025':
-        return {
-          success: false,
-          error: 'Record not found',
-          status: 404
-        };
-      default:
-        return {
-          success: false,
-          error: 'Database error',
-          status: 500
-        };
-    }
-  }
-
-  // Handle other errors
   if (error instanceof Error) {
     return {
-      success: false,
       error: error.message,
       status: 500
     };
   }
-  
+
   return {
-    success: false,
     error: defaultMessage,
     status: 500
   };
@@ -98,26 +67,35 @@ export function createErrorResponse(error: unknown, defaultMessage: string): Api
 
 export function createSuccessResponse<T>(data: T): ApiSuccess<T> {
   return {
-    success: true,
     data
   };
 }
 
 export function createValidationError(errors: ValidationError[]): ApiError {
   return {
-    success: false,
     error: 'Validation error',
     details: errors,
     status: 400
   };
 }
 
+export function createApiError(message: string, status: number = 500): ApiError {
+  return {
+    error: message,
+    status
+  };
+}
+
+export function createApiSuccess<T>(data: T): ApiSuccess<T> {
+  return { data };
+}
+
 export function isApiError(response: ApiResponse<unknown>): response is ApiError {
-  return !response.success;
+  return 'error' in response;
 }
 
 export function isApiSuccess<T>(response: ApiResponse<T>): response is ApiSuccess<T> {
-  return response.success;
+  return 'data' in response;
 }
 
 export async function fetchApi<T>(

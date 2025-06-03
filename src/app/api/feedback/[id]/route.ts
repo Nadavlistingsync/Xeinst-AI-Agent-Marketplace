@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { type Feedback, type FeedbackApiResponse } from '@/types/feedback';
 import { z } from 'zod';
+import { createErrorResponse } from '@/lib/api';
 
 const feedbackSchema = z.object({
   rating: z.number().min(1).max(5),
@@ -19,10 +20,7 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const agent = await prisma.deployment.findUnique({
@@ -63,14 +61,7 @@ export async function GET(
             image: true,
           },
         },
-        deployment: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            createdBy: true,
-          },
-        },
+        deployment: true
       },
       orderBy: {
         createdAt: 'desc',
@@ -105,18 +96,15 @@ export async function GET(
           createdBy: f.deployment.createdBy,
         },
       })),
-    });
+    } as FeedbackApiResponse);
   } catch (error) {
-    console.error('Error fetching feedback:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    const errorResponse = createErrorResponse(error, 'Failed to fetch feedback');
+    return NextResponse.json(errorResponse, { status: errorResponse.status });
   }
 }
 
 export async function POST(
-  request: Request,
+  req: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse<FeedbackApiResponse>> {
   try {
@@ -128,104 +116,34 @@ export async function POST(
       );
     }
 
-    const agent = await prisma.deployment.findUnique({
-      where: { id: params.id },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-          },
-        },
-      },
-    });
-
-    if (!agent) {
-      return NextResponse.json(
-        { success: false, error: 'Agent not found' },
-        { status: 404 }
-      );
-    }
-
-    if (agent.createdBy !== session.user.id && !agent.isPublic) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 403 }
-      );
-    }
-
-    const body = await request.json();
-    const validatedData = feedbackSchema.parse(body);
-
+    const validatedData = await feedbackSchema.parseAsync(await req.json());
+    
     const feedback = await prisma.agentFeedback.create({
       data: {
         deploymentId: params.id,
         userId: session.user.id,
         rating: validatedData.rating,
         comment: validatedData.comment,
-        categories: validatedData.categories || {},
-        metadata: validatedData.metadata || {},
+        categories: validatedData.categories,
+        metadata: validatedData.metadata
       },
       include: {
         user: {
           select: {
             name: true,
-            image: true,
-          },
-        },
-        deployment: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            createdBy: true,
-          },
-        },
-      },
+            image: true
+          }
+        }
+      }
     });
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        id: feedback.id,
-        deploymentId: feedback.deploymentId,
-        userId: feedback.userId,
-        rating: feedback.rating,
-        comment: feedback.comment,
-        sentimentScore: feedback.sentimentScore ? Number(feedback.sentimentScore) : 0,
-        categories: feedback.categories as Record<string, number> | null,
-        metadata: feedback.metadata as Record<string, unknown>,
-        creatorResponse: feedback.creatorResponse,
-        responseDate: feedback.responseDate,
-        createdAt: feedback.createdAt,
-        updatedAt: feedback.updatedAt,
-        user: {
-          id: feedback.userId,
-          name: feedback.user.name,
-          email: null,
-          image: feedback.user.image,
-        },
-        deployment: {
-          id: feedback.deployment.id,
-          name: feedback.deployment.name,
-          description: feedback.deployment.description,
-          createdBy: feedback.deployment.createdBy,
-        },
-      },
-    });
+    return NextResponse.json({ success: true, data: feedback });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid input', details: [error] },
-        { status: 400 }
-      );
-    }
-
     console.error('Error creating feedback:', error);
+    const errorResponse = handleApiError(error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
+      { success: false, error: errorResponse.message },
+      { status: errorResponse.status }
     );
   }
 }

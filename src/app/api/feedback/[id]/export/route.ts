@@ -2,18 +2,17 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { ApiError } from '@/lib/errors';
-import { Prisma } from '@prisma/client';
+import { type FeedbackExport } from '@/types/feedback';
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse<{ success: boolean; data?: { exports: FeedbackExport[] }; error?: string }>> {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    if (!session) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
@@ -21,104 +20,66 @@ export async function GET(
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       select: {
-        id: true,
-        name: true,
         createdBy: true,
-        isPublic: true
+        accessLevel: true
       }
     });
 
     if (!agent) {
       return NextResponse.json(
-        { error: 'Agent not found' },
+        { success: false, error: 'Agent not found' },
         { status: 404 }
       );
     }
 
-    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+    if (agent.createdBy !== session.user.id && agent.accessLevel !== 'public') {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized' },
         { status: 403 }
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const format = searchParams.get('format') || 'csv';
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-
-    const where: Prisma.AgentFeedbackWhereInput = {
-      agentId: params.id,
-      ...(startDate && {
-        createdAt: {
-          gte: new Date(startDate)
-        }
-      }),
-      ...(endDate && {
-        createdAt: {
-          lte: new Date(endDate)
-        }
-      })
-    };
-
-    const feedbacks = await prisma.agentFeedback.findMany({
-      where,
+    const feedback = await prisma.agentFeedback.findMany({
+      where: {
+        deploymentId: params.id,
+      },
       include: {
         user: {
           select: {
             name: true,
-            email: true
-          }
-        }
+            email: true,
+          },
+        },
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
-    if (format === 'json') {
-      return NextResponse.json(feedbacks);
-    }
+    const exports: FeedbackExport[] = feedback.map((f) => ({
+      id: f.id,
+      rating: f.rating,
+      comment: f.comment,
+      sentimentScore: f.sentimentScore ? Number(f.sentimentScore) : null,
+      categories: f.categories as Record<string, number> | null,
+      createdAt: f.createdAt,
+      response: f.creatorResponse,
+      responseDate: f.responseDate,
+      userName: f.user.name,
+      userEmail: f.user.email,
+    }));
 
-    // CSV format
-    const headers = [
-      'ID',
-      'Rating',
-      'Comment',
-      'Sentiment Score',
-      'Categories',
-      'User Name',
-      'User Email',
-      'Created At',
-      'Response',
-      'Response Date'
-    ].join(',');
-
-    const rows = feedbacks.map(feedback => {
-      const categories = feedback.categories ? JSON.stringify(feedback.categories) : '';
-      return [
-        feedback.id,
-        feedback.rating,
-        `"${feedback.comment?.replace(/"/g, '""') || ''}"`,
-        feedback.sentimentScore || '',
-        `"${categories}"`,
-        `"${feedback.user?.name || ''}"`,
-        `"${feedback.user?.email || ''}"`,
-        feedback.createdAt.toISOString(),
-        `"${feedback.creatorResponse?.replace(/"/g, '""') || ''}"`,
-        feedback.responseDate?.toISOString() || ''
-      ].join(',');
+    return NextResponse.json({
+      success: true,
+      data: {
+        exports,
+      },
     });
-
-    const csv = [headers, ...rows].join('\n');
-    const response = new NextResponse(csv);
-    response.headers.set('Content-Type', 'text/csv');
-    response.headers.set('Content-Disposition', `attachment; filename="feedback-${agent.name}-${new Date().toISOString()}.csv"`);
-    return response;
   } catch (error) {
     console.error('Error exporting feedback:', error);
-    const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to export feedback');
     return NextResponse.json(
-      { error: errorResponse.message },
-      { status: errorResponse.statusCode }
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
     );
   }
 } 

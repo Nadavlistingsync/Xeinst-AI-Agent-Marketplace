@@ -29,7 +29,7 @@ export function FilterBar() {
     <div className="flex gap-4">
       <Select
         value={searchParams.get('framework') || ''}
-        onValueChange={(value) => handleFilterChange('framework', value)}
+        onValueChange={(value: string) => handleFilterChange('framework', value)}
       >
         <option value="">All Frameworks</option>
         <option value="python">Python</option>
@@ -39,7 +39,7 @@ export function FilterBar() {
 
       <Select
         value={searchParams.get('access_level') || ''}
-        onValueChange={(value) => handleFilterChange('access_level', value)}
+        onValueChange={(value: string) => handleFilterChange('access_level', value)}
       >
         <option value="">All Access Levels</option>
         <option value="public">Public</option>

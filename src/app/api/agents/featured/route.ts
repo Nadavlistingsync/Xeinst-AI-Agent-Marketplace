@@ -1,37 +1,47 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { products } from '@/lib/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
 const ProductSchema = z.object({
   id: z.string(),
   name: z.string(),
   description: z.string(),
-  tag: z.string(),
-  price: z.number().nullable(),
+  category: z.string(),
+  price: z.number(),
   imageUrl: z.string().nullable(),
-  average_rating: z.number(),
-  total_ratings: z.number(),
-  download_count: z.number(),
+  rating: z.number(),
+  totalRatings: z.number(),
+  downloadCount: z.number(),
   isPublic: z.boolean(),
-  isFeatured: z.boolean(),
-  created_at: z.date(),
+  status: z.enum(['draft', 'published', 'archived']),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  version: z.string(),
+  environment: z.string(),
+  framework: z.string(),
+  modelType: z.string(),
+  accessLevel: z.enum(['public', 'private', 'restricted']),
+  licenseType: z.enum(['free', 'commercial', 'enterprise']),
+  earningsSplit: z.number(),
+  createdBy: z.string(),
+  fileUrl: z.string(),
+  requirements: z.array(z.string()),
+  tags: z.array(z.string()),
+  longDescription: z.string().nullable()
 });
 
 export async function GET() {
   try {
-    const featuredAgents = await db
-      .select()
-      .from(products)
-      .where(
-        and(
-          eq(products.is_public, true),
-          eq(products.is_featured, true)
-        )
-      )
-      .orderBy(desc(products.average_rating))
-      .limit(6);
+    const featuredAgents = await prisma.product.findMany({
+      where: {
+        isPublic: true,
+        status: 'published'
+      },
+      orderBy: {
+        rating: 'desc'
+      },
+      take: 6
+    });
 
     // Validate the response data
     const validatedAgents = featuredAgents.map(agent => {

@@ -17,6 +17,13 @@ const ProductInputSchema = z.object({
   isPublic: z.boolean().optional(),
   isFeatured: z.boolean().optional(),
   earnings_split: z.number().min(0).max(100).optional(),
+  fileUrl: z.string().url().optional(),
+  tags: z.array(z.string()).max(20).optional(),
+  version: z.string().min(1).max(100).optional(),
+  environment: z.string().min(1).max(100).optional(),
+  framework: z.string().min(1).max(100).optional(),
+  modelType: z.string().min(1).max(100).optional(),
+  earningsSplit: z.number().min(0).max(100).optional(),
 });
 
 export async function GET(): Promise<NextResponse> {
@@ -59,11 +66,25 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const product = await prisma.product.create({
       data: {
-        ...validatedData,
+        name: validatedData.name,
+        description: validatedData.description,
+        fileUrl: validatedData.fileUrl || '',
+        price: validatedData.price || 0,
+        category: validatedData.category,
+        tags: validatedData.tags || [],
+        version: validatedData.version || '1.0.0',
+        environment: validatedData.environment || 'production',
+        framework: validatedData.framework || 'default',
+        modelType: validatedData.modelType || 'default',
         createdBy: session.user.id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
+        earningsSplit: validatedData.earningsSplit || 0,
+        isPublic: validatedData.isPublic ?? true,
+        longDescription: validatedData.longDescription || '',
+        requirements: validatedData.requirements || [],
+        status: 'draft',
+        accessLevel: 'public',
+        licenseType: 'free'
+      }
     });
 
     return NextResponse.json(product);
@@ -103,11 +124,22 @@ export async function PUT(request: Request): Promise<NextResponse> {
     }
 
     const updatedProduct = await prisma.product.update({
-      where: { id },
+      where: { id: id },
       data: {
-        ...parsed.data,
-        updated_at: new Date(),
-      },
+        name: parsed.data.name,
+        description: parsed.data.description,
+        price: parsed.data.price,
+        category: parsed.data.category,
+        tags: parsed.data.tags,
+        version: parsed.data.version,
+        environment: parsed.data.environment,
+        framework: parsed.data.framework,
+        modelType: parsed.data.modelType,
+        earningsSplit: parsed.data.earningsSplit,
+        isPublic: parsed.data.isPublic,
+        longDescription: parsed.data.longDescription,
+        updatedAt: new Date()
+      }
     });
     return NextResponse.json(updatedProduct);
   } catch (error) {

@@ -11,7 +11,7 @@ const frameworks = [
   "Anthropic",
   "HuggingFace",
   "Custom",
-];
+] as const;
 
 const categories = [
   "All",
@@ -20,14 +20,14 @@ const categories = [
   "Text Analysis",
   "Data Processing",
   "Automation",
-];
+] as const;
 
 const accessLevels = [
   "All",
   "Public",
   "Basic",
   "Premium",
-];
+] as const;
 
 export function MarketplaceFilters() {
   const router = useRouter();
@@ -60,7 +60,7 @@ export function MarketplaceFilters() {
         <Label>Framework</Label>
         <Select
           value={searchParams.get("framework") || "All"}
-          onValueChange={(value) => handleFilterChange("framework", value)}
+          onValueChange={(value: string) => handleFilterChange("framework", value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select framework" />
@@ -79,7 +79,7 @@ export function MarketplaceFilters() {
         <Label>Category</Label>
         <Select
           value={searchParams.get("category") || "All"}
-          onValueChange={(value) => handleFilterChange("category", value)}
+          onValueChange={(value: string) => handleFilterChange("category", value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select category" />
@@ -98,7 +98,7 @@ export function MarketplaceFilters() {
         <Label>Access Level</Label>
         <Select
           value={searchParams.get("accessLevel") || "All"}
-          onValueChange={(value) => handleFilterChange("accessLevel", value)}
+          onValueChange={(value: string) => handleFilterChange("accessLevel", value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select access level" />
@@ -139,7 +139,7 @@ export function MarketplaceFilters() {
             <Checkbox
               id="verified"
               checked={searchParams.get("verified") === "true"}
-              onCheckedChange={(checked) =>
+              onCheckedChange={(checked: boolean) =>
                 handleFilterChange("verified", checked ? "true" : "false")
               }
             />
@@ -151,7 +151,7 @@ export function MarketplaceFilters() {
             <Checkbox
               id="popular"
               checked={searchParams.get("popular") === "true"}
-              onCheckedChange={(checked) =>
+              onCheckedChange={(checked: boolean) =>
                 handleFilterChange("popular", checked ? "true" : "false")
               }
             />
@@ -163,7 +163,7 @@ export function MarketplaceFilters() {
             <Checkbox
               id="new"
               checked={searchParams.get("new") === "true"}
-              onCheckedChange={(checked) =>
+              onCheckedChange={(checked: boolean) =>
                 handleFilterChange("new", checked ? "true" : "false")
               }
             />

@@ -44,14 +44,9 @@ export async function GET(
 
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        }
+      select: {
+        createdBy: true,
+        accessLevel: true
       }
     });
 
@@ -62,7 +57,7 @@ export async function GET(
       );
     }
 
-    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+    if (agent.createdBy !== session.user.id && agent.accessLevel !== 'public') {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }

@@ -11,6 +11,7 @@ const reviewSchema = z.object({
   comment: z.string().max(1000).optional(),
   title: z.string().max(100).optional(),
   images: z.array(z.string().url()).max(5).optional(),
+  deploymentId: z.string().uuid().optional(),
 });
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
@@ -111,34 +112,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const review = await prisma.review.create({
       data: {
-        ...validatedData,
+        rating: validatedData.rating,
+        comment: validatedData.comment,
+        title: validatedData.title,
+        images: validatedData.images,
         userId: session.user.id,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        }
+        productId: validatedData.productId,
+        deploymentId: validatedData.deploymentId
       }
     });
 
     // Update product average rating
-    const allReviews = await prisma.review.findMany({
+    const productReviews = await prisma.review.findMany({
       where: { productId: validatedData.productId }
     });
 
-    const averageRating = allReviews.reduce((acc, curr) => acc + curr.rating, 0) / allReviews.length;
+    const averageRating = productReviews.reduce((sum, review) => sum + review.rating, 0) / productReviews.length;
 
     await prisma.product.update({
       where: { id: validatedData.productId },
       data: {
-        average_rating: averageRating,
-        total_ratings: allReviews.length
+        rating: averageRating
       }
     });
 

@@ -27,7 +27,7 @@ export default async function CheckoutPage({
   const plan = searchParams.plan?.toLowerCase() || 'free';
   const price = planPrices[plan as keyof typeof planPrices] || 0;
 
-  if (plan === session.user.subscription_tier) {
+  if (plan === session.user.subscriptionTier) {
     redirect('/pricing');
   }
 

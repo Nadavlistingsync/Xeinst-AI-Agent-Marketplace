@@ -88,7 +88,7 @@ model Product {
   downloadCount   Int       @default(0)
   requirements    String[]
   longDescription String?
-  price           Decimal   @db.Decimal(10, 2)
+  price           Float
   category        String
   tags            String[]
   version         String
@@ -99,7 +99,7 @@ model Product {
   framework       String
   modelType       String
   createdBy       String
-  earningsSplit   Decimal   @db.Decimal(5, 2)
+  earningsSplit   Float
   isPublic        Boolean   @default(true)
   uploadedBy      String?
   createdAt       DateTime  @default(now())
@@ -132,6 +132,9 @@ model Deployment {
   startDate       DateTime  @default(now())
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  isPublic        Boolean   @default(true)
+  version         String    @default("1.0.0")
+  health          Json?     @default("{}")
 
   // Relations
   creator         User      @relation("DeploymentCreator", fields: [createdBy], references: [id])
@@ -148,7 +151,7 @@ model AgentFeedback {
   deploymentId    String
   userId          String
   comment         String?
-  sentimentScore  Decimal?  @db.Decimal(5, 2)
+  sentimentScore  Float?
   categories      Json?
   creatorResponse String?
   responseDate    DateTime?
@@ -166,6 +169,7 @@ model Review {
   rating          Int
   deploymentId    String
   userId          String
+  productId       String?
   comment         String
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -173,7 +177,6 @@ model Review {
   // Relations
   deployment      Deployment @relation(fields: [deploymentId], references: [id])
   user            User      @relation(fields: [userId], references: [id])
-  productId       String?
   product         Product?  @relation("ProductReviews", fields: [productId], references: [id])
 }
 
@@ -182,7 +185,7 @@ model Purchase {
   status          String
   userId          String
   productId       String
-  amount          Decimal   @db.Decimal(10, 2)
+  amount          Float
   stripeTransferId String?
   paidAt          DateTime?
   createdAt       DateTime  @default(now())
@@ -236,8 +239,10 @@ model AgentMetrics {
   averageTokensUsed Float
   costPerRequest  Float
   totalCost       Float
+  timestamp       DateTime  @default(now())
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  lastUpdated     DateTime  @default(now())
 
   // Relations
   deployment      Deployment @relation(fields: [deploymentId], references: [id])
@@ -260,16 +265,16 @@ model AgentLog {
 model File {
   id              String    @id @default(cuid())
   name            String
-  url             String
+  path            String
   size            Int
   type            String
-  path            String
-  uploadedBy      String
+  url             String
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  productId       String?
+  uploadedBy      String
 
   // Relations
-  user            User      @relation(fields: [uploadedBy], references: [id])
   product         Product?  @relation(fields: [productId], references: [id])
-  productId       String?
+  user            User      @relation(fields: [uploadedBy], references: [id])
 }

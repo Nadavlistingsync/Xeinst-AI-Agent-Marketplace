@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { Deployment } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,10 +20,7 @@ export async function POST(req: NextRequest) {
     const description = formData.get('description') as string;
     const modelType = formData.get('modelType') as string;
     const framework = formData.get('framework') as string;
-    const requirements = formData.get('requirements') as string;
-    const apiEndpoint = formData.get('apiEndpoint') as string;
     const environment = formData.get('environment') as string;
-    const version = formData.get('version') as string;
     const source = formData.get('source') as string;
 
     if (!file || !name || !description || !modelType || !framework) {
@@ -41,23 +38,20 @@ export async function POST(req: NextRequest) {
     await writeFile(filePath, buffer);
 
     // Create deployment record
-    const [deployment] = await db
-      .insert(Deployment)
-      .values({
-        name,
-        description,
-        model_type: modelType,
-        framework,
-        requirements: requirements || null,
-        api_endpoint: apiEndpoint || null,
+    const deployment = await prisma.deployment.create({
+      data: {
+        name: name,
+        description: description,
+        accessLevel: 'public',
+        licenseType: 'open-source',
         environment: environment || 'production',
-        version,
-        file_url: `/uploads/${fileName}`,
-        status: 'pending',
-        deployed_by: session.user.id,
-        source,
-      })
-      .returning();
+        framework: framework,
+        modelType: modelType,
+        source: source,
+        deployedBy: session.user.id,
+        createdBy: session.user.id
+      }
+    });
 
     return NextResponse.json({ deployment });
   } catch (error) {

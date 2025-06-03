@@ -8,6 +8,9 @@ import { motion } from "framer-motion";
 import { uploadToS3 } from "@/lib/s3-helpers";
 import { createDeployment } from "@/lib/db-helpers";
 import { uploadFile } from '@/lib/file-helpers';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export default function DeployPage() {
   const router = useRouter();
@@ -26,10 +29,12 @@ export default function DeployPage() {
     environment: "production",
     version: "1.0.0",
     price: "0.00",
+    accessLevel: "",
+    licenseType: "",
+    source: "",
   });
 
   const [file, setFile] = useState<File | null>(null);
-  const [folderFiles] = useState<FileList | null>(null);
   const [uploadType, setUploadType] = useState<'file' | 'github'>("file");
   const [githubUrl, setGithubUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,7 +63,7 @@ export default function DeployPage() {
       toast.error("Framework is required");
       return false;
     }
-    if (uploadType === "file" && !file && !folderFiles) {
+    if (uploadType === "file" && !file) {
       toast.error("Please select a file or folder to upload");
       return false;
     }
@@ -89,32 +94,34 @@ export default function DeployPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsDeploying(true);
+    setIsUploading(true);
 
     try {
-      // Upload file
-      const file_url = await uploadFile(uploadFile, session?.user?.id!);
+      let file_url = '';
+      if (uploadType === 'file') {
+        if (!file) throw new Error('No file selected');
+        file_url = await uploadFile(file, session?.user?.id!);
+      } else if (uploadType === 'github') {
+        if (!githubUrl) throw new Error('No GitHub URL provided');
+        const zipFile = await fetchGithubRepoAsZip(githubUrl);
+        file_url = await uploadFile(zipFile, session?.user?.id!);
+      }
 
       // Create deployment
-      const response = await fetch('/api/deployments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const deployment = await prisma.deployment.create({
+        data: {
           name: formData.name,
           description: formData.description,
+          accessLevel: formData.accessLevel,
+          licenseType: formData.licenseType,
+          environment: formData.environment,
           framework: formData.framework,
-          file_url,
           modelType: formData.modelType,
-          requirements: formData.requirements,
-          version: formData.version,
-        }),
+          source: formData.source,
+          deployedBy: session.user.id,
+          createdBy: session.user.id
+        }
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to create deployment');
-      }
 
       toast.success('Deployment created successfully!');
       router.push('/dashboard');
@@ -122,7 +129,7 @@ export default function DeployPage() {
       console.error('Error creating deployment:', error);
       toast.error('Failed to create deployment');
     } finally {
-      setIsDeploying(false);
+      setIsUploading(false);
     }
   };
 

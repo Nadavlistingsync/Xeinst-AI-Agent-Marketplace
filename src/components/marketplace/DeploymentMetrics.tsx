@@ -1,22 +1,69 @@
+'use client';
+
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Activity, Clock, Zap, Users } from "lucide-react";
+import { AgentMetrics } from "@prisma/client";
 
 interface DeploymentMetricsProps {
   deploymentId: string;
 }
 
-const mockData = [
-  { time: "00:00", requests: 120, latency: 150, errors: 2 },
-  { time: "04:00", requests: 80, latency: 180, errors: 1 },
-  { time: "08:00", requests: 200, latency: 120, errors: 0 },
-  { time: "12:00", requests: 350, latency: 100, errors: 3 },
-  { time: "16:00", requests: 280, latency: 130, errors: 1 },
-  { time: "20:00", requests: 150, latency: 160, errors: 2 },
-];
+interface MetricsData {
+  time: string;
+  requests: number;
+  latency: number;
+  errors: number;
+}
 
 export function DeploymentMetrics({ deploymentId }: DeploymentMetricsProps) {
+  const [metrics, setMetrics] = useState<AgentMetrics[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const response = await fetch(`/api/agents/${deploymentId}/metrics`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch metrics');
+        }
+        const data = await response.json();
+        setMetrics(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch metrics');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, [deploymentId]);
+
+  const chartData: MetricsData[] = metrics.map(metric => ({
+    time: new Date(metric.createdAt).toLocaleTimeString(),
+    requests: metric.totalRequests,
+    latency: metric.responseTime,
+    errors: Math.round(metric.errorRate * metric.totalRequests / 100),
+  }));
+
+  const latestMetrics = metrics[metrics.length - 1] || {
+    totalRequests: 0,
+    responseTime: 0,
+    errorRate: 0,
+    activeUsers: 0,
+  };
+
+  if (isLoading) {
+    return <div>Loading metrics...</div>;
+  }
+
+  if (error) {
+    return <div>Error: {error}</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -26,8 +73,8 @@ export function DeploymentMetrics({ deploymentId }: DeploymentMetricsProps) {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,180</div>
-            <p className="text-xs text-muted-foreground">+12% from last hour</p>
+            <div className="text-2xl font-bold">{latestMetrics.totalRequests}</div>
+            <p className="text-xs text-muted-foreground">Total requests processed</p>
           </CardContent>
         </Card>
 
@@ -37,8 +84,8 @@ export function DeploymentMetrics({ deploymentId }: DeploymentMetricsProps) {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">140ms</div>
-            <p className="text-xs text-muted-foreground">-8% from last hour</p>
+            <div className="text-2xl font-bold">{latestMetrics.responseTime.toFixed(0)}ms</div>
+            <p className="text-xs text-muted-foreground">Average response time</p>
           </CardContent>
         </Card>
 
@@ -48,8 +95,8 @@ export function DeploymentMetrics({ deploymentId }: DeploymentMetricsProps) {
             <Zap className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">0.76%</div>
-            <p className="text-xs text-muted-foreground">+0.2% from last hour</p>
+            <div className="text-2xl font-bold">{latestMetrics.errorRate.toFixed(2)}%</div>
+            <p className="text-xs text-muted-foreground">Request error rate</p>
           </CardContent>
         </Card>
 
@@ -59,8 +106,8 @@ export function DeploymentMetrics({ deploymentId }: DeploymentMetricsProps) {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">245</div>
-            <p className="text-xs text-muted-foreground">+18% from last hour</p>
+            <div className="text-2xl font-bold">{latestMetrics.activeUsers}</div>
+            <p className="text-xs text-muted-foreground">Current active users</p>
           </CardContent>
         </Card>
       </div>
@@ -80,7 +127,7 @@ export function DeploymentMetrics({ deploymentId }: DeploymentMetricsProps) {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockData}>
+                  <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="time" />
                     <YAxis />
@@ -106,7 +153,7 @@ export function DeploymentMetrics({ deploymentId }: DeploymentMetricsProps) {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockData}>
+                  <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="time" />
                     <YAxis />
@@ -132,7 +179,7 @@ export function DeploymentMetrics({ deploymentId }: DeploymentMetricsProps) {
             <CardContent>
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mockData}>
+                  <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="time" />
                     <YAxis />
