@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { analyzeFeedback } from '@/lib/feedback-monitoring';
+import { analyzeAgentFeedback } from '@/lib/feedback-monitoring';
 import prisma from '@/lib/prisma';
 import { createErrorResponse } from '@/lib/api';
 import { z } from 'zod';
@@ -78,11 +78,14 @@ export async function GET(
 
     const validatedParams = analysisQuerySchema.parse(queryParams);
 
-    const analysis = await analyzeFeedback(params.id, {
-      startDate: validatedParams.startDate ? new Date(validatedParams.startDate) : undefined,
-      endDate: validatedParams.endDate ? new Date(validatedParams.endDate) : undefined,
-      includeDetails: validatedParams.includeDetails
-    });
+    const timeRange = validatedParams.startDate && validatedParams.endDate
+      ? {
+          start_date: new Date(validatedParams.startDate),
+          end_date: new Date(validatedParams.endDate)
+        }
+      : undefined;
+
+    const analysis = await analyzeAgentFeedback(params.id, timeRange);
 
     return NextResponse.json({
       ...analysis,
