@@ -161,7 +161,7 @@ export async function updateFeedbackAnalysis(
 
 export async function analyzeFeedbackTrends(
   agentId: string,
-  timeRange?: { start: Date; end: Date }
+  timeRange?: { start: Date; end: Date; category?: 'all' | 'error' | 'warning' | 'success' }
 ): Promise<{
   sentimentTrend: { date: string; score: number }[];
   categoryTrend: { date: string; categories: { [key: string]: number } }[];
@@ -173,7 +173,10 @@ export async function analyzeFeedbackTrends(
         created_at: {
           gte: timeRange.start,
           lte: timeRange.end
-        }
+        },
+        ...(timeRange.category && timeRange.category !== 'all' ? {
+          category: timeRange.category
+        } : {})
       } : {})
     },
     orderBy: {
