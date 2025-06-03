@@ -385,7 +385,7 @@ export async function getFeedbackInsights(
   const recommendations: string[] = [];
 
   // Analyze strengths
-  if (analysis.sentimentDistribution.positive > analysis.sentimentDistribution.negative) {
+  if (analysis && analysis.sentimentDistribution.positive > analysis.sentimentDistribution.negative) {
     strengths.push('High positive sentiment in feedback');
   }
   if (metrics.averageRating >= 4) {
@@ -396,7 +396,7 @@ export async function getFeedbackInsights(
   }
 
   // Analyze weaknesses
-  if (analysis.sentimentDistribution.negative > analysis.sentimentDistribution.positive) {
+  if (analysis && analysis.sentimentDistribution.negative > analysis.sentimentDistribution.positive) {
     weaknesses.push('Negative sentiment in feedback');
   }
   if (metrics.averageRating < 3) {
@@ -407,13 +407,13 @@ export async function getFeedbackInsights(
   }
 
   // Generate recommendations
-  if (analysis.trends.rating < 0) {
+  if (analysis && analysis.trends.rating < 0) {
     recommendations.push('Investigate recent rating decline');
   }
-  if (analysis.trends.sentiment < 0) {
+  if (analysis && analysis.trends.sentiment < 0) {
     recommendations.push('Address negative sentiment trends');
   }
-  if (analysis.trends.volume > 0) {
+  if (analysis && analysis.trends.volume > 0) {
     recommendations.push('Increase feedback volume');
   }
 
@@ -441,12 +441,8 @@ export async function updateAgentBasedOnFeedback(
   // Update rating if provided
   if (feedback.rating) {
     const currentRating = agent.rating || 0;
-    const currentRatingCount = agent.ratingCount || 0;
-    const newRatingCount = currentRatingCount + 1;
-    const newRating = ((currentRating * currentRatingCount) + feedback.rating) / newRatingCount;
-
+    const newRating = (currentRating + feedback.rating) / 2;
     updates.rating = newRating;
-    updates.ratingCount = newRatingCount;
   }
 
   // Update status based on feedback
@@ -462,7 +458,7 @@ export async function updateAgentBasedOnFeedback(
 
   // Create notification for agent creator
   await notifyAgentCreator(agentId, {
-    type: 'feedback_received',
+    type: 'feedback_alert',
     message: `New feedback received for agent ${agent.name}`,
     sentimentScore: feedback.sentimentScore,
     categories: feedback.categories as string[],
@@ -545,21 +541,17 @@ export async function processFeedback(feedback: {
 
     // Update agent metrics
     const currentRating = agent.rating || 0;
-    const currentTotalRatings = agent.totalRatings || 0;
-    const newTotalRatings = currentTotalRatings + 1;
-    const newRating = ((currentRating * currentTotalRatings) + feedback.rating) / newTotalRatings;
-
+    const newRating = (currentRating + feedback.rating) / 2;
     await prisma.deployment.update({
       where: { id: feedback.agentId },
       data: {
-        rating: newRating,
-        totalRatings: newTotalRatings
+        rating: newRating
       }
     });
 
     // Create notification for agent creator
     await createNotification({
-      type: 'feedback_received' as NotificationType,
+      type: 'feedback_alert',
       title: 'New Feedback Received',
       message: `New feedback received for ${agent.name}`,
       metadata: {
