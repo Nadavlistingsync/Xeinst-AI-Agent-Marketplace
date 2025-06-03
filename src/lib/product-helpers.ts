@@ -26,7 +26,7 @@ export async function getProduct(id: string): Promise<Product | null> {
         orderBy: { createdAt: 'desc' },
       },
     },
-  });
+  }).then(product => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
 }
 
 export async function getProducts(options: {
@@ -89,7 +89,7 @@ export async function getProducts(options: {
       orderBy: { createdAt: 'desc' },
       take: limit,
       skip: offset,
-    }),
+    }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) }))),
     prisma.product.count({ where }),
   ]);
 
@@ -109,7 +109,7 @@ export async function getRelatedProducts(productId: string, category: string): P
       },
     },
     take: 4,
-  });
+  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 }
 
 export async function getProductReviews(productId: string): Promise<any[]> {
