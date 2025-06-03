@@ -11,8 +11,8 @@ export async function createCategory(data: {
     return await prisma.category.create({
       data: {
         ...data,
-        created_at: new Date(),
-        updated_at: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
     });
   } catch (error) {
@@ -27,7 +27,7 @@ export async function updateCategory(id: string, data: Partial<Category>): Promi
       where: { id },
       data: {
         ...data,
-        updated_at: new Date(),
+        updatedAt: new Date(),
       },
     });
   } catch (error) {
@@ -90,7 +90,7 @@ export async function getCategoryStats(categoryId: string) {
     });
 
     const totalProducts = products.length;
-    const totalValue = products.reduce((sum, product) => sum + product.price, 0);
+    const totalValue = products.reduce((sum, product) => sum + Number(product.price), 0);
     const averagePrice = totalProducts > 0 ? totalValue / totalProducts : 0;
 
     return {
@@ -150,7 +150,7 @@ export async function getCategoryProducts(
 
   return await prisma.product.findMany({
     where,
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }
