@@ -33,7 +33,7 @@ export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 401 },
         { status: 401 }
       );
     }
@@ -45,7 +45,6 @@ export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
         }
       },
       include: {
-        categories: true,
         user: {
           select: {
             name: true,
@@ -56,7 +55,7 @@ export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
     });
 
     const insights: FeedbackInsights = {
-      averageRating: feedback.reduce((acc: number, curr: AgentFeedback) => acc + curr.rating, 0) / feedback.length || 0,
+      averageRating: feedback.length > 0 ? feedback.reduce((acc: number, curr: AgentFeedback) => acc + curr.rating, 0) / feedback.length : 0,
       sentimentBreakdown: {
         positive: feedback.filter((f: AgentFeedback) => f.rating >= 4).length,
         neutral: feedback.filter((f: AgentFeedback) => f.rating === 3).length,
@@ -68,11 +67,11 @@ export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
       })),
       sentimentTrend: feedback.map((f: AgentFeedback) => ({
         date: f.createdAt.toISOString(),
-        sentiment: f.sentimentScore || 0
+        sentiment: f.sentimentScore ?? 0
       })),
       categoryBreakdown: Object.entries(
         feedback.reduce((acc: Record<string, { count: number; totalRating: number }>, curr: AgentFeedback) => {
-          const categories = curr.categories as Record<string, number>;
+          const categories = (curr.categories ?? {}) as Record<string, number>;
           Object.entries(categories).forEach(([name, value]) => {
             if (!acc[name]) {
               acc[name] = { count: 0, totalRating: 0 };
@@ -92,12 +91,11 @@ export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
     return NextResponse.json({
       success: true,
       data: insights
-    } as FeedbackInsightsResponse);
+    });
   } catch (error) {
-    console.error('Error fetching feedback insights:', error);
     const errorResponse = handleApiError(error);
     return NextResponse.json(
-      { success: false, error: errorResponse.message },
+      { success: false, error: errorResponse.message, message: 'Failed to fetch feedback insights', status: errorResponse.status },
       { status: errorResponse.status }
     );
   }

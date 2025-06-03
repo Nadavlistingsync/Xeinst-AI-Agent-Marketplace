@@ -1,33 +1,31 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Play, Square, Trash } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Play, Square, Trash, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { formatDistanceToNow } from "date-fns";
 import { DeploymentWithMetrics } from '@/types/deployment';
 
 interface DeploymentsListProps {
-  deployments: DeploymentWithMetrics[];
-  onStart: (id: string) => Promise<void>;
-  onStop: (id: string) => Promise<void>;
-  onRestart: (id: string) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  userId: string;
 }
 
-export default function DeploymentsList({
-  deployments,
-  onStart,
-  onStop,
-  onRestart,
-  onDelete
-}: DeploymentsListProps) {
+export const DeploymentsList = async ({ userId }: DeploymentsListProps) => {
+  const deployments = await prisma.deployment.findMany({
+    where: {
+      createdBy: userId
+    },
+    include: {
+      metrics: {
+        orderBy: {
+          timestamp: 'desc'
+        },
+        take: 1
+      }
+    }
+  });
+
   if (deployments.length === 0) {
     return (
       <Card>
@@ -91,7 +89,7 @@ export default function DeploymentsList({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onStart(deployment.id)}
+                    onClick={() => handleStartDeployment(deployment.id)}
                     disabled={isActive || isPending}
                   >
                     <Play className="mr-2 h-4 w-4" />
@@ -100,7 +98,7 @@ export default function DeploymentsList({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onStop(deployment.id)}
+                    onClick={() => handleStopDeployment(deployment.id)}
                     disabled={!isActive || isPending}
                   >
                     <Square className="mr-2 h-4 w-4" />
@@ -109,7 +107,7 @@ export default function DeploymentsList({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onRestart(deployment.id)}
+                    onClick={() => handleRestartDeployment(deployment.id)}
                     disabled={!isActive || isPending}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
@@ -118,7 +116,7 @@ export default function DeploymentsList({
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => onDelete(deployment.id)}
+                    onClick={() => handleDeleteDeployment(deployment.id)}
                     disabled={isPending}
                   >
                     <Trash className="mr-2 h-4 w-4" />
@@ -149,6 +147,23 @@ async function handleStopDeployment(id: string) {
   await prisma.deployment.update({
     where: { id },
     data: { status: "stopped" },
+  });
+}
+
+async function handleRestartDeployment(id: string) {
+  "use server";
+  
+  await prisma.deployment.update({
+    where: { id },
+    data: { status: "pending" },
+  });
+  
+  // Wait a moment before setting to active
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  
+  await prisma.deployment.update({
+    where: { id },
+    data: { status: "active" },
   });
 }
 

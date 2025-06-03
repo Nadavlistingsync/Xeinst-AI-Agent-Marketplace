@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { type Feedback, type FeedbackApiResponse } from '@/types/feedback';
+import { type Feedback, type FeedbackResponse } from '@/types/feedback';
 import { z } from 'zod';
 import { createErrorResponse } from '@/lib/api';
 
@@ -16,11 +16,11 @@ const feedbackSchema = z.object({
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse<FeedbackApiResponse>> {
+): Promise<NextResponse<FeedbackResponse>> {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ success: false, error: 'Unauthorized', message: 'Unauthorized', status: 401 }, { status: 401 });
     }
 
     const agent = await prisma.deployment.findUnique({
@@ -38,14 +38,14 @@ export async function GET(
 
     if (!agent) {
       return NextResponse.json(
-        { success: false, error: 'Agent not found' },
+        { success: false, error: 'Agent not found', message: 'Agent not found', status: 404 },
         { status: 404 }
       );
     }
 
     if (agent.createdBy !== session.user.id && !agent.isPublic) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 403 },
         { status: 403 }
       );
     }
@@ -68,6 +68,7 @@ export async function GET(
       },
     });
 
+    // Return array of Feedback, so wrap in ApiSuccess with array
     return NextResponse.json({
       success: true,
       data: feedback.map(f => ({
@@ -76,18 +77,18 @@ export async function GET(
         userId: f.userId,
         rating: f.rating,
         comment: f.comment,
-        sentimentScore: f.sentimentScore ? Number(f.sentimentScore) : 0,
+        sentimentScore: f.sentimentScore ?? 0,
         categories: f.categories as Record<string, number> | null,
-        metadata: f.metadata as Record<string, unknown>,
+        metadata: f.metadata as Record<string, unknown> | null,
         creatorResponse: f.creatorResponse,
         responseDate: f.responseDate,
         createdAt: f.createdAt,
         updatedAt: f.updatedAt,
         user: {
           id: f.userId,
-          name: f.user.name,
+          name: f.user?.name ?? null,
           email: null,
-          image: f.user.image,
+          image: f.user?.image ?? null,
         },
         deployment: {
           id: f.deployment.id,
@@ -96,22 +97,27 @@ export async function GET(
           createdBy: f.deployment.createdBy,
         },
       })),
-    } as FeedbackApiResponse);
+    });
   } catch (error) {
-    const errorResponse = createErrorResponse(error, 'Failed to fetch feedback');
-    return NextResponse.json(errorResponse, { status: errorResponse.status });
+    // createErrorResponse returns ApiError, so add status
+    return NextResponse.json({
+      success: false,
+      error: (error instanceof Error ? error.message : 'Unknown error'),
+      message: 'Failed to fetch feedback',
+      status: 500
+    }, { status: 500 });
   }
 }
 
 export async function POST(
   req: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse<FeedbackApiResponse>> {
+): Promise<NextResponse<FeedbackResponse>> {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 401 },
         { status: 401 }
       );
     }
@@ -123,9 +129,9 @@ export async function POST(
         deploymentId: params.id,
         userId: session.user.id,
         rating: validatedData.rating,
-        comment: validatedData.comment,
-        categories: validatedData.categories,
-        metadata: validatedData.metadata
+        comment: validatedData.comment ?? null,
+        categories: validatedData.categories ?? null,
+        metadata: validatedData.metadata ?? null
       },
       include: {
         user: {
@@ -139,24 +145,24 @@ export async function POST(
 
     return NextResponse.json({ success: true, data: feedback });
   } catch (error) {
-    console.error('Error creating feedback:', error);
-    const errorResponse = handleApiError(error);
-    return NextResponse.json(
-      { success: false, error: errorResponse.message },
-      { status: errorResponse.status }
-    );
+    return NextResponse.json({
+      success: false,
+      error: (error instanceof Error ? error.message : 'Unknown error'),
+      message: 'Failed to create feedback',
+      status: 500
+    }, { status: 500 });
   }
 }
 
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
-): Promise<NextResponse<FeedbackApiResponse>> {
+): Promise<NextResponse<FeedbackResponse>> {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 401 },
         { status: 401 }
       );
     }
@@ -170,14 +176,14 @@ export async function DELETE(
 
     if (!feedback) {
       return NextResponse.json(
-        { success: false, error: 'Feedback not found' },
+        { success: false, error: 'Feedback not found', message: 'Feedback not found', status: 404 },
         { status: 404 }
       );
     }
 
     if (feedback.userId !== session.user.id) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 403 },
         { status: 403 }
       );
     }
@@ -191,10 +197,11 @@ export async function DELETE(
       data: null as any,
     });
   } catch (error) {
-    console.error('Error deleting feedback:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: false,
+      error: (error instanceof Error ? error.message : 'Unknown error'),
+      message: 'Internal server error',
+      status: 500
+    }, { status: 500 });
   }
 } 

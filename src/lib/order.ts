@@ -1,46 +1,63 @@
-import { prisma } from './db';
-import { Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
-export interface Order {
-  id: string;
-  userId: string;
-  productId: string;
-  status: string;
-  amount: number;
-  stripeTransferId?: string;
-  paidAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
+const prisma = new PrismaClient();
 
-export async function createOrder(data: {
+export type CreateOrderInput = {
   userId: string;
   productId: string;
   amount: number;
-  stripeTransferId?: string;
-}): Promise<Order> {
-  return await prisma.purchase.create({
+  currency: string;
+  status: 'pending' | 'completed' | 'failed';
+  stripeTransferId?: string | null;
+};
+
+export type UpdateOrderInput = {
+  status?: 'pending' | 'completed' | 'failed';
+  stripeTransferId?: string | null;
+  paidAt?: Date | null;
+};
+
+export async function createOrder(data: CreateOrderInput) {
+  return prisma.order.create({
     data: {
       userId: data.userId,
       productId: data.productId,
       amount: data.amount,
-      stripeTransferId: data.stripeTransferId,
-      status: 'pending'
+      currency: data.currency,
+      status: data.status,
+      stripeTransferId: data.stripeTransferId || null
     }
   });
 }
 
-export async function updateOrder(
-  id: string,
-  data: {
-    status?: string;
-    stripeTransferId?: string;
-    paidAt?: Date;
-  }
-): Promise<Order> {
-  return await prisma.purchase.update({
+export async function updateOrder(id: string, data: UpdateOrderInput) {
+  return prisma.order.update({
     where: { id },
-    data
+    data: {
+      status: data.status,
+      stripeTransferId: data.stripeTransferId || null,
+      paidAt: data.paidAt || null
+    }
+  });
+}
+
+export async function getOrder(id: string) {
+  return prisma.order.findUnique({
+    where: { id },
+    include: {
+      user: true,
+      product: true
+    }
+  });
+}
+
+export async function getUserOrders(userId: string) {
+  return prisma.order.findMany({
+    where: { userId },
+    include: {
+      product: true
+    },
+    orderBy: { createdAt: 'desc' }
   });
 }
 
@@ -63,12 +80,6 @@ export async function getOrders(options: {
   return await prisma.purchase.findMany({
     where,
     orderBy: { createdAt: 'desc' }
-  });
-}
-
-export async function getOrder(id: string): Promise<Order | null> {
-  return await prisma.purchase.findUnique({
-    where: { id }
   });
 }
 

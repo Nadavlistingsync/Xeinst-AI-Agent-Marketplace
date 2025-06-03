@@ -82,7 +82,7 @@ export default async function PricingPage() {
             description={plan.description}
             features={plan.features}
             buttonText={plan.buttonText}
-            buttonVariant={plan.buttonVariant}
+            buttonVariant={plan.buttonVariant as 'default' | 'outline'}
             current={plan.current}
           />
         ))}

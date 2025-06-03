@@ -5,6 +5,8 @@ import { Prisma } from '@prisma/client';
 import type { AgentFeedback } from '@/lib/schema';
 import { PrismaClient, Deployment, DeploymentStatus } from '@prisma/client';
 import { z } from 'zod';
+import { createNotification } from './notification';
+import { NotificationType, NotificationSeverity } from './types';
 
 const metricsSchema = z.object({
   errorRate: z.number(),
@@ -133,25 +135,23 @@ export async function getAgentLogs(
 ): Promise<any[]> {
   const { startDate, endDate, level, limit = 100 } = options;
 
-  const where: Prisma.LogWhereInput = {
+  const where: Prisma.AgentLogWhereInput = {
     deploymentId: agentId,
+    createdAt: {
+      gte: startDate,
+      lte: endDate
+    }
   };
-
-  if (startDate) {
-    where.createdAt = { ...where.createdAt, gte: startDate };
-  }
-
-  if (endDate) {
-    where.createdAt = { ...where.createdAt, lte: endDate };
-  }
 
   if (level) {
     where.level = level;
   }
 
-  return prisma.log.findMany({
+  return prisma.agentLog.findMany({
     where,
-    orderBy: { createdAt: 'desc' },
+    orderBy: {
+      createdAt: 'desc'
+    },
     take: limit,
   });
 }
@@ -193,7 +193,7 @@ export async function getAgentAnalytics(agentId: string): Promise<{
     totalRequests: metrics.totalRequests,
     successRate: metrics.successRate,
     errorRate: metrics.errorRate,
-    averageResponseTime: metrics.averageResponseTime,
+    averageResponseTime: metrics.responseTime,
     topErrors,
     recentFeedback,
   };
@@ -286,8 +286,8 @@ export async function getAgentPerformanceMetrics(agentId: string) {
 
   return {
     totalRequests: metrics.totalRequests || 0,
-    averageResponseTime: metrics.averageResponseTime || 0,
-    responseTime: metrics.averageResponseTime || 0,
+    averageResponseTime: metrics.responseTime || 0,
+    responseTime: metrics.responseTime || 0,
     errorRate: metrics.errorRate || 0,
     successRate: metrics.successRate || 0,
     activeUsers: metrics.activeUsers || 0,
@@ -310,7 +310,7 @@ export async function getAgentUsageStats(agentId: string): Promise<{
   return {
     totalRequests: metrics.totalRequests,
     activeUsers: metrics.activeUsers,
-    averageResponseTime: metrics.averageResponseTime,
+    averageResponseTime: metrics.responseTime,
     errorRate: metrics.errorRate,
     successRate: metrics.successRate,
   };
@@ -347,7 +347,7 @@ export async function getAgentHealth(agentId: string): Promise<AgentHealth> {
     const latestMetrics = metrics[metrics.length - 1];
     health.metrics = {
       errorRate: latestMetrics.errorRate,
-      responseTime: latestMetrics.averageResponseTime || 0,
+      responseTime: latestMetrics.responseTime || 0,
       successRate: latestMetrics.successRate,
       totalRequests: latestMetrics.totalRequests,
       activeUsers: latestMetrics.activeUsers
@@ -362,10 +362,10 @@ export async function getAgentHealth(agentId: string): Promise<AgentHealth> {
       health.issues.push('Elevated error rate');
     }
 
-    if (latestMetrics.averageResponseTime > 1000) {
+    if (latestMetrics.responseTime > 1000) {
       health.status = 'unhealthy';
       health.issues.push('High response time');
-    } else if (latestMetrics.averageResponseTime > 500) {
+    } else if (latestMetrics.responseTime > 500) {
       health.status = 'degraded';
       health.issues.push('Elevated response time');
     }
@@ -451,45 +451,43 @@ export async function getAgentDeployments(agentId: string): Promise<any[]> {
   });
 }
 
-export async function createAgentFeedback(
-  deploymentId: string,
-  userId: string,
-  validatedFeedback: {
-    rating: number;
-    comment: string | null;
-    sentimentScore: number;
-    categories: Record<string, number> | null;
-  }
-): Promise<AgentFeedback> {
+export async function createAgentFeedback(data: {
+  deploymentId: string;
+  userId: string;
+  rating: number;
+  comment: string | null;
+  sentimentScore: number;
+  categories: Record<string, number> | null;
+}): Promise<AgentFeedback> {
   return prisma.agentFeedback.create({
     data: {
-      deploymentId,
-      userId,
-      rating: validatedFeedback.rating,
-      comment: validatedFeedback.comment,
-      sentimentScore: validatedFeedback.sentimentScore,
-      categories: validatedFeedback.categories as Prisma.JsonValue,
+      deploymentId: data.deploymentId,
+      userId: data.userId,
+      rating: data.rating,
+      comment: data.comment,
+      sentimentScore: data.sentimentScore,
+      categories: data.categories as Prisma.JsonValue,
       metadata: {}
     }
   });
 }
 
 export async function updateAgentFeedback(
-  feedbackId: string,
-  validatedFeedback: {
+  id: string,
+  data: Partial<{
     rating: number;
     comment: string | null;
     sentimentScore: number;
     categories: Record<string, number> | null;
-  }
+  }>
 ): Promise<AgentFeedback> {
   return prisma.agentFeedback.update({
-    where: { id: feedbackId },
+    where: { id },
     data: {
-      rating: validatedFeedback.rating,
-      comment: validatedFeedback.comment,
-      sentimentScore: validatedFeedback.sentimentScore,
-      categories: validatedFeedback.categories as Prisma.JsonValue,
+      rating: data.rating,
+      comment: data.comment,
+      sentimentScore: data.sentimentScore,
+      categories: data.categories as Prisma.JsonValue,
       metadata: {}
     }
   });
@@ -511,8 +509,8 @@ export async function createAgentFeedbackWithResponse(
       userId,
       rating: validatedFeedback.rating,
       comment: validatedFeedback.comment,
-      sentimentScore: validatedFeedback.sentimentScore,
-      categories: validatedFeedback.categories as Prisma.JsonValue,
+      sentimentScore: validatedFeedback.sentimentScore || 0,
+      categories: validatedFeedback.categories as any,
       metadata: {}
     }
   });
@@ -549,7 +547,7 @@ export async function analyzeAgentPerformance(agentId: string) {
     performance.recommendations.push('High error rate detected. Consider reviewing error logs and improving error handling.');
   }
 
-  if (metrics.averageResponseTime > 1000) {
+  if (metrics.responseTime > 1000) {
     performance.recommendations.push('Slow response time detected. Consider optimizing performance.');
   }
 
@@ -560,62 +558,45 @@ export async function analyzeAgentPerformance(agentId: string) {
   return performance;
 }
 
-export async function monitorAgentHealth(agentId: string) {
-  const [metrics, logs, feedbacks] = await Promise.all([
-    getAgentPerformanceMetrics(agentId),
-    getAgentLogs(agentId),
-    getAgentFeedback(agentId),
-  ]);
+export async function monitorAgentHealth(deploymentId: string): Promise<void> {
+  const metrics = await getAgentMetrics(deploymentId);
+  const deployment = await prisma.deployment.findUnique({
+    where: { id: deploymentId },
+    include: { agent: true }
+  });
 
-  let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
-  const issues: string[] = [];
-
-  // Check error rate
-  if (metrics.errorRate > 0.1) {
-    status = 'unhealthy';
-    issues.push('High error rate detected');
-  } else if (metrics.errorRate > 0.05) {
-    status = 'degraded';
-    issues.push('Elevated error rate');
+  if (!deployment) {
+    throw new Error('Deployment not found');
   }
 
-  // Check response time
-  if (metrics.averageResponseTime > 1000) {
-    status = 'unhealthy';
-    issues.push('Slow response time');
-  } else if (metrics.averageResponseTime > 500) {
-    status = 'degraded';
-    issues.push('Elevated response time');
+  // Check for critical issues
+  if (metrics.errorRate > 0.5) {
+    await createNotification({
+      userId: deployment.agent.createdBy,
+      type: 'system_alert' as NotificationType,
+      title: 'High Error Rate Detected',
+      message: `Your agent "${deployment.name}" is experiencing a high error rate of ${(metrics.errorRate * 100).toFixed(1)}%`,
+      severity: 'error' as NotificationSeverity,
+      metadata: {
+        deploymentId,
+        metrics
+      }
+    });
   }
 
-  // Check recent errors
-  const recentErrors = logs.filter(log => 
-    log.level === 'error' && 
-    log.timestamp > new Date(Date.now() - 24 * 60 * 60 * 1000)
-  );
-  if (recentErrors.length > 0) {
-    issues.push(`${recentErrors.length} errors in the last 24 hours`);
+  if (metrics.sentimentScore < -0.5) {
+    await createNotification({
+      userId: deployment.agent.createdBy,
+      type: 'feedback_alert' as NotificationType,
+      title: 'Negative Feedback Alert',
+      message: `Your agent "${deployment.name}" is receiving negative feedback`,
+      severity: 'warning' as NotificationSeverity,
+      metadata: {
+        deploymentId,
+        metrics
+      }
+    });
   }
-
-  // Check user satisfaction
-  if (feedbacks.length > 0) {
-    const averageRating = feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length;
-    if (averageRating < 3) {
-      issues.push('Low user satisfaction');
-    }
-  }
-
-  return {
-    status,
-    issues,
-    metrics: {
-      errorRate: metrics.errorRate,
-      responseTime: metrics.averageResponseTime,
-      successRate: metrics.successRate,
-      totalRequests: metrics.totalRequests,
-      activeUsers: metrics.activeUsers,
-    },
-  };
 }
 
 export async function getAgentDeploymentStatus(agentId: string) {
@@ -708,7 +689,7 @@ export async function analyzeAgentDeployment(agentId: string) {
     analysis.recommendations.push('High error rate detected. Consider reviewing error logs and improving error handling.');
   }
 
-  if (metrics.averageResponseTime > 1000) {
+  if (metrics.responseTime > 1000) {
     analysis.recommendations.push('Slow response time detected. Consider optimizing performance.');
   }
 
@@ -747,10 +728,10 @@ export async function monitorAgentDeployment(agentId: string) {
   }
 
   // Check response time
-  if (metrics.averageResponseTime > 1000) {
+  if (metrics.responseTime > 1000) {
     status = 'unhealthy';
     issues.push('Slow response time');
-  } else if (metrics.averageResponseTime > 500) {
+  } else if (metrics.responseTime > 500) {
     status = 'degraded';
     issues.push('Elevated response time');
   }
@@ -780,7 +761,7 @@ export async function monitorAgentDeployment(agentId: string) {
       issues,
       metrics: {
         errorRate: metrics.errorRate,
-        responseTime: metrics.averageResponseTime,
+        responseTime: metrics.responseTime,
         successRate: metrics.successRate,
         totalRequests: metrics.totalRequests,
         activeUsers: metrics.activeUsers,

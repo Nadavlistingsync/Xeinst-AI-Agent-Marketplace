@@ -37,7 +37,7 @@ export async function uploadProduct(data: {
   description: string;
   price: number;
   category: string;
-  file_url: string;
+  fileUrl: string;
   user_id: string;
 }) {
   try {
@@ -47,7 +47,7 @@ export async function uploadProduct(data: {
         description: data.description,
         price: data.price,
         category: data.category,
-        file_url: data.file_url,
+        fileUrl: data.fileUrl,
         created_by: data.user_id,
         uploaded_by: data.user_id,
         isPublic: true,

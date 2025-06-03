@@ -13,13 +13,13 @@ interface DeploymentOverviewProps {
   onDelete: (id: string) => Promise<void>;
 }
 
-export function DeploymentOverview({
+export const DeploymentOverview = ({
   deployment,
   onStart,
   onStop,
   onRestart,
   onDelete,
-}: DeploymentOverviewProps) {
+}: DeploymentOverviewProps) => {
   const getStatusColor = (status: DeploymentStatus) => {
     switch (status) {
       case 'active':

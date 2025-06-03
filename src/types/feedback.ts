@@ -20,9 +20,9 @@ export interface Feedback {
   userId: string;
   rating: number;
   comment: string | null;
-  sentimentScore: number;
+  sentimentScore: number | null;
   categories: Record<string, number> | null;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, unknown> | null;
   createdAt: Date;
   updatedAt: Date;
   creatorResponse: string | null;
@@ -31,34 +31,24 @@ export interface Feedback {
   deployment: Deployment;
 }
 
-export interface FeedbackSuccess<T = Feedback> {
+export interface FeedbackSuccess {
   success: true;
-  data: T;
+  data: Feedback;
 }
 
 export interface FeedbackError {
   success: false;
   error: string;
-  details?: z.ZodError[];
+  message: string;
+  details?: ValidationError[];
+  status: number;
 }
 
-export type FeedbackApiResponse<T = Feedback> = FeedbackSuccess<T> | FeedbackError;
+export type FeedbackResponse = FeedbackSuccess | FeedbackError;
 
-export const feedbackSchema = z.object({
-  deploymentId: z.string(),
-  rating: z.number().min(1).max(5),
-  comment: z.string().optional(),
-  categories: z.array(z.string()).optional(),
-  metadata: z.record(z.any()).optional(),
-});
-
-export type FeedbackInput = z.infer<typeof feedbackSchema>;
-
-export interface FeedbackResponse {
-  success: boolean;
-  feedback?: Feedback;
-  error?: string;
-  details?: z.ZodError[];
+export interface ValidationError {
+  path: string;
+  message: string;
 }
 
 export interface FeedbackSummary {
@@ -86,37 +76,25 @@ export interface FeedbackTrend {
 }
 
 export interface FeedbackAnalytics {
-  overview: {
-    totalFeedbacks: number;
-    averageRating: number;
-    responseRate: number;
-    averageResponseTime: number;
+  averageRating: number;
+  totalFeedback: number;
+  sentimentDistribution: Record<string, number>;
+  categoryDistribution: Record<string, number>;
+  timeRange: {
+    start: Date;
+    end: Date;
   };
-  sentiment: {
-    distribution: {
-      positive: number;
-      neutral: number;
-      negative: number;
-    };
-    trends: {
-      date: string;
-      score: number;
-    }[];
+}
+
+export interface FeedbackInsights {
+  sentimentTrend: {
+    positive: number;
+    neutral: number;
+    negative: number;
   };
-  categories: {
-    distribution: Record<string, number>;
-    trends: {
-      date: string;
-      categories: Record<string, number>;
-    }[];
-  };
-  ratings: {
-    distribution: Record<number, number>;
-    trends: {
-      date: string;
-      rating: number;
-    }[];
-  };
+  categoryTrends: Record<string, number>;
+  commonIssues: string[];
+  recommendations: string[];
 }
 
 export interface FeedbackRecommendation {
@@ -166,4 +144,18 @@ export interface FeedbackMetrics {
     averageResponseTime: number;
     responseRate: number;
   };
-} 
+}
+
+export const feedbackSchema = z.object({
+  rating: z.number().min(1).max(5),
+  comment: z.string().nullable(),
+  categories: z.record(z.number()).nullable(),
+  metadata: z.record(z.unknown()).nullable()
+});
+
+export const feedbackResponseSchema = z.object({
+  response: z.string().min(1)
+});
+
+export type FeedbackInput = z.infer<typeof feedbackSchema>;
+export type FeedbackResponseInput = z.infer<typeof feedbackResponseSchema>; 

@@ -212,10 +212,10 @@ export async function DELETE(
     // Delete associated metrics and logs first
     await Promise.all([
       prisma.agentMetrics.deleteMany({
-        where: { agentId: params.id },
+        where: { deploymentId: params.id },
       }),
       prisma.agentLog.deleteMany({
-        where: { agentId: params.id },
+        where: { deploymentId: params.id },
       }),
     ]);
 

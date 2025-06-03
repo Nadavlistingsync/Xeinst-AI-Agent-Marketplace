@@ -73,9 +73,9 @@ export async function DELETE(
     }
 
     // Delete the file from local storage if it exists
-    if (agent.file_url) {
+    if (agent.fileUrl) {
       try {
-        const filePath = join(UPLOAD_DIR, agent.file_url.split('/').pop() || '');
+        const filePath = join(UPLOAD_DIR, agent.fileUrl.split('/').pop() || '');
         await unlink(filePath);
       } catch (error) {
         console.error('Error deleting file:', error);
@@ -114,8 +114,9 @@ export async function GET(
         users: {
           select: {
             id: true,
-            email: true,
             name: true,
+            email: true,
+            image: true
           },
         },
       },
@@ -162,7 +163,7 @@ export async function PATCH(
       );
     }
 
-    if (agent.deployed_by !== session.user.id) {
+    if (agent.deployedBy !== session.user.id) {
       return NextResponse.json(
         { error: 'Not authorized to update this agent' },
         { status: 403 }
@@ -175,7 +176,7 @@ export async function PATCH(
       data: {
         name: body.name,
         description: body.description,
-        access_level: body.access_level,
+        accessLevel: body.accessLevel,
         licenseType: body.licenseType,
         priceCents: body.priceCents,
         updated_at: new Date(),

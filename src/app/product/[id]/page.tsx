@@ -25,25 +25,33 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   const isCreator = session?.user?.id === product.createdBy;
 
+  const productWithDetails = {
+    ...product,
+    images: [product.imageUrl || ''],
+    seller: {
+      name: product.createdBy
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <ProductDetails
-        product={product}
+        product={productWithDetails}
         isCreator={isCreator}
         user_id={session?.user?.id}
       />
       <div className="mt-12">
         <ReviewSection
-          product_id={product.id}
-          user_id={session?.user?.id}
-          average_rating={Number(product.average_rating) || 0}
-          total_ratings={product.total_ratings || 0}
+          productId={product.id}
+          userId={session?.user?.id}
+          averageRating={Number(product.rating) || 0}
+          totalRatings={product.totalRatings || 0}
         />
       </div>
       <div className="mt-12">
         <RelatedProducts
-          product_id={product.id}
-          category={product.category}
+          productId={product.id}
+          productCategory={product.category}
         />
       </div>
     </div>

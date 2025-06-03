@@ -13,12 +13,12 @@ export async function GET(
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 401 },
         { status: 401 }
       );
     }
 
-    const feedback = await prisma.feedback.findMany({
+    const feedback = await prisma.agentFeedback.findMany({
       where: {
         deploymentId: params.id
       },
@@ -36,7 +36,7 @@ export async function GET(
       take: 5
     });
 
-    const totalFeedback = await prisma.feedback.count({
+    const totalFeedback = await prisma.agentFeedback.count({
       where: {
         deploymentId: params.id
       }
@@ -57,17 +57,16 @@ export async function GET(
           comment: f.comment,
           createdAt: f.createdAt,
           user: {
-            name: f.user.name,
-            image: f.user.image
+            name: f.user?.name ?? null,
+            image: f.user?.image ?? null
           }
         }))
       }
     });
   } catch (error) {
-    console.error('Error fetching feedback summary:', error);
     const errorResponse = handleApiError(error);
     return NextResponse.json(
-      { success: false, error: errorResponse.message },
+      { success: false, error: errorResponse.message, message: 'Failed to fetch feedback summary', status: errorResponse.status },
       { status: errorResponse.status }
     );
   }

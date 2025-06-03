@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { FeedbackApiResponse } from './feedback';
+import { FeedbackResponse } from './feedback';
 
 export interface FeedbackMetrics {
   totalFeedback: number;
@@ -97,10 +97,29 @@ export interface FeedbackCategoriesResponse {
   data: FeedbackCategory[];
 }
 
-export type FeedbackAnalyticsResponse =
-  | FeedbackApiResponse<FeedbackInsights>
-  | FeedbackApiResponse<FeedbackTrend[]>
-  | FeedbackApiResponse<FeedbackCategory[]>;
+export type FeedbackAnalyticsResponse = {
+  success: boolean;
+  data: FeedbackAnalytics;
+};
+
+export type FeedbackAnalytics = {
+  metrics: {
+    totalFeedback: number;
+    averageRating: number;
+    sentimentDistribution: Record<string, number>;
+    categoryDistribution: Record<string, number>;
+  };
+  trends: {
+    ratingTrend: Array<{ date: string; rating: number }>;
+    sentimentTrend: Array<{ date: string; sentiment: number }>;
+  };
+  categories: Array<{
+    name: string;
+    count: number;
+    percentage: number;
+    examples: string[];
+  }>;
+};
 
 export const feedbackMetricsSchema = z.object({
   totalFeedback: z.number(),

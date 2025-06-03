@@ -1,10 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Star, ShieldCheck, TrendingUp, Sparkles } from "@heroicons/react/20/solid";
-import { formatPrice } from "@/lib/utils";
+import { Star, ShieldCheck } from "@heroicons/react/20/solid";
 import { Badge } from "../ui/badge";
-import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
-import type { MarketplaceDeployment } from "./MarketplaceGrid";
+import { Card, CardContent, CardHeader } from "../ui/card";
 
 interface AgentCardProps {
   deployment: MarketplaceDeployment;

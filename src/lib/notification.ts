@@ -1,36 +1,30 @@
-import { prisma } from './db';
-import { Notification } from './schema';
+import { PrismaClient, NotificationType as PrismaNotificationType } from '@prisma/client';
 
-export type NotificationType = 
-  | 'feedback_alert'
-  | 'rating_alert'
-  | 'sentiment_alert'
-  | 'rating_trend_alert'
-  | 'agent_improvement_needed'
-  | 'system_alert'
-  | 'user_alert';
+const prisma = new PrismaClient();
+
+export type NotificationType = PrismaNotificationType;
 
 export type NotificationSeverity = 'info' | 'warning' | 'error' | 'success';
 
-export interface CreateNotificationInput {
+export type CreateNotificationInput = {
   userId: string;
   type: NotificationType;
   title: string;
   message: string;
   severity?: NotificationSeverity;
-  metadata?: Record<string, any>;
-}
+  metadata?: Record<string, unknown>;
+};
 
-export async function createNotification(data: CreateNotificationInput): Promise<Notification> {
-  return await prisma.notification.create({
+export async function createNotification(data: CreateNotificationInput) {
+  return prisma.notification.create({
     data: {
       userId: data.userId,
       type: data.type,
       title: data.title,
       message: data.message,
-      metadata: data.metadata || {},
-      read: false,
-    },
+      severity: data.severity || 'info',
+      metadata: data.metadata || {}
+    }
   });
 }
 
@@ -73,9 +67,9 @@ export async function getNotification(id: string): Promise<Notification | null> 
 }
 
 export async function markNotificationAsRead(id: string): Promise<Notification> {
-  return await prisma.notification.update({
+  return prisma.notification.update({
     where: { id },
-    data: { read: true },
+    data: { read: true }
   });
 }
 
@@ -88,7 +82,7 @@ export async function markAllNotificationsAsRead(userId: string): Promise<void> 
 
 export async function deleteNotification(id: string): Promise<void> {
   await prisma.notification.delete({
-    where: { id },
+    where: { id }
   });
 }
 

@@ -1,18 +1,32 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ActivityIcon, UsersIcon, ZapIcon, ClockIcon } from "lucide-react";
+import { ActivityIcon, ClockIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
-export async function DashboardStats() {
+interface DashboardStatsProps {
+  userId?: string;
+}
+
+export const DashboardStats = async ({ userId }: DashboardStatsProps) => {
   const [totalRequests, averageResponseTime] = await Promise.all([
     prisma.deploymentMetrics.aggregate({
       _sum: {
         totalRequests: true
-      }
+      },
+      where: userId ? {
+        deployment: {
+          createdBy: userId
+        }
+      } : undefined
     }),
     prisma.deploymentMetrics.aggregate({
       _avg: {
         averageResponseTime: true
-      }
+      },
+      where: userId ? {
+        deployment: {
+          createdBy: userId
+        }
+      } : undefined
     })
   ]);
 

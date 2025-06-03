@@ -1,6 +1,7 @@
-import { prisma } from './db';
-import { Prisma } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { Review } from './schema';
+
+const prisma = new PrismaClient();
 
 export interface ReviewOptions {
   productId?: string;
@@ -11,48 +12,36 @@ export interface ReviewOptions {
   endDate?: Date;
 }
 
-export interface CreateReviewInput {
+export type CreateReviewInput = {
   productId: string;
   userId: string;
+  deploymentId: string;
   rating: number;
-  comment?: string;
-}
+  comment: string;
+};
 
-export interface UpdateReviewInput {
+export type UpdateReviewInput = {
   rating?: number;
   comment?: string;
+};
+
+export async function createReview(data: CreateReviewInput) {
+  return prisma.review.create({
+    data: {
+      productId: data.productId,
+      userId: data.userId,
+      deploymentId: data.deploymentId,
+      rating: data.rating,
+      comment: data.comment
+    }
+  });
 }
 
-export async function createReview(data: CreateReviewInput): Promise<Review> {
-  try {
-    return await prisma.review.create({
-      data: {
-        productId: data.productId,
-        userId: data.userId,
-        rating: data.rating,
-        comment: data.comment || '',
-        createdAt: new Date(),
-      },
-    });
-  } catch (error) {
-    console.error('Error creating review:', error);
-    throw new Error('Failed to create review');
-  }
-}
-
-export async function updateReview(
-  id: string,
-  data: UpdateReviewInput
-): Promise<Review> {
-  try {
-    return await prisma.review.update({
-      where: { id },
-      data,
-    });
-  } catch (error) {
-    console.error('Error updating review:', error);
-    throw new Error('Failed to update review');
-  }
+export async function updateReview(id: string, data: UpdateReviewInput) {
+  return prisma.review.update({
+    where: { id },
+    data
+  });
 }
 
 export async function getReviews(options: ReviewOptions = {}): Promise<Review[]> {
@@ -80,6 +69,11 @@ export async function getReview(id: string): Promise<Review | null> {
   try {
     return await prisma.review.findUnique({
       where: { id },
+      include: {
+        user: true,
+        product: true,
+        deployment: true
+      }
     });
   } catch (error) {
     console.error('Error getting review:', error);
@@ -129,6 +123,7 @@ export async function getUserReviews(
     where,
     include: {
       product: true,
+      deployment: true
     },
     orderBy: { createdAt: 'desc' },
     take: options.limit,
@@ -152,6 +147,7 @@ export async function getProductReviews(
     where,
     include: {
       user: true,
+      deployment: true
     },
     orderBy: { createdAt: 'desc' },
     take: options.limit,

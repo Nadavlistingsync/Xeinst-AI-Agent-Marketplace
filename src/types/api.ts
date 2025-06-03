@@ -1,23 +1,26 @@
 import { z } from 'zod';
 import { DeploymentStatus, NotificationType } from '@prisma/client';
 
-export type ApiSuccess<T> = {
+export interface ApiSuccess<T> {
+  success: true;
   data: T;
-};
+}
 
-export type ApiError = {
+export interface ApiError {
+  success: false;
   error: string;
+  message: string;
   details?: ValidationError[];
   status: number;
-};
+}
 
 export type ApiResponse<T> = ApiSuccess<T> | ApiError;
 
 export interface PaginationParams {
   page?: number;
   limit?: number;
-  orderBy?: string;
-  order?: 'asc' | 'desc';
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface PaginatedResponse<T> {
@@ -31,14 +34,11 @@ export interface PaginatedResponse<T> {
 }
 
 export interface FilterParams {
-  userId?: string;
-  productId?: string;
-  agentId?: string;
+  search?: string;
   status?: string;
   type?: string;
-  level?: string;
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface DateRange {
@@ -46,30 +46,34 @@ export interface DateRange {
   endDate: Date;
 }
 
-export type ValidationError = {
+export interface ValidationError {
   path: string;
   message: string;
-};
+}
 
-export type ApiErrorResponse = {
+export interface ApiErrorResponse {
+  success: false;
   error: string;
+  message: string;
   details?: ValidationError[];
   status: number;
-};
+}
 
 export const apiErrorSchema = z.object({
+  success: z.literal(false),
   error: z.string(),
+  message: z.string(),
   details: z.array(z.object({
     path: z.string(),
     message: z.string()
   })).optional(),
-  status: z.number().optional(),
+  status: z.number()
 });
 
-export const apiSuccessSchema = <T extends z.ZodType>(dataSchema: T) =>
-  z.object({
-    data: dataSchema,
-  });
+export const apiSuccessSchema = <T extends z.ZodType>(dataSchema: T) => z.object({
+  success: z.literal(true),
+  data: dataSchema
+});
 
 export const apiResponseSchema = <T extends z.ZodType>(dataSchema: T) =>
   z.union([
@@ -119,4 +123,19 @@ export interface ProductData {
   earningsSplit: number;
   isPublic: boolean;
   longDescription?: string;
-} 
+}
+
+export const paginationSchema = z.object({
+  page: z.number().int().min(1).optional(),
+  limit: z.number().int().min(1).max(100).optional(),
+  sortBy: z.string().optional(),
+  sortOrder: z.enum(['asc', 'desc']).optional()
+});
+
+export const filterSchema = z.object({
+  search: z.string().optional(),
+  status: z.string().optional(),
+  type: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional()
+}); 

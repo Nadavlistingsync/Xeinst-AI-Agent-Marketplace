@@ -1,37 +1,35 @@
-import { prisma } from './db';
-import { Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { Product } from './schema';
 import { Product as PrismaProduct, ProductStatus, ProductAccessLevel, ProductLicenseType } from '@prisma/client';
 
-export interface ProductOptions {
-  category?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  query?: string;
-  status?: ProductStatus;
-}
+const prisma = new PrismaClient();
 
-export interface CreateProductInput {
+export type CreateProductInput = {
   name: string;
   description: string;
-  longDescription?: string;
-  category: string;
   price: number;
-  fileUrl: string;
-  requirements: string[];
-  tags?: string[];
-  version?: string;
-  status?: ProductStatus;
-  accessLevel?: ProductAccessLevel;
-  licenseType?: ProductLicenseType;
-  environment: string;
-  framework: string;
-  modelType: string;
+  categoryId: string;
   createdBy: string;
-  earningsSplit?: number;
-  isPublic?: boolean;
-  uploadedBy?: string;
-}
+  imageUrl?: string;
+  status?: 'draft' | 'published' | 'archived';
+};
+
+export type UpdateProductInput = {
+  name?: string;
+  description?: string;
+  price?: number;
+  categoryId?: string;
+  imageUrl?: string;
+  status?: 'draft' | 'published' | 'archived';
+};
+
+export type ProductFilter = {
+  categoryId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  status?: 'draft' | 'published' | 'archived';
+  search?: string;
+};
 
 function toProduct(obj: PrismaProduct): Product {
   return {
@@ -41,100 +39,78 @@ function toProduct(obj: PrismaProduct): Product {
   };
 }
 
-export async function createProduct(data: CreateProductInput): Promise<Product> {
-  try {
-    return await prisma.product.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        longDescription: data.longDescription,
-        category: data.category,
-        price: data.price,
-        fileUrl: data.fileUrl,
-        requirements: data.requirements,
-        tags: data.tags ?? [],
-        version: data.version ?? '',
-        status: data.status ?? ProductStatus.draft,
-        accessLevel: data.accessLevel ?? ProductAccessLevel.public,
-        licenseType: data.licenseType ?? ProductLicenseType.free,
-        environment: data.environment,
-        framework: data.framework,
-        modelType: data.modelType,
-        createdBy: data.createdBy,
-        earningsSplit: data.earningsSplit ?? 0.7,
-        isPublic: data.isPublic ?? true,
-        uploadedBy: data.uploadedBy,
-      },
-    }).then(toProduct);
-  } catch (error) {
-    console.error('Error creating product:', error);
-    throw new Error('Failed to create product');
-  }
+export async function createProduct(data: CreateProductInput) {
+  return prisma.product.create({
+    data: {
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      categoryId: data.categoryId,
+      createdBy: data.createdBy,
+      imageUrl: data.imageUrl,
+      status: data.status || 'draft'
+    }
+  }).then(toProduct);
 }
 
-export async function updateProduct(
-  id: string,
-  data: Partial<CreateProductInput>
-): Promise<Product> {
-  try {
-    const updateData: any = { ...data };
-    if (data.price !== undefined) {
-      updateData.price = data.price;
-    }
-    if (data.earningsSplit !== undefined) {
-      updateData.earningsSplit = data.earningsSplit;
-    }
-    if (data.status !== undefined) {
-      updateData.status = data.status;
-    }
-    if (data.accessLevel !== undefined) {
-      updateData.accessLevel = data.accessLevel;
-    }
-    if (data.licenseType !== undefined) {
-      updateData.licenseType = data.licenseType;
-    }
-    return await prisma.product.update({
-      where: { id },
-      data: updateData,
-    }).then(toProduct);
-  } catch (error) {
-    console.error('Error updating product:', error);
-    throw new Error('Failed to update product');
-  }
+export async function updateProduct(id: string, data: UpdateProductInput) {
+  return prisma.product.update({
+    where: { id },
+    data
+  }).then(toProduct);
 }
 
-export async function getProducts(options: ProductOptions = {}): Promise<Product[]> {
-  try {
-    const where: Prisma.ProductWhereInput = {};
-    if (options.category) where.category = options.category;
-    if (options.minPrice) where.price = { gte: options.minPrice };
-    if (options.maxPrice) where.price = { ...where.price, lte: options.maxPrice };
-    if (options.status) where.status = options.status;
-    if (options.query) {
-      where.OR = [
-        { name: { contains: options.query, mode: 'insensitive' } },
-        { description: { contains: options.query, mode: 'insensitive' } },
-      ];
+export async function getProduct(id: string) {
+  return prisma.product.findUnique({
+    where: { id },
+    include: {
+      category: true,
+      creator: true,
+      reviews: {
+        include: {
+          user: true
+        }
+      }
     }
-    return await prisma.product.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-    }).then(products => products.map(toProduct));
-  } catch (error) {
-    console.error('Error getting products:', error);
-    throw new Error('Failed to get products');
-  }
+  }).then(product => (product ? toProduct(product) : null));
 }
 
-export async function getProduct(id: string): Promise<Product | null> {
-  try {
-    return await prisma.product.findUnique({
-      where: { id },
-    }).then(product => (product ? toProduct(product) : null));
-  } catch (error) {
-    console.error('Error getting product:', error);
-    throw new Error('Failed to get product');
+export async function getProducts(filter: ProductFilter = {}) {
+  const where: Prisma.ProductWhereInput = {
+    status: filter.status || 'published'
+  };
+
+  if (filter.categoryId) {
+    where.categoryId = filter.categoryId;
   }
+
+  if (filter.minPrice || filter.maxPrice) {
+    where.price = {
+      ...(filter.minPrice && { gte: filter.minPrice }),
+      ...(filter.maxPrice && { lte: filter.maxPrice })
+    };
+  }
+
+  if (filter.search) {
+    where.OR = [
+      { name: { contains: filter.search, mode: 'insensitive' } },
+      { description: { contains: filter.search, mode: 'insensitive' } }
+    ];
+  }
+
+  return prisma.product.findMany({
+    where,
+    include: {
+      category: true,
+      creator: true,
+      _count: {
+        select: {
+          reviews: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  }).then(products => products.map(toProduct));
 }
 
 export async function deleteProduct(id: string): Promise<void> {
@@ -231,7 +207,7 @@ export async function createProductReview(data: {
       productId: data.productId,
       userId: data.userId,
       rating: data.rating,
-      comment: data.comment,
+      comment: data.comment || '',
     },
   });
 

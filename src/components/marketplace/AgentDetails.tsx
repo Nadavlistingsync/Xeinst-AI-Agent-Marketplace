@@ -1,6 +1,5 @@
-import Image from "next/image";
 import { Deployment } from "@prisma/client";
-import { Star, ShieldCheck, ArrowDownTray, Clock } from "@heroicons/react/24/outline";
+import { Star, ArrowDownTray, Clock } from "@heroicons/react/24/outline";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader } from "../ui/card";
