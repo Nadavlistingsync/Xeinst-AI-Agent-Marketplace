@@ -1,5 +1,4 @@
 import { prisma } from './prisma';
-import { Prisma } from '@prisma/client';
 import { ApiError } from './errors';
 
 interface FeedbackAnalysis {
@@ -19,7 +18,7 @@ interface FeedbackAnalysis {
 export async function analyzeFeedback(agentId: string): Promise<FeedbackAnalysis> {
   try {
     const feedbacks = await prisma.agentFeedback.findMany({
-      where: { agentId },
+      where: { deploymentId: agentId },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -105,7 +104,7 @@ export async function getFeedbackTrends(agentId: string, timeRange: 'day' | 'wee
 
     const feedbacks = await prisma.agentFeedback.findMany({
       where: {
-        agentId,
+        deploymentId: agentId,
         createdAt: {
           gte: startDate
         }
@@ -130,7 +129,7 @@ export async function getFeedbackTrends(agentId: string, timeRange: 'day' | 'wee
 export async function getFeedbackInsights(agentId: string) {
   try {
     const feedbacks = await prisma.agentFeedback.findMany({
-      where: { agentId },
+      where: { deploymentId: agentId },
       orderBy: { createdAt: 'desc' }
     });
 
