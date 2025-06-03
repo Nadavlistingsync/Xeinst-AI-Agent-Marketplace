@@ -119,7 +119,7 @@ export async function GET(
 
     const errorResponse = createErrorResponse(error, 'Failed to generate feedback insights');
     return NextResponse.json(
-      { error: errorResponse.message },
+      { error: errorResponse.error },
       { status: errorResponse.status }
     );
   }
