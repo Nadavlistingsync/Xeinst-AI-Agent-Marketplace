@@ -61,7 +61,7 @@ export async function logAgentEvent(
       deploymentId,
       level,
       message,
-      metadata: metadata || {},
+      metadata: metadata ? (metadata as any) : undefined,
       timestamp: new Date()
     }
   });
