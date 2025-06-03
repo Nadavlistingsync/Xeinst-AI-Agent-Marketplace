@@ -1,9 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
 import { type AgentHealth, type AgentMetrics, type AgentLog } from '@/types/agent';
-import { eq, gte, lte, desc, and } from 'drizzle-orm';
-import { v4 as uuidv4 } from 'uuid';
-import { createNotification } from './notification';
 import { Prisma } from '@prisma/client';
 import type { AgentFeedback } from '@/lib/schema';
 
@@ -149,8 +146,8 @@ export async function getAgentMetrics(
   return metrics.map(metric => ({
     timestamp: metric.createdAt,
     errorRate: metric.errorRate,
-    averageResponseTime: metric.averageResponseTime,
-    responseTime: metric.averageResponseTime,
+    averageResponseTime: metric.averageResponseTime || 0,
+    responseTime: metric.averageResponseTime || 0,
     successRate: metric.successRate,
     totalRequests: metric.totalRequests,
     activeUsers: metric.activeUsers
@@ -328,7 +325,7 @@ export async function getAgentHealth(agentId: string): Promise<AgentHealth> {
     const latestMetrics = metrics[metrics.length - 1];
     health.metrics = {
       errorRate: latestMetrics.errorRate,
-      responseTime: latestMetrics.averageResponseTime,
+      responseTime: latestMetrics.averageResponseTime || 0,
       successRate: latestMetrics.successRate,
       totalRequests: latestMetrics.totalRequests,
       activeUsers: latestMetrics.activeUsers
