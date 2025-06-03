@@ -6,7 +6,7 @@ export const feedbackInsightsSchema = z.object({
   endDate: z.date(),
   groupBy: z.enum(['day', 'week', 'month']).optional().default('day'),
   filters: z.object({
-    agentId: z.string().optional(),
+    deploymentId: z.string().optional(),
     userId: z.string().optional(),
     type: z.enum(['error', 'warning', 'success']).optional(),
   }).optional(),

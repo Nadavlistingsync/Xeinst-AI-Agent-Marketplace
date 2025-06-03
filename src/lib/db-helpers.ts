@@ -401,9 +401,9 @@ export async function updateDeploymentRating(id: string, rating: number) {
 }
 
 // Agent feedback operations
-export async function getAgentFeedback(agentId: string) {
+export async function getAgentFeedback(deploymentId: string) {
   return prisma.agentFeedback.findMany({
-    where: { agentId },
+    where: { deploymentId },
     orderBy: { createdAt: 'desc' },
   });
 }
@@ -429,24 +429,25 @@ export async function createNotification(data: Prisma.NotificationCreateInput) {
 }
 
 // Agent metrics operations
-export async function getAgentMetrics(agentId: string) {
-  return prisma.agentMetrics.findUnique({
-    where: { agentId },
+export async function getAgentMetrics(deploymentId: string) {
+  return prisma.agentMetrics.findMany({
+    where: { deploymentId },
+    orderBy: { lastUpdated: 'desc' },
   });
 }
 
-export async function updateAgentMetrics(agentId: string, data: Prisma.AgentMetricsUpdateInput) {
-  return prisma.agentMetrics.update({
-    where: { agentId },
+export async function updateAgentMetrics(deploymentId: string, data: Prisma.AgentMetricsUpdateInput) {
+  return prisma.agentMetrics.updateMany({
+    where: { deploymentId },
     data,
   });
 }
 
 // Agent logs operations
-export async function getAgentLogs(agentId: string) {
+export async function getAgentLogs(deploymentId: string) {
   return prisma.agentLog.findMany({
-    where: { agentId },
-    orderBy: { createdAt: 'desc' },
+    where: { deploymentId },
+    orderBy: { timestamp: 'desc' },
   });
 }
 
@@ -529,6 +530,19 @@ export async function getDeploymentFeedbacks(id: string) {
         },
       },
     },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function getAgentFeedbackById(id: string) {
+  return prisma.agentFeedback.findUnique({
+    where: { id },
+  });
+}
+
+export async function getAgentFeedbacksByDeploymentId(deploymentId: string) {
+  return prisma.agentFeedback.findMany({
+    where: { deploymentId },
     orderBy: { createdAt: 'desc' },
   });
 } 

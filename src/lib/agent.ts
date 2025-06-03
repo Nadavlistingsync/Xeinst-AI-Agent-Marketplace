@@ -9,7 +9,7 @@ export interface CreateAgentInput {
   fileUrl?: string;
   deployedBy: string;
   modelType: string;
-  requirements?: string;
+  requirements?: string[];
   version: string;
   source: string;
 }
@@ -20,7 +20,7 @@ export interface UpdateAgentInput {
   framework?: string;
   fileUrl?: string;
   modelType?: string;
-  requirements?: string;
+  requirements?: string[];
   version?: string;
   source?: string;
 }
@@ -85,16 +85,16 @@ export async function deleteAgent(id: string) {
   });
 }
 
-export async function getAgentDeployments(agentId: string) {
+export async function getAgentDeployments(deploymentId: string) {
   return await prisma.deployment.findMany({
-    where: { id: agentId },
+    where: { id: deploymentId },
     orderBy: { createdAt: "desc" },
   });
 }
 
-export async function getAgentMetrics(agentId: string) {
+export async function getAgentMetrics(deploymentId: string) {
   const metrics = await prisma.agentMetrics.findMany({
-    where: { agentId },
+    where: { deploymentId },
   });
 
   if (metrics.length === 0) {
@@ -114,15 +114,15 @@ export async function getAgentMetrics(agentId: string) {
   };
 }
 
-export async function getAgentLogs(agentId: string) {
+export async function getAgentLogs(deploymentId: string) {
   return await prisma.agentLog.findMany({
-    where: { agentId },
+    where: { deploymentId },
     orderBy: { timestamp: "desc" },
   });
 }
 
-export async function getAgentFeedback(agentId: string, options: { startDate?: Date; endDate?: Date } = {}) {
-  const where: Prisma.AgentFeedbackWhereInput = { agentId };
+export async function getAgentFeedback(deploymentId: string, options: { startDate?: Date; endDate?: Date } = {}) {
+  const where: Prisma.AgentFeedbackWhereInput = { deploymentId };
 
   if (options.startDate) {
     where.createdAt = { gte: options.startDate };

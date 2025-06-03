@@ -2,11 +2,12 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 export const feedbackSchema = z.object({
-  type: z.enum(['error', 'warning', 'success']),
-  message: z.string().min(1).max(1000),
-  agentId: z.string().optional(),
-  userId: z.string().optional(),
-  metadata: z.record(z.unknown()).optional(),
+  deploymentId: z.string().optional(),
+  rating: z.number().min(1).max(5),
+  comment: z.string().nullable(),
+  sentimentScore: z.number().min(-1).max(1).nullable(),
+  categories: z.record(z.number()).nullable(),
+  metadata: z.record(z.unknown()).nullable()
 });
 
 export type FeedbackInput = z.infer<typeof feedbackSchema>;
@@ -16,7 +17,7 @@ export interface FeedbackOptions {
   endDate?: Date;
   limit?: number;
   offset?: number;
-  agentId?: string;
+  deploymentId?: string;
   userId?: string;
   type?: 'error' | 'warning' | 'success';
 }
@@ -27,7 +28,7 @@ export interface FeedbackFilter {
       gte?: Date;
       lte?: Date;
     };
-    agentId?: string;
+    deploymentId?: string;
     userId?: string;
     type?: 'error' | 'warning' | 'success';
   };
@@ -38,13 +39,34 @@ export interface FeedbackFilter {
   };
 }
 
+export type FeedbackUser = {
+  name: string | null;
+  image: string | null;
+};
+
+export type Feedback = {
+  id: string;
+  deploymentId?: string;
+  userId?: string;
+  rating?: number;
+  comment?: string | null;
+  sentimentScore?: number | null;
+  categories?: Record<string, number> | null;
+  metadata?: Record<string, unknown>;
+  response?: string | null;
+  responseDate?: Date | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+  user?: FeedbackUser;
+};
+
 export async function createFeedback(data: FeedbackInput) {
   try {
     const validatedData = feedbackSchema.parse(data);
 
     const feedback = await prisma.agentFeedback.create({
       data: {
-        agentId: validatedData.agentId,
+        deploymentId: validatedData.deploymentId,
         rating: validatedData.rating,
         comment: validatedData.comment,
         sentimentScore: validatedData.sentimentScore,
@@ -126,9 +148,9 @@ export async function deleteFeedback(id: string) {
   }
 }
 
-export async function getFeedbackByAgent(agentId: string, options: FeedbackOptions = {}) {
+export async function getFeedbackByDeployment(deploymentId: string, options: FeedbackOptions = {}) {
   try {
-    const where: any = { agentId };
+    const where: any = { deploymentId };
     if (options.startDate) where.createdAt = { gte: options.startDate };
     if (options.endDate) where.createdAt = { lte: options.endDate };
 
@@ -141,7 +163,7 @@ export async function getFeedbackByAgent(agentId: string, options: FeedbackOptio
 
     return feedbacks;
   } catch (error) {
-    console.error('Error getting feedback by agent:', error);
+    console.error('Error getting feedback by deployment:', error);
     throw error;
   }
 }
@@ -166,10 +188,10 @@ export async function getFeedbackByUser(userId: string, options: FeedbackOptions
   }
 }
 
-export async function getFeedbackStats(agentId: string) {
+export async function getFeedbackStats(deploymentId: string) {
   try {
     const feedbacks = await prisma.agentFeedback.findMany({
-      where: { agentId }
+      where: { deploymentId }
     });
 
     const stats = {
@@ -245,10 +267,10 @@ export async function getFeedbackStats(agentId: string) {
   }
 }
 
-export async function getFeedbackInsights(agentId: string) {
+export async function getFeedbackInsights(deploymentId: string) {
   try {
     const feedbacks = await prisma.agentFeedback.findMany({
-      where: { agentId }
+      where: { deploymentId }
     });
 
     const insights = {
@@ -258,7 +280,7 @@ export async function getFeedbackInsights(agentId: string) {
     };
 
     if (feedbacks.length > 0) {
-      const stats = await getFeedbackStats(agentId);
+      const stats = await getFeedbackStats(deploymentId);
 
       // Analyze strengths
       if (stats.averageRating >= 4) {

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { User } from '../lib/schema';
 
 export const feedbackSchema = z.object({
-  agentId: z.string(),
+  deploymentId: z.string(),
   rating: z.number().min(1).max(5),
   comment: z.string().nullable(),
   sentimentScore: z.number().min(-1).max(1).nullable(),
@@ -19,7 +19,7 @@ export type FeedbackUser = {
 
 export type Feedback = {
   id: string;
-  agentId: string;
+  deploymentId: string;
   userId: string;
   rating: number;
   comment: string | null;
@@ -50,7 +50,7 @@ export interface FeedbackResponse {
   success: boolean;
   feedback?: {
     id: string;
-    agentId: string;
+    deploymentId: string;
     userId: string;
     rating: number;
     comment: string | null;
