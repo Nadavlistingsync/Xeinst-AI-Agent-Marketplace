@@ -438,13 +438,6 @@ export async function updateAgentBasedOnFeedback(
 
   const updates: any = {};
 
-  // Update rating if provided
-  if (feedback.rating) {
-    const currentRating = agent.rating || 0;
-    const newRating = (currentRating + feedback.rating) / 2;
-    updates.rating = newRating;
-  }
-
   // Update status based on feedback
   if (feedback.rating && feedback.rating < 2) {
     updates.status = 'needs_attention';
@@ -538,16 +531,6 @@ export async function processFeedback(feedback: {
     if (!agent) {
       throw new Error('Agent not found');
     }
-
-    // Update agent metrics
-    const currentRating = agent.rating || 0;
-    const newRating = (currentRating + feedback.rating) / 2;
-    await prisma.deployment.update({
-      where: { id: feedback.agentId },
-      data: {
-        rating: newRating
-      }
-    });
 
     // Create notification for agent creator
     await createNotification({
