@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { authOptions } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 
 export async function GET(
   request: Request,
@@ -75,7 +76,7 @@ export async function POST(
     const review = await prisma.review.create({
       data: {
         rating,
-        comment,
+        comment: comment || "",
         deploymentId: params.id,
         userId: session.user.id,
       },
@@ -157,7 +158,7 @@ export async function PUT(
       where: { id: reviewId },
       data: {
         rating,
-        comment,
+        comment: comment || existingReview.comment,
       },
       include: {
         user: {

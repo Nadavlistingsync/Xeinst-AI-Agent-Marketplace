@@ -3,7 +3,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare, hash } from "bcryptjs";
 import { prisma } from "./prisma";
-import { User } from "@prisma/client";
+import { User, UserRole, SubscriptionTier } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -56,7 +56,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           image: user.image,
           role: user.role,
-          subscriptionTier: user.subscriptionTier as 'free' | 'basic' | 'premium',
+          subscriptionTier: user.subscriptionTier,
           password: user.password,
         };
       },
@@ -69,8 +69,8 @@ export const authOptions: NextAuthOptions = {
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.image = token.picture;
-        session.user.role = token.role;
-        session.user.subscriptionTier = token.subscriptionTier;
+        session.user.role = token.role as UserRole;
+        session.user.subscriptionTier = token.subscriptionTier as SubscriptionTier;
       }
       return session;
     },
@@ -103,7 +103,7 @@ export const authOptions: NextAuthOptions = {
         email: dbUser.email,
         picture: dbUser.image,
         role: dbUser.role,
-        subscriptionTier: dbUser.subscriptionTier as 'free' | 'basic' | 'premium',
+        subscriptionTier: dbUser.subscriptionTier,
         password: dbUser.password,
       };
     },
@@ -123,6 +123,7 @@ export async function getUserById(id: string): Promise<User | null> {
       emailVerified: true,
       createdAt: true,
       updatedAt: true,
+      password: true,
     },
   });
 }
@@ -140,6 +141,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
       emailVerified: true,
       createdAt: true,
       updatedAt: true,
+      password: true,
     },
   });
 }
@@ -148,8 +150,8 @@ export async function createUser(data: {
   name: string;
   email: string;
   password: string;
-  role?: string;
-  subscriptionTier?: string;
+  role?: UserRole;
+  subscriptionTier?: SubscriptionTier;
 }): Promise<User> {
   const hashedPassword = await hash(data.password, 10);
 
@@ -158,8 +160,8 @@ export async function createUser(data: {
       name: data.name,
       email: data.email,
       password: hashedPassword,
-      role: data.role || "user",
-      subscriptionTier: data.subscriptionTier || "free",
+      role: data.role || UserRole.user,
+      subscriptionTier: data.subscriptionTier || SubscriptionTier.free,
       emailVerified: null,
     },
     select: {
@@ -183,8 +185,8 @@ export async function updateUser(
     name?: string;
     email?: string;
     image?: string;
-    role?: string;
-    subscriptionTier?: string;
+    role?: UserRole;
+    subscriptionTier?: SubscriptionTier;
   }
 ): Promise<User> {
   return await prisma.user.update({

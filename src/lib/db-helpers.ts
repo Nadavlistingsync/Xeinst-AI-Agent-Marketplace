@@ -83,7 +83,7 @@ export async function getFeaturedProducts() {
       isFeatured: true 
     },
     orderBy: { createdAt: 'desc' }
-  });
+  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 }
 
 export async function getProductsByCategory(category: string) {
@@ -93,7 +93,7 @@ export async function getProductsByCategory(category: string) {
       category 
     },
     orderBy: { createdAt: 'desc' }
-  });
+  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 }
 
 export async function getProductsByUser(userId: string) {
@@ -105,7 +105,7 @@ export async function getProductsByUser(userId: string) {
       ]
     },
     orderBy: { createdAt: 'desc' }
-  });
+  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 }
 
 export async function createProduct(data: Prisma.ProductCreateInput) {
@@ -205,19 +205,13 @@ export async function getUserPurchases(userId: string) {
               image: true,
             },
           },
-          uploader: {
-            select: {
-              name: true,
-              image: true,
-            },
-          },
         },
       },
     },
     orderBy: {
       createdAt: "desc",
     },
-  });
+  }).then(purchases => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
 }
 
 export async function getUserProducts(userId: string) {
@@ -229,7 +223,7 @@ export async function getUserProducts(userId: string) {
       ]
     },
     orderBy: { createdAt: 'desc' }
-  });
+  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 }
 
 // Deployment operations
@@ -330,12 +324,7 @@ export async function updateDeploymentMetrics(id: string, metrics: any) {
   return prisma.deployment.update({
     where: { id },
     data: {
-      metrics: {
-        upsert: {
-          create: metrics,
-          update: metrics,
-        },
-      },
+      metrics: metrics,
     },
   });
 }
@@ -344,7 +333,7 @@ export async function incrementDownloadCount(id: string) {
   return prisma.deployment.update({
     where: { id },
     data: {
-      downloads: {
+      downloadCount: {
         increment: 1,
       },
     },
@@ -406,7 +395,7 @@ export async function createNotification(data: Prisma.NotificationCreateInput) {
 export async function getAgentMetrics(deploymentId: string) {
   return prisma.agentMetrics.findMany({
     where: { deploymentId },
-    orderBy: { lastUpdated: 'desc' },
+    orderBy: { updatedAt: 'desc' },
   });
 }
 
@@ -421,7 +410,7 @@ export async function updateAgentMetrics(deploymentId: string, data: Prisma.Agen
 export async function getAgentLogs(deploymentId: string) {
   return prisma.agentLog.findMany({
     where: { deploymentId },
-    orderBy: { timestamp: 'desc' },
+    orderBy: { createdAt: 'desc' },
   });
 }
 

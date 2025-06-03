@@ -34,6 +34,25 @@ enum NotificationType {
   feedback_received
   deployment_status
   system_alert
+  feedback_alert
+}
+
+enum ProductStatus {
+  draft
+  published
+  archived
+}
+
+enum ProductAccessLevel {
+  public
+  private
+  restricted
+}
+
+enum ProductLicenseType {
+  free
+  commercial
+  enterprise
 }
 
 model User {
@@ -50,12 +69,14 @@ model User {
 
   // Relations
   products        Product[]
-  deployments     Deployment[]
+  deployments     Deployment[] @relation("DeploymentCreator")
+  deployedDeployments Deployment[] @relation("DeploymentDeployer")
   reviews         Review[]
   feedbacks       AgentFeedback[]
   purchases       Purchase[]
   earnings        Earning[]
   notifications   Notification[]
+  files           File[]
 }
 
 model Product {
@@ -71,14 +92,16 @@ model Product {
   category        String
   tags            String[]
   version         String
-  status          String
-  accessLevel     String
-  licenseType     String
+  status          ProductStatus @default(draft)
+  accessLevel     ProductAccessLevel @default(public)
+  licenseType     ProductLicenseType @default(free)
   environment     String
   framework       String
   modelType       String
   createdBy       String
   earningsSplit   Decimal   @db.Decimal(5, 2)
+  isPublic        Boolean   @default(true)
+  uploadedBy      String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -87,6 +110,7 @@ model Product {
   reviews         Review[]  @relation("ProductReviews")
   purchases       Purchase[]
   earnings        Earning[]
+  files           File[]
 }
 
 model Deployment {
@@ -102,11 +126,16 @@ model Deployment {
   source          String
   deployedBy      String
   createdBy       String
+  rating          Float     @default(0)
+  totalRatings    Int       @default(0)
+  downloadCount   Int       @default(0)
+  startDate       DateTime  @default(now())
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   // Relations
-  creator         User      @relation(fields: [createdBy], references: [id])
+  creator         User      @relation("DeploymentCreator", fields: [createdBy], references: [id])
+  deployer        User      @relation("DeploymentDeployer", fields: [deployedBy], references: [id])
   feedbacks       AgentFeedback[]
   reviews         Review[]
   metrics         AgentMetrics[]
@@ -123,6 +152,7 @@ model AgentFeedback {
   categories      Json?
   creatorResponse String?
   responseDate    DateTime?
+  metadata        Json?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -185,6 +215,7 @@ model Notification {
   message         String
   userId          String
   read            Boolean   @default(false)
+  metadata        Json?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -200,6 +231,11 @@ model AgentMetrics {
   successRate     Float
   totalRequests   Int
   activeUsers     Int
+  averageResponseTime Float
+  requestsPerMinute Float
+  averageTokensUsed Float
+  costPerRequest  Float
+  totalCost       Float
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -213,6 +249,7 @@ model AgentLog {
   level           String
   message         String
   metadata        Json?
+  timestamp       DateTime  @default(now())
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -226,6 +263,13 @@ model File {
   url             String
   size            Int
   type            String
+  path            String
+  uploadedBy      String
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user            User      @relation(fields: [uploadedBy], references: [id])
+  product         Product?  @relation(fields: [productId], references: [id])
+  productId       String?
 }

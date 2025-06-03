@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma, UserRole, SubscriptionTier } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { prisma } from './db';
 import { User, Agent, Deployment, AgentFeedback, Earning, Purchase } from './schema';
@@ -7,14 +7,14 @@ export interface CreateUserInput {
   name: string | null;
   email: string;
   image: string | null;
-  role: string;
-  subscriptionTier: string;
+  role: UserRole;
+  subscriptionTier: SubscriptionTier;
   password: string;
 }
 
 export interface GetUsersOptions {
-  role?: string;
-  subscriptionTier?: string;
+  role?: UserRole;
+  subscriptionTier?: SubscriptionTier;
   startDate?: Date;
   endDate?: Date;
   search?: string;
@@ -57,6 +57,8 @@ export async function createUser(data: CreateUserInput): Promise<User> {
     return await prisma.user.create({
       data: {
         ...data,
+        role: data.role,
+        subscriptionTier: data.subscriptionTier,
         password: hashedPassword,
         emailVerified: null,
         createdAt: new Date(),
@@ -203,7 +205,7 @@ export async function getUserEarnings(
     where,
     orderBy: { createdAt: 'desc' },
     take: options.limit,
-  });
+  }).then(earnings => earnings.map(e => ({ ...e, amount: Number(e.amount) })));
 }
 
 export async function getUserPurchases(
@@ -219,7 +221,7 @@ export async function getUserPurchases(
     where,
     orderBy: { createdAt: 'desc' },
     take: options.limit,
-  });
+  }).then(purchases => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
 }
 
 export async function getUserStats() {

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { prisma } from "./db";
-import { Deployment, AgentLog, AgentMetrics, AgentFeedback } from "@prisma/client";
+import { Deployment, AgentLog, AgentMetrics, AgentFeedback, DeploymentStatus } from "@prisma/client";
 import { Deployment as DeploymentSchema } from './schema';
 import JSZip from 'jszip';
 import { logAgentEvent } from './agent-monitoring';
@@ -20,30 +20,30 @@ export const agentValidationSchema = z.object({
 export type AgentValidationType = z.infer<typeof agentValidationSchema>;
 
 export interface AgentDeploymentOptions {
-  user_id?: string;
+  userId?: string;
   category?: string;
-  status?: string;
+  status?: DeploymentStatus;
   query?: string;
   framework?: string;
-  access_level?: string;
+  accessLevel?: string;
   licenseType?: string;
 }
 
 export async function getAgentDeployments(options: AgentDeploymentOptions = {}) {
   const {
-    user_id,
+    userId,
     category,
     status,
     query,
     framework,
-    access_level,
+    accessLevel,
     licenseType,
   } = options;
 
   const where: Prisma.DeploymentWhereInput = {};
 
-  if (user_id) {
-    where.deployed_by = user_id;
+  if (userId) {
+    where.deployedBy = userId;
   }
 
   if (category) {
@@ -65,8 +65,8 @@ export async function getAgentDeployments(options: AgentDeploymentOptions = {}) 
     where.framework = framework;
   }
 
-  if (access_level) {
-    where.access_level = access_level;
+  if (accessLevel) {
+    where.accessLevel = accessLevel;
   }
 
   if (licenseType) {
@@ -86,7 +86,7 @@ export async function getAgentDeployments(options: AgentDeploymentOptions = {}) 
       metrics: true,
     },
     orderBy: {
-      created_at: 'desc',
+      createdAt: 'desc',
     },
   });
 
@@ -131,12 +131,12 @@ export async function getAgentDeploymentById(id: string) {
   return deployment;
 }
 
-export async function createAgentDeployment(data: AgentValidationType, user_id: string) {
+export async function createAgentDeployment(data: AgentValidationType, userId: string) {
   const deployment = await prisma.deployment.create({
     data: {
       ...data,
-      deployed_by: user_id,
-      status: 'pending',
+      deployedBy: userId,
+      status: DeploymentStatus.pending,
     },
     include: {
       deployer: {
@@ -150,7 +150,7 @@ export async function createAgentDeployment(data: AgentValidationType, user_id: 
   });
 
   await logAgentEvent(deployment.id, 'info', 'Deployment created', {
-    user_id,
+    userId,
     deploymentId: deployment.id,
   });
 

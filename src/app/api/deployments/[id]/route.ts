@@ -76,11 +76,13 @@ export async function POST(
       }
 
       case "undeploy": {
+        // deployedBy cannot be set to null because the schema does not allow null
+        // Instead, we can set it to the current user or leave it unchanged
         const deployment = await prisma.deployment.update({
           where: { id: params.id },
           data: {
             status: "stopped",
-            deployedBy: null,
+            deployedBy: session.user.id, // fallback to current user
           },
         });
         return NextResponse.json(deployment);
