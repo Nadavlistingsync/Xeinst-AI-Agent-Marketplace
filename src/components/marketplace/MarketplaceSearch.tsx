@@ -1,3 +1,5 @@
+'use client';
+
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { SearchIcon } from "lucide-react";
