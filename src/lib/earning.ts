@@ -36,7 +36,7 @@ export async function createEarning(data: CreateEarningInput): Promise<Earning> 
         stripeTransferId: data.stripeTransferId,
         createdAt: new Date(),
       },
-    });
+    }).then((earning) => ({ ...earning, amount: Number(earning.amount) }));
   } catch (error) {
     console.error('Error creating earning:', error);
     throw new Error('Failed to create earning');
@@ -59,7 +59,7 @@ export async function updateEarning(
     return await prisma.earning.update({
       where: { id },
       data: updateData,
-    });
+    }).then((earning) => ({ ...earning, amount: Number(earning.amount) }));
   } catch (error) {
     console.error('Error updating earning:', error);
     throw new Error('Failed to update earning');
@@ -79,7 +79,7 @@ export async function getEarnings(options: EarningOptions = {}): Promise<Earning
     return await prisma.earning.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-    });
+    }).then((earnings) => earnings.map(e => ({ ...e, amount: Number(e.amount) })));
   } catch (error) {
     console.error('Error getting earnings:', error);
     throw new Error('Failed to get earnings');
@@ -90,7 +90,7 @@ export async function getEarning(id: string): Promise<Earning | null> {
   try {
     return await prisma.earning.findUnique({
       where: { id },
-    });
+    }).then((earning) => earning ? { ...earning, amount: Number(earning.amount) } : null);
   } catch (error) {
     console.error('Error getting earning:', error);
     throw new Error('Failed to get earning');
@@ -130,7 +130,7 @@ export async function getUserEarnings(
     },
     orderBy: { createdAt: 'desc' },
     take: options.limit,
-  });
+  }).then((earnings) => earnings.map(e => ({ ...e, amount: Number(e.amount) })));
 }
 
 export async function getProductEarnings(
@@ -155,7 +155,7 @@ export async function getProductEarnings(
     },
     orderBy: { createdAt: 'desc' },
     take: options.limit,
-  });
+  }).then((earnings) => earnings.map(e => ({ ...e, amount: Number(e.amount) })));
 }
 
 export async function getEarningStats() {
@@ -226,17 +226,19 @@ export async function getProductEarningStats(productId: string): Promise<{
     where: { productId },
   });
 
-  const totalEarnings = earnings.reduce((sum, earning) => sum + Number(earning.amount), 0);
-  const totalPending = earnings
-    .filter(earning => earning.status === 'pending')
-    .reduce((sum, earning) => sum + Number(earning.amount), 0);
-  const totalPaid = earnings
-    .filter(earning => earning.status === 'paid')
-    .reduce((sum, earning) => sum + Number(earning.amount), 0);
+  const earningsNum = earnings.map(e => ({ ...e, amount: Number(e.amount) }));
 
-  const earningDistribution = earnings.reduce((acc, earning) => {
+  const totalEarnings = earningsNum.reduce((sum, earning) => sum + earning.amount, 0);
+  const totalPending = earningsNum
+    .filter(earning => earning.status === 'pending')
+    .reduce((sum, earning) => sum + earning.amount, 0);
+  const totalPaid = earningsNum
+    .filter(earning => earning.status === 'paid')
+    .reduce((sum, earning) => sum + earning.amount, 0);
+
+  const earningDistribution = earningsNum.reduce((acc, earning) => {
     const date = earning.createdAt.toISOString().split('T')[0];
-    acc[date] = (acc[date] || 0) + Number(earning.amount);
+    acc[date] = (acc[date] || 0) + earning.amount;
     return acc;
   }, {} as Record<string, number>);
 

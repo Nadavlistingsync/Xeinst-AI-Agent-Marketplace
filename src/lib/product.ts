@@ -54,7 +54,7 @@ export async function createProduct(data: CreateProductInput): Promise<Product> 
         totalRatings: 0,
         downloadCount: 0,
       },
-    });
+    }).then((product) => ({ ...product, price: Number(product.price), earnings_split: Number(product.earnings_split) }));
   } catch (error) {
     console.error('Error creating product:', error);
     throw new Error('Failed to create product');
@@ -77,7 +77,7 @@ export async function updateProduct(
     return await prisma.product.update({
       where: { id },
       data: updateData,
-    });
+    }).then((product) => ({ ...product, price: Number(product.price), earnings_split: Number(product.earnings_split) }));
   } catch (error) {
     console.error('Error updating product:', error);
     throw new Error('Failed to update product');
@@ -110,7 +110,7 @@ export async function getProducts(options: {
     return await prisma.product.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-    });
+    }).then((products) => products.map(p => ({ ...p, price: Number(p.price), earnings_split: Number(p.earnings_split) })));
   } catch (error) {
     console.error('Error getting products:', error);
     throw new Error('Failed to get products');
@@ -121,7 +121,7 @@ export async function getProduct(id: string): Promise<Product | null> {
   try {
     return await prisma.product.findUnique({
       where: { id },
-    });
+    }).then((product) => product ? { ...product, price: Number(product.price), earnings_split: Number(product.earnings_split) } : null);
   } catch (error) {
     console.error('Error getting product:', error);
     throw new Error('Failed to get product');

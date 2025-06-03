@@ -24,7 +24,7 @@ export async function createPurchase(data: {
         createdAt: new Date(),
         updatedAt: new Date(),
       },
-    });
+    }).then((purchase) => ({ ...purchase, amount: Number(purchase.amount) }));
   } catch (error) {
     console.error('Error creating purchase:', error);
     throw new Error('Failed to create purchase');
@@ -39,7 +39,7 @@ export async function updatePurchase(id: string, data: Partial<Purchase>): Promi
         ...data,
         updatedAt: new Date(),
       },
-    });
+    }).then((purchase) => ({ ...purchase, amount: Number(purchase.amount) }));
   } catch (error) {
     console.error('Error updating purchase:', error);
     throw new Error('Failed to update purchase');
@@ -59,7 +59,7 @@ export async function getPurchases(options: PurchaseOptions = {}): Promise<Purch
     return await prisma.purchase.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-    });
+    }).then((purchases) => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
   } catch (error) {
     console.error('Error getting purchases:', error);
     throw new Error('Failed to get purchases');
@@ -70,7 +70,7 @@ export async function getPurchase(id: string): Promise<Purchase | null> {
   try {
     return await prisma.purchase.findUnique({
       where: { id },
-    });
+    }).then((purchase) => purchase ? { ...purchase, amount: Number(purchase.amount) } : null);
   } catch (error) {
     console.error('Error getting purchase:', error);
     throw new Error('Failed to get purchase');
@@ -110,7 +110,7 @@ export async function getUserPurchases(
     },
     orderBy: { createdAt: 'desc' },
     take: options.limit,
-  });
+  }).then((purchases) => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
 }
 
 export async function getProductPurchases(
@@ -135,7 +135,7 @@ export async function getProductPurchases(
     },
     orderBy: { createdAt: 'desc' },
     take: options.limit,
-  });
+  }).then((purchases) => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
 }
 
 export async function getPurchaseStats() {
