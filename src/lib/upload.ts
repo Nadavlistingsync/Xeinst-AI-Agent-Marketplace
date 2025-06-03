@@ -59,9 +59,4 @@ export async function uploadProduct(data: {
     console.error('Error uploading product:', error);
     throw new Error('Failed to upload product');
   }
-}
-
-export default function uploadFile() {
-  // Implement upload logic here
-  return null;
 } 
