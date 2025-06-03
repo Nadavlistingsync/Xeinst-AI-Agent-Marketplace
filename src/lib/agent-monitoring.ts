@@ -75,7 +75,7 @@ export async function updateAgentMetrics(
     data: {
       deploymentId,
       errorRate: metrics.errorRate,
-      responseTime: metrics.responseTime,
+      averageResponseTime: metrics.averageResponseTime,
       successRate: metrics.successRate,
       totalRequests: metrics.totalRequests,
       activeUsers: metrics.activeUsers,
@@ -150,7 +150,7 @@ export async function getAgentMetrics(
   return metrics.map(metric => ({
     timestamp: metric.timestamp,
     errorRate: metric.errorRate,
-    responseTime: metric.responseTime,
+    averageResponseTime: metric.averageResponseTime,
     successRate: metric.successRate,
     totalRequests: metric.totalRequests,
     activeUsers: metric.activeUsers
@@ -168,7 +168,7 @@ export async function getAgentAnalytics(deploymentId: string) {
     logs,
     summary: metrics ? {
       totalRequests: metrics.reduce((sum, m) => sum + (m.totalRequests || 0), 0),
-      averageResponseTime: metrics.reduce((sum, m) => sum + (m.responseTime || 0), 0) / metrics.length || 0,
+      averageResponseTime: metrics.reduce((sum, m) => sum + (m.averageResponseTime || 0), 0) / metrics.length || 0,
       errorRate: metrics.reduce((sum, m) => sum + (m.errorRate || 0), 0) / metrics.length || 0,
       successRate: metrics.reduce((sum, m) => sum + (m.successRate || 0), 0) / metrics.length || 0,
       activeUsers: metrics.reduce((sum, m) => sum + (m.activeUsers || 0), 0),
@@ -224,8 +224,9 @@ export async function getAgentFeedback(agentId: string, options: MonitoringOptio
 }
 
 export async function getAgentPerformanceMetrics(agentId: string) {
-  const metrics = await prisma.agentMetrics.findUnique({
+  const metrics = await prisma.agentMetrics.findFirst({
     where: { deploymentId: agentId },
+    orderBy: { timestamp: 'desc' },
   });
 
   if (!metrics) {
@@ -244,7 +245,7 @@ export async function getAgentPerformanceMetrics(agentId: string) {
 
   return {
     totalRequests: metrics.totalRequests || 0,
-    averageResponseTime: metrics.responseTime || 0,
+    averageResponseTime: metrics.averageResponseTime || 0,
     errorRate: metrics.errorRate || 0,
     successRate: metrics.successRate || 0,
     activeUsers: metrics.activeUsers || 0,
@@ -304,7 +305,7 @@ export async function getAgentHealth(agentId: string): Promise<AgentHealth> {
     const latestMetrics = metrics[metrics.length - 1];
     health.metrics = {
       errorRate: latestMetrics.errorRate,
-      responseTime: latestMetrics.responseTime,
+      responseTime: latestMetrics.averageResponseTime,
       successRate: latestMetrics.successRate,
       totalRequests: latestMetrics.totalRequests,
       activeUsers: latestMetrics.activeUsers
@@ -319,10 +320,10 @@ export async function getAgentHealth(agentId: string): Promise<AgentHealth> {
       health.issues.push('Elevated error rate');
     }
 
-    if (latestMetrics.responseTime > 1000) {
+    if (latestMetrics.averageResponseTime > 1000) {
       health.status = 'unhealthy';
       health.issues.push('High response time');
-    } else if (latestMetrics.responseTime > 500) {
+    } else if (latestMetrics.averageResponseTime > 500) {
       health.status = 'degraded';
       health.issues.push('Elevated response time');
     }
