@@ -38,6 +38,7 @@ export async function POST(request: Request) {
     const agent = await prisma.deployment.create({
       data: {
         ...validatedData,
+        modelType: body.modelType || 'standard',
         createdBy: session.user.id,
         deployedBy: session.user.id,
       },
