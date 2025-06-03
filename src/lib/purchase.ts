@@ -3,16 +3,16 @@ import { Prisma } from '@prisma/client';
 import { Purchase } from './schema';
 
 export interface PurchaseOptions {
-  user_id?: string;
-  product_id?: string;
+  userId?: string;
+  productId?: string;
   status?: string;
   startDate?: Date;
   endDate?: Date;
 }
 
 export async function createPurchase(data: {
-  user_id: string;
-  product_id: string;
+  userId: string;
+  productId: string;
   amount: number;
   status?: string;
 }): Promise<Purchase> {
@@ -50,8 +50,8 @@ export async function getPurchases(options: PurchaseOptions = {}): Promise<Purch
   try {
     const where: Prisma.PurchaseWhereInput = {};
     
-    if (options.user_id) where.userId = options.user_id;
-    if (options.product_id) where.productId = options.product_id;
+    if (options.userId) where.userId = options.userId;
+    if (options.productId) where.productId = options.productId;
     if (options.status) where.status = options.status;
     if (options.startDate) where.createdAt = { gte: options.startDate };
     if (options.endDate) where.createdAt = { lte: options.endDate };
@@ -89,7 +89,7 @@ export async function deletePurchase(id: string): Promise<void> {
 }
 
 export async function getUserPurchases(
-  user_id: string,
+  userId: string,
   options: {
     status?: string;
     startDate?: Date;
@@ -97,7 +97,7 @@ export async function getUserPurchases(
     limit?: number;
   } = {}
 ): Promise<Purchase[]> {
-  const where: Prisma.PurchaseWhereInput = { userId: user_id };
+  const where: Prisma.PurchaseWhereInput = { userId };
 
   if (options.status) where.status = options.status;
   if (options.startDate) where.createdAt = { gte: options.startDate };
@@ -114,7 +114,7 @@ export async function getUserPurchases(
 }
 
 export async function getProductPurchases(
-  product_id: string,
+  productId: string,
   options: {
     status?: string;
     startDate?: Date;
@@ -122,7 +122,7 @@ export async function getProductPurchases(
     limit?: number;
   } = {}
 ): Promise<Purchase[]> {
-  const where: Prisma.PurchaseWhereInput = { productId: product_id };
+  const where: Prisma.PurchaseWhereInput = { productId };
 
   if (options.status) where.status = options.status;
   if (options.startDate) where.createdAt = { gte: options.startDate };
@@ -186,10 +186,10 @@ export async function getPurchaseHistory() {
 }
 
 export async function updateProductDownloadCount(
-  product_id: string
+  productId: string
 ): Promise<void> {
   await prisma.product.update({
-    where: { id: product_id },
+    where: { id: productId },
     data: {
       downloadCount: {
         increment: 1,

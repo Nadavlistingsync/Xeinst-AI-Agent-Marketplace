@@ -31,7 +31,7 @@ export async function createEarning(data: CreateEarningInput): Promise<Earning> 
       data: {
         userId: data.userId,
         productId: data.productId,
-        amount: new Prisma.Decimal(data.amount),
+        amount: data.amount,
         status: data.status || 'pending',
         stripeTransferId: data.stripeTransferId,
         createdAt: new Date(),
@@ -50,7 +50,7 @@ export async function updateEarning(
   try {
     const updateData: any = { ...data };
     if (data.amount !== undefined) {
-      updateData.amount = new Prisma.Decimal(data.amount);
+      updateData.amount = data.amount;
     }
     if (data.paidAt) {
       updateData.paidAt = data.paidAt;

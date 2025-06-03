@@ -38,7 +38,7 @@ export async function createProduct(data: CreateProductInput): Promise<Product> 
         description: data.description,
         longDescription: data.longDescription,
         category: data.category,
-        price: new Prisma.Decimal(data.price),
+        price: data.price,
         imageUrl: data.imageUrl,
         fileUrl: data.fileUrl,
         documentation: data.documentation,
@@ -48,11 +48,11 @@ export async function createProduct(data: CreateProductInput): Promise<Product> 
         uploadedBy: data.uploadedBy,
         isPublic: data.isPublic ?? true,
         isFeatured: data.isFeatured ?? false,
-        earnings_split: new Prisma.Decimal(data.earnings_split ?? 0.70),
+        earnings_split: data.earnings_split ?? 0.70,
         rating: 0,
-        average_rating: new Prisma.Decimal(0),
-        total_ratings: 0,
-        download_count: 0,
+        average_rating: 0,
+        totalRatings: 0,
+        downloadCount: 0,
       },
     });
   } catch (error) {
@@ -68,10 +68,10 @@ export async function updateProduct(
   try {
     const updateData: any = { ...data };
     if (data.price !== undefined) {
-      updateData.price = new Prisma.Decimal(data.price);
+      updateData.price = data.price;
     }
     if (data.earnings_split !== undefined) {
-      updateData.earnings_split = new Prisma.Decimal(data.earnings_split);
+      updateData.earnings_split = data.earnings_split;
     }
 
     return await prisma.product.update({
@@ -290,7 +290,7 @@ export async function updateProductDownloadCount(
   await prisma.product.update({
     where: { id: product_id },
     data: {
-      download_count: {
+      downloadCount: {
         increment: 1,
       },
     },
