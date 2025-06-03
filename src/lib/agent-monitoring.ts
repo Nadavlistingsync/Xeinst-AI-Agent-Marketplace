@@ -107,13 +107,13 @@ export async function getAgentLogs(
   const logs = await prisma.agentLog.findMany({
     where,
     orderBy: {
-      timestamp: 'desc'
+      createdAt: 'desc'
     }
   });
 
   return logs.map(log => ({
     id: log.id,
-    level: log.level,
+    level: (log.level === 'info' || log.level === 'warning' || log.level === 'error' ? log.level : 'info') as 'info' | 'warning' | 'error',
     message: log.message,
     timestamp: log.timestamp,
     metadata: log.metadata as Record<string, unknown>
@@ -143,7 +143,7 @@ export async function getAgentMetrics(
   const metrics = await prisma.agentMetrics.findMany({
     where,
     orderBy: {
-      timestamp: 'desc'
+      createdAt: 'desc'
     }
   });
 
@@ -178,33 +178,54 @@ export async function getAgentAnalytics(deploymentId: string) {
 }
 
 export async function getAgentWarnings(deploymentId: string): Promise<AgentLog[]> {
-  return await prisma.agentLog.findMany({
+  const logs = await prisma.agentLog.findMany({
     where: {
       deploymentId,
       level: 'warning',
     },
-    orderBy: { timestamp: 'desc' },
+    orderBy: { createdAt: 'desc' },
   });
+  return logs.map(log => ({
+    id: log.id,
+    level: (log.level === 'info' || log.level === 'warning' || log.level === 'error' ? log.level : 'info') as 'info' | 'warning' | 'error',
+    message: log.message,
+    timestamp: log.timestamp,
+    metadata: log.metadata as Record<string, unknown>
+  }));
 }
 
 export async function getAgentErrors(deploymentId: string): Promise<AgentLog[]> {
-  return await prisma.agentLog.findMany({
+  const logs = await prisma.agentLog.findMany({
     where: {
       deploymentId,
       level: 'error',
     },
-    orderBy: { timestamp: 'desc' },
+    orderBy: { createdAt: 'desc' },
   });
+  return logs.map(log => ({
+    id: log.id,
+    level: (log.level === 'info' || log.level === 'warning' || log.level === 'error' ? log.level : 'info') as 'info' | 'warning' | 'error',
+    message: log.message,
+    timestamp: log.timestamp,
+    metadata: log.metadata as Record<string, unknown>
+  }));
 }
 
 export async function getAgentInfo(agentId: string): Promise<AgentLog[]> {
-  return await prisma.agentLog.findMany({
+  const logs = await prisma.agentLog.findMany({
     where: {
       deploymentId: agentId,
       level: 'info',
     },
-    orderBy: { timestamp: 'desc' },
+    orderBy: { createdAt: 'desc' },
   });
+  return logs.map(log => ({
+    id: log.id,
+    level: (log.level === 'info' || log.level === 'warning' || log.level === 'error' ? log.level : 'info') as 'info' | 'warning' | 'error',
+    message: log.message,
+    timestamp: log.timestamp,
+    metadata: log.metadata as Record<string, unknown>
+  }));
 }
 
 export async function getAgentFeedback(agentId: string, options: MonitoringOptions = {}) {
@@ -720,20 +741,30 @@ export async function monitorAgentDeployment(agentId: string) {
 }
 
 export async function updateAgentDeploymentMetrics(agentId: string, metrics: Partial<AgentMetrics>) {
-  return await prisma.agentMetrics.upsert({
+  // Find the latest metrics record for this deployment
+  const latest = await prisma.agentMetrics.findFirst({
     where: { deploymentId: agentId },
-    update: {
-      ...metrics,
-      lastUpdated: new Date(),
-    },
-    create: {
-      deploymentId: agentId,
-      ...metrics,
-      lastUpdated: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
+    orderBy: { createdAt: 'desc' },
   });
+  if (latest) {
+    return await prisma.agentMetrics.update({
+      where: { id: latest.id },
+      data: {
+        ...metrics,
+        lastUpdated: new Date(),
+      },
+    });
+  } else {
+    return await prisma.agentMetrics.create({
+      data: {
+        deploymentId: agentId,
+        ...metrics,
+        lastUpdated: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+  }
 }
 
 export async function createAgentDeploymentLog(
