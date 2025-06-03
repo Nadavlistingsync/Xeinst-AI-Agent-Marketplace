@@ -157,9 +157,11 @@ export async function getAgentLogs(
 }
 
 export async function getAgentMetrics(agentId: string): Promise<AgentMetrics | null> {
-  return prisma.agentMetrics.findUnique({
+  const metrics = await prisma.agentMetrics.findUnique({
     where: { id: agentId },
   });
+
+  return metrics;
 }
 
 export async function getAgentAnalytics(agentId: string): Promise<{
@@ -449,15 +451,70 @@ export async function getAgentDeployments(agentId: string): Promise<any[]> {
   });
 }
 
-export async function createAgentFeedback(data: z.infer<typeof feedbackSchema>): Promise<AgentFeedback> {
-  const validatedFeedback = feedbackSchema.parse(data);
-
+export async function createAgentFeedback(
+  deploymentId: string,
+  userId: string,
+  validatedFeedback: {
+    rating: number;
+    comment: string | null;
+    sentimentScore: number;
+    categories: Record<string, number> | null;
+  }
+): Promise<AgentFeedback> {
   return prisma.agentFeedback.create({
     data: {
-      ...validatedFeedback,
-      sentimentScore: validatedFeedback.sentimentScore ?? 0,
+      deploymentId,
+      userId,
+      rating: validatedFeedback.rating,
+      comment: validatedFeedback.comment,
+      sentimentScore: validatedFeedback.sentimentScore,
       categories: validatedFeedback.categories as Prisma.JsonValue,
-    },
+      metadata: {}
+    }
+  });
+}
+
+export async function updateAgentFeedback(
+  feedbackId: string,
+  validatedFeedback: {
+    rating: number;
+    comment: string | null;
+    sentimentScore: number;
+    categories: Record<string, number> | null;
+  }
+): Promise<AgentFeedback> {
+  return prisma.agentFeedback.update({
+    where: { id: feedbackId },
+    data: {
+      rating: validatedFeedback.rating,
+      comment: validatedFeedback.comment,
+      sentimentScore: validatedFeedback.sentimentScore,
+      categories: validatedFeedback.categories as Prisma.JsonValue,
+      metadata: {}
+    }
+  });
+}
+
+export async function createAgentFeedbackWithResponse(
+  deploymentId: string,
+  userId: string,
+  validatedFeedback: {
+    rating: number;
+    comment: string | null;
+    sentimentScore: number;
+    categories: Record<string, number> | null;
+  }
+): Promise<AgentFeedback> {
+  return prisma.agentFeedback.create({
+    data: {
+      deploymentId,
+      userId,
+      rating: validatedFeedback.rating,
+      comment: validatedFeedback.comment,
+      sentimentScore: validatedFeedback.sentimentScore,
+      categories: validatedFeedback.categories as Prisma.JsonValue,
+      metadata: {}
+    }
   });
 }
 
@@ -897,22 +954,6 @@ export async function updateDeploymentStatus(
     data: {
       status,
       ...(health && { health: health as any }),
-    },
-  });
-}
-
-export async function updateAgentFeedback(
-  id: string,
-  data: Partial<z.infer<typeof feedbackSchema>>
-): Promise<AgentFeedback> {
-  const validatedFeedback = feedbackSchema.partial().parse(data);
-
-  return prisma.agentFeedback.update({
-    where: { id },
-    data: {
-      ...validatedFeedback,
-      sentimentScore: validatedFeedback.sentimentScore ?? 0,
-      categories: validatedFeedback.categories as Prisma.JsonValue,
     },
   });
 }

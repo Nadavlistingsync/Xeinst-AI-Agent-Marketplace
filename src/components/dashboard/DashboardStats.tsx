@@ -1,29 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import prisma from "@/lib/prisma";
 import { ActivityIcon, UsersIcon, ZapIcon, ClockIcon } from "lucide-react";
+import { prisma } from "@/lib/prisma";
 
-interface DashboardStatsProps {
-  userId: string;
-}
-
-export default async function DashboardStats({ userId }: DashboardStatsProps) {
+export async function DashboardStats() {
   const [totalRequests, averageResponseTime] = await Promise.all([
     prisma.deploymentMetrics.aggregate({
-      where: {
-        deployment: {
-          deployedBy: userId
-        }
-      },
       _sum: {
         totalRequests: true
       }
     }),
     prisma.deploymentMetrics.aggregate({
-      where: {
-        deployment: {
-          deployedBy: userId
-        }
-      },
       _avg: {
         averageResponseTime: true
       }
@@ -32,24 +18,16 @@ export default async function DashboardStats({ userId }: DashboardStatsProps) {
 
   const stats = [
     {
-      title: 'Total Requests',
-      value: totalRequests._sum?.totalRequests || 0,
-      description: 'Total number of requests handled'
+      title: "Total Requests",
+      value: totalRequests._sum.totalRequests || 0,
+      icon: ActivityIcon,
+      description: "Total number of requests processed"
     },
     {
-      title: 'Average Response Time',
-      value: `${Math.round(averageResponseTime._avg?.averageResponseTime || 0)}ms`,
-      description: 'Average time to process requests'
-    },
-    {
-      title: 'Active Deployments',
-      value: '0',
-      description: 'Number of currently active deployments'
-    },
-    {
-      title: 'Total Deployments',
-      value: '0',
-      description: 'Total number of deployments'
+      title: "Average Response Time",
+      value: `${(averageResponseTime._avg.averageResponseTime || 0).toFixed(2)}ms`,
+      icon: ClockIcon,
+      description: "Average time to process requests"
     }
   ];
 
@@ -58,11 +36,16 @@ export default async function DashboardStats({ userId }: DashboardStatsProps) {
       {stats.map((stat) => (
         <Card key={stat.title}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {stat.title}
+            </CardTitle>
+            <stat.icon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stat.value}</div>
-            <p className="text-xs text-muted-foreground">{stat.description}</p>
+            <p className="text-xs text-muted-foreground">
+              {stat.description}
+            </p>
           </CardContent>
         </Card>
       ))}

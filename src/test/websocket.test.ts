@@ -5,14 +5,16 @@ import { emitDeploymentStatus } from '@/lib/websocket';
 import { DeploymentStatus } from '@prisma/client';
 import type { DeploymentStatusUpdate } from '@/types/websocket';
 
-describe('WebSocket Server', () => {
+describe('WebSocket', () => {
   let io: Server;
-  let httpServer: ReturnType<typeof createServer>;
+  let httpServer: any;
 
-  beforeEach(() => {
+  beforeEach((done) => {
     httpServer = createServer();
     io = new Server(httpServer);
-    httpServer.listen();
+    httpServer.listen(() => {
+      done();
+    });
   });
 
   afterEach(() => {
@@ -20,22 +22,10 @@ describe('WebSocket Server', () => {
     httpServer.close();
   });
 
-  it('should emit deployment status updates', (done) => {
-    const mockDeploymentStatus: DeploymentStatusUpdate = {
+  it('should emit deployment status', (done) => {
+    const mockDeploymentStatus = {
       id: 'test-deployment',
-      status: DeploymentStatus.ACTIVE,
-      metrics: {
-        errorRate: 0,
-        successRate: 100,
-        activeUsers: 10,
-        totalRequests: 1000,
-        averageResponseTime: 200,
-        requestsPerMinute: 50,
-        averageTokensUsed: 100,
-        costPerRequest: 0.001,
-        totalCost: 1.0
-      },
-      lastUpdated: new Date().toISOString()
+      status: DeploymentStatus.active
     };
 
     io.on('connection', (socket) => {
@@ -45,26 +35,28 @@ describe('WebSocket Server', () => {
       });
     });
 
-    emitDeploymentStatus(mockDeploymentStatus);
+    emitDeploymentStatus(io, mockDeploymentStatus.id, mockDeploymentStatus.status);
   });
 
-  it('should handle connection events', (done) => {
+  it('should handle connection', (done) => {
     io.on('connection', (socket) => {
       expect(socket).toBeDefined();
       done();
     });
 
-    const client = io.connect();
+    const client = io.listen(httpServer);
+    client.connect();
   });
 
-  it('should handle disconnection events', (done) => {
+  it('should handle disconnection', (done) => {
     io.on('connection', (socket) => {
       socket.on('disconnect', () => {
         done();
       });
     });
 
-    const client = io.connect();
+    const client = io.listen(httpServer);
+    client.connect();
     client.disconnect();
   });
 }); 

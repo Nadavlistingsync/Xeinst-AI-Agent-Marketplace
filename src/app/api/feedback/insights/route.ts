@@ -4,6 +4,29 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { handleApiError } from '@/lib/error-handling';
 import type { FeedbackInsightsResponse } from '@/types/feedback-analytics';
+import type { AgentFeedback } from '@prisma/client';
+
+interface FeedbackInsights {
+  averageRating: number;
+  sentimentBreakdown: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  ratingTrend: Array<{
+    date: string;
+    rating: number;
+  }>;
+  sentimentTrend: Array<{
+    date: string;
+    sentiment: number;
+  }>;
+  categoryBreakdown: Array<{
+    category: string;
+    count: number;
+    averageRating: number;
+  }>;
+}
 
 export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
   try {
@@ -15,13 +38,14 @@ export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
       );
     }
 
-    const feedback = await prisma.feedback.findMany({
+    const feedback = await prisma.agentFeedback.findMany({
       where: {
         deployment: {
           createdBy: session.user.id
         }
       },
       include: {
+        categories: true,
         user: {
           select: {
             name: true,
@@ -31,53 +55,43 @@ export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
       }
     });
 
-    const metrics = {
-      totalFeedback: feedback.length,
-      averageRating: feedback.reduce((acc, curr) => acc + curr.rating, 0) / feedback.length || 0,
-      sentimentDistribution: {
-        positive: feedback.filter(f => f.rating >= 4).length,
-        neutral: feedback.filter(f => f.rating === 3).length,
-        negative: feedback.filter(f => f.rating <= 2).length
-      }
-    };
-
-    const trends = {
-      ratingTrend: feedback.map(f => ({
+    const insights: FeedbackInsights = {
+      averageRating: feedback.reduce((acc: number, curr: AgentFeedback) => acc + curr.rating, 0) / feedback.length || 0,
+      sentimentBreakdown: {
+        positive: feedback.filter((f: AgentFeedback) => f.rating >= 4).length,
+        neutral: feedback.filter((f: AgentFeedback) => f.rating === 3).length,
+        negative: feedback.filter((f: AgentFeedback) => f.rating <= 2).length
+      },
+      ratingTrend: feedback.map((f: AgentFeedback) => ({
         date: f.createdAt.toISOString(),
         rating: f.rating
       })),
-      sentimentTrend: feedback.map(f => ({
+      sentimentTrend: feedback.map((f: AgentFeedback) => ({
         date: f.createdAt.toISOString(),
-        sentiment: f.sentimentScore ? Number(f.sentimentScore) : 0
+        sentiment: f.sentimentScore || 0
+      })),
+      categoryBreakdown: Object.entries(
+        feedback.reduce((acc: Record<string, { count: number; totalRating: number }>, curr: AgentFeedback) => {
+          const categories = curr.categories as Record<string, number>;
+          Object.entries(categories).forEach(([name, value]) => {
+            if (!acc[name]) {
+              acc[name] = { count: 0, totalRating: 0 };
+            }
+            acc[name].count += 1;
+            acc[name].totalRating += curr.rating;
+          });
+          return acc;
+        }, {})
+      ).map(([name, { count, totalRating }]) => ({
+        category: name,
+        count,
+        averageRating: totalRating / count
       }))
     };
 
-    const categories = Object.entries(
-      feedback.reduce((acc, curr) => {
-        if (curr.categories) {
-          Object.entries(curr.categories as Record<string, number>).forEach(([category, value]) => {
-            if (!acc[category]) {
-              acc[category] = { count: 0, totalRating: 0 };
-            }
-            acc[category].count++;
-            acc[category].totalRating += value;
-          });
-        }
-        return acc;
-      }, {} as Record<string, { count: number; totalRating: number }>)
-    ).map(([name, { count, totalRating }]) => ({
-      name,
-      count,
-      averageRating: totalRating / count || 0
-    }));
-
     return NextResponse.json({
       success: true,
-      data: {
-        metrics,
-        trends,
-        categories
-      }
+      data: insights
     } as FeedbackInsightsResponse);
   } catch (error) {
     console.error('Error fetching feedback insights:', error);

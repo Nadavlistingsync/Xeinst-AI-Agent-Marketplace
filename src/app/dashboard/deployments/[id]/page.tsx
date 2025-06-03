@@ -95,33 +95,32 @@ export default async function DeploymentPage({ params }: DeploymentPageProps) {
         <div className="lg:col-span-2 space-y-8">
           <DeploymentOverview 
             deployment={deploymentWithMetrics}
-            onStart={async (id) => {
+            onStart={async (id: string) => {
               "use server";
               await prisma.deployment.update({
                 where: { id },
-                data: { status: DeploymentStatus.ACTIVE }
+                data: { status: DeploymentStatus.active }
               });
             }}
-            onStop={async (id) => {
+            onStop={async (id: string) => {
               "use server";
               await prisma.deployment.update({
                 where: { id },
-                data: { status: DeploymentStatus.STOPPED }
+                data: { status: DeploymentStatus.stopped }
               });
             }}
-            onRestart={async (id) => {
+            onRestart={async (id: string) => {
               "use server";
               await prisma.deployment.update({
                 where: { id },
-                data: { status: DeploymentStatus.PENDING }
+                data: { status: DeploymentStatus.pending }
               });
-              await new Promise(resolve => setTimeout(resolve, 1000));
               await prisma.deployment.update({
                 where: { id },
-                data: { status: DeploymentStatus.ACTIVE }
+                data: { status: DeploymentStatus.active }
               });
             }}
-            onDelete={async (id) => {
+            onDelete={async (id: string) => {
               "use server";
               await prisma.deployment.delete({
                 where: { id }

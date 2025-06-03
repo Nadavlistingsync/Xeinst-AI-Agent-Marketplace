@@ -1,113 +1,89 @@
-import { Server as NetServer } from 'http';
-import { Server as SocketIOServer } from 'socket.io';
-import { NextApiResponse } from 'next';
-import { getAgentHealth } from './agent-monitoring';
+import { Server } from 'socket.io';
+import { DeploymentStatus } from '@prisma/client';
+import type { WebSocketMessage, DeploymentStatusUpdate } from '@/types/websocket';
 
-export type NextApiResponseWithSocket = NextApiResponse & {
-  socket: {
-    server: NetServer & {
-      io?: SocketIOServer;
-    };
-  };
-};
+let io: Server;
 
-export type DeploymentStatus = {
-  id: string;
-  status: 'pending' | 'deploying' | 'active' | 'failed' | 'stopped';
-  health: {
-    status: 'healthy' | 'degraded' | 'unhealthy';
-    issues: string[];
-    metrics: {
-      errorRate: number;
-      responseTime: number;
-      successRate: number;
-      totalRequests: number;
-      activeUsers: number;
-    };
-  };
-  lastUpdated: string;
-};
+export const initializeWebSocket = (server: any) => {
+  io = new Server(server, {
+    cors: {
+      origin: process.env.NEXT_PUBLIC_APP_URL,
+      methods: ['GET', 'POST']
+    }
+  });
 
-export function initSocket(res: NextApiResponseWithSocket) {
-  if (!res.socket.server.io) {
-    const io = new SocketIOServer(res.socket.server, {
-      cors: {
-        origin: process.env.NEXT_PUBLIC_APP_URL,
-        methods: ['GET', 'POST'],
-      },
-    });
-    res.socket.server.io = io;
+  io.on('connection', (socket) => {
+    console.log('Client connected:', socket.id);
 
-    io.on('connection', socket => {
-      console.log('Client connected:', socket.id);
-
-      // Handle deployment room joins
-      socket.on('join_deployment', (deploymentId: string) => {
-        socket.join(`deployment:${deploymentId}`);
-        console.log(`Client ${socket.id} joined deployment room: ${deploymentId}`);
-      });
-
-      // Handle deployment room leaves
-      socket.on('leave_deployment', (deploymentId: string) => {
-        socket.leave(`deployment:${deploymentId}`);
-        console.log(`Client ${socket.id} left deployment room: ${deploymentId}`);
-      });
-
-      socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-      });
+    socket.on('disconnect', () => {
+      console.log('Client disconnected:', socket.id);
     });
 
-    // Start periodic health checks for active deployments
-    setInterval(async () => {
-      try {
-        const activeDeployments = await prisma?.deployment.findMany({
-          where: {
-            status: 'active',
-          },
-          select: {
-            id: true,
-          },
-        });
+    socket.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+  });
 
-        if (activeDeployments) {
-          for (const deployment of activeDeployments) {
-            const health = await getAgentHealth(deployment.id);
-            const status: DeploymentStatus = {
-              id: deployment.id,
-              status: 'active',
-              health,
-              lastUpdated: new Date().toISOString(),
-            };
+  return io;
+};
 
-            io.to(`deployment:${deployment.id}`).emit('deployment_status', status);
-          }
-        }
-      } catch (error) {
-        console.error('Error in deployment health check:', error);
-      }
-    }, 30000); // Check every 30 seconds
+export const emitDeploymentStatus = (
+  socket: Server,
+  deploymentId: string,
+  status: DeploymentStatus
+) => {
+  const update: DeploymentStatusUpdate = {
+    id: deploymentId,
+    status,
+    lastUpdated: new Date().toISOString()
+  };
+
+  const message: WebSocketMessage = {
+    type: 'deployment_status',
+    payload: update
+  };
+
+  socket.emit('deployment_status', message);
+};
+
+export const broadcastDeploymentStatus = (update: DeploymentStatusUpdate) => {
+  if (!io) {
+    console.error('WebSocket server not initialized');
+    return;
   }
 
-  return res.socket.server.io;
-}
+  const message: WebSocketMessage = {
+    type: 'deployment_status',
+    payload: update
+  };
 
-export const emitDeploymentStatus = (io: SocketIOServer, deploymentId: string, status: DeploymentStatus) => {
-  io.to(`deployment:${deploymentId}`).emit('deployment_status', status);
+  io.emit('deployment_status', message);
 };
 
-export const emitDeploymentMetrics = (io: SocketIOServer, deploymentId: string, metrics: any) => {
-  io.to(`deployment:${deploymentId}`).emit('deployment_metrics', metrics);
+export const sendError = (clientId: string, error: string) => {
+  if (!io) {
+    console.error('WebSocket server not initialized');
+    return;
+  }
+
+  const message: WebSocketMessage = {
+    type: 'error',
+    payload: error
+  };
+
+  io.to(clientId).emit('error', message);
 };
 
-export const emitDeploymentLog = (io: SocketIOServer, deploymentId: string, log: any) => {
-  io.to(`deployment:${deploymentId}`).emit('deployment_log', log);
-};
+export const sendInfo = (clientId: string, info: string) => {
+  if (!io) {
+    console.error('WebSocket server not initialized');
+    return;
+  }
 
-export const emitNotification = (io: SocketIOServer, userId: string, notification: any) => {
-  io.to(`user:${userId}`).emit('notification', notification);
-};
+  const message: WebSocketMessage = {
+    type: 'info',
+    payload: info
+  };
 
-export const emitFeedbackUpdate = (io: SocketIOServer, agentId: string, feedback: any) => {
-  io.to(`agent:${agentId}`).emit('feedback_update', feedback);
+  io.to(clientId).emit('info', message);
 }; 
