@@ -79,7 +79,6 @@ export async function updateAgentMetrics(
       successRate: metrics.successRate,
       totalRequests: metrics.totalRequests,
       activeUsers: metrics.activeUsers,
-      timestamp: metrics.timestamp
     }
   });
 }
@@ -124,17 +123,17 @@ export async function getAgentMetrics(
   deploymentId: string,
   options: MonitoringOptions = {}
 ): Promise<AgentMetrics[]> {
-  const { startDate, endDate, interval = 'day' } = options;
+  const { startDate, endDate } = options;
 
   const where = {
     deploymentId,
     ...(startDate && {
-      timestamp: {
+      createdAt: {
         gte: startDate
       }
     }),
     ...(endDate && {
-      timestamp: {
+      createdAt: {
         lte: endDate
       }
     })
@@ -148,9 +147,10 @@ export async function getAgentMetrics(
   });
 
   return metrics.map(metric => ({
-    timestamp: metric.timestamp,
+    timestamp: metric.createdAt,
     errorRate: metric.errorRate,
     averageResponseTime: metric.averageResponseTime,
+    responseTime: metric.averageResponseTime,
     successRate: metric.successRate,
     totalRequests: metric.totalRequests,
     activeUsers: metric.activeUsers
@@ -247,13 +247,14 @@ export async function getAgentFeedback(agentId: string, options: MonitoringOptio
 export async function getAgentPerformanceMetrics(agentId: string) {
   const metrics = await prisma.agentMetrics.findFirst({
     where: { deploymentId: agentId },
-    orderBy: { timestamp: 'desc' },
+    orderBy: { createdAt: 'desc' },
   });
 
   if (!metrics) {
     return {
       totalRequests: 0,
       averageResponseTime: 0,
+      responseTime: 0,
       errorRate: 0,
       successRate: 0,
       activeUsers: 0,
@@ -267,6 +268,7 @@ export async function getAgentPerformanceMetrics(agentId: string) {
   return {
     totalRequests: metrics.totalRequests || 0,
     averageResponseTime: metrics.averageResponseTime || 0,
+    responseTime: metrics.averageResponseTime || 0,
     errorRate: metrics.errorRate || 0,
     successRate: metrics.successRate || 0,
     activeUsers: metrics.activeUsers || 0,
