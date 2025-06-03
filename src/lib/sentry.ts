@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { BrowserTracing } from '@sentry/browser';
 
 export function initSentry() {
   if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
@@ -7,7 +8,7 @@ export function initSentry() {
       environment: process.env.NODE_ENV,
       tracesSampleRate: 1.0,
       integrations: [
-        new Sentry.BrowserTracing({
+        new BrowserTracing({
           tracePropagationTargets: ['localhost', process.env.NEXT_PUBLIC_APP_URL],
         }),
       ],

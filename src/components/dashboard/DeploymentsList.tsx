@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Play, Stop, Trash } from "lucide-react";
+import { MoreHorizontal, Play, Square, Trash } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -98,7 +98,7 @@ export async function DeploymentsList({ userId }: DeploymentsListProps) {
                         className="text-red-600"
                         onClick={() => handleStopDeployment(deployment.id)}
                       >
-                        <Stop className="h-4 w-4 mr-2" />
+                        <Square className="h-4 w-4 mr-2" />
                         Stop Deployment
                       </DropdownMenuItem>
                     ) : (

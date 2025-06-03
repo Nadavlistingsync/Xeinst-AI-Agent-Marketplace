@@ -2,7 +2,7 @@ import { Deployment } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Play, Stop, RefreshCw } from "lucide-react";
+import { Play, Square, RefreshCw } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 interface DeploymentOverviewProps {
@@ -39,7 +39,7 @@ export function DeploymentOverview({ deployment }: DeploymentOverviewProps) {
                 className="text-red-600 hover:text-red-700"
                 onClick={() => handleStopDeployment(deployment.id)}
               >
-                <Stop className="h-4 w-4 mr-2" />
+                <Square className="h-4 w-4 mr-2" />
                 Stop
               </Button>
             ) : (
