@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Deployment } from "@prisma/client";
-import { StarIcon, ShieldCheckIcon, TrendingUpIcon, SparklesIcon, DownloadIcon, ClockIcon } from "@heroicons/react/20/solid";
+import { Star, ShieldCheck, TrendingUp, Sparkles, ArrowDownTray, Clock } from "@heroicons/react/20/solid";
 import { formatPrice } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -36,19 +36,19 @@ export function AgentDetails({ deployment }: AgentDetailsProps) {
               <div className="absolute top-4 right-4 flex gap-2">
                 {deployment.isVerified && (
                   <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
-                    <ShieldCheckIcon className="h-4 w-4 mr-1" />
+                    <ShieldCheck className="h-4 w-4 mr-1" />
                     Verified
                   </Badge>
                 )}
                 {deployment.isPopular && (
                   <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
-                    <TrendingUpIcon className="h-4 w-4 mr-1" />
+                    <TrendingUp className="h-4 w-4 mr-1" />
                     Popular
                   </Badge>
                 )}
                 {deployment.isNew && (
                   <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
-                    <SparklesIcon className="h-4 w-4 mr-1" />
+                    <Sparkles className="h-4 w-4 mr-1" />
                     New
                   </Badge>
                 )}
@@ -60,7 +60,7 @@ export function AgentDetails({ deployment }: AgentDetailsProps) {
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-3xl font-bold text-gray-900">{deployment.name}</h1>
               <div className="flex items-center">
-                <StarIcon className="h-6 w-6 text-yellow-400" />
+                <Star className="h-6 w-6 text-yellow-400" />
                 <span className="ml-1 text-lg text-gray-600">
                   {deployment.rating.toFixed(1)}
                 </span>
@@ -78,11 +78,11 @@ export function AgentDetails({ deployment }: AgentDetailsProps) {
 
             <div className="flex items-center justify-between text-sm text-gray-500 mb-6">
               <div className="flex items-center">
-                <DownloadIcon className="h-4 w-4 mr-1" />
+                <ArrowDownTray className="h-4 w-4 mr-1" />
                 {deployment.downloadCount} downloads
               </div>
               <div className="flex items-center">
-                <ClockIcon className="h-4 w-4 mr-1" />
+                <Clock className="h-4 w-4 mr-1" />
                 Updated {new Date(deployment.updatedAt).toLocaleDateString()}
               </div>
             </div>

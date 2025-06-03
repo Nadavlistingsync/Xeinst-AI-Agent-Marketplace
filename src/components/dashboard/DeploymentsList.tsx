@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontalIcon, PlayIcon, StopIcon, TrashIcon } from "lucide-react";
+import { MoreHorizontal, Play, Stop, Trash } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,7 +84,7 @@ export async function DeploymentsList({ userId }: DeploymentsListProps) {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
-                      <MoreHorizontalIcon className="h-4 w-4" />
+                      <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -98,14 +98,14 @@ export async function DeploymentsList({ userId }: DeploymentsListProps) {
                         className="text-red-600"
                         onClick={() => handleStopDeployment(deployment.id)}
                       >
-                        <StopIcon className="h-4 w-4 mr-2" />
+                        <Stop className="h-4 w-4 mr-2" />
                         Stop Deployment
                       </DropdownMenuItem>
                     ) : (
                       <DropdownMenuItem
                         onClick={() => handleStartDeployment(deployment.id)}
                       >
-                        <PlayIcon className="h-4 w-4 mr-2" />
+                        <Play className="h-4 w-4 mr-2" />
                         Start Deployment
                       </DropdownMenuItem>
                     )}
@@ -113,7 +113,7 @@ export async function DeploymentsList({ userId }: DeploymentsListProps) {
                       className="text-red-600"
                       onClick={() => handleDeleteDeployment(deployment.id)}
                     >
-                      <TrashIcon className="h-4 w-4 mr-2" />
+                      <Trash className="h-4 w-4 mr-2" />
                       Delete Deployment
                     </DropdownMenuItem>
                   </DropdownMenuContent>

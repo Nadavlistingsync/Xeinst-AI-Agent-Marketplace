@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Deployment } from "@prisma/client";
-import { StarIcon, ShieldCheckIcon, TrendingUpIcon, SparklesIcon } from "@heroicons/react/20/solid";
+import { Star, ShieldCheck, TrendingUp, Sparkles } from "@heroicons/react/20/solid";
 import { formatPrice } from "@/lib/utils";
 import { Badge } from "../ui/badge";
 import { Card, CardContent, CardFooter, CardHeader } from "../ui/card";
@@ -31,19 +31,19 @@ export function AgentCard({ deployment }: AgentCardProps) {
             <div className="absolute top-2 right-2 flex gap-2">
               {deployment.isVerified && (
                 <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
-                  <ShieldCheckIcon className="h-4 w-4 mr-1" />
+                  <ShieldCheck className="h-4 w-4 mr-1" />
                   Verified
                 </Badge>
               )}
               {deployment.isPopular && (
                 <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
-                  <TrendingUpIcon className="h-4 w-4 mr-1" />
+                  <TrendingUp className="h-4 w-4 mr-1" />
                   Popular
                 </Badge>
               )}
               {deployment.isNew && (
                 <Badge variant="secondary" className="bg-white/90 backdrop-blur-sm">
-                  <SparklesIcon className="h-4 w-4 mr-1" />
+                  <Sparkles className="h-4 w-4 mr-1" />
                   New
                 </Badge>
               )}
@@ -57,7 +57,7 @@ export function AgentCard({ deployment }: AgentCardProps) {
               {deployment.name}
             </h3>
             <div className="flex items-center">
-              <StarIcon className="h-5 w-5 text-yellow-400" />
+              <Star className="h-5 w-5 text-yellow-400" />
               <span className="ml-1 text-sm text-gray-600">
                 {deployment.rating.toFixed(1)}
               </span>
