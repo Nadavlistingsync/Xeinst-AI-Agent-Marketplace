@@ -72,7 +72,7 @@ export async function updateAgentMetrics(
     data: {
       deploymentId,
       errorRate: metrics.errorRate,
-      averageResponseTime: metrics.averageResponseTime,
+      averageResponseTime: metrics.averageResponseTime || 0,
       successRate: metrics.successRate,
       totalRequests: metrics.totalRequests,
       activeUsers: metrics.activeUsers,
@@ -84,7 +84,7 @@ export async function getAgentLogs(
   deploymentId: string,
   options: MonitoringOptions = {}
 ): Promise<AgentLog[]> {
-  const { startDate, endDate, interval = 'day' } = options;
+  const { startDate, endDate } = options;
 
   const where = {
     deploymentId,
@@ -165,7 +165,7 @@ export async function getAgentAnalytics(deploymentId: string) {
     logs,
     summary: metrics ? {
       totalRequests: metrics.reduce((sum, m) => sum + (m.totalRequests || 0), 0),
-      averageResponseTime: metrics.reduce((sum, m) => sum + (m.averageResponseTime || 0), 0) / metrics.length || 0,
+      averageResponseTime: metrics.reduce((sum, m) => sum + ((m.averageResponseTime || 0)), 0) / metrics.length || 0,
       errorRate: metrics.reduce((sum, m) => sum + (m.errorRate || 0), 0) / metrics.length || 0,
       successRate: metrics.reduce((sum, m) => sum + (m.successRate || 0), 0) / metrics.length || 0,
       activeUsers: metrics.reduce((sum, m) => sum + (m.activeUsers || 0), 0),
