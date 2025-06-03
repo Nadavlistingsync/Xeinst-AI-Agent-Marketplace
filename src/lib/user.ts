@@ -1,16 +1,57 @@
 import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { prisma } from './db';
-import { User } from './schema';
+import { User, Agent, Deployment, AgentFeedback, Earning, Purchase } from './schema';
 
-export async function createUser(data: {
+export interface CreateUserInput {
   name: string | null;
   email: string;
   image: string | null;
   role: string;
   subscriptionTier: string;
   password: string;
-}): Promise<User> {
+}
+
+export interface GetUsersOptions {
+  role?: string;
+  subscriptionTier?: string;
+  startDate?: Date;
+  endDate?: Date;
+  search?: string;
+}
+
+export interface GetUserAgentsOptions {
+  status?: string;
+  category?: string;
+  limit?: number;
+}
+
+export interface GetUserDeploymentsOptions {
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+}
+
+export interface GetUserFeedbacksOptions {
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+}
+
+export interface GetUserEarningsOptions {
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+}
+
+export interface GetUserPurchasesOptions {
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+}
+
+export async function createUser(data: CreateUserInput): Promise<User> {
   try {
     const hashedPassword = await bcrypt.hash(data.password, 10);
     return await prisma.user.create({
@@ -47,13 +88,7 @@ export async function updateUser(id: string, data: Partial<User>): Promise<User>
   }
 }
 
-export async function getUsers(options: {
-  role?: string;
-  subscriptionTier?: string;
-  startDate?: Date;
-  endDate?: Date;
-  search?: string;
-} = {}): Promise<User[]> {
+export async function getUsers(options: GetUsersOptions = {}): Promise<User[]> {
   try {
     const where: Prisma.UserWhereInput = {};
     
@@ -107,14 +142,10 @@ export async function deleteUser(id: string): Promise<void> {
 }
 
 export async function getUserAgents(
-  user_id: string,
-  options: {
-    status?: string;
-    category?: string;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const where: Prisma.AgentWhereInput = { createdBy: user_id };
+  userId: string,
+  options: GetUserAgentsOptions = {}
+): Promise<Agent[]> {
+  const where: Prisma.AgentWhereInput = { createdBy: userId };
 
   if (options.status) where.status = options.status;
   if (options.category) where.category = options.category;
@@ -127,19 +158,14 @@ export async function getUserAgents(
 }
 
 export async function getUserDeployments(
-  user_id: string,
-  options: {
-    status?: string;
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const where: Prisma.DeploymentWhereInput = { deployed_by: user_id };
+  userId: string,
+  options: GetUserDeploymentsOptions = {}
+): Promise<Deployment[]> {
+  const where: Prisma.DeploymentWhereInput = { deployedBy: userId };
 
   if (options.status) where.status = options.status;
   if (options.startDate) where.startDate = { gte: options.startDate };
-  if (options.endDate) where.endDate = { lte: options.endDate };
+  if (options.endDate) where.startDate = { lte: options.endDate };
 
   return await prisma.deployment.findMany({
     where,
@@ -149,14 +175,10 @@ export async function getUserDeployments(
 }
 
 export async function getUserFeedbacks(
-  user_id: string,
-  options: {
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const where: Prisma.AgentFeedbackWhereInput = { user_id: user_id };
+  userId: string,
+  options: GetUserFeedbacksOptions = {}
+): Promise<AgentFeedback[]> {
+  const where: Prisma.AgentFeedbackWhereInput = { userId };
 
   if (options.startDate) where.createdAt = { gte: options.startDate };
   if (options.endDate) where.createdAt = { lte: options.endDate };
@@ -169,14 +191,10 @@ export async function getUserFeedbacks(
 }
 
 export async function getUserEarnings(
-  user_id: string,
-  options: {
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const where: Prisma.EarningWhereInput = { user_id };
+  userId: string,
+  options: GetUserEarningsOptions = {}
+): Promise<Earning[]> {
+  const where: Prisma.EarningWhereInput = { userId };
 
   if (options.startDate) where.createdAt = { gte: options.startDate };
   if (options.endDate) where.createdAt = { lte: options.endDate };
@@ -189,14 +207,10 @@ export async function getUserEarnings(
 }
 
 export async function getUserPurchases(
-  user_id: string,
-  options: {
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const where: Prisma.PurchaseWhereInput = { user_id: user_id };
+  userId: string,
+  options: GetUserPurchasesOptions = {}
+): Promise<Purchase[]> {
+  const where: Prisma.PurchaseWhereInput = { userId };
 
   if (options.startDate) where.createdAt = { gte: options.startDate };
   if (options.endDate) where.createdAt = { lte: options.endDate };

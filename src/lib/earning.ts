@@ -3,29 +3,38 @@ import { Prisma } from '@prisma/client';
 import { Earning } from './schema';
 
 export interface EarningOptions {
-  user_id?: string;
-  product_id?: string;
+  userId?: string;
+  productId?: string;
   status?: string;
   startDate?: Date;
   endDate?: Date;
 }
 
-export async function createEarning(data: {
-  user_id: string;
-  product_id: string;
+export interface CreateEarningInput {
+  userId: string;
+  productId: string;
   amount: number;
   status?: string;
   stripeTransferId?: string;
-}): Promise<Earning> {
+}
+
+export interface UpdateEarningInput {
+  amount?: number;
+  status?: string;
+  stripeTransferId?: string;
+  paidAt?: Date;
+}
+
+export async function createEarning(data: CreateEarningInput): Promise<Earning> {
   try {
     return await prisma.earning.create({
       data: {
-        user_id: data.user_id,
-        product_id: data.product_id,
+        userId: data.userId,
+        productId: data.productId,
         amount: new Prisma.Decimal(data.amount),
         status: data.status || 'pending',
         stripeTransferId: data.stripeTransferId,
-        created_at: new Date(),
+        createdAt: new Date(),
       },
     });
   } catch (error) {
@@ -36,12 +45,7 @@ export async function createEarning(data: {
 
 export async function updateEarning(
   id: string,
-  data: {
-    amount?: number;
-    status?: string;
-    stripeTransferId?: string;
-    paidAt?: Date;
-  }
+  data: UpdateEarningInput
 ): Promise<Earning> {
   try {
     const updateData: any = { ...data };
@@ -66,15 +70,15 @@ export async function getEarnings(options: EarningOptions = {}): Promise<Earning
   try {
     const where: Prisma.EarningWhereInput = {};
     
-    if (options.user_id) where.user_id = options.user_id;
-    if (options.product_id) where.product_id = options.product_id;
+    if (options.userId) where.userId = options.userId;
+    if (options.productId) where.productId = options.productId;
     if (options.status) where.status = options.status;
-    if (options.startDate) where.created_at = { gte: options.startDate };
-    if (options.endDate) where.created_at = { lte: options.endDate };
+    if (options.startDate) where.createdAt = { gte: options.startDate };
+    if (options.endDate) where.createdAt = { lte: options.endDate };
 
     return await prisma.earning.findMany({
       where,
-      orderBy: { created_at: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   } catch (error) {
     console.error('Error getting earnings:', error);
@@ -105,7 +109,7 @@ export async function deleteEarning(id: string): Promise<void> {
 }
 
 export async function getUserEarnings(
-  user_id: string,
+  userId: string,
   options: {
     status?: string;
     startDate?: Date;
@@ -113,24 +117,24 @@ export async function getUserEarnings(
     limit?: number;
   } = {}
 ): Promise<Earning[]> {
-  const where: Prisma.EarningWhereInput = { user_id };
+  const where: Prisma.EarningWhereInput = { userId };
 
   if (options.status) where.status = options.status;
-  if (options.startDate) where.created_at = { gte: options.startDate };
-  if (options.endDate) where.created_at = { lte: options.endDate };
+  if (options.startDate) where.createdAt = { gte: options.startDate };
+  if (options.endDate) where.createdAt = { lte: options.endDate };
 
   return await prisma.earning.findMany({
     where,
     include: {
       product: true,
     },
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }
 
 export async function getProductEarnings(
-  product_id: string,
+  productId: string,
   options: {
     status?: string;
     startDate?: Date;
@@ -138,18 +142,18 @@ export async function getProductEarnings(
     limit?: number;
   } = {}
 ): Promise<Earning[]> {
-  const where: Prisma.EarningWhereInput = { product_id };
+  const where: Prisma.EarningWhereInput = { productId };
 
   if (options.status) where.status = options.status;
-  if (options.startDate) where.created_at = { gte: options.startDate };
-  if (options.endDate) where.created_at = { lte: options.endDate };
+  if (options.startDate) where.createdAt = { gte: options.startDate };
+  if (options.endDate) where.createdAt = { lte: options.endDate };
 
   return await prisma.earning.findMany({
     where,
     include: {
       user: true,
     },
-    orderBy: { created_at: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
 }
@@ -167,7 +171,7 @@ export async function getEarningStats() {
       .reduce((sum, earning) => sum + Number(earning.amount), 0);
 
     const earningsByProduct = earnings.reduce((acc, earning) => {
-      acc[earning.product_id] = (acc[earning.product_id] || 0) + Number(earning.amount);
+      acc[earning.productId] = (acc[earning.productId] || 0) + Number(earning.amount);
       return acc;
     }, {} as Record<string, number>);
 
@@ -189,7 +193,7 @@ export async function getEarningHistory() {
     const earnings = await getEarnings();
 
     const monthlyEarnings = earnings.reduce((acc, earning) => {
-      const month = earning.created_at.toISOString().slice(0, 7);
+      const month = earning.createdAt.toISOString().slice(0, 7);
       if (!acc[month]) {
         acc[month] = { total: 0, pending: 0, paid: 0 };
       }
@@ -212,14 +216,14 @@ export async function getEarningHistory() {
   }
 }
 
-export async function getProductEarningStats(product_id: string): Promise<{
+export async function getProductEarningStats(productId: string): Promise<{
   totalEarnings: number;
   totalPending: number;
   totalPaid: number;
   earningDistribution: Record<string, number>;
 }> {
   const earnings = await prisma.earning.findMany({
-    where: { product_id },
+    where: { productId },
   });
 
   const totalEarnings = earnings.reduce((sum, earning) => sum + Number(earning.amount), 0);
@@ -231,7 +235,7 @@ export async function getProductEarningStats(product_id: string): Promise<{
     .reduce((sum, earning) => sum + Number(earning.amount), 0);
 
   const earningDistribution = earnings.reduce((acc, earning) => {
-    const date = earning.created_at.toISOString().split('T')[0];
+    const date = earning.createdAt.toISOString().split('T')[0];
     acc[date] = (acc[date] || 0) + Number(earning.amount);
     return acc;
   }, {} as Record<string, number>);

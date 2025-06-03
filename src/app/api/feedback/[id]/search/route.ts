@@ -1,18 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { AgentFeedback } from '@prisma/client';
-
-interface SearchResult {
-  id: string;
-  rating: number;
-  comment: string | null;
-  sentimentScore: number | null;
-  categories: Record<string, number> | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import prisma from '@/lib/prisma';
+import { ApiError } from '@/lib/errors';
+import { Prisma } from '@prisma/client';
 
 export async function GET(
   request: Request,
@@ -20,25 +11,10 @@ export async function GET(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const query = searchParams.get('query');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const sortBy = searchParams.get('sortBy') || 'createdAt';
-    const sortOrder = searchParams.get('sortOrder') || 'desc';
-    const minRating = parseInt(searchParams.get('minRating') || '0');
-    const maxRating = parseInt(searchParams.get('maxRating') || '5');
-    const sentiment = searchParams.get('sentiment');
-    const category = searchParams.get('category');
-
-    if (!query) {
+    if (!session?.user) {
       return NextResponse.json(
-        { error: 'Search query is required' },
-        { status: 400 }
+        { error: 'Unauthorized' },
+        { status: 401 }
       );
     }
 
@@ -48,106 +24,91 @@ export async function GET(
         id: true,
         name: true,
         createdBy: true,
-        isPublic: true,
-      },
+        isPublic: true
+      }
     });
 
     if (!agent) {
-      return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Agent not found' },
+        { status: 404 }
+      );
     }
 
     if (agent.createdBy !== session.user.id && !agent.isPublic) {
       return NextResponse.json(
-        { error: 'Not authorized to search feedback for this agent' },
+        { error: 'Unauthorized' },
         { status: 403 }
       );
     }
 
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('q') || '';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
-    const where = {
+    const where: Prisma.AgentFeedbackWhereInput = {
       agentId: params.id,
-      rating: {
-        gte: minRating,
-        lte: maxRating,
-      },
-      ...(sentiment && {
-        sentimentScore: {
-          ...(sentiment === 'positive' && { gt: 0.5 }),
-          ...(sentiment === 'negative' && { lt: -0.5 }),
-          ...(sentiment === 'neutral' && {
-            gte: -0.5,
-            lte: 0.5,
-          }),
-        },
-      }),
-      ...(category && {
-        categories: {
-          path: [category],
-          gt: 0,
-        },
-      }),
       OR: [
         {
           comment: {
             contains: query,
-            mode: 'insensitive',
-          },
+            mode: 'insensitive' as Prisma.QueryMode
+          }
         },
         {
           categories: {
             path: ['$'],
-            string_contains: query,
-          },
-        },
-      ],
+            string_contains: query
+          }
+        }
+      ]
     };
 
     const [results, total] = await Promise.all([
       prisma.agentFeedback.findMany({
         where,
-        orderBy: {
-          [sortBy]: sortOrder,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true
+            }
+          }
         },
+        orderBy: { createdAt: 'desc' },
         skip,
-        take: limit,
+        take: limit
       }),
-      prisma.agentFeedback.count({ where }),
+      prisma.agentFeedback.count({ where })
     ]);
 
-    const searchResults: SearchResult[] = results.map((item) => ({
+    const searchResults = results.map((item) => ({
       id: item.id,
       rating: item.rating,
       comment: item.comment,
-      sentimentScore: item.sentimentScore,
+      sentimentScore: item.sentimentScore ? Number(item.sentimentScore) : null,
       categories: item.categories as Record<string, number> | null,
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
+      user: item.user
     }));
 
     return NextResponse.json({
       results: searchResults,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-      metadata: {
-        query,
-        filters: {
-          minRating,
-          maxRating,
-          sentiment,
-          category,
-        },
-      },
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
     console.error('Error searching feedback:', error);
+    const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to search feedback');
     return NextResponse.json(
-      { error: 'Failed to search feedback' },
-      { status: 500 }
+      { error: errorResponse.message },
+      { status: errorResponse.statusCode }
     );
   }
 } 

@@ -12,34 +12,40 @@ export interface LogEntry {
 }
 
 export interface MetricsData {
-  total_requests: number;
-  average_response_time: number;
-  error_rate: number;
-  success_rate: number;
-  active_users: number;
-  requests_per_minute: number;
-  average_tokens_used: number;
-  cost_per_request: number;
-  total_cost: number;
+  totalRequests: number;
+  averageResponseTime: number;
+  errorRate: number;
+  successRate: number;
+  activeUsers: number;
+  requestsPerMinute: number;
+  averageTokensUsed: number;
+  costPerRequest: number;
+  totalCost: number;
 }
 
 export interface GetAgentLogsOptions {
-  start_date?: Date;
-  end_date?: Date;
+  startDate?: Date;
+  endDate?: Date;
   level?: 'info' | 'warning' | 'error';
   limit?: number;
 }
 
 export interface MetricsUpdate {
-  total_requests?: number;
-  average_response_time?: number;
-  error_rate?: number;
-  success_rate?: number;
-  active_users?: number;
-  requests_per_minute?: number;
-  average_tokens_used?: number;
-  cost_per_request?: number;
-  total_cost?: number;
+  totalRequests?: number;
+  averageResponseTime?: number;
+  errorRate?: number;
+  successRate?: number;
+  activeUsers?: number;
+  requestsPerMinute?: number;
+  averageTokensUsed?: number;
+  costPerRequest?: number;
+  totalCost?: number;
+}
+
+export interface MonitoringOptions {
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
 }
 
 export async function logAgentEvent(
@@ -60,17 +66,7 @@ export async function logAgentEvent(
 
 export async function updateAgentMetrics(
   agentId: string,
-  data: {
-    totalRequests?: number;
-    averageResponseTime?: number;
-    errorRate?: number;
-    successRate?: number;
-    activeUsers?: number;
-    requestsPerMinute?: number;
-    averageTokensUsed?: number;
-    costPerRequest?: number;
-    totalCost?: number;
-  }
+  data: MetricsUpdate
 ) {
   return prisma.agentMetrics.upsert({
     where: { agentId },
@@ -88,12 +84,7 @@ export async function updateAgentMetrics(
 
 export async function getAgentLogs(
   agentId: string,
-  options: {
-    level?: string;
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
+  options: GetAgentLogsOptions = {}
 ) {
   const { level, startDate, endDate, limit = 100 } = options;
 
@@ -128,15 +119,15 @@ export async function getAgentMetrics(agentId: string, options: MonitoringOption
   const where: Prisma.AgentMetricsWhereInput = { agentId };
 
   if (options.startDate) {
-    where.created_at = { gte: options.startDate };
+    where.createdAt = { gte: options.startDate };
   }
   if (options.endDate) {
-    where.created_at = { lte: options.endDate };
+    where.createdAt = { lte: options.endDate };
   }
 
   const metrics = await prisma.agentMetrics.findMany({
     where,
-    orderBy: { created_at: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 
   if (metrics.length === 0) {
@@ -171,9 +162,7 @@ export async function getAgentAnalytics(deploymentId: string) {
       errorRate: metrics.errorRate,
       successRate: metrics.successRate,
       activeUsers: metrics.activeUsers,
-      cpuUsage: metrics.cpuUsage,
-      memoryUsage: metrics.memoryUsage,
-      lastUpdated: metrics.lastUpdated,
+      lastUpdated: new Date(),
     } : null,
   };
 }
@@ -212,15 +201,15 @@ export async function getAgentFeedback(agentId: string, options: MonitoringOptio
   const where: Prisma.AgentFeedbackWhereInput = { agentId };
 
   if (options.startDate) {
-    where.created_at = { gte: options.startDate };
+    where.createdAt = { gte: options.startDate };
   }
   if (options.endDate) {
-    where.created_at = { lte: options.endDate };
+    where.createdAt = { lte: options.endDate };
   }
 
   return await prisma.agentFeedback.findMany({
     where,
-    orderBy: { created_at: "desc" },
+    orderBy: { createdAt: "desc" },
   });
 }
 

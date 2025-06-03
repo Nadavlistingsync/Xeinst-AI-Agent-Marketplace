@@ -2,213 +2,109 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { createErrorResponse } from '@/lib/api';
-import { 
-  type FeedbackTrendsApiResponse,
-  feedbackTrendsSchema,
-  type FeedbackTrendsInput,
-  type FeedbackTrend
-} from '@/types/feedback-analytics';
+import { ApiError } from '@/lib/errors';
 import { Prisma } from '@prisma/client';
 
-export async function GET(request: Request): Promise<NextResponse<FeedbackTrendsApiResponse>> {
+interface FeedbackTrend {
+  date: string;
+  count: number;
+  averageRating: number;
+  sentiment: number;
+  categories: Record<string, number>;
+}
+
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
     const { searchParams } = new URL(request.url);
-    const query = {
-      startDate: new Date(searchParams.get('startDate') || ''),
-      endDate: new Date(searchParams.get('endDate') || ''),
-      metrics: searchParams.get('metrics')?.split(',') || ['rating'],
-      groupBy: searchParams.get('groupBy') || 'day',
+    const agentId = searchParams.get('agentId');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const groupBy = searchParams.get('groupBy') || 'day';
+
+    const where: Prisma.AgentFeedbackWhereInput = {
+      ...(agentId && { agentId }),
+      ...(startDate && endDate && {
+        createdAt: {
+          gte: new Date(startDate),
+          lte: new Date(endDate)
+        }
+      })
     };
 
-    const validatedQuery = feedbackTrendsSchema.parse(query);
-
-    const where: Prisma.FeedbackWhereInput = {
-      createdAt: {
-        gte: validatedQuery.startDate,
-        lte: validatedQuery.endDate,
-      },
-    };
-
-    const feedbacks = await prisma.feedback.findMany({
+    const feedbacks = await prisma.agentFeedback.findMany({
       where,
-      orderBy: { createdAt: 'asc' },
-      select: {
-        id: true,
-        rating: true,
-        comment: true,
-        createdAt: true,
-        metadata: true,
-      },
+      orderBy: { createdAt: 'asc' }
     });
 
-    const trends = generateTrends(feedbacks, validatedQuery.metrics, validatedQuery.groupBy);
-    const summary = calculateMetricsSummary(feedbacks, validatedQuery.metrics);
+    // Group feedbacks by date
+    const groupedFeedbacks = feedbacks.reduce((acc, feedback) => {
+      const date = feedback.createdAt;
+      let key: string;
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        trends,
-        summary,
-      },
+      switch (groupBy) {
+        case 'week':
+          const weekStart = new Date(date);
+          weekStart.setDate(date.getDate() - date.getDay());
+          key = weekStart.toISOString().split('T')[0];
+          break;
+        case 'month':
+          key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+          break;
+        default: // day
+          key = date.toISOString().split('T')[0];
+      }
+
+      if (!acc[key]) {
+        acc[key] = [];
+      }
+      acc[key].push(feedback);
+      return acc;
+    }, {} as Record<string, typeof feedbacks>);
+
+    // Calculate trends
+    const trends: FeedbackTrend[] = Object.entries(groupedFeedbacks).map(([date, groupFeedbacks]) => {
+      const sentimentScores = groupFeedbacks
+        .map(f => f.sentimentScore ? Number(f.sentimentScore) : 0)
+        .filter(score => !isNaN(score));
+      
+      const averageSentiment = sentimentScores.length > 0
+        ? sentimentScores.reduce((a, b) => a + b, 0) / sentimentScores.length
+        : 0;
+
+      const categories = groupFeedbacks.reduce((acc, feedback) => {
+        if (feedback.categories && typeof feedback.categories === 'object') {
+          const feedbackCategories = feedback.categories as Record<string, number>;
+          Object.entries(feedbackCategories).forEach(([category, value]) => {
+            acc[category] = (acc[category] || 0) + value;
+          });
+        }
+        return acc;
+      }, {} as Record<string, number>);
+
+      return {
+        date,
+        count: groupFeedbacks.length,
+        averageRating: groupFeedbacks.reduce((acc, f) => acc + f.rating, 0) / groupFeedbacks.length,
+        sentiment: averageSentiment,
+        categories
+      };
     });
+
+    return NextResponse.json({ trends });
   } catch (error) {
     console.error('Error fetching feedback trends:', error);
+    const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to fetch feedback trends');
     return NextResponse.json(
-      createErrorResponse(error, 'Failed to fetch feedback trends'),
-      { status: 500 }
+      { error: errorResponse.message },
+      { status: errorResponse.statusCode }
     );
   }
-}
-
-function generateTrends(
-  feedbacks: Array<{
-    rating: number;
-    comment: string;
-    createdAt: Date;
-    metadata: Record<string, unknown>;
-  }>,
-  metrics: string[],
-  groupBy: 'day' | 'week' | 'month'
-): FeedbackTrend[] {
-  const groupedFeedbacks = groupFeedbacksByDate(feedbacks, groupBy);
-  
-  return Object.entries(groupedFeedbacks).map(([date, groupFeedbacks]) => {
-    const metricsData: Record<string, number> = {};
-    
-    metrics.forEach(metric => {
-      metricsData[metric] = calculateMetric(groupFeedbacks, metric);
-    });
-    
-    return {
-      date: new Date(date),
-      metrics: metricsData,
-    };
-  });
-}
-
-function groupFeedbacksByDate(
-  feedbacks: Array<{ createdAt: Date }>,
-  groupBy: 'day' | 'week' | 'month'
-): Record<string, typeof feedbacks> {
-  return feedbacks.reduce((groups, feedback) => {
-    const date = new Date(feedback.createdAt);
-    let key: string;
-    
-    switch (groupBy) {
-      case 'day':
-        key = date.toISOString().split('T')[0];
-        break;
-      case 'week':
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        key = weekStart.toISOString().split('T')[0];
-        break;
-      case 'month':
-        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        break;
-    }
-    
-    if (!groups[key]) {
-      groups[key] = [];
-    }
-    groups[key].push(feedback);
-    return groups;
-  }, {} as Record<string, typeof feedbacks>);
-}
-
-function calculateMetric(
-  feedbacks: Array<{
-    rating: number;
-    comment: string;
-    metadata: Record<string, unknown>;
-  }>,
-  metric: string
-): number {
-  switch (metric) {
-    case 'rating':
-      return calculateAverageRating(feedbacks);
-    case 'sentiment':
-      return calculateSentimentScore(feedbacks);
-    case 'response_time':
-      return calculateAverageResponseTime(feedbacks);
-    case 'volume':
-      return feedbacks.length;
-    case 'satisfaction':
-      return calculateSatisfactionScore(feedbacks);
-    default:
-      return 0;
-  }
-}
-
-function calculateAverageRating(feedbacks: Array<{ rating: number }>) {
-  if (!feedbacks.length) return 0;
-  const sum = feedbacks.reduce((acc, f) => acc + f.rating, 0);
-  return sum / feedbacks.length;
-}
-
-function calculateSentimentScore(feedbacks: Array<{ rating: number }>) {
-  if (!feedbacks.length) return 0;
-  const positive = feedbacks.filter(f => f.rating >= 4).length;
-  return positive / feedbacks.length;
-}
-
-function calculateAverageResponseTime(feedbacks: Array<{ metadata: Record<string, unknown> }>) {
-  const responseTimes = feedbacks
-    .map(f => f.metadata.responseTime as number)
-    .filter(t => typeof t === 'number');
-  
-  if (!responseTimes.length) return 0;
-  const sum = responseTimes.reduce((acc, t) => acc + t, 0);
-  return sum / responseTimes.length;
-}
-
-function calculateSatisfactionScore(feedbacks: Array<{ rating: number }>) {
-  if (!feedbacks.length) return 0;
-  const satisfied = feedbacks.filter(f => f.rating >= 4).length;
-  return satisfied / feedbacks.length;
-}
-
-function calculateMetricsSummary(
-  feedbacks: Array<{
-    rating: number;
-    comment: string;
-    metadata: Record<string, unknown>;
-  }>,
-  metrics: string[]
-): Record<string, { average: number; min: number; max: number; change: number }> {
-  const summary: Record<string, { average: number; min: number; max: number; change: number }> = {};
-  
-  metrics.forEach(metric => {
-    const values = feedbacks.map(f => calculateMetric([f], metric));
-    const sortedValues = values.sort((a, b) => a - b);
-    
-    summary[metric] = {
-      average: values.reduce((acc, v) => acc + v, 0) / values.length,
-      min: sortedValues[0],
-      max: sortedValues[sortedValues.length - 1],
-      change: calculateChange(values),
-    };
-  });
-  
-  return summary;
-}
-
-function calculateChange(values: number[]): number {
-  if (values.length < 2) return 0;
-  const firstHalf = values.slice(0, Math.floor(values.length / 2));
-  const secondHalf = values.slice(Math.floor(values.length / 2));
-  
-  const firstAvg = firstHalf.reduce((acc, v) => acc + v, 0) / firstHalf.length;
-  const secondAvg = secondHalf.reduce((acc, v) => acc + v, 0) / secondHalf.length;
-  
-  return firstAvg ? (secondAvg - firstAvg) / firstAvg : 0;
 } 

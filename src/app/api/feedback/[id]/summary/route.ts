@@ -1,18 +1,24 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { z } from 'zod';
+import prisma from '@/lib/prisma';
+import { ApiError } from '@/lib/errors';
+import { Prisma } from '@prisma/client';
 
-const summarySchema = z.object({
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  limit: z.number().optional().default(10)
-});
-
-interface FeedbackTimeRange {
-  start_date?: Date;
-  end_date?: Date;
+interface FeedbackSummary {
+  totalFeedbacks: number;
+  averageRating: number;
+  sentimentDistribution: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  categoryDistribution: Record<string, number>;
+  recentActivity: {
+    lastFeedback: string;
+    responseRate: number;
+    averageResponseTime: number;
+  };
 }
 
 export async function GET(
@@ -28,23 +34,22 @@ export async function GET(
       );
     }
 
-    const { searchParams } = new URL(request.url);
-    const validatedParams = summarySchema.parse({
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
-    });
-
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
-      include: {
-        creator: {
-          select: {
-            id: true,
-            name: true,
-            image: true
-          }
-        }
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        status: true,
+        framework: true,
+        version: true,
+        rating: true,
+        totalRatings: true,
+        requirements: true,
+        createdBy: true,
+        deployedBy: true,
+        createdAt: true,
+        updatedAt: true
       }
     });
 
@@ -62,109 +67,83 @@ export async function GET(
       );
     }
 
-    const timeRange: FeedbackTimeRange = {
-      start_date: validatedParams.startDate ? new Date(validatedParams.startDate) : undefined,
-      end_date: validatedParams.endDate ? new Date(validatedParams.endDate) : undefined
-    };
-
-    const where = {
-      agentId: params.id,
-      ...(timeRange.start_date && {
-        createdAt: {
-          gte: timeRange.start_date
-        }
-      }),
-      ...(timeRange.end_date && {
-        createdAt: {
-          lte: timeRange.end_date
-        }
-      })
-    };
-
-    const feedback = await prisma.agentFeedback.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      take: validatedParams.limit
+    const feedbacks = await prisma.agentFeedback.findMany({
+      where: { agentId: params.id },
+      orderBy: { createdAt: 'desc' }
     });
 
-    const summary = {
-      totalFeedback: feedback.length,
-      averageRating: 0,
-      sentimentDistribution: {
-        positive: 0,
-        neutral: 0,
-        negative: 0
-      },
-      topCategories: [] as Array<{ name: string; count: number }>,
-      recentFeedback: feedback.map(item => ({
-        id: item.id,
-        rating: item.rating,
-        sentimentScore: item.sentimentScore ? Number(item.sentimentScore) : null,
-        categories: item.categories as Record<string, number>,
-        createdAt: item.createdAt
-      }))
+    // Calculate sentiment distribution
+    const sentimentCounts = {
+      positive: 0,
+      neutral: 0,
+      negative: 0
     };
 
-    if (feedback.length > 0) {
-      // Calculate average rating
-      summary.averageRating = feedback.reduce((sum, item) => sum + item.rating, 0) / feedback.length;
+    feedbacks.forEach(feedback => {
+      const score = feedback.sentimentScore ? Number(feedback.sentimentScore) : 0;
+      if (score > 0.5) sentimentCounts.positive++;
+      else if (score < -0.5) sentimentCounts.negative++;
+      else sentimentCounts.neutral++;
+    });
 
-      // Calculate sentiment distribution
-      feedback.forEach((item) => {
-        if (item.sentimentScore) {
-          const score = Number(item.sentimentScore);
-          if (score > 0.5) {
-            summary.sentimentDistribution.positive++;
-          } else if (score < -0.5) {
-            summary.sentimentDistribution.negative++;
-          } else {
-            summary.sentimentDistribution.neutral++;
-          }
-        }
-      });
+    const totalFeedbacks = feedbacks.length;
+    const sentimentDistribution = {
+      positive: totalFeedbacks ? sentimentCounts.positive / totalFeedbacks : 0,
+      neutral: totalFeedbacks ? sentimentCounts.neutral / totalFeedbacks : 0,
+      negative: totalFeedbacks ? sentimentCounts.negative / totalFeedbacks : 0
+    };
 
-      // Calculate top categories
-      const categoryCounts: Record<string, number> = {};
-      feedback.forEach((item) => {
-        if (item.categories) {
-          const categories = item.categories as Record<string, number>;
-          Object.entries(categories).forEach(([category, value]) => {
-            categoryCounts[category] = (categoryCounts[category] || 0) + value;
-          });
-        }
-      });
-
-      summary.topCategories = Object.entries(categoryCounts)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5);
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: {
-        summary,
-        timeRange: {
-          start: timeRange.start_date?.toISOString() || feedback[0]?.createdAt.toISOString(),
-          end: timeRange.end_date?.toISOString() || feedback[feedback.length - 1]?.createdAt.toISOString()
-        }
+    // Calculate category distribution
+    const categoryCounts: Record<string, number> = {};
+    feedbacks.forEach(feedback => {
+      if (feedback.categories && typeof feedback.categories === 'object') {
+        const categories = feedback.categories as Record<string, number>;
+        Object.entries(categories).forEach(([category, value]) => {
+          categoryCounts[category] = (categoryCounts[category] || 0) + value;
+        });
       }
     });
+
+    const categoryDistribution: Record<string, number> = {};
+    Object.entries(categoryCounts).forEach(([category, count]) => {
+      categoryDistribution[category] = totalFeedbacks ? count / totalFeedbacks : 0;
+    });
+
+    // Calculate recent activity metrics
+    const respondedFeedbacks = feedbacks.filter(f => f.creatorResponse);
+    const responseRate = totalFeedbacks ? respondedFeedbacks.length / totalFeedbacks : 0;
+
+    let totalResponseTime = 0;
+    let responseCount = 0;
+    respondedFeedbacks.forEach(feedback => {
+      if (feedback.responseDate) {
+        const responseTime = feedback.responseDate.getTime() - feedback.createdAt.getTime();
+        totalResponseTime += responseTime;
+        responseCount++;
+      }
+    });
+
+    const averageResponseTime = responseCount ? totalResponseTime / responseCount : 0;
+
+    const summary: FeedbackSummary = {
+      totalFeedbacks,
+      averageRating: agent.rating,
+      sentimentDistribution,
+      categoryDistribution,
+      recentActivity: {
+        lastFeedback: feedbacks[0]?.createdAt.toISOString() || '',
+        responseRate,
+        averageResponseTime
+      }
+    };
+
+    return NextResponse.json(summary);
   } catch (error) {
-    console.error('Error fetching summary:', error);
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation error',
-          details: error.errors
-        },
-        { status: 400 }
-      );
-    }
+    console.error('Error fetching feedback summary:', error);
+    const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to fetch feedback summary');
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: errorResponse.message },
+      { status: errorResponse.statusCode }
     );
   }
 } 

@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
-import { Deployment } from "@prisma/client";
+import type { Deployment } from './schema';
 
 // Product operations
 export async function getProduct(id: string) {
@@ -33,12 +33,14 @@ export async function getProduct(id: string) {
   });
 }
 
-export async function getProducts(params: {
+export interface GetProductsParams {
   query?: string;
   category?: string;
   minPrice?: number;
   maxPrice?: number;
-}) {
+}
+
+export async function getProducts(params: GetProductsParams) {
   const { query, category, minPrice, maxPrice } = params;
 
   const where: Prisma.ProductWhereInput = {
@@ -83,7 +85,7 @@ export async function getProducts(params: {
       },
     },
     orderBy: {
-      created_at: "desc",
+      createdAt: "desc",
     },
   });
 }
@@ -94,7 +96,7 @@ export async function getFeaturedProducts() {
       isPublic: true,
       isFeatured: true 
     },
-    orderBy: { created_at: 'desc' }
+    orderBy: { createdAt: 'desc' }
   });
 }
 
@@ -104,19 +106,19 @@ export async function getProductsByCategory(category: string) {
       isPublic: true,
       category 
     },
-    orderBy: { created_at: 'desc' }
+    orderBy: { createdAt: 'desc' }
   });
 }
 
-export async function getProductsByUser(user_id: string) {
+export async function getProductsByUser(userId: string) {
   return prisma.product.findMany({
     where: { 
       OR: [
-        { created_by: user_id },
-        { uploaded_by: user_id }
+        { createdBy: userId },
+        { uploadedBy: userId }
       ]
     },
-    orderBy: { created_at: 'desc' }
+    orderBy: { createdAt: 'desc' }
   });
 }
 
@@ -168,9 +170,9 @@ export async function deleteProduct(id: string) {
 }
 
 // Review operations
-export async function getProductReviews(product_id: string) {
+export async function getProductReviews(productId: string) {
   return prisma.review.findMany({
-    where: { product_id },
+    where: { productId },
     include: {
       user: {
         select: {
@@ -180,7 +182,7 @@ export async function getProductReviews(product_id: string) {
       },
     },
     orderBy: {
-      created_at: "desc",
+      createdAt: "desc",
     },
   });
 }
@@ -199,11 +201,11 @@ export async function createReview(data: Prisma.ReviewCreateInput) {
   });
 }
 
-export async function getUserReview(product_id: string, user_id: string) {
+export async function getUserReview(productId: string, userId: string) {
   return prisma.review.findFirst({
     where: {
-      product_id,
-      user_id,
+      productId,
+      userId,
     },
     include: {
       user: {
@@ -217,9 +219,9 @@ export async function getUserReview(product_id: string, user_id: string) {
 }
 
 // Purchase operations
-export async function getUserPurchases(user_id: string) {
+export async function getUserPurchases(userId: string) {
   return prisma.purchase.findMany({
-    where: { user_id },
+    where: { userId },
     include: {
       product: {
         include: {
@@ -239,19 +241,45 @@ export async function getUserPurchases(user_id: string) {
       },
     },
     orderBy: {
-      created_at: "desc",
+      createdAt: "desc",
     },
   });
 }
 
-export async function getUserProducts(user_id: string) {
+export async function getUserProducts(userId: string) {
   return prisma.product.findMany({
     where: {
       OR: [
-        { created_by: user_id },
-        { uploaded_by: user_id },
-      ],
+        { createdBy: userId },
+        { uploadedBy: userId }
+      ]
     },
+    orderBy: { createdAt: 'desc' }
+  });
+}
+
+// Deployment operations
+export interface DeploymentFilters {
+  query?: string;
+  framework?: string;
+  minPrice?: string;
+  maxPrice?: string;
+}
+
+export async function getDeployments(filters?: DeploymentFilters): Promise<Deployment[]> {
+  const where: Prisma.DeploymentWhereInput = {};
+
+  if (filters?.query) {
+    where.OR = [
+      { name: { contains: filters.query, mode: 'insensitive' } },
+      { description: { contains: filters.query, mode: 'insensitive' } },
+    ];
+  }
+
+  if (filters?.framework) where.framework = filters.framework;
+
+  return prisma.deployment.findMany({
+    where,
     include: {
       creator: {
         select: {
@@ -259,90 +287,9 @@ export async function getUserProducts(user_id: string) {
           image: true,
         },
       },
-      uploader: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
-    },
-    orderBy: {
-      created_at: "desc",
-    },
-  });
-}
-
-// Deployment operations
-interface DeploymentFilters {
-  query?: string;
-  framework?: string;
-  category?: string;
-  accessLevel?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  verified?: string;
-  popular?: string;
-  new?: string;
-}
-
-export async function getDeployments(filters?: DeploymentFilters): Promise<Deployment[]> {
-  const where: any = {
-    status: "published",
-  };
-
-  if (filters?.query) {
-    where.OR = [
-      { name: { contains: filters.query, mode: "insensitive" } },
-      { description: { contains: filters.query, mode: "insensitive" } },
-    ];
-  }
-
-  if (filters?.framework && filters.framework !== "All") {
-    where.framework = filters.framework;
-  }
-
-  if (filters?.category && filters.category !== "All") {
-    where.category = filters.category;
-  }
-
-  if (filters?.accessLevel && filters.accessLevel !== "All") {
-    where.accessLevel = filters.accessLevel.toLowerCase();
-  }
-
-  if (filters?.minPrice || filters?.maxPrice) {
-    where.priceCents = {
-      ...(filters.minPrice && { gte: parseInt(filters.minPrice) }),
-      ...(filters.maxPrice && { lte: parseInt(filters.maxPrice) }),
-    };
-  }
-
-  if (filters?.verified === "true") {
-    where.isVerified = true;
-  }
-
-  if (filters?.popular === "true") {
-    where.isPopular = true;
-  }
-
-  if (filters?.new === "true") {
-    where.isNew = true;
-  }
-
-  return prisma.deployment.findMany({
-    where,
-    include: {
-      users: {
-        select: {
-          name: true,
-          email: true,
-        },
-      },
     },
     orderBy: [
-      { isVerified: "desc" },
-      { isPopular: "desc" },
-      { isNew: "desc" },
-      { createdAt: "desc" },
+      { createdAt: 'desc' },
     ],
   });
 }
@@ -351,28 +298,22 @@ export async function getDeploymentById(id: string): Promise<Deployment | null> 
   return prisma.deployment.findUnique({
     where: { id },
     include: {
-      users: {
+      creator: {
         select: {
           name: true,
-          email: true,
+          image: true,
         },
       },
-      metrics: true,
     },
   });
 }
 
 export async function getDeploymentMetrics(id: string) {
-  return prisma.agentMetrics.findUnique({
-    where: { agentId: id },
-  });
-}
-
-export async function getDeploymentLogs(id: string, limit = 100) {
-  return prisma.agentLog.findMany({
-    where: { agentId: id },
-    orderBy: { timestamp: "desc" },
-    take: limit,
+  return prisma.deployment.findUnique({
+    where: { id },
+    select: {
+      metrics: true,
+    },
   });
 }
 
@@ -380,15 +321,12 @@ export async function createDeployment(data: Prisma.DeploymentCreateInput) {
   return prisma.deployment.create({
     data,
     include: {
-      deployer: {
+      creator: {
         select: {
           name: true,
           image: true,
         },
       },
-      metrics: true,
-      logs: true,
-      feedbacks: true,
     },
   });
 }
@@ -398,15 +336,12 @@ export async function updateDeployment(id: string, data: Prisma.DeploymentUpdate
     where: { id },
     data,
     include: {
-      deployer: {
+      creator: {
         select: {
           name: true,
           image: true,
         },
       },
-      metrics: true,
-      logs: true,
-      feedbacks: true,
     },
   });
 }
@@ -435,7 +370,7 @@ export async function incrementDownloadCount(id: string) {
   return prisma.deployment.update({
     where: { id },
     data: {
-      downloadCount: {
+      downloads: {
         increment: 1,
       },
     },
@@ -446,17 +381,15 @@ export async function updateDeploymentRating(id: string, rating: number) {
   const deployment = await prisma.deployment.findUnique({
     where: { id },
     select: {
-      rating: true,
       totalRatings: true,
+      rating: true,
     },
   });
 
-  if (!deployment) {
-    throw new Error("Deployment not found");
-  }
+  if (!deployment) return null;
 
-  const newTotalRatings = deployment.totalRatings + 1;
-  const newRating = ((deployment.rating * deployment.totalRatings) + rating) / newTotalRatings;
+  const newTotalRatings = (deployment.totalRatings || 0) + 1;
+  const newRating = ((deployment.rating || 0) * (deployment.totalRatings || 0) + rating) / newTotalRatings;
 
   return prisma.deployment.update({
     where: { id },
@@ -467,67 +400,63 @@ export async function updateDeploymentRating(id: string, rating: number) {
   });
 }
 
-// Feedback operations
+// Agent feedback operations
 export async function getAgentFeedback(agentId: string) {
   return prisma.agentFeedback.findMany({
     where: { agentId },
-    include: { user: true },
-    orderBy: { created_at: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
 }
 
-export async function createAgentFeedback(data: any) {
+export async function createAgentFeedback(data: Prisma.AgentFeedbackCreateInput) {
   return prisma.agentFeedback.create({
-    data
+    data,
   });
 }
 
 // Notification operations
-export async function getUserNotifications(user_id: string) {
+export async function getUserNotifications(userId: string) {
   return prisma.notification.findMany({
-    where: { user_id },
-    orderBy: { created_at: 'desc' }
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
   });
 }
 
-export async function createNotification(data: any) {
+export async function createNotification(data: Prisma.NotificationCreateInput) {
   return prisma.notification.create({
-    data
+    data,
   });
 }
 
-// Metrics operations
+// Agent metrics operations
 export async function getAgentMetrics(agentId: string) {
   return prisma.agentMetrics.findUnique({
-    where: { agentId }
-  });
-}
-
-export async function updateAgentMetrics(agentId: string, data: any) {
-  return prisma.agentMetrics.upsert({
     where: { agentId },
-    update: data,
-    create: {
-      agentId,
-      ...data
-    }
   });
 }
 
-// Log operations
+export async function updateAgentMetrics(agentId: string, data: Prisma.AgentMetricsUpdateInput) {
+  return prisma.agentMetrics.update({
+    where: { agentId },
+    data,
+  });
+}
+
+// Agent logs operations
 export async function getAgentLogs(agentId: string) {
   return prisma.agentLog.findMany({
     where: { agentId },
-    orderBy: { timestamp: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
 }
 
-export async function createAgentLog(data: any) {
+export async function createAgentLog(data: Prisma.AgentLogCreateInput) {
   return prisma.agentLog.create({
-    data
+    data,
   });
 }
 
+// Product operations
 export async function getProductById(id: string) {
   return prisma.product.findUnique({
     where: { id },
@@ -544,10 +473,21 @@ export async function getProductById(id: string) {
           image: true,
         },
       },
+      reviews: {
+        include: {
+          user: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+        },
+      },
     },
   });
 }
 
+// Deployment operations
 export async function getDeployment(id: string) {
   return prisma.deployment.findUnique({
     where: { id },
@@ -558,20 +498,29 @@ export async function getDeployment(id: string) {
           image: true,
         },
       },
-      metrics: true,
-      logs: {
-        orderBy: {
-          created_at: 'desc',
+      deployer: {
+        select: {
+          name: true,
+          image: true,
         },
-        take: 100,
+      },
+      feedbacks: {
+        include: {
+          user: {
+            select: {
+              name: true,
+              image: true,
+            },
+          },
+        },
       },
     },
   });
 }
 
 export async function getDeploymentFeedbacks(id: string) {
-  return prisma.feedback.findMany({
-    where: { deployment_id: id },
+  return prisma.agentFeedback.findMany({
+    where: { agentId: id },
     include: {
       user: {
         select: {
@@ -580,8 +529,6 @@ export async function getDeploymentFeedbacks(id: string) {
         },
       },
     },
-    orderBy: {
-      created_at: 'desc',
-    },
+    orderBy: { createdAt: 'desc' },
   });
 } 

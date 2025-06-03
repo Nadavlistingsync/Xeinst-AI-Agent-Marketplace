@@ -1,20 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
+import { ApiError } from '@/lib/errors';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { feedbackSchema, type FeedbackApiResponse } from '@/types/feedback';
-import { type AgentFeedback } from '@prisma/client';
 
-interface FeedbackData {
-  id: string;
-  rating: number;
-  comment: string | null;
-  sentimentScore: number | null;
-  categories: Record<string, number> | null;
-  createdAt: string;
-  updatedAt: string;
-}
+const feedbackSchema = z.object({
+  rating: z.number().min(1).max(5),
+  comment: z.string().min(1).max(1000).optional(),
+  sentimentScore: z.number().min(-1).max(1).optional(),
+  categories: z.record(z.number()).optional()
+});
 
 export async function GET(
   request: Request,
@@ -34,17 +31,7 @@ export async function GET(
       select: {
         id: true,
         name: true,
-        createdAt: true,
-        updatedAt: true,
-        status: true,
-        description: true,
-        framework: true,
-        deployedBy: true,
-        rating: true,
-        requirements: true,
-        version: true,
         createdBy: true,
-        totalRatings: true,
         isPublic: true
       }
     });
@@ -63,30 +50,28 @@ export async function GET(
       );
     }
 
-    const feedback = await prisma.agentFeedback.findMany({
+    const feedbacks = await prisma.agentFeedback.findMany({
       where: { agentId: params.id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
 
-    const feedbackData = feedback.map((item) => ({
-      id: item.id,
-      rating: item.rating,
-      comment: item.comment,
-      sentimentScore: item.sentimentScore ? Number(item.sentimentScore) : null,
-      categories: item.categories as Record<string, number> | null,
-      createdAt: item.createdAt.toISOString(),
-      updatedAt: item.updatedAt.toISOString()
-    }));
-
-    return NextResponse.json({
-      success: true,
-      data: feedbackData
-    });
+    return NextResponse.json(feedbacks);
   } catch (error) {
     console.error('Error fetching feedback:', error);
+    const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to fetch feedback');
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: errorResponse.message },
+      { status: errorResponse.statusCode }
     );
   }
 }
@@ -109,17 +94,7 @@ export async function POST(
       select: {
         id: true,
         name: true,
-        createdAt: true,
-        updatedAt: true,
-        status: true,
-        description: true,
-        framework: true,
-        deployedBy: true,
-        rating: true,
-        requirements: true,
-        version: true,
         createdBy: true,
-        totalRatings: true,
         isPublic: true
       }
     });
@@ -128,6 +103,13 @@ export async function POST(
       return NextResponse.json(
         { error: 'Agent not found' },
         { status: 404 }
+      );
+    }
+
+    if (agent.createdBy !== session.user.id && !agent.isPublic) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 403 }
       );
     }
 
@@ -140,30 +122,55 @@ export async function POST(
         userId: session.user.id,
         rating: validatedData.rating,
         comment: validatedData.comment,
-        categories: validatedData.categories,
-        sentimentScore: validatedData.sentimentScore
+        sentimentScore: validatedData.sentimentScore ? new Prisma.Decimal(validatedData.sentimentScore) : null,
+        categories: validatedData.categories || {},
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true
+          }
+        }
       }
     });
 
-    return NextResponse.json({
-      success: true,
-      data: feedback
-    });
+    // Create notification for agent creator
+    if (agent.createdBy !== session.user.id) {
+      await prisma.notification.create({
+        data: {
+          userId: agent.createdBy,
+          type: 'FEEDBACK_RECEIVED',
+          title: 'New Feedback Received',
+          message: `You received new feedback for your agent "${agent.name}"`,
+          metadata: {
+            agentId: agent.id,
+            feedbackId: feedback.id
+          },
+          read: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+      });
+    }
+
+    return NextResponse.json(feedback);
   } catch (error) {
     console.error('Error creating feedback:', error);
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Validation error',
-          details: error.errors
-        },
+        { error: 'Validation error', details: error.errors },
         { status: 400 }
       );
     }
+    const errorResponse = error instanceof ApiError ? error : new ApiError('Failed to create feedback');
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: errorResponse.message },
+      { status: errorResponse.statusCode }
     );
   }
 }
