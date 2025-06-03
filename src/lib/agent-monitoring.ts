@@ -330,13 +330,13 @@ export async function getAgentHealth(agentId: string): Promise<AgentHealth> {
 }
 
 export async function getAgentDeploymentHistory(agentId: string): Promise<any[]> {
-  return await prisma.deployment.findMany({
-    where: and(
-      eq(agentLogs.deploymentId, agentId),
-      eq(agentLogs.level, 'info'),
-      eq(agentLogs.message, 'Deployment completed')
-    ),
-    orderBy: [desc(agentLogs.timestamp)]
+  return await prisma.agentLog.findMany({
+    where: {
+      deploymentId: agentId,
+      level: 'info',
+      message: 'Deployment completed',
+    },
+    orderBy: { timestamp: 'desc' },
   });
 }
 
@@ -416,12 +416,12 @@ export async function getAgentFeedbackStats(agentId: string) {
 
 export async function getAgentDeployments(agentId: string): Promise<any[]> {
   return prisma.agentLog.findMany({
-    where: and(
-      eq(agentLogs.deploymentId, agentId),
-      eq(agentLogs.level, 'info'),
-      eq(agentLogs.message, 'Deployment completed')
-    ),
-    orderBy: [desc(agentLogs.timestamp)]
+    where: {
+      deploymentId: agentId,
+      level: 'info',
+      message: 'Deployment completed',
+    },
+    orderBy: { timestamp: 'desc' },
   });
 }
 
