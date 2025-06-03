@@ -5,7 +5,7 @@ import prisma from '@/lib/prisma';
 import { type FeedbackCategory } from '@/types/feedback-analytics';
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse<{ success: boolean; data?: { categories: FeedbackCategory[] }; error?: string }>> {
   try {

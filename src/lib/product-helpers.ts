@@ -1,4 +1,3 @@
-import { Prisma } from '@prisma/client';
 import { prisma } from './db';
 import { Product } from './schema';
 
@@ -128,7 +127,7 @@ export async function createProductReview(data: {
   productId: string;
   userId: string;
   rating: number;
-  comment?: string;
+  comment: string;
 }): Promise<any> {
   return await prisma.review.create({
     data: {

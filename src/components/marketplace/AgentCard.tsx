@@ -16,7 +16,6 @@ export function AgentCard({ deployment, onClick }: AgentCardProps) {
     status,
     rating,
     downloadCount,
-    category,
     accessLevel,
     licenseType,
     createdAt,
@@ -60,11 +59,6 @@ export function AgentCard({ deployment, onClick }: AgentCardProps) {
           {description}
         </p>
         <div className="flex flex-wrap gap-2 mb-4">
-          {category && (
-            <Badge variant="outline">
-              {category}
-            </Badge>
-          )}
           {accessLevel && (
             <Badge variant="outline">
               {accessLevel}

@@ -450,16 +450,29 @@ export async function deployAgent(data: {
 }
 
 export async function getAgentVersions(deploymentId: string) {
-  return prisma.deployment.findMany({
+  const versions = await prisma.deployment.findMany({
     where: {
-      id: deploymentId,
+      id: deploymentId
     },
     select: {
-      createdAt: true,
+      id: true,
+      version: true,
       status: true,
+      createdAt: true,
+      updatedAt: true,
+      metrics: true
     },
     orderBy: {
-      createdAt: 'desc',
-    },
+      createdAt: 'desc'
+    }
   });
+
+  return versions.map(version => ({
+    id: version.id,
+    version: version.version,
+    status: version.status,
+    createdAt: version.createdAt,
+    updatedAt: version.updatedAt,
+    metrics: version.metrics
+  }));
 } 

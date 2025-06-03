@@ -11,7 +11,6 @@ export interface Deployment {
   environment: string;
   framework: string;
   modelType: string;
-  category: string;
   source: string;
   deployedBy: string;
   createdBy: string;
@@ -19,14 +18,11 @@ export interface Deployment {
   totalRatings: number;
   downloadCount: number;
   startDate: Date;
-  endDate: Date | null;
   createdAt: Date;
   updatedAt: Date;
   isPublic: boolean;
   version: string;
   health: JsonValue;
-  tags: string[];
-  earningsSplit: number;
   config?: Record<string, unknown>;
 }
 
@@ -70,7 +66,6 @@ export interface CreateDeploymentInput {
   environment: string;
   framework: string;
   modelType: string;
-  category: string;
   isPublic: boolean;
   version: string;
   tags: string[];

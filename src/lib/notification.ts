@@ -1,5 +1,5 @@
-import { PrismaClient, NotificationType, Prisma } from '@prisma/client';
-import { JsonValue } from '@/types/json';
+import { PrismaClient, NotificationType, Prisma, Notification } from '@prisma/client';
+import { JsonValue } from '@prisma/client/runtime/library';
 import { prisma } from './db';
 
 const prismaClient = new PrismaClient();
@@ -14,7 +14,7 @@ export interface CreateNotificationInput {
 export interface UpdateNotificationInput {
   message?: string;
   type?: NotificationType;
-  metadata?: JsonValue;
+  metadata?: Prisma.InputJsonValue;
   read?: boolean;
 }
 
@@ -41,7 +41,7 @@ export async function updateNotification(id: string, data: UpdateNotificationInp
     data: {
       type: data.type,
       message: data.message,
-      metadata: data.metadata as any,
+      metadata: data.metadata || Prisma.JsonNull,
       read: data.read,
     },
   });

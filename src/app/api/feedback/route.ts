@@ -3,7 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
-import { Feedback, FeedbackApiResponse } from '@/types/feedback';
+import { Feedback, FeedbackSuccess, FeedbackError } from '@/types/feedback';
+import { JsonValue } from '@prisma/client/runtime/library';
+import { NotificationType } from '@prisma/client';
 
 const feedbackSchema = z.object({
   deploymentId: z.string(),
@@ -13,12 +15,12 @@ const feedbackSchema = z.object({
   metadata: z.record(z.any()).optional(),
 });
 
-export async function GET(): Promise<NextResponse<FeedbackApiResponse<Feedback[]>>> {
+export async function GET(): Promise<NextResponse<FeedbackSuccess | FeedbackError>> {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 401 },
         { status: 401 }
       );
     }
@@ -35,7 +37,9 @@ export async function GET(): Promise<NextResponse<FeedbackApiResponse<Feedback[]
           include: {
             user: {
               select: {
+                id: true,
                 name: true,
+                email: true,
                 image: true
               }
             }
@@ -51,13 +55,17 @@ export async function GET(): Promise<NextResponse<FeedbackApiResponse<Feedback[]
         userId: feedback.userId,
         rating: feedback.rating,
         comment: feedback.comment,
-        sentimentScore: feedback.sentimentScore,
-        categories: feedback.categories,
-        metadata: feedback.metadata,
+        sentimentScore: feedback.sentimentScore ?? 0,
+        categories: feedback.categories as Record<string, number> | null,
+        metadata: feedback.metadata as JsonValue,
         createdAt: feedback.createdAt,
         updatedAt: feedback.updatedAt,
+        creatorResponse: feedback.creatorResponse,
+        responseDate: feedback.responseDate,
         user: {
+          id: feedback.user.id,
           name: feedback.user.name,
+          email: feedback.user.email,
           image: feedback.user.image
         },
         deployment: {
@@ -69,25 +77,42 @@ export async function GET(): Promise<NextResponse<FeedbackApiResponse<Feedback[]
       }))
     );
 
+    if (feedback.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No feedback found', message: 'No feedback found', status: 404 },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      data: feedback
-    } as FeedbackApiResponse<Feedback[]>);
+      data: feedback[0]
+    });
   } catch (error) {
     console.error('Error fetching feedback:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { 
+        success: false, 
+        error: 'Internal server error',
+        message: 'Internal server error',
+        status: 500
+      },
       { status: 500 }
     );
   }
 }
 
-export async function POST(request: Request): Promise<NextResponse<FeedbackApiResponse>> {
+export async function POST(request: Request): Promise<NextResponse<FeedbackSuccess | FeedbackError>> {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { 
+          success: false, 
+          error: 'Unauthorized',
+          message: 'Unauthorized',
+          status: 401
+        },
         { status: 401 }
       );
     }
@@ -108,14 +133,24 @@ export async function POST(request: Request): Promise<NextResponse<FeedbackApiRe
 
     if (!deployment) {
       return NextResponse.json(
-        { success: false, error: 'Deployment not found' },
+        { 
+          success: false, 
+          error: 'Deployment not found',
+          message: 'Deployment not found',
+          status: 404
+        },
         { status: 404 }
       );
     }
 
     if (!deployment.isPublic && deployment.createdBy !== session.user.id) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { 
+          success: false, 
+          error: 'Unauthorized',
+          message: 'Unauthorized',
+          status: 403
+        },
         { status: 403 }
       );
     }
@@ -125,9 +160,9 @@ export async function POST(request: Request): Promise<NextResponse<FeedbackApiRe
         deploymentId: validatedData.deploymentId,
         userId: session.user.id,
         rating: validatedData.rating,
-        comment: validatedData.comment,
-        categories: validatedData.categories,
-        metadata: validatedData.metadata,
+        comment: validatedData.comment || null,
+        categories: validatedData.categories ? { categories: validatedData.categories } : undefined,
+        metadata: validatedData.metadata ? { metadata: validatedData.metadata } : undefined,
         sentimentScore: 0, // Will be updated by the feedback processor
       },
       include: {
@@ -155,13 +190,13 @@ export async function POST(request: Request): Promise<NextResponse<FeedbackApiRe
       deploymentId: feedback.deploymentId,
       userId: feedback.userId,
       rating: feedback.rating,
-      comment: feedback.comment || null,
-      sentimentScore: feedback.sentimentScore ? Number(feedback.sentimentScore) : 0,
+      comment: feedback.comment,
+      sentimentScore: feedback.sentimentScore ?? 0,
       categories: feedback.categories as Record<string, number> | null,
-      metadata: feedback.metadata as Record<string, unknown>,
+      metadata: feedback.metadata as JsonValue,
       createdAt: feedback.createdAt,
       updatedAt: feedback.updatedAt,
-      creatorResponse: feedback.creatorResponse || null,
+      creatorResponse: feedback.creatorResponse,
       responseDate: feedback.responseDate,
       user: {
         id: feedback.user.id,
@@ -181,7 +216,7 @@ export async function POST(request: Request): Promise<NextResponse<FeedbackApiRe
     await prisma.notification.create({
       data: {
         userId: deployment.createdBy,
-        type: 'NEW_FEEDBACK' as any, // TODO: Replace with correct Prisma enum if needed
+        type: 'NEW_FEEDBACK' as NotificationType,
         message: `New feedback received for ${deployment.name}`,
         metadata: {
           feedbackId: feedback.id,
@@ -197,14 +232,28 @@ export async function POST(request: Request): Promise<NextResponse<FeedbackApiRe
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { success: false, error: 'Invalid input', details: [error] },
+        { 
+          success: false, 
+          error: 'Invalid input',
+          message: 'Invalid input',
+          details: error.errors.map(err => ({
+            path: err.path.join('.'),
+            message: err.message
+          })),
+          status: 400
+        },
         { status: 400 }
       );
     }
 
     console.error('Error creating feedback:', error);
     return NextResponse.json(
-      { success: false, error: 'Internal server error' },
+      { 
+        success: false, 
+        error: 'Internal server error',
+        message: 'Internal server error',
+        status: 500
+      },
       { status: 500 }
     );
   }

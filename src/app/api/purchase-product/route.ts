@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     const earningsAmount = (Number(product.price) * Number(product.earningsSplit)).toFixed(2);
 
     // Create earnings record and update product in a transaction
-    const result = await prisma.$transaction([
+    await prisma.$transaction([
       prisma.earning.create({
         data: {
           userId: product.creator.id,
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    const purchase = await prisma.purchase.create({
+    await prisma.purchase.create({
       data: {
         status: 'pending',
         userId: session.user.id,

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { submitAgentFeedback, getAgentFeedback } from '@/lib/agent-monitoring';
+import { getAgentFeedback, createAgentFeedback } from '@/lib/agent-monitoring';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
 
@@ -15,11 +15,7 @@ export async function GET(
   context: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const timeRange = {
-      start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // Last 30 days
-      end: new Date()
-    };
-    const feedback = await getAgentFeedback(context.params.id, timeRange);
+    const feedback = await getAgentFeedback(context.params.id);
     return createSuccessResponse(feedback);
   } catch (error) {
     console.error('Error fetching agent feedback:', error);
@@ -40,7 +36,12 @@ export async function POST(
     const body = await request.json();
     const validatedData = feedbackSchema.parse(body);
 
-    await submitAgentFeedback(params.id, session.user.id, validatedData.rating, validatedData.comment);
+    await createAgentFeedback({
+      deploymentId: params.id,
+      userId: session.user.id,
+      rating: validatedData.rating,
+      comment: validatedData.comment
+    });
     return createSuccessResponse({ message: 'Feedback submitted' });
   } catch (error) {
     console.error('Error submitting agent feedback:', error);

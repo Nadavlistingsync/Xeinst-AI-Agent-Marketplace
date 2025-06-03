@@ -5,6 +5,7 @@ import { AgentDetails } from "@/components/marketplace/AgentDetails";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Suspense } from "react";
 import { Deployment } from "@/types/deployment";
+import { DeploymentStatus } from "@prisma/client";
 
 interface PageProps {
   params: {
@@ -36,21 +37,27 @@ export default async function MarketplaceDetailPage({ params }: PageProps) {
 
   // Ensure deployment has all required fields for AgentDetails
   const deploymentWithRequiredFields: Deployment = {
-    ...deployment,
-    category: deployment.category || '',
-    endDate: deployment.endDate || null,
-    tags: deployment.tags || [],
-    earningsSplit: deployment.earningsSplit || 0,
+    id: deployment.id,
+    name: deployment.name,
+    status: deployment.status as DeploymentStatus,
+    description: deployment.description || '',
+    accessLevel: deployment.accessLevel,
+    licenseType: deployment.licenseType,
+    environment: deployment.environment,
+    framework: deployment.framework,
+    modelType: deployment.modelType,
+    source: deployment.source || '',
+    deployedBy: deployment.deployedBy,
+    createdBy: deployment.createdBy,
     rating: deployment.rating || 0,
     totalRatings: deployment.totalRatings || 0,
     downloadCount: deployment.downloadCount || 0,
-    source: deployment.source || '',
-    deployedBy: deployment.deployedBy || '',
-    createdBy: deployment.createdBy || '',
     startDate: deployment.startDate || new Date(),
-    isPublic: deployment.isPublic || false,
+    createdAt: deployment.createdAt,
+    updatedAt: deployment.updatedAt,
+    isPublic: deployment.isPublic,
     version: deployment.version || '1.0.0',
-    health: deployment.health || null
+    health: deployment.health || {},
   };
 
   return (

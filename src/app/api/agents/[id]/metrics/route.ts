@@ -5,12 +5,19 @@ import { getAgentMetrics } from '@/lib/agent-monitoring';
 import prisma from '@/lib/prisma';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
+import { Deployment, User } from '@prisma/client';
 
 const metricsQuerySchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   interval: z.enum(['hour', 'day', 'week', 'month']).optional(),
 });
+
+type SubscriptionTier = 'free' | 'basic' | 'premium' | 'enterprise';
+
+type AgentWithCreator = Deployment & {
+  creator: Pick<User, 'id' | 'subscriptionTier'>;
+};
 
 export async function GET(
   request: Request,
@@ -37,7 +44,7 @@ export async function GET(
           }
         }
       }
-    });
+    }) as AgentWithCreator | null;
 
     if (!agent) {
       return createErrorResponse('Agent not found');
@@ -46,10 +53,13 @@ export async function GET(
     // Check if user has access to the agent
     if (agent.createdBy !== session.user.id && agent.accessLevel !== 'public') {
       if (agent.accessLevel === 'restricted') {
-        if (agent.creator.subscriptionTier === 'enterprise' && session.user.subscriptionTier !== 'enterprise') {
+        const creatorTier = agent.creator.subscriptionTier as SubscriptionTier;
+        const userTier = session.user.subscriptionTier as SubscriptionTier;
+        
+        if (creatorTier === 'enterprise' && userTier !== 'enterprise') {
           return createErrorResponse('Enterprise access required');
         }
-        if (agent.creator.subscriptionTier === 'premium' && session.user.subscriptionTier !== 'premium') {
+        if (creatorTier === 'premium' && userTier !== 'premium') {
           return createErrorResponse('Premium access required');
         }
       }
@@ -63,9 +73,10 @@ export async function GET(
       interval: searchParams.get('interval')
     };
 
-    const validatedParams = metricsQuerySchema.parse(queryParams);
+    metricsQuerySchema.parse(queryParams);
 
     const metrics = await getAgentMetrics(params.id);
+
     if (!metrics) {
       return createErrorResponse('Metrics not found');
     }

@@ -9,20 +9,13 @@ import { Session } from 'next-auth';
 import { signIn } from 'next-auth/react';
 import { PageSkeleton } from './LoadingSkeleton';
 import { toast } from 'react-hot-toast';
-import { fetchApi } from '@/lib/api';
-import { Agent } from '@prisma/client';
-
-interface ApiResponse<T> {
-  data: T;
-  error?: string;
-}
 
 interface MarketplaceProps {
   session: Session | null;
 }
 
 export default function Marketplace({ session }: MarketplaceProps) {
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -41,7 +34,7 @@ export default function Marketplace({ session }: MarketplaceProps) {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetchApi<{ products: Agent[] }>('/api/list-products');
+      const response = await fetchApi<{ products: any[] }>('/api/list-products');
       
       if (response.error) {
         throw new Error(response.error);
@@ -68,9 +61,8 @@ export default function Marketplace({ session }: MarketplaceProps) {
   }, [session, fetchAgents]);
 
   const filteredAgents = agents.filter(agent =>
-    agent.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-    agent.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-    agent.tag.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+    agent.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+    agent.description?.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
   const handleViewAgent = (agentId: number) => {
@@ -128,7 +120,7 @@ export default function Marketplace({ session }: MarketplaceProps) {
             key={agent.id}
             className="glass-card card-hover p-6"
           >
-            {agent.imageUrl && (
+            {/* agent.imageUrl && (
               <div className="mb-4 relative w-full h-48">
                 <Image
                   src={agent.imageUrl}
@@ -138,11 +130,11 @@ export default function Marketplace({ session }: MarketplaceProps) {
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
               </div>
-            )}
+            ) */}
             <div className="flex items-center justify-between mb-4">
-              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+              {/* <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
                 {agent.tag}
-              </span>
+              </span> */}
               <div className="flex items-center">
                 <Star className="w-5 h-5 text-yellow-400 fill-current" />
                 <span className="ml-1 text-gray-600">{agent.rating}</span>

@@ -31,7 +31,8 @@ export async function POST(
         averageTokensUsed: deployment.metrics[0].averageTokensUsed || 0,
         costPerRequest: deployment.metrics[0].costPerRequest || 0,
         totalCost: deployment.metrics[0].totalCost || 0
-      } : undefined
+      } : undefined,
+      lastUpdated: new Date().toISOString()
     };
     broadcastDeploymentStatus(statusUpdate);
 

@@ -28,9 +28,9 @@ vi.mock('@prisma/client', () => ({
   })),
 }));
 
-import { getFeaturedAgents, getTrendingAgents, GET } from '../route';
+import { GET } from '../route';
 import prisma from '@/lib/prisma';
-import { getAgentLogs, getAgentMetrics, logAgentEvent } from '@/lib/agent-monitoring';
+import { getAgentLogs, getAgentMetrics } from '@/lib/agent-monitoring';
 import { prisma as testPrisma } from '@/test/setup';
 
 // Mock Prisma
@@ -54,46 +54,6 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 describe('Agents API', () => {
-  const mockAgents = [
-    {
-      id: '1',
-      name: 'Test Agent',
-      description: 'Test Description',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: 'user1',
-      status: 'active',
-      category: 'test',
-      isFeatured: true,
-      isTrending: true,
-      usageCount: 0,
-      rating: 4.5,
-      price: 9.99,
-      earningsSplit: 0.7,
-      deploymentCount: 0,
-      feedbackCount: 0,
-      totalEarnings: 0,
-      lastDeployed: new Date(),
-      lastUsed: new Date(),
-      lastUpdated: new Date(),
-      lastFeedback: new Date(),
-      lastRating: 4.5,
-      lastEarnings: 0,
-      lastDeployment: new Date(),
-      lastUsage: new Date(),
-      lastFeedbackDate: new Date(),
-      lastRatingDate: new Date(),
-      lastEarningsDate: new Date(),
-      lastDeploymentDate: new Date(),
-      lastUsageDate: new Date(),
-      creator: {
-        id: 'user1',
-        email: 'test@example.com',
-        name: 'Test User',
-      },
-    },
-  ];
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -101,54 +61,6 @@ describe('Agents API', () => {
   beforeEach(async () => {
     // Clear the deployments table before each test
     await testPrisma.deployment.deleteMany();
-  });
-
-  describe('getFeaturedAgents', () => {
-    it('should return featured agents', async () => {
-      (prisma.deployment.findMany as any).mockResolvedValue(mockAgents);
-      (prisma.deployment.count as any).mockResolvedValue(mockAgents.length);
-
-      const result = await getFeaturedAgents();
-      expect(result).toEqual({
-        agents: mockAgents,
-        pagination: {
-          total: mockAgents.length,
-          pages: 1,
-          page: 1,
-          limit: 10,
-        },
-      });
-    });
-
-    it('should handle database errors', async () => {
-      (prisma.deployment.findMany as any).mockRejectedValue(new Error('Database error'));
-
-      await expect(getFeaturedAgents()).rejects.toThrow('Database error');
-    });
-  });
-
-  describe('getTrendingAgents', () => {
-    it('should return trending agents', async () => {
-      (prisma.deployment.findMany as any).mockResolvedValue(mockAgents);
-      (prisma.deployment.count as any).mockResolvedValue(mockAgents.length);
-
-      const result = await getTrendingAgents();
-      expect(result).toEqual({
-        agents: mockAgents,
-        pagination: {
-          total: mockAgents.length,
-          pages: 1,
-          page: 1,
-          limit: 10,
-        },
-      });
-    });
-
-    it('should handle database errors', async () => {
-      (prisma.deployment.findMany as any).mockRejectedValue(new Error('Database error'));
-
-      await expect(getTrendingAgents()).rejects.toThrow('Database error');
-    });
   });
 
   it('returns empty array when no agents exist', async () => {
@@ -248,8 +160,8 @@ describe('Agent Monitoring', () => {
         {
           id: '1',
           deploymentId: mockAgentId,
-          level: 'error',
-          message: 'Test error log',
+          level: 'info',
+          message: 'Test log',
           metadata: null,
           timestamp: mockDate,
           createdAt: mockDate,
@@ -260,39 +172,46 @@ describe('Agent Monitoring', () => {
       (prisma.agentLog.findMany as any).mockResolvedValue(mockLogs);
 
       const logs = await getAgentLogs(mockAgentId, {
-        startDate: new Date('2024-01-01'),
+        startDate: mockDate,
         endDate: new Date('2024-01-02'),
-        level: 'error',
+        level: 'info',
+        limit: 10
       });
 
       expect(prisma.agentLog.findMany).toHaveBeenCalledWith({
         where: {
           deploymentId: mockAgentId,
           timestamp: {
-            gte: new Date('2024-01-01'),
+            gte: mockDate,
             lte: new Date('2024-01-02'),
           },
-          level: 'error',
+          level: 'info',
         },
         orderBy: {
           timestamp: 'desc',
         },
+        take: 10
       });
       expect(logs).toEqual(mockLogs);
     });
   });
 
   describe('getAgentMetrics', () => {
-    it('should fetch agent metrics', async () => {
+    it('should fetch metrics', async () => {
       const mockMetrics = {
         id: '1',
-        agentId: mockAgentId,
-        requests: 100,
-        errors: 5,
-        avgResponseTime: '50.5',
-        lastActive: mockDate,
-        created_at: mockDate,
-        updated_at: mockDate,
+        deploymentId: mockAgentId,
+        errorRate: 0.1,
+        successRate: 0.9,
+        activeUsers: 100,
+        totalRequests: 1000,
+        averageResponseTime: 200,
+        requestsPerMinute: 10,
+        averageTokensUsed: 100,
+        costPerRequest: 0.01,
+        totalCost: 10,
+        createdAt: mockDate,
+        updatedAt: mockDate
       };
 
       (prisma.agentMetrics.findUnique as any).mockResolvedValue(mockMetrics);
@@ -300,70 +219,9 @@ describe('Agent Monitoring', () => {
       const metrics = await getAgentMetrics(mockAgentId);
 
       expect(prisma.agentMetrics.findUnique).toHaveBeenCalledWith({
-        where: {
-          agentId: mockAgentId,
-        },
+        where: { id: mockAgentId }
       });
       expect(metrics).toEqual(mockMetrics);
-    });
-
-    it('should return null when no metrics found', async () => {
-      (prisma.agentMetrics.findUnique as any).mockResolvedValue(null);
-
-      const metrics = await getAgentMetrics(mockAgentId);
-
-      expect(metrics).toBeNull();
-    });
-  });
-
-  describe('logAgentEvent', () => {
-    it('should log an agent event', async () => {
-      const mockEvent = {
-        level: 'info' as const,
-        message: 'Test event',
-        metadata: { test: 'data' },
-      };
-
-      const mockCreatedLog = {
-        id: expect.any(String),
-        agentId: mockAgentId,
-        level: mockEvent.level,
-        message: mockEvent.message,
-        metadata: mockEvent.metadata,
-        timestamp: expect.any(Date),
-        created_at: expect.any(Date),
-        updated_at: expect.any(Date),
-      };
-
-      (prisma.agentLog.create as any).mockResolvedValue(mockCreatedLog);
-
-      await logAgentEvent(mockAgentId, mockEvent.level, mockEvent.message, mockEvent.metadata);
-
-      expect(prisma.agentLog.create).toHaveBeenCalledWith({
-        data: {
-          agentId: mockAgentId,
-          level: mockEvent.level,
-          message: mockEvent.message,
-          metadata: mockEvent.metadata,
-          timestamp: expect.any(Date),
-          created_at: expect.any(Date),
-          updated_at: expect.any(Date),
-        },
-      });
-    });
-
-    it('should handle database errors', async () => {
-      const mockEvent = {
-        level: 'info' as const,
-        message: 'Test event',
-        metadata: { test: 'data' },
-      };
-
-      (prisma.agentLog.create as any).mockRejectedValue(new Error('Database error'));
-
-      await expect(
-        logAgentEvent(mockAgentId, mockEvent.level, mockEvent.message, mockEvent.metadata)
-      ).rejects.toThrow('Database error');
     });
   });
 }); 

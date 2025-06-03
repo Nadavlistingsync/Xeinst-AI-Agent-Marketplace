@@ -33,7 +33,7 @@ describe('DeploymentMetrics', () => {
       error: null,
     });
 
-    render(<DeploymentMetrics deploymentId={mockDeploymentId} />);
+    render(<DeploymentMetrics deploymentId={mockDeploymentId} socket={null} />);
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
   });
 
@@ -46,7 +46,7 @@ describe('DeploymentMetrics', () => {
       error: new Error(errorMessage),
     });
 
-    render(<DeploymentMetrics deploymentId={mockDeploymentId} />);
+    render(<DeploymentMetrics deploymentId={mockDeploymentId} socket={null} />);
     expect(screen.getByText(new RegExp(errorMessage, 'i'))).toBeInTheDocument();
   });
 
@@ -58,7 +58,7 @@ describe('DeploymentMetrics', () => {
       error: null,
     });
 
-    render(<DeploymentMetrics deploymentId={mockDeploymentId} />);
+    render(<DeploymentMetrics deploymentId={mockDeploymentId} socket={null} />);
 
     await waitFor(() => {
       expect(screen.getByText('Deployment Metrics')).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('DeploymentMetrics', () => {
       error: null,
     });
 
-    render(<DeploymentMetrics deploymentId={mockDeploymentId} />);
+    render(<DeploymentMetrics deploymentId={mockDeploymentId} socket={null} />);
 
     await waitFor(() => {
       expect(screen.getByText('Health Issues')).toBeInTheDocument();

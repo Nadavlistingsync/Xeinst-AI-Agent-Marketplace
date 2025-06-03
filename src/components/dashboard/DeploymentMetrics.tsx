@@ -4,10 +4,9 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DeploymentStatus } from '@prisma/client';
-import { AgentHealth, AgentMetrics } from '@/types/agent-monitoring';
+import { AgentMetrics } from '@/types/agent-monitoring';
 
 interface DeploymentMetricsProps {
-  deploymentId: string;
   socket: WebSocket | null;
 }
 
@@ -37,7 +36,7 @@ interface DeploymentMetrics {
   metrics: AgentMetrics;
 }
 
-export function DeploymentMetrics({ deploymentId, socket }: DeploymentMetricsProps) {
+export function DeploymentMetrics({ socket }: DeploymentMetricsProps) {
   const [historicalData, setHistoricalData] = useState<DeploymentMetrics[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected'>('disconnected');
   const [error, setError] = useState<string | null>(null);

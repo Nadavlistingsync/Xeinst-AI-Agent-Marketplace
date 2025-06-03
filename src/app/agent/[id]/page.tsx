@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { MonitoringDashboard } from '@/components/dashboard/MonitoringDashboard';
-import { AgentPage } from '@/components/agent/AgentPage';
+import AgentPage from '@/components/agent/AgentPage';
 import prisma from '@/lib/prisma';
 
 interface AgentPageProps {

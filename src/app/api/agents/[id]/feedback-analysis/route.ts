@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
-import { analyzeAgentFeedback } from '@/lib/feedback-analysis';
+import { analyzeFeedback } from '@/lib/feedback-analysis';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
 
@@ -49,7 +49,7 @@ export async function GET(
       endDate: searchParams.get('endDate'),
     });
 
-    const analysis = await analyzeAgentFeedback(params.id, timeRange);
+    const analysis = await analyzeFeedback(params.id);
     return createSuccessResponse(analysis);
   } catch (error) {
     console.error('Error analyzing feedback:', error);

@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir, unlink } from 'fs/promises';
+import { NextResponse } from 'next/server';
+import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { uploadFile, deleteFile } from '@/lib/upload';
+import { deleteFile } from '@/lib/upload';
 import prisma from '@/lib/prisma';
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
@@ -21,11 +21,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const file = formData.get('file');
 
-    if (!file) {
+    if (!file || !(file instanceof File)) {
       return NextResponse.json(
-        { success: false, error: 'No file provided' },
+        { success: false, error: 'No file provided or invalid file type' },
         { status: 400 }
       );
     }

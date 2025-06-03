@@ -95,18 +95,4 @@ export async function getCategoryProducts(
     orderBy: { createdAt: 'desc' },
     take: options.limit,
   });
-}
-
-export async function getCategoryPath(id: string): Promise<Category[]> {
-  const path: Category[] = [];
-  let currentCategory = await getCategory(id);
-  while (currentCategory) {
-    path.unshift(currentCategory);
-    if (currentCategory.parentId) {
-      currentCategory = await getCategory(currentCategory.parentId);
-    } else {
-      break;
-    }
-  }
-  return path;
 } 

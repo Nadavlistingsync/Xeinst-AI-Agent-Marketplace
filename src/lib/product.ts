@@ -19,7 +19,7 @@ export interface CreateProductInput {
   framework?: string;
   modelType?: string;
   version?: string;
-  metadata?: Prisma.JsonValue;
+  metadata?: Record<string, any>;
 }
 
 export interface UpdateProductInput {
@@ -35,7 +35,7 @@ export interface UpdateProductInput {
   framework?: string;
   modelType?: string;
   version?: string;
-  metadata?: Prisma.JsonValue;
+  metadata?: Record<string, any>;
 }
 
 export interface ProductFilter {
@@ -75,7 +75,7 @@ export async function createProduct(data: CreateProductInput) {
       framework: data.framework || 'custom',
       modelType: data.modelType || 'general',
       version: data.version || '1.0.0',
-      metadata: data.metadata || Prisma.JsonNull,
+      metadata: data.metadata ? JSON.stringify(data.metadata) : Prisma.JsonNull,
     },
   }).then(toProduct);
 }
@@ -95,7 +95,7 @@ export async function updateProduct(id: string, data: UpdateProductInput) {
       framework: data.framework,
       modelType: data.modelType,
       version: data.version,
-      metadata: data.metadata,
+      metadata: data.metadata ? JSON.stringify(data.metadata) : Prisma.JsonNull,
     },
   }).then(toProduct);
 }

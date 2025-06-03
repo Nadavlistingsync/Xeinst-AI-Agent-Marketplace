@@ -11,7 +11,6 @@ interface MarketplaceGridProps {
 export function MarketplaceGrid({ deployments, onDeploymentSelect }: MarketplaceGridProps) {
   const [filteredDeployments, setFilteredDeployments] = useState<Deployment[]>(deployments);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     let filtered = deployments;
@@ -24,14 +23,8 @@ export function MarketplaceGrid({ deployments, onDeploymentSelect }: Marketplace
       );
     }
 
-    if (selectedCategory) {
-      filtered = filtered.filter(d => d.category === selectedCategory);
-    }
-
     setFilteredDeployments(filtered);
-  }, [deployments, searchQuery, selectedCategory]);
-
-  const categories = Array.from(new Set(deployments.map(d => d.category))).filter(Boolean);
+  }, [deployments, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -43,18 +36,6 @@ export function MarketplaceGrid({ deployments, onDeploymentSelect }: Marketplace
           onChange={(e) => setSearchQuery(e.target.value)}
           className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <select
-          value={selectedCategory || ''}
-          onChange={(e) => setSelectedCategory(e.target.value || null)}
-          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">All Categories</option>
-          {categories.map(category => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
-        </select>
       </div>
 
       {filteredDeployments.length === 0 ? (

@@ -79,7 +79,7 @@ export async function GET(
       metadata: {
         agentId: params.id,
         totalVersions: versions.length,
-        currentVersion: versions[0].id,
+        currentVersion: versions[0].version,
         pagination: {
           limit: validatedParams.limit,
           offset: validatedParams.offset

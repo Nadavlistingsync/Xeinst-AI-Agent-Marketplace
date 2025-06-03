@@ -52,9 +52,9 @@ export async function GET(request: Request): Promise<NextResponse> {
       );
     }
 
-    const errorResponse = createErrorResponse(error, 'Failed to initialize socket');
+    const errorResponse = createErrorResponse(error);
     return NextResponse.json(
-      { error: errorResponse.message },
+      { error: errorResponse.error },
       { status: errorResponse.status }
     );
   }

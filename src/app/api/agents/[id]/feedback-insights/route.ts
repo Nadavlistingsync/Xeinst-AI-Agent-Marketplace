@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { generateFeedbackInsights, analyzeFeedbackTrends } from '@/lib/feedback-analysis';
+import { getFeedbackInsights, getFeedbackTrends } from '@/lib/feedback-analysis';
 import prisma from '@/lib/prisma';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
@@ -64,14 +64,8 @@ export async function GET(
     const validatedParams = insightsQuerySchema.parse(queryParams);
 
     const [insights, trends] = await Promise.all([
-      generateFeedbackInsights(params.id),
-      analyzeFeedbackTrends(params.id, {
-        ...(validatedParams.startDate && validatedParams.endDate ? {
-          start: new Date(validatedParams.startDate),
-          end: new Date(validatedParams.endDate)
-        } : {}),
-        category: validatedParams.category
-      })
+      getFeedbackInsights(params.id),
+      getFeedbackTrends(params.id, validatedParams.category === 'all' ? 'day' : 'month')
     ]);
 
     return createSuccessResponse({

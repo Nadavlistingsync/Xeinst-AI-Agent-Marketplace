@@ -69,31 +69,11 @@ export async function GET(
     const validatedParams = fileQuerySchema.parse(queryParams);
 
     // Get file content from storage
-    const fileContent = await prisma.fileContent.findUnique({
-      where: { fileId: file.id }
-    });
-
-    if (!fileContent) {
-      return NextResponse.json(
-        { error: 'File content not found' },
-        { status: 404 }
-      );
-    }
-
-    const buffer = Buffer.from(fileContent.content, 'base64');
-
-    // Set appropriate headers based on query parameters
-    const headers: Record<string, string> = {
-      'Content-Type': file.type,
-    };
-
-    if (validatedParams.download) {
-      headers['Content-Disposition'] = `attachment; filename="${file.name}"`;
-    } else if (validatedParams.preview) {
-      headers['Content-Disposition'] = 'inline';
-    }
-
-    return new NextResponse(buffer, { headers });
+    // TODO: Implement file content retrieval from storage (e.g., file system, S3, etc.)
+    return NextResponse.json(
+      { error: 'File content retrieval not implemented' },
+      { status: 501 }
+    );
   } catch (error) {
     console.error('Error downloading file:', error);
     

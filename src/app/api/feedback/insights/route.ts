@@ -3,30 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { handleApiError } from '@/lib/error-handling';
-import type { FeedbackInsightsResponse } from '@/types/feedback-analytics';
+import type { FeedbackInsightsResponse, FeedbackInsights } from '@/types/feedback-analytics';
 import type { AgentFeedback } from '@prisma/client';
-
-interface FeedbackInsights {
-  averageRating: number;
-  sentimentBreakdown: {
-    positive: number;
-    neutral: number;
-    negative: number;
-  };
-  ratingTrend: Array<{
-    date: string;
-    rating: number;
-  }>;
-  sentimentTrend: Array<{
-    date: string;
-    sentiment: number;
-  }>;
-  categoryBreakdown: Array<{
-    category: string;
-    count: number;
-    averageRating: number;
-  }>;
-}
 
 export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
   try {
@@ -55,21 +33,26 @@ export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
     });
 
     const insights: FeedbackInsights = {
-      averageRating: feedback.length > 0 ? feedback.reduce((acc: number, curr: AgentFeedback) => acc + curr.rating, 0) / feedback.length : 0,
-      sentimentBreakdown: {
-        positive: feedback.filter((f: AgentFeedback) => f.rating >= 4).length,
-        neutral: feedback.filter((f: AgentFeedback) => f.rating === 3).length,
-        negative: feedback.filter((f: AgentFeedback) => f.rating <= 2).length
+      metrics: {
+        totalFeedback: feedback.length,
+        averageRating: feedback.length > 0 ? feedback.reduce((acc: number, curr: AgentFeedback) => acc + curr.rating, 0) / feedback.length : 0,
+        sentimentDistribution: {
+          positive: feedback.filter((f: AgentFeedback) => f.rating >= 4).length,
+          neutral: feedback.filter((f: AgentFeedback) => f.rating === 3).length,
+          negative: feedback.filter((f: AgentFeedback) => f.rating <= 2).length
+        }
       },
-      ratingTrend: feedback.map((f: AgentFeedback) => ({
-        date: f.createdAt.toISOString(),
-        rating: f.rating
-      })),
-      sentimentTrend: feedback.map((f: AgentFeedback) => ({
-        date: f.createdAt.toISOString(),
-        sentiment: f.sentimentScore ?? 0
-      })),
-      categoryBreakdown: Object.entries(
+      trends: {
+        ratingTrend: feedback.map((f: AgentFeedback) => ({
+          date: f.createdAt.toISOString(),
+          rating: f.rating
+        })),
+        sentimentTrend: feedback.map((f: AgentFeedback) => ({
+          date: f.createdAt.toISOString(),
+          sentiment: f.sentimentScore ?? 0
+        }))
+      },
+      categories: Object.entries(
         feedback.reduce((acc: Record<string, { count: number; totalRating: number }>, curr: AgentFeedback) => {
           const categories = (curr.categories ?? {}) as Record<string, number>;
           Object.entries(categories).forEach(([name, value]) => {
@@ -82,7 +65,7 @@ export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
           return acc;
         }, {})
       ).map(([name, { count, totalRating }]) => ({
-        category: name,
+        name,
         count,
         averageRating: totalRating / count
       }))

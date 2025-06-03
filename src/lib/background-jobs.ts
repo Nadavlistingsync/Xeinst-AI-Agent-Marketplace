@@ -1,6 +1,7 @@
 import { prisma } from './db';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
 import { AgentFeedback } from '@/types/agent-monitoring';
+import { Prisma } from '@prisma/client';
 
 export async function processFeedbackJob() {
   const feedback = await prisma.agentFeedback.findMany({
@@ -11,7 +12,11 @@ export async function processFeedbackJob() {
 
   for (const f of feedback) {
     try {
-      await updateAgentBasedOnFeedback(f.deploymentId, f as AgentFeedback);
+      await updateAgentBasedOnFeedback(f.deploymentId, {
+        ...f,
+        sentimentScore: f.sentimentScore ?? 0,
+        categories: f.categories as Record<string, any> | null
+      });
     } catch (error) {
       console.error(`Error processing feedback ${f.id}:`, error);
     }
@@ -68,7 +73,7 @@ export async function updateAgentMetrics() {
               activeUsers: 0,
             },
             logs: [],
-          } as unknown as Prisma.JsonValue,
+          } as Prisma.InputJsonValue,
         },
       });
     } catch (error) {
@@ -115,5 +120,9 @@ export async function processFeedback(agentId: string, feedbackId: string) {
     throw new Error('Feedback not found');
   }
 
-  await updateAgentBasedOnFeedback(agentId, feedback);
+  await updateAgentBasedOnFeedback(agentId, {
+    ...feedback,
+    sentimentScore: feedback.sentimentScore ?? 0,
+    categories: feedback.categories as Record<string, any> | null
+  });
 } 

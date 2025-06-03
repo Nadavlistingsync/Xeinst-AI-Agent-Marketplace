@@ -61,7 +61,8 @@ export default async function DeploymentPage({ params }: DeploymentPageProps) {
           user: {
             select: {
               name: true,
-              image: true
+              image: true,
+              email: true
             }
           }
         }
@@ -79,9 +80,44 @@ export default async function DeploymentPage({ params }: DeploymentPageProps) {
 
   // Transform the deployment data to match DeploymentWithMetrics type
   const deploymentWithMetrics: DeploymentWithMetrics = {
-    ...deployment,
+    id: deployment.id,
+    name: deployment.name,
     status: deployment.status as DeploymentStatus,
-    metrics: deployment.metrics || [],
+    description: deployment.description || '',
+    accessLevel: deployment.accessLevel,
+    licenseType: deployment.licenseType,
+    environment: deployment.environment,
+    framework: deployment.framework,
+    modelType: deployment.modelType,
+    source: deployment.source || '',
+    deployedBy: deployment.deployedBy,
+    createdBy: deployment.createdBy,
+    rating: deployment.rating || 0,
+    totalRatings: deployment.totalRatings || 0,
+    downloadCount: deployment.downloadCount || 0,
+    startDate: deployment.startDate || new Date(),
+    createdAt: deployment.createdAt,
+    updatedAt: deployment.updatedAt,
+    isPublic: deployment.isPublic,
+    version: deployment.version || '1.0.0',
+    health: deployment.health || {},
+    metrics: deployment.metrics.map(metric => ({
+      id: metric.id,
+      createdAt: metric.createdAt,
+      updatedAt: metric.updatedAt,
+      deploymentId: metric.deploymentId,
+      errorRate: metric.errorRate,
+      responseTime: metric.responseTime,
+      successRate: metric.successRate,
+      totalRequests: metric.totalRequests,
+      activeUsers: metric.activeUsers,
+      averageResponseTime: metric.averageResponseTime,
+      requestsPerMinute: metric.requestsPerMinute,
+      averageTokensUsed: metric.averageTokensUsed,
+      costPerRequest: metric.costPerRequest,
+      totalCost: metric.totalCost,
+      lastUpdated: metric.lastUpdated
+    })),
     feedbacks: deployment.feedbacks.map(feedback => ({
       id: feedback.id,
       rating: feedback.rating,

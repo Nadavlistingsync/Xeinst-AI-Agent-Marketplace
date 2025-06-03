@@ -8,8 +8,6 @@ import {
 
 export async function GET(): Promise<NextResponse<HealthCheckApiResponse>> {
   try {
-    const startTime = Date.now();
-    
     // Check database connection
     const dbStatus = await checkDatabase();
     
@@ -42,10 +40,10 @@ export async function GET(): Promise<NextResponse<HealthCheckApiResponse>> {
     });
   } catch (error) {
     console.error('Health check failed:', error);
-    const errorResponse = createErrorResponse(error, 'Health check failed');
+    const errorResponse = createErrorResponse(error);
     return NextResponse.json({
       success: false,
-      error: errorResponse.message
+      error: errorResponse.error
     } as HealthCheckApiResponse);
   }
 }

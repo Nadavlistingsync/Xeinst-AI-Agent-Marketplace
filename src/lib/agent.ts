@@ -36,7 +36,6 @@ export async function createAgent(data: CreateAgentInput) {
       name: data.name,
       description: data.description,
       framework: data.framework,
-      fileUrl: data.fileUrl,
       deployedBy: data.deployedBy,
       modelType: data.modelType,
       requirements: data.requirements,

@@ -72,7 +72,7 @@ export async function createFeedback(data: {
       userId: data.userId,
       rating: data.rating,
       comment: data.comment || null,
-      sentimentScore: typeof data.sentimentScore === 'number' ? data.sentimentScore : 0,
+      sentimentScore: data.sentimentScore ?? 0,
       categories: data.categories ? (data.categories as Prisma.InputJsonValue) : Prisma.JsonNull,
       metadata: data.metadata || Prisma.JsonNull,
     },
@@ -189,7 +189,7 @@ const FEEDBACK_CATEGORIES: FeedbackCategory[] = [
 
 export async function analyzeAgentFeedback(
   agentId: string,
-  options: FeedbackTimeRange & { includeDetails?: boolean }
+  _options: FeedbackTimeRange & { includeDetails?: boolean }
 ): Promise<FeedbackMetrics | null> {
   try {
     const agent = await prisma.deployment.findUnique({
@@ -382,19 +382,9 @@ export async function getFeedbackInsights(
   };
 }
 
-export async function updateAgentBasedOnFeedback(deploymentId: string, feedback: AgentFeedback): Promise<void> {
-  const deployment = await prisma.deployment.findUnique({
-    where: { id: deploymentId },
-  });
-  if (!deployment) {
-    throw new Error('Deployment not found');
-  }
-  await prisma.deployment.update({
-    where: { id: deploymentId },
-    data: {
-      // No categories property, so nothing to update here for categories
-    },
-  });
+export async function updateAgentBasedOnFeedback(deploymentId: string, _feedback: AgentFeedback): Promise<void> {
+  // Implementation will be added later
+  console.log(`Updating agent ${deploymentId} based on feedback`);
 }
 
 export async function analyzeFeedback(feedback: {

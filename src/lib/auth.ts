@@ -1,10 +1,21 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
-import { compare, hash } from "bcryptjs";
+import { hash } from "bcryptjs";
 import { prisma } from "./prisma";
 import { User, UserRole, SubscriptionTier } from "@prisma/client";
-import { providers } from './providers';
+import GoogleProvider from "next-auth/providers/google";
+import GitHubProvider from "next-auth/providers/github";
+
+const providers = [
+  GoogleProvider({
+    clientId: process.env.GOOGLE_CLIENT_ID!,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+  }),
+  GitHubProvider({
+    clientId: process.env.GITHUB_ID!,
+    clientSecret: process.env.GITHUB_SECRET!,
+  }),
+];
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma) as any,

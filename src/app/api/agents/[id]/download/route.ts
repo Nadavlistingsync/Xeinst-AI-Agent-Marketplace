@@ -30,8 +30,8 @@ export async function GET(
       return createErrorResponse(new Error('Agent not found'));
     }
 
-    if (!agent.fileUrl) {
-      return createErrorResponse(new Error('Agent file not found'));
+    if (!agent.source) {
+      return createErrorResponse(new Error('Agent source not found'));
     }
 
     const user = session.user as { subscriptionTier: string } & typeof session.user;
@@ -48,7 +48,7 @@ export async function GET(
     }
 
     // Fetch the agent file
-    const response = await fetch(agent.fileUrl);
+    const response = await fetch(agent.source);
     if (!response.ok) {
       throw new Error('Failed to fetch agent file');
     }

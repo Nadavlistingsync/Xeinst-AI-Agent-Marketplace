@@ -64,7 +64,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     console.error('Error fetching reviews:', error);
     const errorResponse = createErrorResponse(error);
     return NextResponse.json(
-      { error: errorResponse.error },
+      errorResponse,
       { status: errorResponse.status }
     );
   }
@@ -110,16 +110,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Create review data object
+    const reviewData = {
+      rating: validatedData.rating,
+      comment: validatedData.comment,
+      userId: session.user.id,
+      productId: validatedData.productId,
+      ...(validatedData.deploymentId && { deploymentId: validatedData.deploymentId })
+    };
+
     const review = await prisma.review.create({
-      data: {
-        rating: validatedData.rating,
-        comment: validatedData.comment,
-        title: validatedData.title,
-        images: validatedData.images,
-        userId: session.user.id,
-        productId: validatedData.productId,
-        deploymentId: validatedData.deploymentId
-      }
+      data: reviewData
     });
 
     // Update product average rating
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const errorResponse = createErrorResponse(error);
     return NextResponse.json(
-      { error: errorResponse.error },
+      errorResponse,
       { status: errorResponse.status }
     );
   }

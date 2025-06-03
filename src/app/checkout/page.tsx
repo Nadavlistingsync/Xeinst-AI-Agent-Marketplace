@@ -1,10 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import CheckoutForm from '@/components/checkout/CheckoutForm';
 
 const planPrices = {
@@ -54,7 +51,16 @@ export default async function CheckoutPage({
                 <span className="font-medium">${price}/month</span>
               </div>
               <div className="border-t pt-6">
-                <CheckoutForm plan={plan} price={price} />
+                <CheckoutForm 
+                  amount={price}
+                  onSuccess={() => {
+                    // Handle successful payment
+                    window.location.href = '/dashboard';
+                  }}
+                  onError={(error) => {
+                    console.error('Payment error:', error);
+                  }}
+                />
               </div>
             </div>
           </CardContent>

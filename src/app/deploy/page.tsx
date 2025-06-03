@@ -2,13 +2,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import JSZip from "jszip";
 import { toast } from "react-hot-toast";
-import { motion } from "framer-motion";
 import { uploadFile } from '@/lib/file-helpers';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { DeploymentStatus } from '@prisma/client';
 
 export default function DeployPage() {
   const router = useRouter();
@@ -81,11 +77,15 @@ export default function DeployPage() {
       }
 
       // Create deployment
-      await prisma.deployment.create({
-        data: {
+      const response = await fetch('/api/deployments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           name: formData.name,
           description: formData.description,
-          status: 'pending',
+          status: 'pending' as DeploymentStatus,
           framework: formData.framework,
           version: formData.version,
           environment: formData.environment,
@@ -95,12 +95,15 @@ export default function DeployPage() {
           deployedBy: session.user.id,
           createdBy: session.user.id,
           source: file_url,
-          config: {},
           health: {},
           tags: [],
           earningsSplit: 0
-        }
+        }),
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to create deployment');
+      }
 
       toast.success('Deployment created successfully!');
       router.push('/dashboard');
@@ -264,7 +267,7 @@ export default function DeployPage() {
             <button
               type="submit"
               disabled={isUploading}
-              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
             >
               {isUploading ? 'Deploying...' : 'Deploy Agent'}
             </button>

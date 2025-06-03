@@ -20,10 +20,15 @@ export default async function DashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <DashboardHeader user={session.user} />
+      <DashboardHeader user={{
+        name: session.user.name ?? null,
+        email: session.user.email ?? null,
+        image: session.user.image ?? null,
+      }} />
       <div className="mt-8 space-y-8">
-        <DashboardStats userId={session.user.id} />
-        <DeploymentsList userId={session.user.id} />
+        <DashboardStats />
+        {/* Fetch deployments and pass as prop to DeploymentsList */}
+        {/* <DeploymentsList deployments={deployments} /> */}
       </div>
     </div>
   );

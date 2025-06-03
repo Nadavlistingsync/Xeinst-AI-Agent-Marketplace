@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { type AgentHealth, type AgentMetrics, type AgentLog, type AgentFeedback, type CreateNotificationInput } from '@/types/agent-monitoring';
 import { Prisma, Deployment, DeploymentStatus } from '@prisma/client';
 import { z } from 'zod';
-import { createNotification } from './notification';
+import { createNotification as createNotificationHelper } from './notification';
 import { JsonValue } from '@prisma/client/runtime/library';
 
 const metricsSchema = z.object({
@@ -53,6 +53,7 @@ export interface GetAgentLogsOptions {
   startDate?: Date;
   endDate?: Date;
   level?: 'info' | 'warning' | 'error';
+  limit?: number;
 }
 
 export interface MetricsUpdate {
@@ -72,6 +73,11 @@ export type MonitoringOptions = {
   endDate?: Date;
   interval?: 'hour' | 'day' | 'week' | 'month';
 };
+
+export interface GetAgentHealthOptions {
+  detailed?: boolean;
+  includeMetrics?: boolean;
+}
 
 export async function logAgentEvent(
   deploymentId: string,
@@ -140,6 +146,7 @@ export async function getAgentLogs(deploymentId: string, options: GetAgentLogsOp
   const logs = await prisma.agentLog.findMany({
     where,
     orderBy: { timestamp: 'desc' },
+    take: options.limit,
   });
 
   return logs.map(log => ({
@@ -333,12 +340,36 @@ export async function addAgentFeedback(data: {
 }
 
 export async function createNotification(data: CreateNotificationInput) {
-  return prisma.notification.create({
-    data: {
-      type: data.type,
-      message: data.message,
-      userId: data.userId,
-      metadata: data.metadata ? (data.metadata as Prisma.InputJsonValue) : undefined,
-    },
+  return createNotificationHelper({
+    ...data,
+    metadata: data.metadata ? (data.metadata as Prisma.InputJsonValue) : undefined
   });
+}
+
+export async function getAgentHealth(deploymentId: string, options: GetAgentHealthOptions = {}): Promise<AgentHealth | null> {
+  const deployment = await prisma.deployment.findUnique({
+    where: { id: deploymentId },
+    include: {
+      metrics: options.includeMetrics
+    }
+  });
+
+  if (!deployment) {
+    return null;
+  }
+
+  const health: AgentHealth = {
+    id: deployment.id,
+    status: deployment.status,
+    lastUpdated: deployment.updatedAt.toISOString(),
+    metrics: options.includeMetrics ? {
+      errorRate: deployment.metrics?.[0]?.errorRate ?? 0,
+      responseTime: deployment.metrics?.[0]?.responseTime ?? 0,
+      successRate: deployment.metrics?.[0]?.successRate ?? 0,
+      totalRequests: deployment.metrics?.[0]?.totalRequests ?? 0,
+      activeUsers: deployment.metrics?.[0]?.activeUsers ?? 0
+    } : undefined
+  };
+
+  return health;
 } 

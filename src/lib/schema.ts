@@ -182,7 +182,7 @@ export const agentSchema = z.object({
   environment: z.string(),
   fileUrl: z.string(),
   imageUrl: z.string().nullable(),
-  status: z.string(),
+  status: DeploymentStatus,
   rating: z.number(),
   downloadCount: z.number(),
   isPublic: z.boolean(),

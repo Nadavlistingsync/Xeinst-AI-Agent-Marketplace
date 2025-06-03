@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { unlink } from 'fs/promises';
-import { join } from 'path';
 import prisma from '@/lib/prisma';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
-
-const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
 
 const updateAgentSchema = z.object({
   name: z.string().min(1).max(100),
@@ -77,23 +73,12 @@ export async function DELETE(
     const agent = await prisma.deployment.findUnique({
       where: { id },
       select: { 
-        createdBy: true,
-        fileUrl: true
+        createdBy: true
       }
     });
 
     if (!agent || agent.createdBy !== session.user.id) {
       return createErrorResponse('You do not have permission to delete this agent');
-    }
-
-    // Delete the file from local storage if it exists
-    if (agent.fileUrl) {
-      try {
-        const filePath = join(UPLOAD_DIR, agent.fileUrl.split('/').pop() || '');
-        await unlink(filePath);
-      } catch (error) {
-        console.error('Error deleting file:', error);
-      }
     }
 
     // Delete the agent from the database

@@ -28,17 +28,8 @@ export async function POST(
     const statusUpdate: DeploymentStatusUpdate = {
       id: deployment.id,
       status: 'active',
-      metrics: deployment.metrics?.[0] ? {
-        errorRate: deployment.metrics[0].errorRate || 0,
-        successRate: deployment.metrics[0].successRate || 0,
-        activeUsers: deployment.metrics[0].activeUsers || 0,
-        totalRequests: deployment.metrics[0].totalRequests || 0,
-        averageResponseTime: deployment.metrics[0].averageResponseTime || 0,
-        requestsPerMinute: deployment.metrics[0].requestsPerMinute || 0,
-        averageTokensUsed: deployment.metrics[0].averageTokensUsed || 0,
-        costPerRequest: deployment.metrics[0].costPerRequest || 0,
-        totalCost: deployment.metrics[0].totalCost || 0
-      } : undefined
+      metrics: deployment.metrics,
+      lastUpdated: new Date().toISOString()
     };
     broadcastDeploymentStatus(statusUpdate);
 

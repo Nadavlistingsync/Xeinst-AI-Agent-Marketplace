@@ -2,10 +2,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import db from '@/lib/db';
-import { products } from "@/lib/schema";
-import { uploadFile } from '@/lib/file-helpers';
+import prisma from '@/lib/prisma';
 import { toast } from "react-hot-toast";
+import { uploadFileToStorage } from '@/lib/file-helpers';
 
 export default function UploadPage() {
   const router = useRouter();
@@ -62,18 +61,18 @@ export default function UploadPage() {
     }
 
     try {
-      let uploadFile: File | null = null;
+      let fileToUpload: File | null = null;
 
       if (uploadType === "file") {
         if (!file) throw new Error("Please select a file to upload");
-        uploadFile = file;
+        fileToUpload = file;
       } else {
         if (!githubUrl) throw new Error("Please enter a GitHub repository URL");
-        uploadFile = await fetchGithubRepoAsZip(githubUrl);
+        fileToUpload = await fetchGithubRepoAsZip(githubUrl);
       }
 
       // Upload file
-      const uploadedFile = await uploadFile(uploadFile, session?.user?.id!);
+      const uploadedFile = await uploadFileToStorage(fileToUpload, session.user.id);
       const fileUrl = uploadedFile.url;
 
       // Insert product into database
@@ -81,17 +80,20 @@ export default function UploadPage() {
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '');
-      const [product] = await db.insert(products).values({
-        name: formData.name,
-        slug,
-        category: formData.category,
-        description: formData.description,
-        price: formData.price,
-        documentation: formData.documentation,
-        file_url: fileUrl,
-        uploaded_by: session.user.id,
-        is_public: true,
-      }).returning();
+
+      const product = await prisma.product.create({
+        data: {
+          name: formData.name,
+          slug,
+          category: formData.category,
+          description: formData.description,
+          price: parseFloat(formData.price),
+          documentation: formData.documentation,
+          fileUrl,
+          createdBy: session.user.id,
+          isPublic: true,
+        }
+      });
 
       toast.success('Product uploaded successfully!');
       router.push(`/product/${product.id}`);

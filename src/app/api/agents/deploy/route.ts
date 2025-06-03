@@ -43,7 +43,12 @@ export async function POST(req: Request) {
     });
 
     // Start the deployment process
-    const { success, error } = await deployAgent(deployment.id);
+    const { success, error } = await deployAgent({
+      name: deployment.name,
+      description: deployment.description,
+      userId: session.user.id,
+      version: deployment.version
+    });
     if (!success) {
       return NextResponse.json({ error }, { status: 500 });
     }

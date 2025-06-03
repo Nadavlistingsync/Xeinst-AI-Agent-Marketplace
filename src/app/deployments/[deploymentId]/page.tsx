@@ -6,6 +6,7 @@ import { DeploymentWithMetrics } from '@/types/deployment';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
+import { DeploymentStatus } from '@prisma/client';
 
 export default async function DeploymentPage({
   params
@@ -41,30 +42,81 @@ export default async function DeploymentPage({
             }
           }
         }
+      },
+      metrics: {
+        orderBy: { createdAt: 'desc' },
+        take: 1
       }
     }
-  }) as DeploymentWithMetrics | null;
+  });
 
   if (!deployment) {
     notFound();
   }
 
-  const metrics = await prisma.deploymentMetrics.findMany({
-    where: { deploymentId: deployment.id },
-    orderBy: { createdAt: 'desc' },
-    take: 1
-  });
+  const deploymentWithMetrics: DeploymentWithMetrics = {
+    id: deployment.id,
+    name: deployment.name,
+    status: deployment.status as DeploymentStatus,
+    description: deployment.description || '',
+    accessLevel: deployment.accessLevel,
+    licenseType: deployment.licenseType,
+    environment: deployment.environment,
+    framework: deployment.framework,
+    modelType: deployment.modelType,
+    source: deployment.source || '',
+    deployedBy: deployment.deployedBy,
+    createdBy: deployment.createdBy,
+    rating: deployment.rating || 0,
+    totalRatings: deployment.totalRatings || 0,
+    downloadCount: deployment.downloadCount || 0,
+    startDate: deployment.startDate || new Date(),
+    createdAt: deployment.createdAt,
+    updatedAt: deployment.updatedAt,
+    isPublic: deployment.isPublic,
+    version: deployment.version || '1.0.0',
+    health: deployment.health || {},
+    metrics: deployment.metrics.map(metric => ({
+      id: metric.id,
+      createdAt: metric.createdAt,
+      updatedAt: metric.updatedAt,
+      deploymentId: metric.deploymentId,
+      errorRate: metric.errorRate,
+      responseTime: metric.responseTime,
+      successRate: metric.successRate,
+      totalRequests: metric.totalRequests,
+      activeUsers: metric.activeUsers,
+      averageResponseTime: metric.averageResponseTime,
+      requestsPerMinute: metric.requestsPerMinute,
+      averageTokensUsed: metric.averageTokensUsed,
+      costPerRequest: metric.costPerRequest,
+      totalCost: metric.totalCost,
+      lastUpdated: metric.lastUpdated
+    })),
+    feedbacks: deployment.feedbacks.map(feedback => ({
+      id: feedback.id,
+      rating: feedback.rating,
+      comment: feedback.comment,
+      sentimentScore: feedback.sentimentScore || 0,
+      createdAt: feedback.createdAt,
+      user: {
+        name: feedback.user?.name || null,
+        email: null,
+        image: feedback.user?.image || null
+      }
+    }))
+  };
 
   return (
     <div className="container mx-auto py-8">
       <div className="grid gap-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">{deployment.name}</h1>
-            <p className="text-muted-foreground">{deployment.description}</p>
+            <h1 className="text-3xl font-bold">{deploymentWithMetrics.name}</h1>
+            <p className="text-muted-foreground">{deploymentWithMetrics.description}</p>
           </div>
-          <Badge variant={deployment.status === 'active' ? 'success' : 'secondary'}>
-            {deployment.status}
+          <Badge variant={deploymentWithMetrics.status === 'active' ? 'success' : 'secondary'}>
+            {deploymentWithMetrics.status}
           </Badge>
         </div>
 
@@ -74,7 +126,7 @@ export default async function DeploymentPage({
               <CardTitle>Total Requests</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{metrics[0]?.totalRequests || 0}</p>
+              <p className="text-2xl font-bold">{deploymentWithMetrics.metrics[0]?.totalRequests || 0}</p>
             </CardContent>
           </Card>
 
@@ -83,7 +135,7 @@ export default async function DeploymentPage({
               <CardTitle>Average Response Time</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{metrics[0]?.averageResponseTime || 0}ms</p>
+              <p className="text-2xl font-bold">{deploymentWithMetrics.metrics[0]?.averageResponseTime || 0}ms</p>
             </CardContent>
           </Card>
 
@@ -92,7 +144,7 @@ export default async function DeploymentPage({
               <CardTitle>Error Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{metrics[0]?.errorRate || 0}%</p>
+              <p className="text-2xl font-bold">{deploymentWithMetrics.metrics[0]?.errorRate || 0}%</p>
             </CardContent>
           </Card>
 
@@ -101,7 +153,7 @@ export default async function DeploymentPage({
               <CardTitle>Success Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{metrics[0]?.successRate || 0}%</p>
+              <p className="text-2xl font-bold">{deploymentWithMetrics.metrics[0]?.successRate || 0}%</p>
             </CardContent>
           </Card>
         </div>
@@ -112,7 +164,7 @@ export default async function DeploymentPage({
           </CardHeader>
           <CardContent>
             <pre className="rounded-lg bg-muted p-4">
-              {JSON.stringify(deployment.config || {}, null, 2)}
+              {JSON.stringify(deploymentWithMetrics.health || {}, null, 2)}
             </pre>
           </CardContent>
         </Card>
@@ -123,19 +175,19 @@ export default async function DeploymentPage({
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {deployment.feedbacks?.map((feedback) => (
+              {deploymentWithMetrics.feedbacks.map((feedback) => (
                 <div key={feedback.id} className="rounded-lg border p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      {feedback.user.image && (
+                      {feedback.user?.image && (
                         <img
                           src={feedback.user.image}
-                          alt={feedback.user.name || 'User'}
+                          alt={feedback.user?.name || 'User'}
                           className="h-8 w-8 rounded-full"
                         />
                       )}
                       <div>
-                        <p className="font-medium">{feedback.user.name || 'Anonymous'}</p>
+                        <p className="font-medium">{feedback.user?.name || 'Anonymous'}</p>
                         <p className="text-sm text-muted-foreground">
                           {formatDistanceToNow(new Date(feedback.createdAt), { addSuffix: true })}
                         </p>
