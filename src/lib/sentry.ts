@@ -7,8 +7,9 @@ export function initSentry() {
       environment: process.env.NODE_ENV,
       tracesSampleRate: 1.0,
       integrations: [
-        new Sentry.BrowserTracing({
-          tracePropagationTargets: ['localhost', process.env.NEXT_PUBLIC_APP_URL],
+        new Sentry.Replay({
+          maskAllText: true,
+          blockAllMedia: true,
         }),
       ],
     });
@@ -40,16 +41,6 @@ export function setUser(user: { id: string; email?: string; username?: string } 
   if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     Sentry.setUser(user);
   }
-}
-
-export function startTransaction(name: string, op?: string) {
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    return Sentry.startTransaction({
-      name,
-      op,
-    });
-  }
-  return null;
 }
 
 export function setTag(key: string, value: string) {

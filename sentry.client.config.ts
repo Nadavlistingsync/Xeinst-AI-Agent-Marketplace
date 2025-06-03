@@ -7,8 +7,9 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0,
   replaysSessionSampleRate: 0.1,
   integrations: [
-    new Sentry.BrowserTracing({
-      tracePropagationTargets: ['localhost', process.env.NEXT_PUBLIC_APP_URL],
+    new Sentry.Replay({
+      maskAllText: true,
+      blockAllMedia: true,
     }),
   ],
 }); 
