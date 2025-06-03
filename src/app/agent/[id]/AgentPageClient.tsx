@@ -37,7 +37,7 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
               <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
               <div className="flex items-center mb-4">
                 <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                <span className="ml-1">{formatDecimal(product.average_rating)}</span>
+                <span className="ml-1">{formatDecimal(product.averageRating)}</span>
                 <span className="ml-2 text-gray-500">
                   ({product.total_ratings} reviews)
                 </span>
