@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { BrowserTracing } from '@sentry/browser';
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
@@ -7,9 +8,6 @@ Sentry.init({
   replaysOnErrorSampleRate: 1.0,
   replaysSessionSampleRate: 0.1,
   integrations: [
-    new Sentry.Replay({
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
+    new BrowserTracing(),
   ],
 }); 

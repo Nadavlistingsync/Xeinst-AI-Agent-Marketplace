@@ -135,4 +135,6 @@ export function CheckoutForm({ amount, onSuccess, onError }: CheckoutFormProps) 
       </div>
     </form>
   );
-} 
+}
+
+export default CheckoutForm; 

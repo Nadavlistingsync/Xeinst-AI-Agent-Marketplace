@@ -526,4 +526,62 @@ export async function createAgentLog(data: any) {
   return prisma.agentLog.create({
     data
   });
+}
+
+export async function getProductById(id: string) {
+  return prisma.product.findUnique({
+    where: { id },
+    include: {
+      creator: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      uploader: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+    },
+  });
+}
+
+export async function getDeployment(id: string) {
+  return prisma.deployment.findUnique({
+    where: { id },
+    include: {
+      creator: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      metrics: true,
+      logs: {
+        orderBy: {
+          created_at: 'desc',
+        },
+        take: 100,
+      },
+    },
+  });
+}
+
+export async function getDeploymentFeedbacks(id: string) {
+  return prisma.feedback.findMany({
+    where: { deployment_id: id },
+    include: {
+      user: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+    },
+    orderBy: {
+      created_at: 'desc',
+    },
+  });
 } 

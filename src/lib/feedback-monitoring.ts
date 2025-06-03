@@ -463,4 +463,43 @@ async function getPreviousMetrics(agentId: string): Promise<FeedbackMetrics | nu
   };
 
   return await getFeedbackMetrics(agentId, timeRange);
+}
+
+export async function analyzeFeedback(feedback: {
+  text: string;
+  rating: number;
+  categories?: string[];
+}): Promise<{
+  sentimentScore: number;
+  categories: string[];
+  keyPhrases: string[];
+}> {
+  // Simple sentiment analysis based on rating
+  const sentimentScore = (feedback.rating - 3) / 2; // Convert 1-5 rating to -1 to 1 scale
+
+  // Extract categories from feedback text
+  const categories = feedback.categories || [];
+  const text = feedback.text.toLowerCase();
+
+  // Add categories based on keywords
+  FEEDBACK_CATEGORIES.forEach((category) => {
+    if (category.keywords.some((keyword) => text.includes(keyword.toLowerCase()))) {
+      if (!categories.includes(category.name)) {
+        categories.push(category.name);
+      }
+    }
+  });
+
+  // Extract key phrases (simple implementation)
+  const keyPhrases = text
+    .split(/[.!?]+/)
+    .map((sentence) => sentence.trim())
+    .filter((sentence) => sentence.length > 0)
+    .slice(0, 3); // Take top 3 sentences as key phrases
+
+  return {
+    sentimentScore,
+    categories,
+    keyPhrases,
+  };
 } 

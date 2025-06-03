@@ -376,4 +376,65 @@ export async function deleteAgentFeedback(id: string) {
   });
 
   return feedback;
+}
+
+export async function validateAgentCode(code: string): Promise<boolean> {
+  try {
+    // Basic validation - check if code is not empty and has required structure
+    if (!code || typeof code !== 'string') {
+      return false;
+    }
+
+    // Add more specific validation logic here
+    // For example, check for required functions, proper syntax, etc.
+    
+    return true;
+  } catch (error) {
+    console.error('Error validating agent code:', error);
+    return false;
+  }
+}
+
+export async function deployAgent(data: {
+  name: string;
+  description: string;
+  code: string;
+  userId: string;
+  version: string;
+}): Promise<Deployment> {
+  const deployment = await prisma.deployment.create({
+    data: {
+      name: data.name,
+      description: data.description,
+      code: data.code,
+      deployed_by: data.userId,
+      version: data.version,
+      status: 'active',
+      created_at: new Date(),
+      updated_at: new Date(),
+    },
+  });
+
+  await logAgentEvent(deployment.id, 'info', 'Agent deployed', {
+    userId: data.userId,
+    deploymentId: deployment.id,
+  });
+
+  return deployment;
+}
+
+export async function getAgentVersions(agentId: string) {
+  return prisma.deployment.findMany({
+    where: {
+      id: agentId,
+    },
+    select: {
+      version: true,
+      created_at: true,
+      status: true,
+    },
+    orderBy: {
+      created_at: 'desc',
+    },
+  });
 } 
