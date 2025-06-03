@@ -276,6 +276,7 @@ export async function notifyAgentCreator(
 ): Promise<void> {
   await createNotification({
     type: feedback.type,
+    title: 'Agent Feedback Notification',
     message: feedback.message,
     metadata: {
       agentId,
