@@ -4,6 +4,8 @@ import { type AgentHealth, type AgentMetrics, type AgentLog } from '@/types/agen
 import { eq, gte, lte, desc, and } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import { createNotification } from './notification';
+import { Prisma } from '@prisma/client';
+import type { AgentFeedback } from '@/lib/schema';
 
 export interface LogEntry {
   level: 'info' | 'warning' | 'error';
@@ -206,7 +208,7 @@ export async function getAgentInfo(agentId: string): Promise<AgentLog[]> {
 }
 
 export async function getAgentFeedback(agentId: string, options: MonitoringOptions = {}) {
-  const where: Prisma.AgentFeedbackWhereInput = { agentId };
+  const where: Prisma.AgentFeedbackWhereInput = { deploymentId: agentId };
 
   if (options.startDate) {
     where.createdAt = { gte: options.startDate };
@@ -324,6 +326,11 @@ export async function getAgentHealth(agentId: string): Promise<AgentHealth> {
       health.status = 'degraded';
       health.issues.push('Elevated response time');
     }
+  }
+
+  // Only assign allowed values
+  if (health.status !== 'healthy' && health.status !== 'degraded' && health.status !== 'unhealthy') {
+    health.status = 'healthy';
   }
 
   return health;
@@ -489,28 +496,25 @@ export async function monitorAgentHealth(agentId: string) {
     getAgentFeedbacks(agentId),
   ]);
 
-  const health = {
-    status: 'healthy' as const,
-    issues: [] as string[],
-    metrics: {
-      errorRate: metrics.errorRate,
-      responseTime: metrics.averageResponseTime,
-      successRate: metrics.successRate,
-      totalRequests: metrics.totalRequests,
-      activeUsers: metrics.activeUsers,
-    },
-  };
+  let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+  const issues: string[] = [];
 
   // Check error rate
   if (metrics.errorRate > 0.1) {
-    health.status = 'unhealthy';
-    health.issues.push('High error rate detected');
+    status = 'unhealthy';
+    issues.push('High error rate detected');
+  } else if (metrics.errorRate > 0.05) {
+    status = 'degraded';
+    issues.push('Elevated error rate');
   }
 
   // Check response time
   if (metrics.averageResponseTime > 1000) {
-    health.status = 'degraded';
-    health.issues.push('Slow response time');
+    status = 'unhealthy';
+    issues.push('Slow response time');
+  } else if (metrics.averageResponseTime > 500) {
+    status = 'degraded';
+    issues.push('Elevated response time');
   }
 
   // Check recent errors
@@ -519,18 +523,28 @@ export async function monitorAgentHealth(agentId: string) {
     log.timestamp > new Date(Date.now() - 24 * 60 * 60 * 1000)
   );
   if (recentErrors.length > 0) {
-    health.issues.push(`${recentErrors.length} errors in the last 24 hours`);
+    issues.push(`${recentErrors.length} errors in the last 24 hours`);
   }
 
   // Check user satisfaction
   if (feedbacks.length > 0) {
     const averageRating = feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length;
     if (averageRating < 3) {
-      health.issues.push('Low user satisfaction');
+      issues.push('Low user satisfaction');
     }
   }
 
-  return health;
+  return {
+    status,
+    issues,
+    metrics: {
+      errorRate: metrics.errorRate,
+      responseTime: metrics.averageResponseTime,
+      successRate: metrics.successRate,
+      totalRequests: metrics.totalRequests,
+      activeUsers: metrics.activeUsers,
+    },
+  };
 }
 
 export async function getAgentDeploymentStatus(agentId: string) {
@@ -649,12 +663,50 @@ export async function monitorAgentDeployment(agentId: string) {
     return null;
   }
 
-  const health = {
+  let status: 'healthy' | 'degraded' | 'unhealthy' = 'healthy';
+  const issues: string[] = [];
+
+  // Check error rate
+  if (metrics.errorRate > 0.1) {
+    status = 'unhealthy';
+    issues.push('High error rate detected');
+  } else if (metrics.errorRate > 0.05) {
+    status = 'degraded';
+    issues.push('Elevated error rate');
+  }
+
+  // Check response time
+  if (metrics.averageResponseTime > 1000) {
+    status = 'unhealthy';
+    issues.push('Slow response time');
+  } else if (metrics.averageResponseTime > 500) {
+    status = 'degraded';
+    issues.push('Elevated response time');
+  }
+
+  // Check recent errors
+  const recentErrors = logs.filter(log => 
+    log.level === 'error' && 
+    log.timestamp > new Date(Date.now() - 24 * 60 * 60 * 1000)
+  );
+  if (recentErrors.length > 0) {
+    issues.push(`${recentErrors.length} errors in the last 24 hours`);
+  }
+
+  // Check user satisfaction
+  if (feedbacks.length > 0) {
+    const averageRating = feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length;
+    if (averageRating < 3) {
+      issues.push('Low user satisfaction');
+    }
+  }
+
+  return {
     deploymentId: deployment.id,
     status: deployment.status,
     health: {
-      status: 'healthy' as const,
-      issues: [] as string[],
+      status,
+      issues,
       metrics: {
         errorRate: metrics.errorRate,
         responseTime: metrics.averageResponseTime,
@@ -664,37 +716,6 @@ export async function monitorAgentDeployment(agentId: string) {
       },
     },
   };
-
-  // Check error rate
-  if (metrics.errorRate > 0.1) {
-    health.health.status = 'unhealthy';
-    health.health.issues.push('High error rate detected');
-  }
-
-  // Check response time
-  if (metrics.averageResponseTime > 1000) {
-    health.health.status = 'degraded';
-    health.health.issues.push('Slow response time');
-  }
-
-  // Check recent errors
-  const recentErrors = logs.filter(log => 
-    log.level === 'error' && 
-    log.timestamp > new Date(Date.now() - 24 * 60 * 60 * 1000)
-  );
-  if (recentErrors.length > 0) {
-    health.health.issues.push(`${recentErrors.length} errors in the last 24 hours`);
-  }
-
-  // Check user satisfaction
-  if (feedbacks.length > 0) {
-    const averageRating = feedbacks.reduce((sum, f) => sum + f.rating, 0) / feedbacks.length;
-    if (averageRating < 3) {
-      health.health.issues.push('Low user satisfaction');
-    }
-  }
-
-  return health;
 }
 
 export async function updateAgentDeploymentMetrics(agentId: string, metrics: Partial<AgentMetrics>) {
