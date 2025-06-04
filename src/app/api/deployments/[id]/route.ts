@@ -186,6 +186,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
+  _request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
