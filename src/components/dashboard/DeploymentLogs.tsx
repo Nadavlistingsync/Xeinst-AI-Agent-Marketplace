@@ -2,7 +2,6 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useDeploymentSocket } from '@/hooks/useDeploymentSocket';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface DeploymentLogsProps {
   deploymentId: string;
@@ -16,7 +15,7 @@ export function DeploymentLogs({ deploymentId }: DeploymentLogsProps) {
   if (error) {
     return (
       <Card className="p-6">
-        <div className="text-red-500">Error loading logs: {error.message}</div>
+        <div className="text-red-500">Error: {error.message}</div>
       </Card>
     );
   }
@@ -24,14 +23,7 @@ export function DeploymentLogs({ deploymentId }: DeploymentLogsProps) {
   if (!isConnected) {
     return (
       <Card className="p-6">
-        <div className="space-y-4">
-          <Skeleton className="h-8 w-1/3" />
-          <div className="space-y-2">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        </div>
+        <div className="text-gray-500">Loading deployment logs...</div>
       </Card>
     );
   }

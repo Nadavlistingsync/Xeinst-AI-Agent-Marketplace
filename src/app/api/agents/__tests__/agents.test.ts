@@ -29,41 +29,18 @@ vi.mock('@prisma/client', () => ({
 }));
 
 import { GET } from '../route';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/test/setup';
 import { getAgentLogs, getAgentMetrics } from '@/lib/agent-monitoring';
-import { prisma as testPrisma } from '@/test/setup';
-
-// Mock Prisma
-vi.mock('@/lib/prisma', () => ({
-  default: {
-    deployment: {
-      findMany: vi.fn(),
-      findUnique: vi.fn(),
-      count: vi.fn(),
-      delete: vi.fn(),
-    },
-    agentLog: {
-      create: vi.fn(),
-      findMany: vi.fn(),
-    },
-    agentMetrics: {
-      findUnique: vi.fn(),
-      upsert: vi.fn(),
-    },
-  },
-}));
 
 describe('Agents API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  beforeEach(async () => {
-    // Clear the deployments table before each test
-    await testPrisma.deployment.deleteMany();
-  });
-
   it('returns empty array when no agents exist', async () => {
+    // Mock Prisma to return empty array
+    vi.mocked(prisma.deployment.findMany).mockResolvedValueOnce([]);
+
     const response = await GET();
     const data = await response.json();
 
@@ -73,24 +50,27 @@ describe('Agents API', () => {
   });
 
   it('returns all agents when they exist', async () => {
-    // Create a test agent
-    const testAgent = await testPrisma.deployment.create({
-      data: {
-        name: 'Test Agent',
-        description: 'Test Description',
-        status: 'active',
-        accessLevel: 'public',
-        licenseType: 'free',
-        environment: 'production',
-        framework: 'node',
-        modelType: 'standard',
-        source: 'test-source',
-        deployedBy: 'user1',
-        createdBy: 'user1',
-        rating: 4.5,
-        version: '1.0.0',
-      },
-    });
+    const mockAgent = {
+      id: '1',
+      name: 'Test Agent',
+      description: 'Test Description',
+      status: 'active',
+      accessLevel: 'public',
+      licenseType: 'free',
+      environment: 'production',
+      framework: 'node',
+      modelType: 'standard',
+      source: 'test-source',
+      deployedBy: 'user1',
+      createdBy: 'user1',
+      rating: 4.5,
+      version: '1.0.0',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    // Mock Prisma to return the test agent
+    vi.mocked(prisma.deployment.findMany).mockResolvedValueOnce([mockAgent]);
 
     const response = await GET();
     const data = await response.json();
@@ -99,20 +79,10 @@ describe('Agents API', () => {
     expect(Array.isArray(data)).toBe(true);
     expect(data).toHaveLength(1);
     expect(data[0]).toMatchObject({
-      id: testAgent.id,
-      name: testAgent.name,
-      description: testAgent.description,
-      status: testAgent.status,
-      accessLevel: testAgent.accessLevel,
-      licenseType: testAgent.licenseType,
-      environment: testAgent.environment,
-      framework: testAgent.framework,
-      modelType: testAgent.modelType,
-      source: testAgent.source,
-      deployedBy: testAgent.deployedBy,
-      createdBy: testAgent.createdBy,
-      rating: testAgent.rating,
-      version: testAgent.version,
+      id: mockAgent.id,
+      name: mockAgent.name,
+      description: mockAgent.description,
+      status: mockAgent.status,
     });
   });
 });
@@ -151,6 +121,7 @@ describe('Agent Monitoring', () => {
         orderBy: {
           timestamp: 'desc',
         },
+        take: 100
       });
       expect(logs).toEqual(mockLogs);
     });

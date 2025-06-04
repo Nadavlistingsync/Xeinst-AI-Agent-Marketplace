@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 import { ApiError, ApiResponse, ApiSuccess } from '@/types/api';
+import * as Sentry from '@sentry/nextjs';
 
 export function createErrorResponse(error: unknown): NextResponse<ApiResponse<unknown>> {
   if (error instanceof ZodError) {
@@ -23,6 +24,10 @@ export function createErrorResponse(error: unknown): NextResponse<ApiResponse<un
   }
 
   if (error instanceof Error) {
+    // Only report to Sentry for non-validation and non-database errors
+    if (!(error instanceof ZodError) && !(error instanceof Prisma.PrismaClientKnownRequestError)) {
+      Sentry.captureException(error);
+    }
     return NextResponse.json({
       statusCode: 500,
       name: 'Server error',
@@ -30,6 +35,8 @@ export function createErrorResponse(error: unknown): NextResponse<ApiResponse<un
     });
   }
 
+  // Report unknown errors to Sentry
+  Sentry.captureException(error);
   return NextResponse.json({
     statusCode: 500,
     name: 'Unknown error',

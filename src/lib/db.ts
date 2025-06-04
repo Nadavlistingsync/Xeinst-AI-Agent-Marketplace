@@ -34,29 +34,13 @@ export class DatabaseError extends Error {
   }
 }
 
-export async function withRetry<T>(
-  operation: () => Promise<T>,
-  retries = MAX_RETRIES
-): Promise<T> {
-  try {
-    return await operation();
-  } catch (error) {
-    if (retries > 0 && isRetryableError(error)) {
-      const delayMs = getRetryDelay(MAX_RETRIES - retries);
-      console.log(`Retrying database operation after ${delayMs}ms. Attempts remaining: ${retries - 1}`);
-      await delay(delayMs);
-      return withRetry(operation, retries - 1);
-    }
-    throw error;
-  }
-}
-
 export function handleDatabaseError(error: unknown): never {
   // Log the error
   console.error('Database Error:', error);
   
-  // Report to Sentry in production
-  if (process.env.NODE_ENV === 'production') {
+  // Only report to Sentry in production and for non-validation errors
+  if (process.env.NODE_ENV === 'production' && 
+      !(error instanceof Prisma.PrismaClientValidationError)) {
     Sentry.captureException(error);
   }
 
@@ -86,9 +70,23 @@ export function handleDatabaseError(error: unknown): never {
   throw new DatabaseError('An unexpected database error occurred', 'UNKNOWN_ERROR', 500);
 }
 
+export async function withRetry<T>(
+  operation: () => Promise<T>,
+  retries = MAX_RETRIES
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (retries > 0 && isRetryableError(error)) {
+      const delayMs = getRetryDelay(MAX_RETRIES - retries);
+      await delay(delayMs);
+      return withRetry(operation, retries - 1);
+    }
+    throw error;
+  }
+}
+
 // Export a singleton instance of PrismaClient
 export const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-});
-
-export default prisma; 
+}); 

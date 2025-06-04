@@ -135,21 +135,31 @@ export async function updateAgentMetrics(deploymentId: string, metrics: Partial<
 }
 
 export async function getAgentLogs(deploymentId: string, options: GetAgentLogsOptions = {}): Promise<AgentLog[]> {
-  const where: Prisma.AgentLogWhereInput = {
+  const where: any = {
     deploymentId,
   };
 
-  if (options.startDate) where.timestamp = { gte: options.startDate };
-  if (options.endDate) where.timestamp = { lte: options.endDate };
-  if (options.level) where.level = options.level;
+  if (options.level) {
+    where.level = options.level;
+  }
+
+  if (options.startDate || options.endDate) {
+    where.timestamp = {};
+    if (options.startDate) {
+      where.timestamp.gte = options.startDate;
+    }
+    if (options.endDate) {
+      where.timestamp.lte = options.endDate;
+    }
+  }
 
   const logs = await prisma.agentLog.findMany({
     where,
     orderBy: { timestamp: 'desc' },
-    take: options.limit,
+    take: options.limit || 100,
   });
 
-  return logs.map(log => ({
+  return (logs || []).map(log => ({
     id: log.id,
     deploymentId: log.deploymentId,
     level: log.level as 'info' | 'warning' | 'error',

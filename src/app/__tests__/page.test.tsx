@@ -2,11 +2,16 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import Home from '../page'
 import { vi } from 'vitest'
-import prisma from '@/lib/prisma'
+import { prisma } from '@/test/setup'
 
 // Mock the FeaturedAgents component
 vi.mock('@/components/FeaturedAgents', () => ({
-  default: () => <div data-testid="featured-agents">Featured Agents</div>
+  FeaturedAgents: () => (
+    <div data-testid="featured-agents">
+      <h2>Featured AI Agents</h2>
+      <div>Featured Agents</div>
+    </div>
+  )
 }))
 
 describe('Home Page', () => {
@@ -61,15 +66,15 @@ describe('Home Page', () => {
     render(<Home />);
 
     // Check if main sections are rendered
-    expect(screen.getByText(/Welcome to AI Agency/i)).toBeInTheDocument();
+    expect(screen.getByText(/Transform Your Business with/i)).toBeInTheDocument();
+    expect(screen.getByText('AI Solutions')).toBeInTheDocument();
     expect(screen.getByText(/Featured AI Agents/i)).toBeInTheDocument();
-    expect(screen.getByText(/How It Works/i)).toBeInTheDocument();
-    expect(screen.getByText(/Why Choose Us/i)).toBeInTheDocument();
+    expect(screen.getByText(/Why Choose Our Platform?/i)).toBeInTheDocument();
   });
 
   it('handles database errors correctly', async () => {
     // Mock the agentLog.findMany to throw an error
-    (prisma.agentLog.findMany as any).mockRejectedValueOnce(new Error('Database error'));
+    vi.mocked(prisma.agentLog.findMany).mockRejectedValueOnce(new Error('Database error'));
     
     try {
       await prisma.agentLog.findMany();

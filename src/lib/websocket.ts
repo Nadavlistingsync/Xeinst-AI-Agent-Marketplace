@@ -7,9 +7,12 @@ let io: Server;
 export const initializeWebSocket = (server: any) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.NEXT_PUBLIC_APP_URL,
+      origin: process.env.NEXT_PUBLIC_APP_URL || '*',
       methods: ['GET', 'POST']
-    }
+    },
+    transports: ['websocket'],
+    pingTimeout: 60000,
+    pingInterval: 25000
   });
 
   io.on('connection', (socket) => {
@@ -21,6 +24,10 @@ export const initializeWebSocket = (server: any) => {
 
     socket.on('error', (error) => {
       console.error('WebSocket error:', error);
+      socket.emit('error', {
+        type: 'error',
+        payload: 'An error occurred in the WebSocket connection'
+      });
     });
   });
 

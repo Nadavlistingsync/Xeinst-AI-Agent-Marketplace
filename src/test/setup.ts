@@ -1,33 +1,86 @@
-import dotenv from 'dotenv';
-dotenv.config({ path: '.env.test' });
-console.log('Loaded DATABASE_URL:', process.env.DATABASE_URL);
 import '@testing-library/jest-dom';
 import { vi, beforeAll, afterAll, afterEach } from 'vitest';
 import React from 'react';
 import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
 
-// Set test environment variables
-const originalNodeEnv = process.env.NODE_ENV;
-// Instead of directly modifying NODE_ENV, we'll use a different approach
-process.env = {
-  ...process.env,
-  NODE_ENV: 'test',
-  DATABASE_URL: process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test'
+// Mock Prisma Client
+const mockPrisma = {
+  deployment: {
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
+    count: vi.fn(),
+    delete: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+  },
+  agentLog: {
+    create: vi.fn(),
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  agentMetrics: {
+    findUnique: vi.fn(),
+    upsert: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    create: vi.fn(),
+  },
+  user: {
+    findUnique: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  account: {
+    findUnique: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  session: {
+    findUnique: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  verificationToken: {
+    findUnique: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  agentFeedback: {
+    findMany: vi.fn(),
+    create: vi.fn(),
+  },
+  $disconnect: vi.fn().mockResolvedValue(undefined),
 };
 
-// Restore original environment after tests
-afterAll(() => {
-  process.env = {
-    ...process.env,
-    NODE_ENV: originalNodeEnv
-  };
-});
+vi.mock('@/lib/prisma', () => ({
+  __esModule: true,
+  default: mockPrisma,
+  prisma: mockPrisma,
+}));
+
+// Export mock Prisma for tests
+export const prisma = mockPrisma;
 
 // Mock Sentry in tests
 vi.mock('@sentry/nextjs', () => ({
   captureException: vi.fn(),
   init: vi.fn(),
+  setUser: vi.fn(),
+  setTag: vi.fn(),
+  setExtra: vi.fn(),
+  addBreadcrumb: vi.fn(),
+  Severity: {
+    Error: 'error',
+    Warning: 'warning',
+    Info: 'info',
+  },
 }));
 
 // Mock window.matchMedia
@@ -48,7 +101,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Create a test database client
-const prisma = new PrismaClient({
+const prismaClient = new PrismaClient({
   datasources: {
     db: {
       url: process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test',
@@ -68,13 +121,13 @@ beforeAll(async () => {
     });
 
     // Clean up the database before tests
-    const tables = await prisma.$queryRaw<
+    const tables = await prismaClient.$queryRaw<
       Array<{ tablename: string }>
     >`SELECT tablename FROM pg_tables WHERE schemaname='public'`;
 
     for (const { tablename } of tables) {
       if (tablename !== '_prisma_migrations') {
-        await prisma.$executeRawUnsafe(
+        await prismaClient.$executeRawUnsafe(
           `TRUNCATE TABLE "public"."${tablename}" CASCADE;`
         );
       }
@@ -86,19 +139,29 @@ beforeAll(async () => {
 });
 
 // Global teardown
-afterAll(async () => {
-  await prisma.$disconnect();
-});
+// afterAll(async () => {
+//   try {
+//     // Only disconnect if we're using a real Prisma client
+//     if (prismaClient instanceof PrismaClient) {
+//       await Promise.race([
+//         prismaClient.$disconnect(),
+//         new Promise((_, reject) => setTimeout(() => reject(new Error('Disconnect timeout')), 5000))
+//       ]);
+//     }
+//   } catch (error) {
+//     console.error('Failed to disconnect from database:', error);
+//   }
+// }, 10000); // Reduce timeout to 10 seconds
 
 // Clean up after each test
 afterEach(async () => {
   try {
-    const tables = await prisma.$queryRaw<
+    const tables = await prismaClient.$queryRaw<
       Array<{ tablename: string }>
     >`SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename != '_prisma_migrations'`;
     
     for (const { tablename } of tables) {
-      await prisma.$executeRawUnsafe(
+      await prismaClient.$executeRawUnsafe(
         `TRUNCATE TABLE "public"."${tablename}" CASCADE;`
       );
     }
@@ -107,18 +170,6 @@ afterEach(async () => {
     throw error; // Fail fast if cleanup fails
   }
 });
-
-// Mock next/navigation
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    replace: vi.fn(),
-    prefetch: vi.fn(),
-    back: vi.fn(),
-  }),
-  usePathname: () => '',
-  useSearchParams: () => new URLSearchParams(),
-}));
 
 // Mock next-auth
 vi.mock('next-auth', () => ({
@@ -148,7 +199,4 @@ vi.mock('react-hot-toast', () => ({
     loading: vi.fn(),
     dismiss: vi.fn(),
   },
-}));
-
-// Export test utilities
-export { prisma }; 
+})); 

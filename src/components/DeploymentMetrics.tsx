@@ -7,87 +7,80 @@ interface DeploymentMetricsProps {
 export function DeploymentMetrics({ metrics }: DeploymentMetricsProps) {
   if (!metrics) return null;
 
-  const formatNumber = (num: number) => {
+  const formatNumber = (num: number | undefined | null) => {
+    if (num === undefined || num === null) return '0.00';
     return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(num);
   };
 
-  const formatPercentage = (num: number) => {
+  const formatPercentage = (num: number | undefined | null) => {
+    if (num === undefined || num === null) return '0.00%';
     return `${formatNumber(num)}%`;
   };
 
-  const formatCurrency = (num: number) => {
+  const formatCurrency = (num: number | undefined | null) => {
+    if (num === undefined || num === null) return '$0.00';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(num);
   };
 
+  const metricCards = [
+    {
+      title: 'Error Rate',
+      value: formatPercentage(metrics.errorRate),
+      className: 'text-red-600'
+    },
+    {
+      title: 'Success Rate',
+      value: formatPercentage(metrics.successRate),
+      className: 'text-green-600'
+    },
+    {
+      title: 'Active Users',
+      value: formatNumber(metrics.activeUsers)
+    },
+    {
+      title: 'Total Requests',
+      value: formatNumber(metrics.totalRequests)
+    },
+    {
+      title: 'Avg Response Time',
+      value: `${formatNumber(metrics.averageResponseTime)}ms`
+    },
+    {
+      title: 'Requests/Min',
+      value: formatNumber(metrics.requestsPerMinute)
+    },
+    {
+      title: 'Avg Tokens Used',
+      value: formatNumber(metrics.averageTokensUsed)
+    },
+    {
+      title: 'Cost/Request',
+      value: formatCurrency(metrics.costPerRequest)
+    },
+    {
+      title: 'Total Cost',
+      value: formatCurrency(metrics.totalCost)
+    }
+  ];
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-500">Error Rate</h3>
-        <p className="mt-1 text-lg font-semibold text-red-600">
-          {formatPercentage(metrics.errorRate)}
-        </p>
-      </div>
-
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-500">Success Rate</h3>
-        <p className="mt-1 text-lg font-semibold text-green-600">
-          {formatPercentage(metrics.successRate)}
-        </p>
-      </div>
-
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-500">Active Users</h3>
-        <p className="mt-1 text-lg font-semibold">
-          {formatNumber(metrics.activeUsers)}
-        </p>
-      </div>
-
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-500">Total Requests</h3>
-        <p className="mt-1 text-lg font-semibold">
-          {formatNumber(metrics.totalRequests)}
-        </p>
-      </div>
-
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-500">Avg Response Time</h3>
-        <p className="mt-1 text-lg font-semibold">
-          {formatNumber(metrics.averageResponseTime)}ms
-        </p>
-      </div>
-
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-500">Requests/Min</h3>
-        <p className="mt-1 text-lg font-semibold">
-          {formatNumber(metrics.requestsPerMinute)}
-        </p>
-      </div>
-
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-500">Avg Tokens Used</h3>
-        <p className="mt-1 text-lg font-semibold">
-          {formatNumber(metrics.averageTokensUsed)}
-        </p>
-      </div>
-
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-500">Cost/Request</h3>
-        <p className="mt-1 text-lg font-semibold">
-          {formatCurrency(metrics.costPerRequest)}
-        </p>
-      </div>
-
-      <div className="p-3 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-500">Total Cost</h3>
-        <p className="mt-1 text-lg font-semibold">
-          {formatCurrency(metrics.totalCost)}
-        </p>
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {metricCards.map((card) => (
+        <div key={card.title} className="p-3 bg-gray-50 rounded-lg">
+          <h3 className="text-sm font-medium text-gray-500">{card.title}</h3>
+          <p className={`mt-1 text-lg font-semibold ${card.className || ''}`}>
+            {card.value}
+          </p>
+        </div>
+      ))}
     </div>
   );
 } 
