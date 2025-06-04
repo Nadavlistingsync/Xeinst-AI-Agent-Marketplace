@@ -6,12 +6,7 @@ import prisma from '@/lib/prisma'
 
 // Mock the FeaturedAgents component
 vi.mock('@/components/FeaturedAgents', () => ({
-  default: () => (
-    <div>
-      <h2>Featured AI Agents</h2>
-      <div data-testid="featured-agents">Featured Agents</div>
-    </div>
-  ),
+  default: () => <div data-testid="featured-agents">Featured Agents</div>
 }))
 
 describe('Home Page', () => {

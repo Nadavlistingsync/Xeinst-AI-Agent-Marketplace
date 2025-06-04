@@ -9,19 +9,13 @@ import { execSync } from 'child_process';
 
 // Set test environment variables
 const originalNodeEnv = process.env.NODE_ENV;
-Object.defineProperty(process.env, 'NODE_ENV', {
-  value: 'test',
-  configurable: true
-});
+process.env.NODE_ENV = 'test';
 
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test';
 
 // Restore original NODE_ENV after tests
 afterAll(() => {
-  Object.defineProperty(process.env, 'NODE_ENV', {
-    value: originalNodeEnv,
-    configurable: true
-  });
+  process.env.NODE_ENV = originalNodeEnv;
 });
 
 // Mock Sentry in tests
