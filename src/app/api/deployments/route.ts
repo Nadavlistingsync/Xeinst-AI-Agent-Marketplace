@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     // Create initial metrics
     await prisma.agentMetrics.create({
       data: {
-        agentId: deployment.id,
+        deploymentId: deployment.id,
         errorRate: 0,
         successRate: 0,
         activeUsers: 0,
@@ -59,7 +59,8 @@ export async function POST(req: Request) {
         requestsPerMinute: 0,
         averageTokensUsed: 0,
         costPerRequest: 0,
-        totalCost: 0
+        totalCost: 0,
+        responseTime: 0
       },
     });
 

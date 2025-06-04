@@ -128,6 +128,7 @@ export async function createProductReview(data: {
   userId: string;
   rating: number;
   comment: string;
+  deploymentId: string;
 }): Promise<any> {
   return await prisma.review.create({
     data: {
@@ -135,6 +136,7 @@ export async function createProductReview(data: {
       userId: data.userId,
       rating: data.rating,
       comment: data.comment,
+      deploymentId: data.deploymentId
     },
     include: {
       user: true,

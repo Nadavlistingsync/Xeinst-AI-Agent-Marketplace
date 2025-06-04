@@ -5,9 +5,8 @@ import { broadcastDeploymentStatus } from '@/lib/websocket';
 import { type DeploymentStatusUpdate } from '@/types/websocket';
 
 export async function POST(
-  request: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const deployment = await prisma.deployment.update({
       where: { id: params.id },

@@ -37,14 +37,15 @@ export async function GET(): Promise<NextResponse<HealthCheckApiResponse>> {
     return NextResponse.json({
       success: true,
       data: validatedHealthCheck,
-    });
+    } as HealthCheckApiResponse);
   } catch (error) {
     console.error('Health check failed:', error);
     const errorResponse = createErrorResponse(error);
+    const errorData = await errorResponse.json();
     return NextResponse.json({
       success: false,
-      error: errorResponse.error
-    } as HealthCheckApiResponse);
+      error: errorData.message
+    } as HealthCheckApiResponse, { status: errorData.statusCode });
   }
 }
 

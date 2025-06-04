@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Play, Pause, RefreshCw, Trash2 } from 'lucide-react';
 import { DeploymentWithMetrics } from '@/types/deployment';
-import { formatDistanceToNow } from 'date-fns';
 
 interface AgentPageProps {
   deployment: DeploymentWithMetrics;

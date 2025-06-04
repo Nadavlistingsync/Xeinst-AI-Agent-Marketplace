@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { DeploymentStatus } from '@prisma/client';
-import type { DeploymentStatusUpdate } from '@/types/websocket';
 import { DeploymentMetrics } from '@/components/DeploymentMetrics';
 import { DeploymentLogs } from '@/components/DeploymentLogs';
 import { DeploymentControls } from '@/components/DeploymentControls';
+import { DeploymentStatusUpdate } from '@/types/deployment';
 
 export default function DeploymentPage() {
   const { id } = useParams();

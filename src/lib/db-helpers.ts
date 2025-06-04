@@ -80,9 +80,12 @@ export async function getFeaturedProducts() {
   return prisma.product.findMany({
     where: { 
       isPublic: true,
-      isFeatured: true 
+      status: 'published'
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { 
+      rating: 'desc'
+    },
+    take: 10
   }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 }
 

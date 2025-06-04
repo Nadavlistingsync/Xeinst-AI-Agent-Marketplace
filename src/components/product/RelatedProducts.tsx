@@ -2,7 +2,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { getRelatedProducts } from '@/lib/product-helpers';
 import { formatCurrency } from '@/lib/utils';
-import { Product } from '@/lib/schema';
 
 interface RelatedProductsProps {
   product_id: string;

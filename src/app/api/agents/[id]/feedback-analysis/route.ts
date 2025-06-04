@@ -4,15 +4,9 @@ import { authOptions } from '@/lib/auth';
 import prisma from '@/lib/prisma';
 import { analyzeFeedback } from '@/lib/feedback-analysis';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api';
-import { z } from 'zod';
-
-const timeRangeSchema = z.object({
-  startDate: z.string().datetime(),
-  endDate: z.string().datetime(),
-}).optional();
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
@@ -42,12 +36,6 @@ export async function GET(
         return createErrorResponse(new Error('Basic subscription required'));
       }
     }
-
-    const { searchParams } = new URL(request.url);
-    const timeRange = timeRangeSchema.parse({
-      startDate: searchParams.get('startDate'),
-      endDate: searchParams.get('endDate'),
-    });
 
     const analysis = await analyzeFeedback(params.id);
     return createSuccessResponse(analysis);

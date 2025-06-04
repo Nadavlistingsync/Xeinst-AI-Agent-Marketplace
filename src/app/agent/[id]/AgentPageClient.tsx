@@ -85,7 +85,7 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
       <div className="mt-8">
         <AgentReviews
           product_id={product.id}
-          average_rating={formatDecimal(product.rating)}
+          rating={formatDecimal(product.rating)}
         />
       </div>
     </div>

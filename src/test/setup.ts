@@ -7,9 +7,22 @@ import React from 'react';
 import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
 
-// Set test environment
-process.env.NODE_ENV = 'test' as const;
+// Set test environment variables
+const originalNodeEnv = process.env.NODE_ENV;
+Object.defineProperty(process.env, 'NODE_ENV', {
+  value: 'test',
+  configurable: true
+});
+
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test';
+
+// Restore original NODE_ENV after tests
+afterAll(() => {
+  Object.defineProperty(process.env, 'NODE_ENV', {
+    value: originalNodeEnv,
+    configurable: true
+  });
+});
 
 // Mock Sentry in tests
 vi.mock('@sentry/nextjs', () => ({

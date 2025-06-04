@@ -1,44 +1,64 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Deployment } from '@/types/deployment';
 import { AgentCard } from './AgentCard';
 
 interface MarketplaceGridProps {
-  deployments: Deployment[];
-  onDeploymentSelect?: (deployment: Deployment) => void;
+  searchParams: {
+    query?: string;
+    framework?: string;
+    category?: string;
+    accessLevel?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    verified?: string;
+    popular?: string;
+    new?: string;
+  };
 }
 
-export function MarketplaceGrid({ deployments, onDeploymentSelect }: MarketplaceGridProps) {
-  const [filteredDeployments, setFilteredDeployments] = useState<Deployment[]>(deployments);
-  const [searchQuery, setSearchQuery] = useState('');
+export function MarketplaceGrid({ searchParams }: MarketplaceGridProps) {
+  const [deployments, setDeployments] = useState<Deployment[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let filtered = deployments;
+    const fetchDeployments = async () => {
+      try {
+        const queryParams = new URLSearchParams();
+        Object.entries(searchParams).forEach(([key, value]) => {
+          if (value) queryParams.append(key, value);
+        });
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(d => 
-        d.name.toLowerCase().includes(query) || 
-        d.description.toLowerCase().includes(query)
-      );
-    }
+        const response = await fetch(`/api/deployments?${queryParams.toString()}`);
+        if (!response.ok) throw new Error('Failed to fetch deployments');
+        
+        const data = await response.json();
+        setDeployments(data);
+      } catch (error) {
+        console.error('Error fetching deployments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setFilteredDeployments(filtered);
-  }, [deployments, searchQuery]);
+    fetchDeployments();
+  }, [searchParams]);
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center text-gray-500">
+            Loading deployments...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4">
-        <input
-          type="text"
-          placeholder="Search agents..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-      </div>
-
-      {filteredDeployments.length === 0 ? (
+      {deployments.length === 0 ? (
         <Card>
           <CardContent className="py-8">
             <div className="text-center text-gray-500">
@@ -48,11 +68,10 @@ export function MarketplaceGrid({ deployments, onDeploymentSelect }: Marketplace
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredDeployments.map((deployment) => (
+          {deployments.map((deployment) => (
             <AgentCard
               key={deployment.id}
               deployment={deployment}
-              onClick={() => onDeploymentSelect?.(deployment)}
             />
           ))}
         </div>

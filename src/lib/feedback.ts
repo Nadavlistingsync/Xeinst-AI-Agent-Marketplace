@@ -1,9 +1,15 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { z } from 'zod';
-import { prisma } from './db';
-import { feedbackSchema } from './schema';
 
 const prismaClient = new PrismaClient();
+
+const feedbackSchema = z.object({
+  rating: z.number().min(1).max(5),
+  comment: z.string().optional(),
+  sentimentScore: z.number().optional(),
+  categories: z.record(z.any()).optional(),
+  metadata: z.record(z.any()).optional(),
+});
 
 export type CreateFeedbackInput = z.infer<typeof feedbackSchema> & {
   deploymentId: string;
@@ -12,14 +18,22 @@ export type CreateFeedbackInput = z.infer<typeof feedbackSchema> & {
 
 export type UpdateFeedbackInput = Partial<z.infer<typeof feedbackSchema>>;
 
-export async function createFeedback(data: z.infer<typeof feedbackSchema>) {
+export async function createFeedback(data: z.infer<typeof feedbackSchema> & { deploymentId: string; userId: string }) {
   const validatedFeedback = feedbackSchema.parse(data);
   
   return prismaClient.agentFeedback.create({
     data: {
-      ...validatedFeedback,
+      rating: validatedFeedback.rating,
+      comment: validatedFeedback.comment,
+      sentimentScore: validatedFeedback.sentimentScore ?? 0,
       categories: validatedFeedback.categories ? validatedFeedback.categories as Prisma.InputJsonValue : Prisma.JsonNull,
       metadata: validatedFeedback.metadata ? validatedFeedback.metadata as Prisma.InputJsonValue : Prisma.JsonNull,
+      deployment: {
+        connect: { id: data.deploymentId }
+      },
+      user: {
+        connect: { id: data.userId }
+      }
     }
   });
 }

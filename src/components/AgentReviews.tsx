@@ -7,8 +7,31 @@ import { Star } from 'lucide-react';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Card } from './ui/card';
-import { fetchApi } from '@/lib/api';
-import type { ApiResponse } from '@/types/api';
+
+interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+}
+
+async function fetchApi<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'An error occurred' };
+  }
+}
 
 interface Review {
   id: string;
@@ -26,6 +49,7 @@ interface ReviewsResponse {
 
 interface AgentReviewsProps {
   product_id: string;
+  rating: number;
 }
 
 export function AgentReviews({ product_id }: AgentReviewsProps) {
@@ -41,10 +65,10 @@ export function AgentReviews({ product_id }: AgentReviewsProps) {
       setLoading(true);
       const response = await fetchApi<ReviewsResponse>(`/api/reviews?product_id=${product_id}`);
       
-      if ('data' in response && response.data?.reviews) {
+      if (response.data?.reviews) {
         setReviews(response.data.reviews);
-      } else if ('error' in response) {
-        setError(response.error || 'Failed to fetch reviews');
+      } else if (response.error) {
+        setError(response.error);
       }
     } catch (err) {
       setError('Failed to fetch reviews');
@@ -65,7 +89,7 @@ export function AgentReviews({ product_id }: AgentReviewsProps) {
     }
 
     try {
-      const response = await fetchApi('/api/reviews', {
+      const response = await fetchApi<{ success: boolean }>('/api/reviews', {
         method: 'POST',
         body: JSON.stringify({
           product_id,
@@ -74,13 +98,13 @@ export function AgentReviews({ product_id }: AgentReviewsProps) {
         }),
       });
 
-      if ('data' in response) {
+      if (response.data?.success) {
         toast.success('Review submitted successfully');
         setRating(0);
         setComment('');
         fetchReviews();
-      } else if ('error' in response) {
-        toast.error(response.error || 'Failed to submit review');
+      } else if (response.error) {
+        toast.error(response.error);
       }
     } catch (err) {
       toast.error('Failed to submit review');

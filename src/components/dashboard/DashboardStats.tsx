@@ -2,10 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityIcon, ClockIcon } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
-interface DashboardStatsProps {
-  userId?: string;
-}
-
 export async function DashboardStats() {
   const [totalRequests, averageResponseTime] = await Promise.all([
     prisma.agentMetrics.aggregate({

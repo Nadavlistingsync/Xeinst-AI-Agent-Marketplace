@@ -1,7 +1,6 @@
 import { PrismaClient, Prisma, ProductStatus, ProductAccessLevel, ProductLicenseType } from '@prisma/client';
 import { Product } from './schema';
 import { Product as PrismaProduct } from '@prisma/client';
-import { prisma } from './db';
 
 const prismaClient = new PrismaClient();
 
@@ -75,7 +74,8 @@ export async function createProduct(data: CreateProductInput) {
       framework: data.framework || 'custom',
       modelType: data.modelType || 'general',
       version: data.version || '1.0.0',
-      metadata: data.metadata ? JSON.stringify(data.metadata) : Prisma.JsonNull,
+      fileUrl: data.imageUrl || '',
+      earningsSplit: 0.8, // Default earnings split
     },
   }).then(toProduct);
 }
@@ -95,7 +95,6 @@ export async function updateProduct(id: string, data: UpdateProductInput) {
       framework: data.framework,
       modelType: data.modelType,
       version: data.version,
-      metadata: data.metadata ? JSON.stringify(data.metadata) : Prisma.JsonNull,
     },
   }).then(toProduct);
 }

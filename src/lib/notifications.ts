@@ -1,15 +1,6 @@
 import { prisma } from './db';
 import { Notification, NotificationType } from '@prisma/client';
 
-export type NotificationType = 
-  | 'feedback_alert'
-  | 'rating_alert'
-  | 'sentiment_alert'
-  | 'rating_trend_alert'
-  | 'agent_improvement_needed'
-  | 'system_alert'
-  | 'user_alert';
-
 export interface CreateNotificationParams {
   type: NotificationType;
   userId: string;

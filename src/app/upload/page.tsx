@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import prisma from '@/lib/prisma';
 import { toast } from "react-hot-toast";
-import { uploadFileToStorage } from '@/lib/file-helpers';
+import { uploadFile } from '@/lib/file-helpers';
 
 export default function UploadPage() {
   const router = useRouter();
@@ -72,26 +72,27 @@ export default function UploadPage() {
       }
 
       // Upload file
-      const uploadedFile = await uploadFileToStorage(fileToUpload, session.user.id);
+      const uploadedFile = await uploadFile(fileToUpload, session.user.id);
       const fileUrl = uploadedFile.url;
 
       // Insert product into database
-      const slug = formData.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)+/g, '');
-
       const product = await prisma.product.create({
         data: {
           name: formData.name,
-          slug,
           category: formData.category,
           description: formData.description,
+          longDescription: formData.documentation,
           price: parseFloat(formData.price),
-          documentation: formData.documentation,
           fileUrl,
           createdBy: session.user.id,
           isPublic: true,
+          earningsSplit: 0.8, // Default earnings split
+          requirements: [],
+          tags: [],
+          version: '1.0.0',
+          environment: 'production',
+          framework: 'custom',
+          modelType: 'custom'
         }
       });
 

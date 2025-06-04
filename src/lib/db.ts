@@ -1,5 +1,4 @@
 import { PrismaClient, Prisma } from '@prisma/client';
-import { createErrorResponse } from './api';
 import * as Sentry from '@sentry/nextjs';
 
 const MAX_RETRIES = 3;

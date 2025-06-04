@@ -1,6 +1,5 @@
 import { prisma } from './db';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
-import { AgentFeedback } from '@/types/agent-monitoring';
 import { Prisma } from '@prisma/client';
 
 export async function processFeedbackJob() {

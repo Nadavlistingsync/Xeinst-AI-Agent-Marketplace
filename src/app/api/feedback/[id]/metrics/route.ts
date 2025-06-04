@@ -96,7 +96,6 @@ export async function GET(
     });
 
     const averageSentiment = totalFeedback > 0 ? totalSentiment / totalFeedback : 0;
-    const averageResponseTime = totalResponses > 0 ? totalResponseTime / totalResponses : 0;
     const responseRate = totalFeedback > 0 ? (totalResponses / totalFeedback) * 100 : 0;
 
     // Calculate trends (simplified for now)
@@ -123,7 +122,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: metrics,
+      data: metrics
     });
   } catch (error) {
     console.error('Error fetching feedback metrics:', error);

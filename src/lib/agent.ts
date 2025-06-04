@@ -38,7 +38,6 @@ export async function createAgent(data: CreateAgentInput) {
       framework: data.framework,
       deployedBy: data.deployedBy,
       modelType: data.modelType,
-      requirements: data.requirements,
       version: data.version,
       source: data.source,
       status: DeploymentStatus.pending,
@@ -47,6 +46,11 @@ export async function createAgent(data: CreateAgentInput) {
       totalRatings: 0,
       downloadCount: 0,
       health: Prisma.JsonNull,
+      accessLevel: 'public',
+      licenseType: 'free',
+      environment: 'production',
+      createdBy: data.deployedBy,
+      isPublic: true
     },
   });
 }
@@ -150,7 +154,6 @@ export async function createDeployment(data: {
   framework: string;
   modelType: string;
   version: string;
-  requirements: string[];
   isPublic: boolean;
   createdBy: string;
   earningsSplit: number;
@@ -179,7 +182,6 @@ export async function updateDeployment(id: string, data: Partial<{
   framework: string;
   modelType: string;
   version: string;
-  requirements: string[];
   isPublic: boolean;
   earningsSplit: number;
   status: DeploymentStatus;

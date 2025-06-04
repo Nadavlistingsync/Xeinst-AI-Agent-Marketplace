@@ -116,7 +116,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       comment: validatedData.comment,
       userId: session.user.id,
       productId: validatedData.productId,
-      ...(validatedData.deploymentId && { deploymentId: validatedData.deploymentId })
+      deploymentId: validatedData.deploymentId || product.id
     };
 
     const review = await prisma.review.create({

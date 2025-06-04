@@ -48,9 +48,14 @@ export async function uploadProduct(data: {
         price: data.price,
         category: data.category,
         fileUrl: data.fileUrl,
-        created_by: data.user_id,
-        uploaded_by: data.user_id,
+        createdBy: data.user_id,
+        uploadedBy: data.user_id,
         isPublic: true,
+        version: '1.0.0',
+        environment: 'production',
+        framework: 'custom',
+        modelType: 'general',
+        earningsSplit: 0.8,
       },
     });
 

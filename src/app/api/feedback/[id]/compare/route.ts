@@ -5,7 +5,6 @@ import prisma from '@/lib/prisma';
 import { type FeedbackTrend } from '@/types/feedback';
 
 export async function GET(
-  request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse<{ success: boolean; data?: { trends: FeedbackTrend[] }; error?: string }>> {
   try {

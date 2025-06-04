@@ -86,7 +86,7 @@ export async function getUser(id: string, options: GetUserOptions = {}) {
   const include: Prisma.UserInclude = {};
 
   if (options.includeAgents) {
-    include.agents = true;
+    include.deployments = true;
   }
 
   if (options.includeDeployments) {

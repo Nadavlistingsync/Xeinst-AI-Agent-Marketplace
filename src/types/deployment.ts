@@ -48,8 +48,15 @@ export interface DeploymentWithMetrics extends Deployment {
     id: string;
     rating: number;
     comment: string | null;
-    sentimentScore: number;
+    sentimentScore: number | null;
     createdAt: Date;
+    updatedAt: Date;
+    deploymentId: string;
+    userId: string;
+    categories: JsonValue | null;
+    creatorResponse: string | null;
+    responseDate: Date | null;
+    metadata: JsonValue | null;
     user?: {
       name: string | null;
       email: string | null;
@@ -91,12 +98,18 @@ export interface UpdateDeploymentInput {
   health?: JsonValue;
 }
 
+export type DeploymentStatusType = 'active' | 'failed' | 'pending' | 'stopped';
+
 export interface DeploymentMetrics {
+  errorRate: number;
+  successRate: number;
+  activeUsers: number;
   totalRequests: number;
   averageResponseTime: number;
-  successRate: number;
-  errorRate: number;
-  timestamp: Date;
+  requestsPerMinute: number;
+  averageTokensUsed: number;
+  costPerRequest: number;
+  totalCost: number;
 }
 
 export interface DeploymentHealth {
@@ -173,4 +186,10 @@ export interface DeploymentAnalytics {
     start: Date;
     end: Date;
   };
+}
+
+export interface DeploymentStatusUpdate {
+  status: DeploymentStatusType;
+  lastUpdated: string;
+  metrics?: DeploymentMetrics;
 } 

@@ -1,5 +1,4 @@
 import { PrismaClient, NotificationType, Prisma, Notification } from '@prisma/client';
-import { JsonValue } from '@prisma/client/runtime/library';
 import { prisma } from './db';
 
 const prismaClient = new PrismaClient();

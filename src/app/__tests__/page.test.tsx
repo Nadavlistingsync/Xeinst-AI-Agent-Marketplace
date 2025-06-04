@@ -82,7 +82,9 @@ describe('Home Page', () => {
       expect(true).toBe(false);
     } catch (error) {
       expect(error).toBeInstanceOf(Error);
-      expect(error.message).toBe('Database error');
+      if (error instanceof Error) {
+        expect(error.message).toBe('Database error');
+      }
     }
   });
 }) 

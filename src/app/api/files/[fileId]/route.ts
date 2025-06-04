@@ -46,7 +46,7 @@ export async function GET(
 
     if (!file) {
       return NextResponse.json(
-        { error: 'File not found' },
+        { message: 'File not found' },
         { status: 404 }
       );
     }
@@ -66,7 +66,7 @@ export async function GET(
       preview: searchParams.get('preview') === 'true'
     };
 
-    const validatedParams = fileQuerySchema.parse(queryParams);
+    fileQuerySchema.parse(queryParams);
 
     // Get file content from storage
     // TODO: Implement file content retrieval from storage (e.g., file system, S3, etc.)
@@ -88,9 +88,10 @@ export async function GET(
     }
 
     const errorResponse = createErrorResponse(error);
+    const errorData = await errorResponse.json();
     return NextResponse.json(
-      { error: errorResponse.error },
-      { status: errorResponse.status }
+      { message: errorData.message },
+      { status: errorData.statusCode }
     );
   }
 } 

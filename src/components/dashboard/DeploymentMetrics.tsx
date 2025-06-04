@@ -7,7 +7,8 @@ import { DeploymentStatus } from '@prisma/client';
 import { AgentMetrics } from '@/types/agent-monitoring';
 
 interface DeploymentMetricsProps {
-  socket: WebSocket | null;
+  socket?: WebSocket | null;
+  deploymentId?: string;
 }
 
 interface HealthMetrics {
@@ -36,14 +37,36 @@ interface DeploymentMetrics {
   metrics: AgentMetrics;
 }
 
-export function DeploymentMetrics({ socket }: DeploymentMetricsProps) {
+export function DeploymentMetrics({ socket, deploymentId }: DeploymentMetricsProps) {
   const [historicalData, setHistoricalData] = useState<DeploymentMetrics[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected'>('disconnected');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket && !deploymentId) return;
 
+    if (deploymentId) {
+      // Fetch metrics from API
+      const fetchMetrics = async () => {
+        try {
+          const response = await fetch(`/api/deployments/${deploymentId}/metrics`);
+          if (!response.ok) throw new Error('Failed to fetch metrics');
+          const data = await response.json();
+          setHistoricalData(prev => [...prev, data].slice(-10));
+          setConnectionStatus('connected');
+          setError(null);
+        } catch (err) {
+          setError('Failed to fetch metrics');
+          setConnectionStatus('disconnected');
+        }
+      };
+
+      fetchMetrics();
+      const interval = setInterval(fetchMetrics, 5000); // Poll every 5 seconds
+      return () => clearInterval(interval);
+    }
+
+    // WebSocket handling
     const handleMessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data) as DeploymentMetrics;
@@ -65,16 +88,16 @@ export function DeploymentMetrics({ socket }: DeploymentMetricsProps) {
       setConnectionStatus('disconnected');
     };
 
-    socket.addEventListener('message', handleMessage);
-    socket.addEventListener('error', handleError);
-    socket.addEventListener('close', handleClose);
+    socket?.addEventListener('message', handleMessage);
+    socket?.addEventListener('error', handleError);
+    socket?.addEventListener('close', handleClose);
 
     return () => {
-      socket.removeEventListener('message', handleMessage);
-      socket.removeEventListener('error', handleError);
-      socket.removeEventListener('close', handleClose);
+      socket?.removeEventListener('message', handleMessage);
+      socket?.removeEventListener('error', handleError);
+      socket?.removeEventListener('close', handleClose);
     };
-  }, [socket]);
+  }, [socket, deploymentId]);
 
   const getHealthColor = (status: DeploymentStatus) => {
     switch (status) {

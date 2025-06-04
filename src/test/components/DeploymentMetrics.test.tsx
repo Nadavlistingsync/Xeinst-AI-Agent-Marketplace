@@ -1,97 +1,62 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { DeploymentMetrics } from '@/components/dashboard/DeploymentMetrics';
-import { useDeploymentSocket } from '@/hooks/useDeploymentSocket';
-
-// Mock the useDeploymentSocket hook
-vi.mock('@/hooks/useDeploymentSocket');
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { DeploymentMetrics } from '@/components/DeploymentMetrics';
+import { DeploymentStatusUpdate } from '@/types/websocket';
 
 describe('DeploymentMetrics', () => {
-  const mockDeploymentId = 'test-deployment';
-  const mockStatus = {
-    id: mockDeploymentId,
-    status: 'active',
-    health: {
-      status: 'healthy',
-      issues: [],
-      metrics: {
-        errorRate: 0.01,
-        responseTime: 100,
-        successRate: 0.99,
-        totalRequests: 1000,
-        activeUsers: 50,
-      },
-    },
-    lastUpdated: new Date().toISOString(),
+  const mockMetrics: DeploymentStatusUpdate['metrics'] = {
+    errorRate: 0.5,
+    successRate: 99.5,
+    activeUsers: 100,
+    totalRequests: 1000,
+    averageResponseTime: 200,
+    requestsPerMinute: 50,
+    averageTokensUsed: 150,
+    costPerRequest: 0.01,
+    totalCost: 10
   };
 
-  it('renders loading state when not connected', () => {
-    (useDeploymentSocket as any).mockReturnValue({
-      status: null,
-      metrics: null,
-      isConnected: false,
-      error: null,
-    });
-
-    render(<DeploymentMetrics deploymentId={mockDeploymentId} socket={null} />);
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  it('renders metrics correctly', () => {
+    render(<DeploymentMetrics metrics={mockMetrics} />);
+    
+    expect(screen.getByText('Error Rate')).toBeInTheDocument();
+    expect(screen.getByText('0.50%')).toBeInTheDocument();
+    expect(screen.getByText('Success Rate')).toBeInTheDocument();
+    expect(screen.getByText('99.50%')).toBeInTheDocument();
+    expect(screen.getByText('Active Users')).toBeInTheDocument();
+    expect(screen.getByText('100')).toBeInTheDocument();
   });
 
-  it('renders error state when there is an error', () => {
-    const errorMessage = 'Failed to connect';
-    (useDeploymentSocket as any).mockReturnValue({
-      status: null,
-      metrics: null,
-      isConnected: false,
-      error: new Error(errorMessage),
-    });
-
-    render(<DeploymentMetrics deploymentId={mockDeploymentId} socket={null} />);
-    expect(screen.getByText(new RegExp(errorMessage, 'i'))).toBeInTheDocument();
+  it('handles undefined metrics', () => {
+    render(<DeploymentMetrics metrics={undefined} />);
+    expect(screen.queryByText('Error Rate')).not.toBeInTheDocument();
   });
 
-  it('renders metrics when connected and data is available', async () => {
-    (useDeploymentSocket as any).mockReturnValue({
-      status: mockStatus,
-      metrics: mockStatus.health.metrics,
-      isConnected: true,
-      error: null,
-    });
-
-    render(<DeploymentMetrics deploymentId={mockDeploymentId} socket={null} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Deployment Metrics')).toBeInTheDocument();
-      expect(screen.getByText('healthy')).toBeInTheDocument();
-      expect(screen.getByText('1.0%')).toBeInTheDocument(); // Error Rate
-      expect(screen.getByText('100ms')).toBeInTheDocument(); // Response Time
-      expect(screen.getByText('99.0%')).toBeInTheDocument(); // Success Rate
-    });
+  it('formats numbers correctly', () => {
+    render(<DeploymentMetrics metrics={mockMetrics} />);
+    
+    expect(screen.getByText('$0.01')).toBeInTheDocument(); // cost per request
+    expect(screen.getByText('$10.00')).toBeInTheDocument(); // total cost
+    expect(screen.getByText('200')).toBeInTheDocument(); // average response time
   });
 
-  it('renders health issues when present', async () => {
-    const statusWithIssues = {
-      ...mockStatus,
-      health: {
-        ...mockStatus.health,
-        status: 'degraded',
-        issues: ['High response time', 'Low success rate'],
-      },
-    };
+  it('displays all metric cards', () => {
+    render(<DeploymentMetrics metrics={mockMetrics} />);
+    
+    const metricCards = [
+      'Error Rate',
+      'Success Rate',
+      'Active Users',
+      'Total Requests',
+      'Avg Response Time',
+      'Requests/Min',
+      'Avg Tokens Used',
+      'Cost/Request',
+      'Total Cost'
+    ];
 
-    (useDeploymentSocket as any).mockReturnValue({
-      status: statusWithIssues,
-      metrics: statusWithIssues.health.metrics,
-      isConnected: true,
-      error: null,
-    });
-
-    render(<DeploymentMetrics deploymentId={mockDeploymentId} socket={null} />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Health Issues')).toBeInTheDocument();
-      expect(screen.getByText('High response time')).toBeInTheDocument();
-      expect(screen.getByText('Low success rate')).toBeInTheDocument();
+    metricCards.forEach(card => {
+      expect(screen.getByText(card)).toBeInTheDocument();
     });
   });
 }); 

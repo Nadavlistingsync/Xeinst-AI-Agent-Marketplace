@@ -55,7 +55,7 @@ export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
       categories: Object.entries(
         feedback.reduce((acc: Record<string, { count: number; totalRating: number }>, curr: AgentFeedback) => {
           const categories = (curr.categories ?? {}) as Record<string, number>;
-          Object.entries(categories).forEach(([name, value]) => {
+          Object.entries(categories).forEach(([name]) => {
             if (!acc[name]) {
               acc[name] = { count: 0, totalRating: 0 };
             }

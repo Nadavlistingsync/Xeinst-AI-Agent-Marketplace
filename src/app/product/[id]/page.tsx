@@ -1,5 +1,3 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { getProduct } from '@/lib/product-helpers';
 import { notFound } from "next/navigation";
 import { ProductDetails } from "@/components/product/ProductDetails";
@@ -13,7 +11,6 @@ interface ProductPageProps {
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const session = await getServerSession(authOptions);
   const product = await getProduct(params.id);
 
   if (!product) {

@@ -4,11 +4,35 @@ import { Search } from 'lucide-react';
 import { Star } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { Session } from 'next-auth';
 import { signIn } from 'next-auth/react';
 import { PageSkeleton } from './LoadingSkeleton';
 import { toast } from 'react-hot-toast';
+
+interface ApiResponse<T> {
+  data?: T;
+  error?: string;
+}
+
+async function fetchApi<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'An error occurred' };
+  }
+}
 
 interface MarketplaceProps {
   session: Session | null;

@@ -3,7 +3,7 @@ import { Prisma } from '@prisma/client';
 export type JsonValue = Prisma.JsonValue;
 export type JsonObject = Prisma.JsonObject;
 export type JsonArray = Prisma.JsonArray;
-export type JsonPrimitive = Prisma.JsonPrimitive;
+export type JsonPrimitive = string | number | boolean | null;
 
 export function isJsonValue(value: unknown): value is JsonValue {
   if (value === null) return true;

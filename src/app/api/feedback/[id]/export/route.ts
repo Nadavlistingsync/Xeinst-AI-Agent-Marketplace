@@ -5,7 +5,6 @@ import prisma from '@/lib/prisma';
 import { type FeedbackExport } from '@/types/feedback';
 
 export async function GET(
-  request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse<{ success: boolean; data?: { exports: FeedbackExport[] }; error?: string }>> {
   try {

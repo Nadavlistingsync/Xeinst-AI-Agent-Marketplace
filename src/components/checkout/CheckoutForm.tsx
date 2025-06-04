@@ -33,6 +33,7 @@ export function CheckoutForm({ amount, onSuccess, onError }: CheckoutFormProps) 
       setIsProcessing(true);
       // Here you would typically integrate with your payment processor
       // For now, we'll just simulate a successful payment
+      console.log('Processing payment for:', data.email);
       await new Promise(resolve => setTimeout(resolve, 1000));
       toast.success('Payment successful!');
       onSuccess();

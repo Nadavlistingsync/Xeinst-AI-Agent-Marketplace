@@ -1,8 +1,6 @@
+import { Prisma, NotificationType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
-import { AgentFeedback } from './schema';
 import { createNotification } from './notification';
-import { NotificationType, Prisma } from '@prisma/client';
-import { JsonValue } from '@prisma/client/runtime/library';
 
 export interface FeedbackMetrics {
   totalFeedback: number;
@@ -57,26 +55,50 @@ export interface GetFeedbackOptions {
   limit?: number;
 }
 
+export interface AgentFeedback {
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  rating: number;
+  deploymentId: string;
+  userId: string;
+  comment: string | null;
+  sentimentScore: number;
+  categories: Record<string, any> | null;
+  creatorResponse: string | null;
+  responseDate: Date | null;
+  metadata: Prisma.JsonValue;
+}
+
 export async function createFeedback(data: {
   deploymentId: string;
   userId: string;
   rating: number;
   comment?: string | null;
-  sentimentScore?: number;
+  sentimentScore?: number | null;
   categories?: Record<string, any> | null;
   metadata?: Prisma.InputJsonValue;
 }): Promise<AgentFeedback> {
-  return prisma.agentFeedback.create({
+  const sentimentScore = data.sentimentScore ?? 0;
+  
+  const feedback = await prisma.agentFeedback.create({
     data: {
       deploymentId: data.deploymentId,
       userId: data.userId,
       rating: data.rating,
       comment: data.comment || null,
-      sentimentScore: data.sentimentScore ?? 0,
+      sentimentScore,
       categories: data.categories ? (data.categories as Prisma.InputJsonValue) : Prisma.JsonNull,
       metadata: data.metadata || Prisma.JsonNull,
+      responseDate: null
     },
   });
+
+  return {
+    ...feedback,
+    sentimentScore: Number(feedback.sentimentScore),
+    categories: feedback.categories as Record<string, any> | null
+  };
 }
 
 export async function getFeedbackMetrics(deploymentId: string, timeRange?: { startDate?: Date; endDate?: Date }): Promise<FeedbackMetrics> {
@@ -99,13 +121,13 @@ export async function getFeedbackMetrics(deploymentId: string, timeRange?: { sta
 
   const totalFeedback = feedbacks.length;
   const averageRating = feedbacks.reduce((acc, f) => acc + f.rating, 0) / totalFeedback || 0;
-  const averageSentiment = feedbacks.reduce((acc, f) => acc + (f.sentimentScore || 0), 0) / totalFeedback || 0;
+  const averageSentiment = feedbacks.reduce((acc, f) => acc + Number(f.sentimentScore), 0) / totalFeedback || 0;
 
   const sentimentDistribution: Record<string, number> = {};
   const categoryDistribution: Record<string, number> = {};
 
   feedbacks.forEach(feedback => {
-    const sentiment = feedback.sentimentScore || 0;
+    const sentiment = Number(feedback.sentimentScore);
     const sentimentKey = sentiment < -0.5 ? 'negative' : sentiment > 0.5 ? 'positive' : 'neutral';
     sentimentDistribution[sentimentKey] = (sentimentDistribution[sentimentKey] || 0) + 1;
 
@@ -119,7 +141,7 @@ export async function getFeedbackMetrics(deploymentId: string, timeRange?: { sta
   const timeSeriesData = feedbacks.map(feedback => ({
     date: feedback.createdAt,
     rating: feedback.rating,
-    sentiment: feedback.sentimentScore || 0,
+    sentiment: Number(feedback.sentimentScore)
   }));
 
   return {

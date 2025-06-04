@@ -59,7 +59,7 @@ export async function listFiles(user_id: string): Promise<File[]> {
   return prisma.file.findMany({
     where: { uploadedBy: user_id },
     orderBy: {
-      created_at: 'desc',
+      createdAt: 'desc',
     },
   });
 }

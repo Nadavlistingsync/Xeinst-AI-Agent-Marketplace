@@ -14,7 +14,7 @@ const updateDeploymentSchema = z.object({
 });
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -142,7 +142,7 @@ export async function PUT(
 }
 
 export async function PATCH(
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -152,7 +152,7 @@ export async function PATCH(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const body = await req.json();
+    const body = await _req.json();
     const validatedData = updateDeploymentSchema.parse(body);
 
     const deployment = await prisma.deployment.findUnique({
@@ -186,9 +186,8 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);
 

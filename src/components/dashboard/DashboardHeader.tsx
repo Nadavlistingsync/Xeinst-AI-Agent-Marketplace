@@ -1,5 +1,4 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User } from '@prisma/client';
 
 interface DashboardHeaderProps {
   user: {

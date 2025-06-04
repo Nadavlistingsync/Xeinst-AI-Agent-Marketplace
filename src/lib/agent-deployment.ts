@@ -1,8 +1,6 @@
 import { z } from 'zod';
 import { prisma } from "./db";
 import { DeploymentStatus } from "@prisma/client";
-import { Deployment as DeploymentSchema } from './schema';
-import JSZip from 'jszip';
 import { logAgentEvent } from './agent-monitoring';
 import { Prisma } from '@prisma/client';
 

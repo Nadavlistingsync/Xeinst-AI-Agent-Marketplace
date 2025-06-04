@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { FeedbackResponse } from './feedback';
 
 export interface FeedbackMetrics {
   totalFeedback: number;

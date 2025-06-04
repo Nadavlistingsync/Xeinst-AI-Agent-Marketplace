@@ -31,6 +31,13 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const socket = await initializeSocket(session.user.id);
 
+    if (!socket) {
+      return NextResponse.json(
+        { message: 'Socket not found' },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json({
       socket,
       metadata: {
@@ -53,9 +60,10 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
 
     const errorResponse = createErrorResponse(error);
+    const errorData = await errorResponse.json();
     return NextResponse.json(
-      { error: errorResponse.error },
-      { status: errorResponse.status }
+      { message: errorData.message },
+      { status: errorData.statusCode }
     );
   }
 } 

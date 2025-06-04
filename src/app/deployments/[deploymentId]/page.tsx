@@ -97,12 +97,19 @@ export default async function DeploymentPage({
       id: feedback.id,
       rating: feedback.rating,
       comment: feedback.comment,
-      sentimentScore: feedback.sentimentScore || 0,
+      sentimentScore: feedback.sentimentScore,
       createdAt: feedback.createdAt,
+      updatedAt: feedback.updatedAt,
+      deploymentId: feedback.deploymentId,
+      userId: feedback.userId,
+      categories: feedback.categories,
+      creatorResponse: feedback.creatorResponse,
+      responseDate: feedback.responseDate,
+      metadata: feedback.metadata,
       user: {
         name: feedback.user?.name || null,
-        email: null,
-        image: feedback.user?.image || null
+        image: feedback.user?.image || null,
+        email: null
       }
     }))
   };

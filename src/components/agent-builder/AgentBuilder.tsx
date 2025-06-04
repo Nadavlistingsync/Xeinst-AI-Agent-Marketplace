@@ -141,7 +141,7 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
             height="100%"
             defaultLanguage={framework}
             value={code}
-            onChange={(value) => setCode(value || '')}
+            onChange={(value: string | undefined) => setCode(value || '')}
             theme="vs-dark"
             options={{
               minimap: { enabled: false },

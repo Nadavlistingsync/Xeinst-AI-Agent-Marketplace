@@ -1,4 +1,5 @@
-import { startTransaction, setTag, setContext } from './sentry';
+import * as Sentry from '@sentry/nextjs';
+import { setTag, setContext } from './sentry';
 
 interface PerformanceMetrics {
   duration: number;
@@ -32,47 +33,39 @@ class PerformanceMonitor {
     metadata?: Record<string, any>
   ): Promise<T> {
     const startTime = performance.now();
-    const transaction = startTransaction(key, 'performance');
-
-    try {
-      const result = await operation();
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      this.recordMetric(key, {
-        duration,
-        startTime,
-        endTime,
-        success: true,
-        metadata,
-      });
-
-      if (transaction) {
-        transaction.setStatus('ok');
-        transaction.finish();
+    let result: T;
+    let success = true;
+    let errorObj: Error | undefined = undefined;
+    await Sentry.startSpan({
+      name: key,
+      op: 'performance'
+    }, async (span) => {
+      try {
+        span.setAttribute('operation', key);
+        if (metadata) {
+          span.setAttribute('metadata', JSON.stringify(metadata));
+        }
+        result = await operation();
+      } catch (error) {
+        success = false;
+        errorObj = error as Error;
+        throw error;
       }
-
-      return result;
-    } catch (error) {
-      const endTime = performance.now();
-      const duration = endTime - startTime;
-
-      this.recordMetric(key, {
-        duration,
-        startTime,
-        endTime,
-        success: false,
-        error: error as Error,
-        metadata,
-      });
-
-      if (transaction) {
-        transaction.setStatus('error');
-        transaction.finish();
-      }
-
-      throw error;
+    });
+    const endTime = performance.now();
+    const duration = endTime - startTime;
+    this.recordMetric(key, {
+      duration,
+      startTime,
+      endTime,
+      success,
+      error: errorObj,
+      metadata,
+    });
+    if (!success && errorObj) {
+      throw errorObj;
     }
+    return result!;
   }
 
   private recordMetric(key: string, metric: PerformanceMetrics) {

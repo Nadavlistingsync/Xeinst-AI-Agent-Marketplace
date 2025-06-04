@@ -350,26 +350,47 @@ export async function getAgentHealth(deploymentId: string, options: GetAgentHeal
   const deployment = await prisma.deployment.findUnique({
     where: { id: deploymentId },
     include: {
-      metrics: options.includeMetrics
-    }
+      metrics: options.includeMetrics,
+    },
   });
 
   if (!deployment) {
     return null;
   }
 
-  const health: AgentHealth = {
-    id: deployment.id,
-    status: deployment.status,
-    lastUpdated: deployment.updatedAt.toISOString(),
-    metrics: options.includeMetrics ? {
-      errorRate: deployment.metrics?.[0]?.errorRate ?? 0,
-      responseTime: deployment.metrics?.[0]?.responseTime ?? 0,
-      successRate: deployment.metrics?.[0]?.successRate ?? 0,
-      totalRequests: deployment.metrics?.[0]?.totalRequests ?? 0,
-      activeUsers: deployment.metrics?.[0]?.activeUsers ?? 0
-    } : undefined
+  const defaultMetrics = {
+    errorRate: 0,
+    responseTime: 0,
+    successRate: 0,
+    totalRequests: 0,
+    activeUsers: 0,
+    averageResponseTime: 0,
+    requestsPerMinute: 0,
+    averageTokensUsed: 0,
+    costPerRequest: 0,
+    totalCost: 0
   };
 
-  return health;
+  // Get the most recent metrics if available
+  const latestMetrics = deployment.metrics && deployment.metrics.length > 0 
+    ? deployment.metrics[0] 
+    : null;
+
+  return {
+    status: deployment.status,
+    lastChecked: new Date(),
+    metrics: options.includeMetrics && latestMetrics ? {
+      errorRate: latestMetrics.errorRate,
+      responseTime: latestMetrics.responseTime,
+      successRate: latestMetrics.successRate,
+      totalRequests: latestMetrics.totalRequests,
+      activeUsers: latestMetrics.activeUsers,
+      averageResponseTime: latestMetrics.averageResponseTime,
+      requestsPerMinute: latestMetrics.requestsPerMinute,
+      averageTokensUsed: latestMetrics.averageTokensUsed,
+      costPerRequest: latestMetrics.costPerRequest,
+      totalCost: latestMetrics.totalCost
+    } : defaultMetrics,
+    logs: [],
+  };
 } 
