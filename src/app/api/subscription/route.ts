@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import db from '@/lib/db';
+import { prisma } from '@/lib/db';
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     // Here you would typically integrate with a payment processor
     // For now, we'll just update the subscription tier directly
 
-    const user = await db.user.update({
+    const user = await prisma.user.update({
       where: {
         id: session.user.id,
       },
@@ -45,7 +45,7 @@ export async function GET() {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const user = await db.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         id: session.user.id,
       },

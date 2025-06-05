@@ -11,7 +11,7 @@ export default function Header() {
   const { scrollY } = useScroll();
 
   useEffect(() => {
-    return scrollY.onChange((latest) => {
+    return scrollY.on("change", (latest) => {
       setScrolled(latest > 50);
     });
   }, [scrollY]);

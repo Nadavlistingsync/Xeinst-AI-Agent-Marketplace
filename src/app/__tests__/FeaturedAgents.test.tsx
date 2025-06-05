@@ -1,4 +1,4 @@
-import { render, screen, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { FeaturedAgents } from '@/components/FeaturedAgents';
 import { vi } from 'vitest';
 import { Agent } from '@/types/agent';

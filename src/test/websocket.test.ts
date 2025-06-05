@@ -4,7 +4,7 @@ import { createServer } from 'http';
 import { emitDeploymentStatus, initializeWebSocket } from '@/lib/websocket';
 import { DeploymentStatus } from '@prisma/client';
 import { io as Client } from 'socket.io-client';
-import type { WebSocketMessage, DeploymentStatusUpdate } from '@/types/websocket';
+import type { DeploymentStatusUpdate } from '@/types/websocket';
 
 describe('WebSocket', () => {
   let io: Server;

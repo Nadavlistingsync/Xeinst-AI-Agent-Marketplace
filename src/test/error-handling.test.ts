@@ -137,7 +137,7 @@ describe('Error Handling', () => {
       } catch (err) {
         // Ignore the error as it's expected
         expect(err).toBeInstanceOf(Prisma.PrismaClientKnownRequestError);
-        expect(err.code).toBe('P1001');
+        expect((err as any).code).toBe('P1001');
       }
     });
 

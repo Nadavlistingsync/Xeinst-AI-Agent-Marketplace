@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { vi, beforeAll, afterAll, afterEach } from 'vitest';
+import { vi, beforeAll, afterEach } from 'vitest';
 import React from 'react';
 import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
