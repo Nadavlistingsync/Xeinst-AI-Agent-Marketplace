@@ -4,8 +4,8 @@ import React from 'react';
 import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
 
-// Set test environment
-process.env.NODE_ENV = 'test';
+// Set test environment using vi.stubEnv
+vi.stubEnv('NODE_ENV', 'test');
 
 // Suppress console.error in tests
 const originalConsoleError = console.error;
