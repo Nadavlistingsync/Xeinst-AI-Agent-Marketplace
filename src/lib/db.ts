@@ -35,8 +35,10 @@ export class DatabaseError extends Error {
 }
 
 export function handleDatabaseError(error: unknown): never {
-  // Log the error
-  console.error('Database Error:', error);
+  // Only log errors in non-test environments
+  if (process.env.NODE_ENV !== 'test') {
+    console.error('Database Error:', error);
+  }
   
   // Only report to Sentry in production and for non-validation errors
   if (process.env.NODE_ENV === 'production' && 
