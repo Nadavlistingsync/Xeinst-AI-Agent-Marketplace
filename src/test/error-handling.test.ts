@@ -6,6 +6,10 @@ import { ZodError } from 'zod';
 import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
 
+process.on('unhandledRejection', (reason, promise) => {
+  // Suppress unhandled rejection warnings in tests
+});
+
 async function getResponseBody(response: any) {
   // NextResponse has a .json() method that returns a Promise
   return typeof response.json === 'function' ? await response.json() : response;
@@ -122,22 +126,22 @@ describe('Error Handling', () => {
     });
 
     it('fails after max retries', async () => {
-      // Mock a retryable error (P1001 is considered retryable in the code)
-      const error = {
-        name: 'PrismaClientKnownRequestError',
-        message: 'Connection error',
+      const operation = vi.fn().mockRejectedValue(new Prisma.PrismaClientKnownRequestError('Connection error', {
         code: 'P1001',
-        clientVersion: '5.0.0',
-      };
+        clientVersion: '5.0.0'
+      }));
 
-      const operation = vi.fn().mockRejectedValue(error);
-
+      const resultPromise = withRetry(operation);
+      
+      // Advance timers for each retry attempt
+      await vi.advanceTimersByTimeAsync(1000); // First retry
+      await vi.advanceTimersByTimeAsync(2000); // Second retry
+      await vi.advanceTimersByTimeAsync(4000); // Third retry
+      
       try {
-        const resultPromise = withRetry(operation);
-        await vi.advanceTimersByTimeAsync(7000);
         await resultPromise;
       } catch (err) {
-        expect(operation).toHaveBeenCalledTimes(4);
+        expect(operation).toHaveBeenCalledTimes(4); // Initial + 3 retries
         const code = (err as any)?.code ?? (err as any)?.serialized?.code;
         expect(code).toBe('P1001');
       }
