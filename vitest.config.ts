@@ -18,4 +18,7 @@ export default defineConfig({
     'process.env.NODE_ENV': '"test"',
     'process.env.NEXT_PUBLIC_SENTRY_DSN': '""',
   },
+  resolve: {
+    mainFields: ['module', 'jsnext:main', 'jsnext', 'browser', 'main'],
+  },
 }); 

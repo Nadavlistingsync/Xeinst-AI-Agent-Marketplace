@@ -6,7 +6,7 @@ import { ZodError } from 'zod';
 import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (_reason, _promise) => {
   // Suppress unhandled rejection warnings in tests
 });
 

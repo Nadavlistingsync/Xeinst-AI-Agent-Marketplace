@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { DeploymentStatus } from '@prisma/client';
+import Image from 'next/image';
 
 export default async function DeploymentPage({
   params
@@ -187,10 +188,12 @@ export default async function DeploymentPage({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       {feedback.user?.image && (
-                        <img
+                        <Image
                           src={feedback.user.image}
                           alt={feedback.user?.name || 'User'}
-                          className="h-8 w-8 rounded-full"
+                          width={32}
+                          height={32}
+                          className="rounded-full"
                         />
                       )}
                       <div>

@@ -79,7 +79,7 @@ export function AgentReviews({ product_id }: AgentReviewsProps) {
 
   useEffect(() => {
     fetchReviews();
-  }, [product_id]);
+  }, [product_id, fetchReviews]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
