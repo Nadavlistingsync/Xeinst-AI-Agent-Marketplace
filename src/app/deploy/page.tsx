@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
-import { uploadFile } from '@/lib/file-helpers';
 import { DeploymentStatus } from '@prisma/client';
 
 export default function DeployPage() {
@@ -67,13 +66,27 @@ export default function DeployPage() {
       let file_url = '';
       if (uploadType === 'file') {
         if (!file) throw new Error('No file selected');
-        const uploadedFile = await uploadFile(file, session.user.id);
-        file_url = uploadedFile.url;
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) throw new Error('File upload failed');
+        file_url = uploadData.data.url;
       } else if (uploadType === 'github') {
         if (!githubUrl) throw new Error('No GitHub URL provided');
         const zipFile = await fetchGithubRepoAsZip(githubUrl);
-        const uploadedFile = await uploadFile(zipFile, session.user.id);
-        file_url = uploadedFile.url;
+        const formData = new FormData();
+        formData.append('file', zipFile);
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) throw new Error('File upload failed');
+        file_url = uploadData.data.url;
       }
 
       // Create deployment

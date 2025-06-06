@@ -1,3 +1,4 @@
+// This file is server-only. Do not import in client components or pages.
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
