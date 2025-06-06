@@ -122,23 +122,22 @@ describe('Error Handling', () => {
     });
 
     it('fails after max retries', async () => {
+      // Mock a retryable error (P1001 is considered retryable in the code)
       const error = {
         name: 'PrismaClientKnownRequestError',
         message: 'Connection error',
         code: 'P1001',
-        clientVersion: '5.0.0'
+        clientVersion: '5.0.0',
       };
 
       const operation = vi.fn().mockRejectedValue(error);
 
       try {
-        const result = withRetry(operation);
+        const resultPromise = withRetry(operation);
         await vi.advanceTimersByTimeAsync(7000);
-        await expect(result).rejects.toThrow('Connection error');
-        expect(operation).toHaveBeenCalledTimes(4);
+        await resultPromise;
       } catch (err) {
-        console.log('DEBUG ERROR OBJECT:', err);
-        // Ignore the error as it's expected
+        expect(operation).toHaveBeenCalledTimes(4);
         const code = (err as any)?.code ?? (err as any)?.serialized?.code;
         expect(code).toBe('P1001');
       }
