@@ -5,6 +5,7 @@ import { broadcastDeploymentStatus } from '@/lib/websocket';
 import { type DeploymentStatusUpdate } from '@/types/websocket';
 
 export async function POST(
+  request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
