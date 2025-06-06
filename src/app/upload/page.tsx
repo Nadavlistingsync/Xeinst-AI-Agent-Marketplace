@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import prisma from '@/lib/prisma';
 import { toast } from "react-hot-toast";
-import { uploadFile } from '@/lib/file-helpers';
 
 export default function UploadPage() {
   const router = useRouter();
@@ -61,19 +60,32 @@ export default function UploadPage() {
     }
 
     try {
-      let fileToUpload: File | null = null;
+      let file_url = '';
 
-      if (uploadType === "file") {
-        if (!file) throw new Error("Please select a file to upload");
-        fileToUpload = file;
-      } else {
-        if (!githubUrl) throw new Error("Please enter a GitHub repository URL");
-        fileToUpload = await fetchGithubRepoAsZip(githubUrl);
+      if (uploadType === 'file') {
+        if (!file) throw new Error('No file selected');
+        const formData = new FormData();
+        formData.append('file', file);
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) throw new Error('File upload failed');
+        file_url = uploadData.data.url;
+      } else if (uploadType === 'github') {
+        if (!githubUrl) throw new Error('No GitHub URL provided');
+        const zipFile = await fetchGithubRepoAsZip(githubUrl);
+        const formData = new FormData();
+        formData.append('file', zipFile);
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.success) throw new Error('File upload failed');
+        file_url = uploadData.data.url;
       }
-
-      // Upload file
-      const uploadedFile = await uploadFile(fileToUpload, session.user.id);
-      const fileUrl = uploadedFile.url;
 
       // Insert product into database
       const product = await prisma.product.create({
@@ -83,7 +95,7 @@ export default function UploadPage() {
           description: formData.description,
           longDescription: formData.documentation,
           price: parseFloat(formData.price),
-          fileUrl,
+          fileUrl: file_url,
           createdBy: session.user.id,
           isPublic: true,
           earningsSplit: 0.8, // Default earnings split
