@@ -137,6 +137,7 @@ describe('Error Handling', () => {
         await expect(result).rejects.toThrow('Connection error');
         expect(operation).toHaveBeenCalledTimes(4);
       } catch (err) {
+        console.log('DEBUG ERROR OBJECT:', err);
         // Ignore the error as it's expected
         const code = (err as any)?.code ?? (err as any)?.serialized?.code;
         expect(code).toBe('P1001');
