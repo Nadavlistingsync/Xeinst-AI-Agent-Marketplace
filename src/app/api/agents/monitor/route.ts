@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,10 +78,10 @@ export async function GET(req: Request) {
         costPerRequest: latestMetrics.costPerRequest,
         totalCost: latestMetrics.totalCost
       } : null,
-      recentLogs: agent.logs.map(log => ({
+      recentLogs: agent.logs.map((log: { message: string; timestamp: Date; level: string }) => ({
         level: log.level,
         message: log.message,
-        timestamp: log.createdAt
+        timestamp: log.timestamp
       }))
     };
 

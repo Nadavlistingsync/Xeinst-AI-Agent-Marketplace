@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { MonitoringDashboard } from '@/components/dashboard/MonitoringDashboard';
 import AgentPage from '@/components/agent/AgentPage';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { DeploymentWithMetrics } from '@/types/deployment';
 
 interface AgentPageProps {
@@ -72,8 +72,21 @@ export default async function Page({ params }: AgentPageProps) {
     isPublic: agent.isPublic,
     version: agent.version,
     health: agent.health ?? {},
-    metrics: agent.metrics.map(metric => ({
-      ...metric,
+    metrics: agent.metrics.map((metric) => ({
+      id: metric.id,
+      createdAt: metric.createdAt,
+      updatedAt: metric.updatedAt,
+      deploymentId: metric.deploymentId,
+      errorRate: metric.errorRate,
+      responseTime: metric.responseTime,
+      successRate: metric.successRate,
+      totalRequests: metric.totalRequests,
+      activeUsers: metric.activeUsers,
+      averageResponseTime: metric.averageResponseTime,
+      requestsPerMinute: metric.requestsPerMinute,
+      averageTokensUsed: metric.averageTokensUsed,
+      costPerRequest: metric.costPerRequest,
+      totalCost: metric.totalCost,
       lastUpdated: metric.updatedAt
     }))
   };

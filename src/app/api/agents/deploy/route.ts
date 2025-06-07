@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { agentValidationSchema, validateAgentCode, deployAgent } from '@/lib/agent-deployment';
 import { z } from 'zod';
 

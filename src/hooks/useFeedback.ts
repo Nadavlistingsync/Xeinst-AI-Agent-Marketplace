@@ -1,11 +1,13 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Feedback, FeedbackSummary, FeedbackTrend, FeedbackAnalytics, FeedbackRecommendation, FeedbackSearchResult, FeedbackExport, CreateFeedbackInput, UpdateFeedbackInput } from '@/types/feedback';
+import { useRouter } from 'next/navigation';
+import { Feedback, FeedbackSummary, FeedbackTrend, FeedbackAnalytics, FeedbackRecommendation, FeedbackSearchResult, FeedbackExport, UpdateFeedbackInput } from '@/types/feedback';
 import { ApiError } from '@/lib/errors';
 import { toast } from 'react-hot-toast';
 
 export function useFeedback(agentId: string) {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -166,38 +168,42 @@ export function useFeedback(agentId: string) {
     }
   }, []);
 
-  const submitFeedback = useCallback(async (data: {
-    agentId: string;
+  const submitFeedback = useCallback(async (feedbackData: {
+    content: string;
     rating: number;
-    comment?: string;
+    category?: string;
+    tags?: string[];
   }) => {
-    try {
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
+    try {
       const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...feedbackData,
+          agentId
+        }),
       });
 
       if (!response.ok) {
         throw new Error('Failed to submit feedback');
       }
 
-      const data = await response.json();
-      toast.success('Feedback submitted successfully');
-      return data;
-    } catch (error) {
-      toast.error('Failed to submit feedback');
-      console.error(error);
-      return null;
+      const responseData = await response.json();
+      router.refresh();
+      return responseData;
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('An error occurred');
+      setError(error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [router, agentId]);
 
   const updateFeedback = async (id: string, input: UpdateFeedbackInput): Promise<Feedback | null> => {
     try {

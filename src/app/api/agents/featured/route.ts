@@ -37,19 +37,37 @@ export async function GET() {
   try {
     // Add retry logic for database connection
     let retries = 3;
-    let featuredAgents: Array<z.infer<typeof ProductSchema>> = [];
+    let featuredAgents: any[] = [];
 
     while (retries > 0) {
       try {
         featuredAgents = await prisma.product.findMany({
-          where: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            category: true,
+            price: true,
+            rating: true,
+            downloadCount: true,
             isPublic: true,
-            status: 'published'
-          },
-          orderBy: {
-            rating: 'desc'
-          },
-          take: 6
+            status: true,
+            createdAt: true,
+            updatedAt: true,
+            requirements: true,
+            environment: true,
+            uploadedBy: true,
+            longDescription: true,
+            version: true,
+            framework: true,
+            modelType: true,
+            accessLevel: true,
+            licenseType: true,
+            earningsSplit: true,
+            createdBy: true,
+            fileUrl: true,
+            tags: true
+          }
         });
         break;
       } catch (error) {
@@ -59,8 +77,15 @@ export async function GET() {
       }
     }
 
+    // Add fallback fields before validation
+    const featuredAgentsWithFallbacks = featuredAgents.map(agent => ({
+      ...agent,
+      imageUrl: null,
+      totalRatings: 0
+    })) as any[];
+
     // Validate the response data
-    const validatedAgents = featuredAgents.map(agent => {
+    const validatedAgents = featuredAgentsWithFallbacks.map(agent => {
       try {
         return ProductSchema.parse(agent);
       } catch (error) {
@@ -79,9 +104,12 @@ export async function GET() {
       );
     }
 
+    // No need to add fallback fields after validation
+    const processedAgents = validatedAgents;
+
     return NextResponse.json({
-      agents: validatedAgents,
-      count: validatedAgents.length,
+      agents: processedAgents,
+      count: processedAgents.length,
       timestamp: new Date().toISOString()
     }, { status: 200 });
   } catch (error) {
