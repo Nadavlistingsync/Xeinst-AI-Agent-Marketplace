@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import { Prisma, Deployment, DeploymentStatus, AgentMetrics } from '../types/prisma';
+import { Prisma, Deployment, DeploymentStatus, AgentMetrics, AgentLog, AgentFeedback } from '../types/prisma';
 
 export interface CreateAgentInput {
   name: string;
@@ -122,14 +122,14 @@ export async function getAgentMetrics(deploymentId: string) {
   };
 }
 
-export async function getAgentLogs(deploymentId: string) {
+export async function getAgentLogs(deploymentId: string): Promise<AgentLog[]> {
   return await prisma.agentLog.findMany({
     where: { deploymentId },
     orderBy: { timestamp: "desc" },
   });
 }
 
-export async function getAgentFeedback(deploymentId: string, options: { startDate?: Date; endDate?: Date } = {}) {
+export async function getAgentFeedback(deploymentId: string, options: { startDate?: Date; endDate?: Date } = {}): Promise<AgentFeedback[]> {
   const where: Prisma.AgentFeedbackWhereInput = { deploymentId };
 
   if (options.startDate) {
@@ -159,7 +159,7 @@ export async function createDeployment(data: {
   earningsSplit: number;
   source: string;
   deployedBy: string;
-}) {
+}): Promise<Deployment> {
   return prisma.deployment.create({
     data: {
       ...data,
@@ -186,7 +186,7 @@ export async function updateDeployment(id: string, data: Partial<{
   earningsSplit: number;
   status: DeploymentStatus;
   health: Prisma.InputJsonValue;
-}>) {
+}>): Promise<Deployment> {
   return prisma.deployment.update({
     where: { id },
     data: {
