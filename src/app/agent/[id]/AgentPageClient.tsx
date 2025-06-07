@@ -26,7 +26,7 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
             <Image
               src={product.fileUrl}
               alt={product.name}
-              fill={true}
+              fill
               className="object-cover"
             />
           )}

@@ -69,7 +69,7 @@ export function BlogSection() {
                 <Image
                   src={post.image}
                   alt={post.title}
-                  fill={true}
+                  fill
                   className="object-cover"
                 />
               </div>
