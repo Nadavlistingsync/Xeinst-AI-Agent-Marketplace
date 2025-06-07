@@ -201,8 +201,13 @@ global.fetch = vi.fn();
 // Mock next/image
 vi.mock('next/image', () => ({
   default: function Image(props: React.ComponentProps<'img'>) {
+    // Convert boolean fill prop to string
+    const imgProps = { ...props };
+    if (typeof imgProps.fill === 'boolean') {
+      imgProps.fill = imgProps.fill.toString();
+    }
     // eslint-disable-next-line @next/next/no-img-element
-    return React.createElement('img', props);
+    return React.createElement('img', imgProps);
   },
 }));
 
