@@ -71,6 +71,13 @@ const mockPrisma = {
   $disconnect: vi.fn().mockResolvedValue(undefined),
 };
 
+// Mock Prisma client
+vi.mock('@prisma/client', () => {
+  return {
+    PrismaClient: vi.fn(() => mockPrisma),
+  };
+});
+
 vi.mock('@/lib/prisma', () => ({
   __esModule: true,
   default: mockPrisma,
@@ -112,45 +119,19 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Create a test database client
-const prismaClient = new PrismaClient({
-  datasources: {
-    db: {
-      url: process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test',
-    },
-  },
-});
-
 // Global setup
 beforeAll(async () => {
   try {
-    // Check if we can connect to the database
-    await prismaClient.$connect();
-    
-    // Run migrations for test database
-    execSync('npx prisma migrate deploy', {
+    // Generate Prisma client
+    execSync('pnpm prisma generate', {
       env: {
         ...process.env,
         DATABASE_URL: process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test',
         NODE_ENV: 'test',
       },
     });
-
-    // Clean up the database before tests
-    const tables = await prismaClient.$queryRaw<
-      Array<{ tablename: string }>
-    >`SELECT tablename FROM pg_tables WHERE schemaname='public'`;
-
-    for (const { tablename } of tables) {
-      if (tablename !== '_prisma_migrations') {
-        await prismaClient.$executeRawUnsafe(
-          `TRUNCATE TABLE "public"."${tablename}" CASCADE;`
-        );
-      }
-    }
   } catch (error) {
-    // Don't log the error in test environment
-    // Just continue with mocked Prisma
+    console.error('Failed to generate Prisma client:', error);
   }
 });
 
@@ -167,22 +148,8 @@ afterEach(async () => {
         });
       }
     });
-
-    // Only attempt database cleanup if we're using a real connection
-    if (prismaClient instanceof PrismaClient) {
-      const tables = await prismaClient.$queryRaw<
-        Array<{ tablename: string }>
-      >`SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename != '_prisma_migrations'`;
-      
-      for (const { tablename } of tables) {
-        await prismaClient.$executeRawUnsafe(
-          `TRUNCATE TABLE "public"."${tablename}" CASCADE;`
-        );
-      }
-    }
   } catch (error) {
     console.error('Failed to clean up after test:', error);
-    // Don't throw the error, just log it
   }
 });
 
