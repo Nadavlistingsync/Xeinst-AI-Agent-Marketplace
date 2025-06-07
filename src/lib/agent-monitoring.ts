@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import { type AgentHealth, type AgentMetrics, type AgentLog, type AgentFeedback, type CreateNotificationInput } from '@/types/agent-monitoring';
-import { Prisma, Deployment, DeploymentStatus } from '@prisma/client';
+import { Prisma, Deployment, DeploymentStatus } from '../types/prisma';
 import { z } from 'zod';
 import { createNotification as createNotificationHelper } from './notification';
-import { JsonValue } from '@prisma/client/runtime/library';
+import { JsonValue } from '../types/json';
 
 const metricsSchema = z.object({
   errorRate: z.number(),
@@ -135,7 +135,7 @@ export async function updateAgentMetrics(deploymentId: string, metrics: Partial<
 }
 
 export async function getAgentLogs(deploymentId: string, options: GetAgentLogsOptions = {}): Promise<AgentLog[]> {
-  const where: any = {
+  const where: Prisma.AgentLogWhereInput = {
     deploymentId,
   };
 
@@ -159,7 +159,7 @@ export async function getAgentLogs(deploymentId: string, options: GetAgentLogsOp
     take: options.limit || 100,
   });
 
-  return (logs || []).map(log => ({
+  return (logs || []).map((log: AgentLog) => ({
     id: log.id,
     deploymentId: log.deploymentId,
     level: log.level as 'info' | 'warning' | 'error',
@@ -222,7 +222,7 @@ export async function getAgentWarnings(deploymentId: string): Promise<AgentLog[]
     },
     orderBy: { createdAt: 'desc' },
   });
-  return logs.map(log => ({
+  return logs.map((log: AgentLog) => ({
     id: log.id,
     deploymentId: log.deploymentId,
     level: log.level as 'info' | 'warning' | 'error',
@@ -242,7 +242,7 @@ export async function getAgentErrors(deploymentId: string): Promise<AgentLog[]> 
     },
     orderBy: { createdAt: 'desc' },
   });
-  return logs.map(log => ({
+  return logs.map((log: AgentLog) => ({
     id: log.id,
     deploymentId: log.deploymentId,
     level: log.level as 'info' | 'warning' | 'error',
