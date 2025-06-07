@@ -1,6 +1,7 @@
 import { prisma } from './db';
 import { Prisma } from '@prisma/client';
 import { Earning } from './schema';
+import { PrismaClient } from '../types/prisma';
 
 export interface EarningOptions {
   userId?: string;
@@ -158,34 +159,41 @@ export async function getProductEarnings(
   }).then((earnings) => earnings.map(e => ({ ...e, amount: Number(e.amount) })));
 }
 
-export async function getEarningStats() {
-  try {
-    const earnings = await getEarnings();
+interface EarningStats {
+  totalEarnings: number;
+  pendingEarnings: number;
+  paidEarnings: number;
+  earningDistribution: Record<string, number>;
+}
 
-    const totalEarnings = earnings.reduce((sum, earning) => sum + Number(earning.amount), 0);
-    const pendingEarnings = earnings
-      .filter(earning => earning.status === 'pending')
-      .reduce((sum, earning) => sum + Number(earning.amount), 0);
-    const paidEarnings = earnings
-      .filter(earning => earning.status === 'paid')
-      .reduce((sum, earning) => sum + Number(earning.amount), 0);
+export async function getEarningStats(prisma: PrismaClient, userId: string): Promise<EarningStats> {
+  const earnings = await prisma.earning.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+  });
 
-    const earningsByProduct = earnings.reduce((acc, earning) => {
-      acc[earning.productId] = (acc[earning.productId] || 0) + Number(earning.amount);
-      return acc;
-    }, {} as Record<string, number>);
+  const earningsNum = earnings.map((e: Earning) => ({ ...e, amount: Number(e.amount) }));
 
-    return {
-      totalEarnings,
-      pendingEarnings,
-      paidEarnings,
-      earningsByProduct,
-      recentEarnings: earnings.slice(0, 5),
-    };
-  } catch (error) {
-    console.error('Error getting earning stats:', error);
-    throw new Error('Failed to get earning stats');
-  }
+  const totalEarnings = earningsNum.reduce((sum: number, earning: Earning & { amount: number }) => sum + earning.amount, 0);
+  const pendingEarnings = earningsNum
+    .filter((earning: Earning & { amount: number }) => earning.status === 'pending')
+    .reduce((sum: number, earning: Earning & { amount: number }) => sum + earning.amount, 0);
+  const paidEarnings = earningsNum
+    .filter((earning: Earning & { amount: number }) => earning.status === 'paid')
+    .reduce((sum: number, earning: Earning & { amount: number }) => sum + earning.amount, 0);
+
+  const earningDistribution = earningsNum.reduce((acc: Record<string, number>, earning: Earning & { amount: number }) => {
+    const month = earning.createdAt.toISOString().slice(0, 7);
+    acc[month] = (acc[month] || 0) + earning.amount;
+    return acc;
+  }, {});
+
+  return {
+    totalEarnings,
+    pendingEarnings,
+    paidEarnings,
+    earningDistribution,
+  };
 }
 
 export async function getEarningHistory() {
@@ -248,4 +256,21 @@ export async function getProductEarningStats(productId: string): Promise<{
     totalPaid,
     earningDistribution,
   };
+}
+
+export async function getEarningByProduct(prisma: PrismaClient, productId: string) {
+  return prisma.earning
+    .findUnique({
+      where: { productId },
+    })
+    .then((earning: Earning | null) => earning ? { ...earning, amount: Number(earning.amount) } : null);
+}
+
+export async function getEarningsByProduct(prisma: PrismaClient, productId: string) {
+  return prisma.earning
+    .findMany({
+      where: { productId },
+      orderBy: { createdAt: 'desc' },
+    })
+    .then((earnings: Earning[]) => earnings.map((e: Earning) => ({ ...e, amount: Number(e.amount) })));
 } 

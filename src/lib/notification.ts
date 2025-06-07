@@ -1,4 +1,4 @@
-import { PrismaClient, NotificationType, Prisma, Notification } from '@prisma/client';
+import { PrismaClient, Notification, NotificationType } from '../types/prisma';
 import { prisma } from './db';
 
 const prismaClient = new PrismaClient();
@@ -13,23 +13,30 @@ export interface CreateNotificationInput {
 export interface UpdateNotificationInput {
   message?: string;
   type?: NotificationType;
-  metadata?: Prisma.InputJsonValue;
+  metadata?: Record<string, unknown>;
   read?: boolean;
 }
 
-export async function createNotification(data: {
-  userId: string;
-  type: NotificationType;
-  message: string;
-  metadata?: Prisma.InputJsonValue;
-}) {
+interface NotificationStats {
+  total: number;
+  unread: number;
+  byType: Record<NotificationType, number>;
+  byMonth: Record<string, number>;
+}
+
+export async function createNotification(
+  prisma: PrismaClient,
+  userId: string,
+  type: NotificationType,
+  message: string,
+  metadata?: Record<string, unknown>
+) {
   return prisma.notification.create({
     data: {
-      userId: data.userId,
-      type: data.type,
-      message: data.message,
-      metadata: data.metadata || Prisma.JsonNull,
-      read: false,
+      userId,
+      type,
+      message,
+      metadata: metadata || {},
     },
   });
 }
@@ -40,13 +47,13 @@ export async function updateNotification(id: string, data: UpdateNotificationInp
     data: {
       type: data.type,
       message: data.message,
-      metadata: data.metadata || Prisma.JsonNull,
+      metadata: data.metadata || {},
       read: data.read,
     },
   });
 }
 
-export async function getNotifications(userId: string) {
+export async function getNotifications(prisma: PrismaClient, userId: string) {
   return prisma.notification.findMany({
     where: { userId },
     orderBy: { createdAt: 'desc' },
@@ -59,53 +66,45 @@ export async function getNotification(id: string) {
   });
 }
 
-export async function markNotificationAsRead(id: string) {
+export async function markNotificationAsRead(prisma: PrismaClient, id: string) {
   return prisma.notification.update({
     where: { id },
     data: { read: true },
   });
 }
 
-export async function markAllAsRead(userId: string) {
-  await prismaClient.notification.updateMany({
+export async function markAllNotificationsAsRead(prisma: PrismaClient, userId: string) {
+  return prisma.notification.updateMany({
     where: { userId, read: false },
-    data: { read: true }
+    data: { read: true },
   });
 }
 
-export async function deleteNotification(id: string) {
+export async function deleteNotification(prisma: PrismaClient, id: string) {
   return prisma.notification.delete({
     where: { id },
   });
 }
 
-export async function getNotificationStats(userId: string) {
-  const notifications = await prismaClient.notification.findMany({
+export async function getNotificationStats(prisma: PrismaClient, userId: string): Promise<NotificationStats> {
+  const notifications = await prisma.notification.findMany({
     where: { userId },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
 
-  const stats = {
+  return {
     total: notifications.length,
-    unread: notifications.filter(n => !n.read).length,
-    byType: notifications.reduce((acc, notification) => {
+    unread: notifications.filter((n: Notification) => !n.read).length,
+    byType: notifications.reduce((acc: Record<NotificationType, number>, notification: Notification) => {
       acc[notification.type] = (acc[notification.type] || 0) + 1;
       return acc;
-    }, {} as Record<string, number>),
-    byMonth: notifications.reduce((acc, notification) => {
+    }, {} as Record<NotificationType, number>),
+    byMonth: notifications.reduce((acc: Record<string, number>, notification: Notification) => {
       const month = notification.createdAt.toISOString().slice(0, 7);
-      if (!acc[month]) {
-        acc[month] = { total: 0, unread: 0 };
-      }
-      acc[month].total += 1;
-      if (!notification.read) {
-        acc[month].unread += 1;
-      }
+      acc[month] = (acc[month] || 0) + 1;
       return acc;
-    }, {} as Record<string, { total: number; unread: number }>)
+    }, {}),
   };
-
-  return stats;
 }
 
 export async function getNotificationHistory(
