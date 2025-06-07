@@ -13,6 +13,8 @@ interface FeedbackTrend {
   categories: Record<string, number>;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);

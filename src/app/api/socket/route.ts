@@ -5,6 +5,8 @@ import { initializeSocket } from '@/lib/socket';
 import { createErrorResponse } from '@/lib/api';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const socketQuerySchema = z.object({
   reconnect: z.boolean().optional(),
   forceNew: z.boolean().optional(),

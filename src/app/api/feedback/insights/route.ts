@@ -6,6 +6,8 @@ import { handleApiError } from '@/lib/error-handling';
 import type { FeedbackInsightsResponse, FeedbackInsights } from '@/types/feedback-analytics';
 import type { AgentFeedback } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
   try {
     const session = await getServerSession(authOptions);

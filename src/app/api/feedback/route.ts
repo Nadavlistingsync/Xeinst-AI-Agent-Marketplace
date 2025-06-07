@@ -7,6 +7,8 @@ import { Feedback, FeedbackSuccess, FeedbackError } from '@/types/feedback';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { NotificationType } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 const feedbackSchema = z.object({
   deploymentId: z.string(),
   rating: z.number().min(1).max(5),

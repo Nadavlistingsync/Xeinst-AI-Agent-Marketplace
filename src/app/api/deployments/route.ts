@@ -18,6 +18,8 @@ const deploymentSchema = z.object({
   source: z.enum(['marketplace', 'custom', 'template']).optional(),
 });
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);

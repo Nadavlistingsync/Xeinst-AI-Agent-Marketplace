@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
 import { type FeedbackAnalyticsResponse, type FeedbackAnalytics } from '@/types/feedback-analytics';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
