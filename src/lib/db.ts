@@ -82,9 +82,16 @@ export async function withRetry<T>(
     if (retries > 0 && isRetryableError(error)) {
       const delayMs = getRetryDelay(MAX_RETRIES - retries);
       await delay(delayMs);
-      return withRetry(operation, retries - 1);
+      try {
+        return await withRetry(operation, retries - 1);
+      } catch (retryError) {
+        // If the retry fails, throw the original error
+        throw error;
+      }
     }
-    throw error;
+    // For non-retryable errors or when out of retries, handle the error
+    handleDatabaseError(error);
+    throw error; // This line should never be reached due to handleDatabaseError
   }
 }
 

@@ -156,7 +156,12 @@ describe('Error Handling', () => {
       const operation = vi.fn().mockRejectedValue(error);
 
       const result = withRetry(operation);
-      await expect(result).rejects.toThrow(error);
+      await expect(result).rejects.toThrow(DatabaseError);
+      await expect(result).rejects.toMatchObject({
+        message: 'Unique constraint violation',
+        code: 'P2002',
+        status: 409,
+      });
       expect(operation).toHaveBeenCalledTimes(1);
     });
   });
