@@ -1,6 +1,6 @@
 import { prisma } from './db';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
-import { Prisma } from '@prisma/client';
+import { Prisma, AgentLog } from '../types/prisma';
 
 export async function processFeedbackJob() {
   const feedback = await prisma.agentFeedback.findMany({
@@ -53,7 +53,7 @@ export async function updateAgentMetrics() {
         },
       });
 
-      const errorCount = logs.filter(log => log.level === 'error').length;
+      const errorCount = logs.filter((log: AgentLog) => log.level === 'error').length;
       const totalRequests = logs.length;
       const errorRate = totalRequests > 0 ? errorCount / totalRequests : 0;
       const successRate = 1 - errorRate;

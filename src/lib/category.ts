@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import { Prisma, Product } from '@prisma/client';
+import { Prisma, Product } from '../types/prisma';
 
 export interface Category {
   id: string;
@@ -42,7 +42,7 @@ export async function getCategoryStats(categoryId: string) {
       where: { category: categoryId },
     });
     const totalProducts = products.length;
-    const totalValue = products.reduce((sum, product) => sum + Number(product.price), 0);
+    const totalValue = products.reduce((sum: number, product: Product) => sum + Number(product.price), 0);
     const averagePrice = totalProducts > 0 ? totalValue / totalProducts : 0;
     return {
       totalProducts,
@@ -87,7 +87,7 @@ export async function getCategoryProducts(
     limit?: number;
   } = {}
 ): Promise<Product[]> {
-  const where: any = { category: categoryId };
+  const where: Prisma.ProductWhereInput = { category: categoryId };
   if (options.minPrice) where.price = { gte: options.minPrice };
   if (options.maxPrice) where.price = { lte: options.maxPrice };
   return await prisma.product.findMany({
