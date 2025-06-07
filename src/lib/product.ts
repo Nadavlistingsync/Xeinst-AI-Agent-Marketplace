@@ -1,5 +1,4 @@
-import { PrismaClient, Prisma, ProductStatus, ProductAccessLevel, ProductLicenseType } from '@prisma/client';
-import { Product } from './schema';
+import { PrismaClient, Prisma, ProductStatus, ProductAccessLevel, ProductLicenseType, Product } from '../types/prisma';
 import { Product as PrismaProduct } from '@prisma/client';
 
 const prismaClient = new PrismaClient();
@@ -174,35 +173,51 @@ export async function deleteProduct(id: string): Promise<void> {
   }
 }
 
-export async function getProductStats() {
-  const [totalProducts, totalRevenue, categoryDistribution, statusDistribution] = await Promise.all([
-    prismaClient.product.count(),
-    prismaClient.product.aggregate({
-      _sum: {
-        price: true,
-      },
-    }),
-    prismaClient.product.groupBy({
-      by: ['category'],
-      _count: true,
-    }),
-    prismaClient.product.groupBy({
-      by: ['status'],
-      _count: true,
-    }),
-  ]);
+interface ProductWithStats extends Product {
+  averageRating: number;
+  totalReviews: number;
+  categoryDistribution: Record<string, number>;
+  statusDistribution: Record<string, number>;
+  monthlyData: Array<{
+    month: string;
+    count: number;
+  }>;
+}
+
+export async function getProductStats(prisma: PrismaClient): Promise<ProductWithStats> {
+  const products = await prisma.product.findMany();
+  const reviews = await prisma.review.findMany();
+
+  const categoryDistribution = products.reduce((acc: Record<string, number>, curr) => {
+    acc[curr.category] = (acc[curr.category] || 0) + 1;
+    return acc;
+  }, {});
+
+  const statusDistribution = products.reduce((acc: Record<string, number>, curr) => {
+    acc[curr.status] = (acc[curr.status] || 0) + 1;
+    return acc;
+  }, {});
+
+  const monthlyData = products.reduce((acc: Array<{ month: string; count: number }>, product) => {
+    const month = product.createdAt.toISOString().slice(0, 7);
+    const existingMonth = acc.find(m => m.month === month);
+    if (existingMonth) {
+      existingMonth.count++;
+    } else {
+      acc.push({ month, count: 1 });
+    }
+    return acc;
+  }, []);
 
   return {
-    totalProducts,
-    totalRevenue: totalRevenue._sum.price || 0,
-    categoryDistribution: categoryDistribution.reduce((acc, curr) => {
-      acc[curr.category] = curr._count;
-      return acc;
-    }, {} as Record<string, number>),
-    statusDistribution: statusDistribution.reduce((acc, curr) => {
-      acc[curr.status] = curr._count;
-      return acc;
-    }, {} as Record<string, number>),
+    ...products[0],
+    averageRating: reviews.length > 0
+      ? reviews.reduce((sum: number, review) => sum + review.rating, 0) / reviews.length
+      : 0,
+    totalReviews: reviews.length,
+    categoryDistribution,
+    statusDistribution,
+    monthlyData,
   };
 }
 

@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '../types/prisma';
 import * as Sentry from '@sentry/nextjs';
 
 const MAX_RETRIES = 3;
@@ -34,6 +34,29 @@ export class DatabaseError extends Error {
   }
 }
 
+export function isPrismaError(error: unknown): error is Prisma.PrismaClientKnownRequestError {
+  return error instanceof Error && 'code' in error;
+}
+
+export function handlePrismaError(error: unknown): never {
+  if (!isPrismaError(error)) {
+    throw new DatabaseError('Unknown database error', 'UNKNOWN', 500);
+  }
+
+  switch (error.code) {
+    case 'P2002':
+      throw new DatabaseError('Unique constraint violation', error.code, 409);
+    case 'P2025':
+      throw new DatabaseError('Record not found', error.code, 404);
+    case 'P2003':
+      throw new DatabaseError('Foreign key constraint violation', error.code, 400);
+    case 'P2011':
+      throw new DatabaseError('Invalid ID', error.code, 400);
+    default:
+      throw new DatabaseError('Database error', error.code, 500);
+  }
+}
+
 export function handleDatabaseError(error: unknown): never {
   // Only log errors in non-test environments
   if (process.env.NODE_ENV !== 'test') {
@@ -44,25 +67,6 @@ export function handleDatabaseError(error: unknown): never {
   if (process.env.NODE_ENV === 'production' && 
       !(error instanceof Prisma.PrismaClientValidationError)) {
     Sentry.captureException(error);
-  }
-
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    switch (error.code) {
-      case 'P2002':
-        throw new DatabaseError('Unique constraint violation', error.code, 409);
-      case 'P2025':
-        throw new DatabaseError('Record not found', error.code, 404);
-      case 'P2003':
-        throw new DatabaseError('Foreign key constraint violation', error.code, 400);
-      case 'P2014':
-        throw new DatabaseError('Invalid ID', error.code, 400);
-      default:
-        throw new DatabaseError('Database error', error.code, 500);
-    }
-  }
-
-  if (error instanceof Prisma.PrismaClientValidationError) {
-    throw new DatabaseError('Validation error', 'VALIDATION_ERROR', 400);
   }
 
   if (error instanceof Prisma.PrismaClientInitializationError) {
