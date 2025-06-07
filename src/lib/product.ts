@@ -50,7 +50,7 @@ export interface ProductFilter {
   createdBy?: string;
 }
 
-function toProduct(obj: PrismaProduct): Product {
+function toProduct(obj: Product): Product {
   return {
     ...obj,
     price: Number(obj.price),
@@ -188,17 +188,17 @@ export async function getProductStats(prisma: PrismaClient): Promise<ProductWith
   const products = await prisma.product.findMany();
   const reviews = await prisma.review.findMany();
 
-  const categoryDistribution = products.reduce((acc: Record<string, number>, curr) => {
+  const categoryDistribution = products.reduce((acc: Record<string, number>, curr: Product) => {
     acc[curr.category] = (acc[curr.category] || 0) + 1;
     return acc;
   }, {});
 
-  const statusDistribution = products.reduce((acc: Record<string, number>, curr) => {
+  const statusDistribution = products.reduce((acc: Record<string, number>, curr: Product) => {
     acc[curr.status] = (acc[curr.status] || 0) + 1;
     return acc;
   }, {});
 
-  const monthlyData = products.reduce((acc: Array<{ month: string; count: number }>, product) => {
+  const monthlyData = products.reduce((acc: Array<{ month: string; count: number }>, product: Product) => {
     const month = product.createdAt.toISOString().slice(0, 7);
     const existingMonth = acc.find(m => m.month === month);
     if (existingMonth) {
@@ -212,7 +212,7 @@ export async function getProductStats(prisma: PrismaClient): Promise<ProductWith
   return {
     ...products[0],
     averageRating: reviews.length > 0
-      ? reviews.reduce((sum: number, review) => sum + review.rating, 0) / reviews.length
+      ? reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / reviews.length
       : 0,
     totalReviews: reviews.length,
     categoryDistribution,
@@ -225,15 +225,15 @@ export async function getProductHistory() {
   try {
     const products = await getProducts();
 
-    const monthlyProducts = products.reduce((acc, product) => {
+    const monthlyProducts = products.reduce((acc: Record<string, { total: number; categories: Record<string, number> }>, product: Product) => {
       const month = product.createdAt.toISOString().slice(0, 7);
       if (!acc[month]) {
-        acc[month] = { total: 0, categories: {} as Record<string, number> };
+        acc[month] = { total: 0, categories: {} };
       }
       acc[month].total += 1;
       acc[month].categories[product.category] = (acc[month].categories[product.category] || 0) + 1;
       return acc;
-    }, {} as Record<string, { total: number; categories: Record<string, number> }>);
+    }, {});
 
     return {
       monthlyProducts,
@@ -285,12 +285,13 @@ export async function updateProductRating(product_id: string): Promise<void> {
     where: { deploymentId: product_id },
   });
 
-  const average_rating =
-    reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / reviews.length
+    : 0;
 
   await prismaClient.product.update({
     where: { id: product_id },
-    data: { rating: average_rating },
+    data: { rating: averageRating },
   });
 }
 
