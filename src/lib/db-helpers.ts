@@ -1,6 +1,5 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, Deployment, Product, Purchase } from "../types/prisma";
 import { prisma } from "./db";
-import type { Deployment } from '@prisma/client';
 
 // Product operations
 export async function getProduct(id: string) {
@@ -24,7 +23,7 @@ export async function getProduct(id: string) {
         },
       },
     },
-  }).then(product => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
+  }).then((product: Product | null) => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
 }
 
 export interface GetProductsParams {
@@ -73,7 +72,7 @@ export async function getProducts(params: GetProductsParams) {
     orderBy: {
       createdAt: "desc",
     },
-  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
+  }).then((products: Product[]) => products.map((p: Product) => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 }
 
 export async function getFeaturedProducts() {
@@ -214,7 +213,7 @@ export async function getUserPurchases(userId: string) {
     orderBy: {
       createdAt: "desc",
     },
-  }).then(purchases => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
+  }).then((purchases: Purchase[]) => purchases.map((p: Purchase) => ({ ...p, amount: Number(p.amount) })));
 }
 
 export async function getUserProducts(userId: string) {
