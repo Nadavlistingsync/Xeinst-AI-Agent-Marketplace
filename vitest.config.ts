@@ -6,11 +6,19 @@ export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   test: {
     environment: 'jsdom',
-    setupFiles: ['src/test/setup.ts'],
     globals: true,
+    setupFiles: ['./src/test/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/test/',
+        '**/*.d.ts',
+        '**/*.config.ts',
+        '**/*.config.js',
+        '**/types.ts',
+      ],
     },
     deps: {
       optimizer: {
