@@ -11,7 +11,7 @@ export function createErrorResponse(error: unknown): NextResponse<ApiResponse<un
       name: 'Validation error',
       message: 'Invalid input data',
       details: error.errors
-    });
+    } as ApiError);
   }
 
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -20,7 +20,7 @@ export function createErrorResponse(error: unknown): NextResponse<ApiResponse<un
       name: 'Database error',
       message: error.message,
       details: error.meta
-    });
+    } as ApiError);
   }
 
   if (error instanceof Error) {
@@ -32,7 +32,7 @@ export function createErrorResponse(error: unknown): NextResponse<ApiResponse<un
       statusCode: 500,
       name: 'Server error',
       message: error.message
-    });
+    } as ApiError);
   }
 
   // Report unknown errors to Sentry
@@ -41,7 +41,7 @@ export function createErrorResponse(error: unknown): NextResponse<ApiResponse<un
     statusCode: 500,
     name: 'Unknown error',
     message: 'An unexpected error occurred'
-  });
+  } as ApiError);
 }
 
 export function createSuccessResponse<T>(data: T): NextResponse<ApiSuccess<T>> {
@@ -50,7 +50,7 @@ export function createSuccessResponse<T>(data: T): NextResponse<ApiSuccess<T>> {
     name: 'Success',
     message: 'Operation completed successfully',
     data
-  });
+  } as ApiSuccess<T>);
 }
 
 export function isApiError(response: ApiResponse<unknown>): response is ApiError {
