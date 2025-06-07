@@ -2,7 +2,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
 import { hash } from "bcryptjs";
 import { prisma } from "./prisma";
-import { User, UserRole, SubscriptionTier } from "../types/prisma";
+import { User, UserRole, SubscriptionTier, Prisma } from "../types/prisma";
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 
@@ -83,7 +83,7 @@ export async function getUserById(id: string): Promise<User | null> {
       createdAt: true,
       updatedAt: true,
       password: true,
-    },
+    } as const,
   });
 }
 
@@ -101,7 +101,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
       createdAt: true,
       updatedAt: true,
       password: true,
-    },
+    } as const,
   });
 }
 
@@ -134,7 +134,7 @@ export async function createUser(data: {
       emailVerified: true,
       createdAt: true,
       updatedAt: true,
-    },
+    } as const,
   });
 }
 
@@ -162,7 +162,7 @@ export async function updateUser(
       emailVerified: true,
       createdAt: true,
       updatedAt: true,
-    },
+    } as const,
   });
 }
 
@@ -180,6 +180,6 @@ export async function deleteUser(id: string): Promise<User> {
       emailVerified: true,
       createdAt: true,
       updatedAt: true,
-    },
+    } as const,
   });
 } 
