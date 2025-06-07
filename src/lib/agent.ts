@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import { Prisma, Deployment, DeploymentStatus } from '@prisma/client';
+import { Prisma, Deployment, DeploymentStatus, AgentMetrics } from '../types/prisma';
 
 export interface CreateAgentInput {
   name: string;
@@ -110,15 +110,15 @@ export async function getAgentMetrics(deploymentId: string) {
   }
 
   return {
-    totalRequests: metrics.reduce((sum, m) => sum + m.totalRequests, 0),
-    averageResponseTime: metrics.reduce((sum, m) => sum + m.averageResponseTime, 0) / metrics.length || 0,
-    errorRate: metrics.reduce((sum, m) => sum + m.errorRate, 0) / metrics.length || 0,
-    successRate: metrics.reduce((sum, m) => sum + m.successRate, 0) / metrics.length || 0,
-    activeUsers: metrics.reduce((sum, m) => sum + m.activeUsers, 0),
-    requestsPerMinute: metrics.reduce((sum, m) => sum + m.requestsPerMinute, 0) / metrics.length || 0,
-    averageTokensUsed: metrics.reduce((sum, m) => sum + m.averageTokensUsed, 0) / metrics.length || 0,
-    costPerRequest: metrics.reduce((sum, m) => sum + m.costPerRequest, 0) / metrics.length || 0,
-    totalCost: metrics.reduce((sum, m) => sum + m.totalCost, 0),
+    totalRequests: metrics.reduce((sum: number, m: AgentMetrics) => sum + m.totalRequests, 0),
+    averageResponseTime: metrics.reduce((sum: number, m: AgentMetrics) => sum + m.averageResponseTime, 0) / metrics.length || 0,
+    errorRate: metrics.reduce((sum: number, m: AgentMetrics) => sum + m.errorRate, 0) / metrics.length || 0,
+    successRate: metrics.reduce((sum: number, m: AgentMetrics) => sum + m.successRate, 0) / metrics.length || 0,
+    activeUsers: metrics.reduce((sum: number, m: AgentMetrics) => sum + m.activeUsers, 0),
+    requestsPerMinute: metrics.reduce((sum: number, m: AgentMetrics) => sum + m.requestsPerMinute, 0) / metrics.length || 0,
+    averageTokensUsed: metrics.reduce((sum: number, m: AgentMetrics) => sum + m.averageTokensUsed, 0) / metrics.length || 0,
+    costPerRequest: metrics.reduce((sum: number, m: AgentMetrics) => sum + m.costPerRequest, 0) / metrics.length || 0,
+    totalCost: metrics.reduce((sum: number, m: AgentMetrics) => sum + m.totalCost, 0),
   };
 }
 

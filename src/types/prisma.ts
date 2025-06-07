@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 // Re-export all types from Prisma
 export type {
@@ -12,7 +12,7 @@ export type {
   Notification,
   AgentMetrics,
   File,
-} from '@prisma/client';
+} from '.prisma/client';
 
 // Re-export all enums from Prisma
 export {
@@ -23,10 +23,10 @@ export {
   ProductStatus,
   ProductAccessLevel,
   ProductLicenseType,
-} from '@prisma/client';
+} from '.prisma/client';
 
 // Export Prisma namespace
-export { Prisma } from '@prisma/client';
+export { Prisma } from '.prisma/client';
 
 // Export PrismaClient
 export { PrismaClient }; 
