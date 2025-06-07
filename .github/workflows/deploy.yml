@@ -47,18 +47,22 @@ jobs:
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
       run: npm run build
 
+    - name: List build directory
+      run: ls -la .next/
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: build
+        name: build-artifacts
         path: |
-          .next/
-          public/
+          .next
+          public
           package.json
           package-lock.json
           next.config.js
           tsconfig.json
-          prisma/
+          prisma
+        retention-days: 1
 
   deploy:
     needs: test
@@ -68,11 +72,17 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     
+    - name: List directory before download
+      run: ls -la
+    
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
-        name: build
+        name: build-artifacts
         path: ./
+    
+    - name: List directory after download
+      run: ls -la
     
     - name: Setup Node.js
       uses: actions/setup-node@v3
