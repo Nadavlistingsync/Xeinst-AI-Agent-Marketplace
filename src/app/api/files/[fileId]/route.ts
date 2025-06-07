@@ -3,7 +3,7 @@ import { createErrorResponse } from '@/lib/api';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 const fileQuerySchema = z.object({
   download: z.boolean().optional(),

@@ -12,83 +12,67 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let searchParams: URLSearchParams;
+    // Safely parse URL
+    let url: URL;
     try {
-      const url = new URL(request.url);
-      searchParams = url.searchParams;
+      url = new URL(request.url);
     } catch (error) {
-      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Invalid request URL' },
+        { status: 400 }
+      );
     }
 
-    const query = searchParams.get('query') || '';
+    const searchParams = url.searchParams;
+    const query = searchParams.get('q') || '';
     const category = searchParams.get('category');
-    const framework = searchParams.get('framework');
-    const minRating = searchParams.get('minRating');
-    const maxPrice = searchParams.get('maxPrice');
-    const sortBy = searchParams.get('sortBy') || 'rating';
-    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const sort = searchParams.get('sort') || 'rating';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
-    const skip = (page - 1) * limit;
 
-    const where: any = {
+    const where = {
       isPublic: true,
+      status: 'published',
+      ...(category ? { category } : {}),
+      ...(query ? {
+        OR: [
+          { name: { contains: query, mode: 'insensitive' } },
+          { description: { contains: query, mode: 'insensitive' } },
+          { tags: { hasSome: [query] } }
+        ]
+      } : {})
     };
 
-    if (query) {
-      where.OR = [
-        { name: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-      ];
-    }
-
-    if (category) {
-      where.category = category;
-    }
-
-    if (framework) {
-      where.framework = framework;
-    }
-
-    if (minRating) {
-      where.rating = { gte: parseFloat(minRating) };
-    }
-
-    if (maxPrice) {
-      where.price = { lte: parseFloat(maxPrice) };
-    }
-
-    const [total, agents] = await Promise.all([
-      prisma.deployment.count({ where }),
-      prisma.deployment.findMany({
+    const [agents, total] = await Promise.all([
+      prisma.product.findMany({
         where,
-        skip,
-        take: limit,
         orderBy: {
-          [sortBy]: sortOrder,
+          [sort]: 'desc'
         },
+        skip: (page - 1) * limit,
+        take: limit,
         include: {
-          creator: {
+          createdBy: {
             select: {
-              id: true,
               name: true,
-              image: true,
-            },
-          },
-        },
+              image: true
+            }
+          }
+        }
       }),
+      prisma.product.count({ where })
     ]);
 
     return NextResponse.json({
       agents,
       total,
       page,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / limit)
     });
   } catch (error) {
     console.error('Error searching agents:', error);
     return NextResponse.json(
-      { error: 'Failed to search agents' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

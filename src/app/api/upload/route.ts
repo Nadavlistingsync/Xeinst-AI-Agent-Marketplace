@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { deleteFile } from '@/lib/upload';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
 

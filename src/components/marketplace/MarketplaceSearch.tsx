@@ -4,13 +4,27 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { SearchIcon } from "lucide-react";
 import { useDebounce } from "@/hooks/use-debounce";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 export function MarketplaceSearch() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("query") || "");
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  const createQueryString = useCallback(
+    (name: string, value: string) => {
+      try {
+        const params = new URLSearchParams(searchParams?.toString() || '');
+        params.set(name, value);
+        return params.toString();
+      } catch (error) {
+        console.error('Error creating query string:', error);
+        return '';
+      }
+    },
+    [searchParams]
+  );
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -23,15 +37,21 @@ export function MarketplaceSearch() {
   }, [debouncedSearch, router, searchParams]);
 
   return (
-    <div className="relative">
-      <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-      <Input
-        type="search"
-        placeholder="Search for AI agents..."
-        className="pl-10"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-      />
+    <div className="w-full max-w-2xl mx-auto">
+      <div className="relative">
+        <input
+          type="text"
+          placeholder="Search agents..."
+          className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={(e) => {
+            const query = createQueryString('q', e.target.value);
+            if (query) {
+              window.history.pushState(null, '', `?${query}`);
+            }
+          }}
+          defaultValue={searchParams?.get('q') || ''}
+        />
+      </div>
     </div>
   );
 } 

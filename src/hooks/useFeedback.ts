@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Feedback, FeedbackSummary, FeedbackTrend, FeedbackAnalytics, FeedbackRecommendation, FeedbackSearchResult, FeedbackExport, CreateFeedbackInput, UpdateFeedbackInput } from '@/types/feedback';
 import { ApiError } from '@/lib/errors';
@@ -151,19 +151,40 @@ export function useFeedback(agentId: string) {
     }
   });
 
-  const createFeedback = async (input: CreateFeedbackInput): Promise<Feedback | null> => {
+  const createQueryString = useCallback((params: Record<string, string>) => {
+    try {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) {
+          searchParams.append(key, value);
+        }
+      });
+      return searchParams.toString();
+    } catch (error) {
+      console.error('Error creating query string:', error);
+      return '';
+    }
+  }, []);
+
+  const submitFeedback = useCallback(async (data: {
+    agentId: string;
+    rating: number;
+    comment?: string;
+  }) => {
     try {
       setIsLoading(true);
+      setError(null);
+
       const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(input),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create feedback');
+        throw new Error('Failed to submit feedback');
       }
 
       const data = await response.json();
@@ -176,7 +197,7 @@ export function useFeedback(agentId: string) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const updateFeedback = async (id: string, input: UpdateFeedbackInput): Promise<Feedback | null> => {
     try {
@@ -243,7 +264,8 @@ export function useFeedback(agentId: string) {
     respondToFeedback,
     error,
     isLoading,
-    createFeedback,
+    submitFeedback,
+    createQueryString,
     updateFeedback,
     deleteFeedback,
   };

@@ -1,37 +1,31 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request });
-  const isAuth = !!token;
   const isAuthPage = request.nextUrl.pathname.startsWith('/login') || 
-                    request.nextUrl.pathname.startsWith('/register');
+                    request.nextUrl.pathname.startsWith('/signup');
+
+  // Ensure we have a valid base URL
+  const baseUrl = request.url || process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
   if (isAuthPage) {
-    if (isAuth) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
+    if (token) {
+      return NextResponse.redirect(new URL('/dashboard', baseUrl));
     }
-    return null;
+    return NextResponse.next();
   }
 
-  if (!isAuth) {
-    let from = request.nextUrl.pathname;
-    if (request.nextUrl.search) {
-      from += request.nextUrl.search;
-    }
-
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('from', encodeURIComponent(from));
+  if (!token) {
+    const loginUrl = new URL('/login', baseUrl);
+    loginUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Check subscription tier for premium features
-  const subscriptionTier = token.subscription_tier;
-  const isPremiumRoute = request.nextUrl.pathname.startsWith('/premium');
-  
-  if (isPremiumRoute && subscriptionTier !== 'premium') {
-    return NextResponse.redirect(new URL('/pricing', request.url));
+  // Handle pricing page access
+  if (request.nextUrl.pathname === '/pricing' && !token) {
+    return NextResponse.redirect(new URL('/pricing', baseUrl));
   }
 
   return NextResponse.next();
@@ -41,8 +35,10 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/login',
-    '/register',
-    '/premium/:path*',
-    '/settings/:path*',
-  ],
+    '/signup',
+    '/pricing',
+    '/upload/:path*',
+    '/deploy/:path*',
+    '/checkout/:path*'
+  ]
 }; 

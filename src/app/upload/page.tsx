@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { toast } from "react-hot-toast";
 
 export default function UploadPage() {

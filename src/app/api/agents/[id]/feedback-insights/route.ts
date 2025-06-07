@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getFeedbackInsights, getFeedbackTrends } from '@/lib/feedback-analysis';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
 

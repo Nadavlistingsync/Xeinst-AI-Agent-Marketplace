@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+
+// Mark this route as dynamic
+export const dynamic = 'force-dynamic';
 
 const ProductSchema = z.object({
   id: z.string(),
@@ -32,16 +35,29 @@ const ProductSchema = z.object({
 
 export async function GET() {
   try {
-    const featuredAgents = await prisma.product.findMany({
-      where: {
-        isPublic: true,
-        status: 'published'
-      },
-      orderBy: {
-        rating: 'desc'
-      },
-      take: 6
-    });
+    // Add retry logic for database connection
+    let retries = 3;
+    let featuredAgents: Array<z.infer<typeof ProductSchema>> = [];
+
+    while (retries > 0) {
+      try {
+        featuredAgents = await prisma.product.findMany({
+          where: {
+            isPublic: true,
+            status: 'published'
+          },
+          orderBy: {
+            rating: 'desc'
+          },
+          take: 6
+        });
+        break;
+      } catch (error) {
+        retries--;
+        if (retries === 0) throw error;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
 
     // Validate the response data
     const validatedAgents = featuredAgents.map(agent => {
