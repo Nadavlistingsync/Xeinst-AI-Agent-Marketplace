@@ -111,7 +111,7 @@ export async function getFeedbackTrends(agentId: string, timeRange: 'day' | 'wee
       orderBy: { createdAt: 'asc' }
     });
 
-    const trends = feedbacks.map(feedback => ({
+    const trends = feedbacks.map((feedback: AgentFeedback) => ({
       date: feedback.createdAt.toISOString(),
       rating: feedback.rating,
       sentiment: feedback.sentimentScore ? Number(feedback.sentimentScore) : 0,
@@ -134,7 +134,7 @@ export async function getFeedbackInsights(agentId: string) {
 
     const totalFeedbacks = feedbacks.length;
     const averageRating = totalFeedbacks
-      ? feedbacks.reduce((sum, f) => sum + f.rating, 0) / totalFeedbacks
+      ? feedbacks.reduce((sum: number, f: AgentFeedback) => sum + f.rating, 0) / totalFeedbacks
       : 0;
 
     const sentimentCounts = {
@@ -143,7 +143,7 @@ export async function getFeedbackInsights(agentId: string) {
       negative: 0
     };
 
-    feedbacks.forEach(feedback => {
+    feedbacks.forEach((feedback: AgentFeedback) => {
       const score = feedback.sentimentScore ? Number(feedback.sentimentScore) : 0;
       if (score > 0.5) sentimentCounts.positive++;
       else if (score < -0.5) sentimentCounts.negative++;
@@ -157,7 +157,7 @@ export async function getFeedbackInsights(agentId: string) {
     };
 
     const categoryCounts: Record<string, number> = {};
-    feedbacks.forEach(feedback => {
+    feedbacks.forEach((feedback: AgentFeedback) => {
       if (feedback.categories && typeof feedback.categories === 'object') {
         const categories = feedback.categories as Record<string, number>;
         Object.entries(categories).forEach(([category, value]) => {
