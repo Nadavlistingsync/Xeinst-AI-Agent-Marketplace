@@ -1,6 +1,6 @@
 import { prisma } from './db';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
-import { Prisma, AgentLog } from '../types/prisma';
+import { Prisma, AgentLog, AgentFeedback, Deployment } from '../types/prisma';
 
 export async function processFeedbackJob() {
   const feedback = await prisma.agentFeedback.findMany({
@@ -14,7 +14,7 @@ export async function processFeedbackJob() {
       await updateAgentBasedOnFeedback(f.deploymentId, {
         ...f,
         sentimentScore: f.sentimentScore ?? 0,
-        categories: f.categories as Record<string, any> | null
+        categories: f.categories as Record<string, unknown> | null
       });
     } catch (error) {
       console.error(`Error processing feedback ${f.id}:`, error);
@@ -122,6 +122,6 @@ export async function processFeedback(agentId: string, feedbackId: string) {
   await updateAgentBasedOnFeedback(agentId, {
     ...feedback,
     sentimentScore: feedback.sentimentScore ?? 0,
-    categories: feedback.categories as Record<string, any> | null
+    categories: feedback.categories as Record<string, unknown> | null
   });
 } 
