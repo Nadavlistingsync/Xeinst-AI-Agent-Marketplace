@@ -47,7 +47,7 @@ export async function updateEarning(
   data: UpdateEarningInput
 ): Promise<Earning> {
   try {
-    const updateData: any = { ...data };
+    const updateData: Prisma.EarningUpdateInput = { ...data };
     if (data.amount !== undefined) {
       updateData.amount = data.amount;
     }
@@ -58,7 +58,7 @@ export async function updateEarning(
     return await prisma.earning.update({
       where: { id },
       data: updateData,
-    }).then((earning) => ({ ...earning, amount: Number(earning.amount) }));
+    }).then((earning: Earning) => ({ ...earning, amount: Number(earning.amount) }));
   } catch (error) {
     console.error('Error updating earning:', error);
     throw new Error('Failed to update earning');
@@ -129,7 +129,7 @@ export async function getUserEarnings(
     },
     orderBy: { createdAt: 'desc' },
     take: options.limit,
-  }).then((earnings) => earnings.map(e => ({ ...e, amount: Number(e.amount) })));
+  }).then((earnings: Earning[]) => earnings.map((e: Earning) => ({ ...e, amount: Number(e.amount) })));
 }
 
 export async function getProductEarnings(
@@ -154,7 +154,7 @@ export async function getProductEarnings(
     },
     orderBy: { createdAt: 'desc' },
     take: options.limit,
-  }).then((earnings) => earnings.map(e => ({ ...e, amount: Number(e.amount) })));
+  }).then((earnings: Earning[]) => earnings.map((e: Earning) => ({ ...e, amount: Number(e.amount) })));
 }
 
 interface EarningStats {
@@ -232,21 +232,21 @@ export async function getProductEarningStats(productId: string): Promise<{
     where: { productId },
   });
 
-  const earningsNum = earnings.map(e => ({ ...e, amount: Number(e.amount) }));
+  const earningsNum = earnings.map((e: Earning) => ({ ...e, amount: Number(e.amount) }));
 
-  const totalEarnings = earningsNum.reduce((sum, earning) => sum + earning.amount, 0);
+  const totalEarnings = earningsNum.reduce((sum: number, earning: Earning & { amount: number }) => sum + earning.amount, 0);
   const totalPending = earningsNum
-    .filter(earning => earning.status === 'pending')
-    .reduce((sum, earning) => sum + earning.amount, 0);
+    .filter((earning: Earning & { amount: number }) => earning.status === 'pending')
+    .reduce((sum: number, earning: Earning & { amount: number }) => sum + earning.amount, 0);
   const totalPaid = earningsNum
-    .filter(earning => earning.status === 'paid')
-    .reduce((sum, earning) => sum + earning.amount, 0);
+    .filter((earning: Earning & { amount: number }) => earning.status === 'paid')
+    .reduce((sum: number, earning: Earning & { amount: number }) => sum + earning.amount, 0);
 
-  const earningDistribution = earningsNum.reduce((acc, earning) => {
+  const earningDistribution = earningsNum.reduce((acc: Record<string, number>, earning: Earning & { amount: number }) => {
     const date = earning.createdAt.toISOString().split('T')[0];
     acc[date] = (acc[date] || 0) + earning.amount;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
 
   return {
     totalEarnings,
