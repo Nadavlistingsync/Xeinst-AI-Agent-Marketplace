@@ -1,7 +1,5 @@
 import { prisma } from './db';
-import { Prisma } from '@prisma/client';
-import { Earning } from './schema';
-import { PrismaClient } from '../types/prisma';
+import { Prisma, PrismaClient, Earning } from '../types/prisma';
 
 export interface EarningOptions {
   userId?: string;
@@ -37,7 +35,7 @@ export async function createEarning(data: CreateEarningInput): Promise<Earning> 
         stripeTransferId: data.stripeTransferId,
         createdAt: new Date(),
       },
-    }).then((earning) => ({ ...earning, amount: Number(earning.amount) }));
+    }).then((earning: Earning) => ({ ...earning, amount: Number(earning.amount) }));
   } catch (error) {
     console.error('Error creating earning:', error);
     throw new Error('Failed to create earning');
@@ -80,7 +78,7 @@ export async function getEarnings(options: EarningOptions = {}): Promise<Earning
     return await prisma.earning.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-    }).then((earnings) => earnings.map(e => ({ ...e, amount: Number(e.amount) })));
+    }).then((earnings: Earning[]) => earnings.map((e: Earning) => ({ ...e, amount: Number(e.amount) })));
   } catch (error) {
     console.error('Error getting earnings:', error);
     throw new Error('Failed to get earnings');
@@ -200,7 +198,7 @@ export async function getEarningHistory() {
   try {
     const earnings = await getEarnings();
 
-    const monthlyEarnings = earnings.reduce((acc, earning) => {
+    const monthlyEarnings = earnings.reduce((acc: Record<string, { total: number; pending: number; paid: number }>, earning: Earning) => {
       const month = earning.createdAt.toISOString().slice(0, 7);
       if (!acc[month]) {
         acc[month] = { total: 0, pending: 0, paid: 0 };
@@ -212,7 +210,7 @@ export async function getEarningHistory() {
         acc[month].paid += Number(earning.amount);
       }
       return acc;
-    }, {} as Record<string, { total: number; pending: number; paid: number }>);
+    }, {});
 
     return {
       monthlyEarnings,
