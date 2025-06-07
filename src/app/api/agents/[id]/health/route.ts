@@ -6,6 +6,8 @@ import prisma from '@/lib/prisma';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const healthQuerySchema = z.object({
   detailed: z.boolean().optional(),
   includeMetrics: z.boolean().optional(),

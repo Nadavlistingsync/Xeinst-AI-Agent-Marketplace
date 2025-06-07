@@ -6,6 +6,8 @@ import prisma from '@/lib/prisma';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const versionsQuerySchema = z.object({
   limit: z.number().min(1).max(50).optional(),
   offset: z.number().min(0).optional(),

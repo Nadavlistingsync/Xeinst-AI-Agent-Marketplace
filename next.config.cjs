@@ -32,6 +32,19 @@ const nextConfig = {
     // Add custom webpack config here if needed
     return config;
   },
+  // Ensure API routes are not statically optimized
+  output: 'standalone',
+  // Configure which routes should be dynamic
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, must-revalidate' },
+        ],
+      },
+    ];
+  },
 }
 
 const sentryWebpackPluginOptions = {

@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -10,7 +12,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
+    let searchParams: URLSearchParams;
+    try {
+      const url = new URL(request.url);
+      searchParams = url.searchParams;
+    } catch (error) {
+      return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
+    }
+
     const query = searchParams.get('query') || '';
     const category = searchParams.get('category');
     const framework = searchParams.get('framework');

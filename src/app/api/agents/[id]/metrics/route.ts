@@ -7,6 +7,8 @@ import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
 import { Deployment, User } from '@prisma/client';
 
+export const dynamic = 'force-dynamic';
+
 const metricsQuerySchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),

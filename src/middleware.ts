@@ -21,9 +21,9 @@ export async function middleware(request: NextRequest) {
       from += request.nextUrl.search;
     }
 
-    return NextResponse.redirect(
-      new URL(`/login?from=${encodeURIComponent(from)}`, request.url)
-    );
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('from', encodeURIComponent(from));
+    return NextResponse.redirect(loginUrl);
   }
 
   // Check subscription tier for premium features
