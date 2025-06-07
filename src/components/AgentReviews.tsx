@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { Star } from 'lucide-react';
@@ -60,7 +60,7 @@ export function AgentReviews({ product_id }: AgentReviewsProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetchApi<ReviewsResponse>(`/api/reviews?product_id=${product_id}`);
@@ -75,11 +75,11 @@ export function AgentReviews({ product_id }: AgentReviewsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [product_id]);
 
   useEffect(() => {
     fetchReviews();
-  }, [product_id, fetchReviews]);
+  }, [fetchReviews]);
 
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
