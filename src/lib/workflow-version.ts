@@ -14,9 +14,7 @@ interface CreateVersionData {
   version: string;
 }
 
-interface WorkflowVersionWithConfig extends WorkflowVersion {
-  config: VersionConfig;
-}
+export type WorkflowVersionWithConfig = Omit<WorkflowVersion, 'config'> & { config: VersionConfig };
 
 export async function createVersion(data: CreateVersionData): Promise<WorkflowVersion> {
   return prisma.workflowVersion.create({
@@ -104,8 +102,8 @@ export async function compareVersions(
     throw new Error('One or both versions not found');
   }
 
-  const config1 = (version1 as WorkflowVersionWithConfig).config;
-  const config2 = (version2 as WorkflowVersionWithConfig).config;
+  const config1 = version1.config as unknown as VersionConfig;
+  const config2 = version2.config as unknown as VersionConfig;
 
   const added = config2.steps.filter(
     step2 => !config1.steps.some(step1 => step1.id === step2.id)
