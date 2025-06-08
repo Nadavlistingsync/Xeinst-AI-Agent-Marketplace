@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { Feedback, FeedbackSuccess, FeedbackError } from '@/types/feedback';
+import { Feedback, FeedbackSuccess, FeedbackError, FeedbackListResponse } from '@/types/feedback';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { NotificationType } from '@prisma/client';
 
@@ -17,19 +17,10 @@ const feedbackSchema = z.object({
   metadata: z.record(z.any()).optional(),
 });
 
-export async function GET(request: Request): Promise<NextResponse<FeedbackSuccess | FeedbackError>> {
+export async function GET(): Promise<NextResponse<FeedbackListResponse>> {
   try {
-    const { searchParams } = new URL(request.url);
-    const deploymentId = searchParams.get('deploymentId');
-    const userId = searchParams.get('userId');
-
-    const where = {
-      ...(deploymentId && { deploymentId }),
-      ...(userId && { userId })
-    };
-
     const feedback = await prisma.agentFeedback.findMany({
-      where,
+      where: {},
       include: {
         deployment: true,
         user: true
@@ -39,7 +30,7 @@ export async function GET(request: Request): Promise<NextResponse<FeedbackSucces
       }
     });
 
-    const formattedFeedback: Feedback[] = feedback.map(f => ({
+    const formattedFeedback = feedback.map(f => ({
       id: f.id,
       userId: f.userId,
       createdAt: f.createdAt,
@@ -70,7 +61,12 @@ export async function GET(request: Request): Promise<NextResponse<FeedbackSucces
   } catch (error) {
     console.error('Error fetching feedback:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch feedback' },
+      {
+        success: false,
+        error: 'Failed to fetch feedback',
+        message: 'An error occurred while fetching feedback',
+        status: 500
+      },
       { status: 500 }
     );
   }

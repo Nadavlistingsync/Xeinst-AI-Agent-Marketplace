@@ -204,4 +204,19 @@ export interface UpdateFeedbackInput {
   categories?: Record<string, number>;
   metadata?: JsonValue;
   creatorResponse?: string;
-} 
+}
+
+export interface FeedbackListSuccess {
+  success: true;
+  data: Feedback[];
+}
+
+export interface FeedbackListError {
+  success: false;
+  error: string;
+  message: string;
+  details?: ValidationError[];
+  status: number;
+}
+
+export type FeedbackListResponse = FeedbackListSuccess | FeedbackListError; 
