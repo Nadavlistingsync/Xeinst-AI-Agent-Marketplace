@@ -1,12 +1,13 @@
 import { PrismaClient, Notification, NotificationType } from '../types/prisma';
 import { prisma } from './db';
+import type { Notification as PrismaNotification } from '@/types/prisma';
 
 const prismaClient = new PrismaClient();
 
-export interface CreateNotificationInput {
-  userId: string;
+interface CreateNotificationData {
   type: NotificationType;
   message: string;
+  userId: string;
   metadata?: Record<string, any>;
 }
 
@@ -24,20 +25,14 @@ interface NotificationStats {
   byMonth: Record<string, number>;
 }
 
-export async function createNotification(
-  prisma: PrismaClient,
-  userId: string,
-  type: NotificationType,
-  message: string,
-  metadata?: Record<string, unknown>
-) {
+export async function createNotification(data: CreateNotificationData): Promise<Notification> {
   return prisma.notification.create({
     data: {
-      userId,
-      type,
-      message,
-      metadata: metadata || {},
-    },
+      type: data.type,
+      message: data.message,
+      userId: data.userId,
+      metadata: data.metadata || {}
+    }
   });
 }
 
@@ -53,10 +48,10 @@ export async function updateNotification(id: string, data: UpdateNotificationInp
   });
 }
 
-export async function getNotifications(prisma: PrismaClient, userId: string) {
+export async function getNotificationsByUser(userId: string): Promise<Notification[]> {
   return prisma.notification.findMany({
     where: { userId },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: 'desc' }
   });
 }
 
@@ -66,10 +61,10 @@ export async function getNotification(id: string) {
   });
 }
 
-export async function markNotificationAsRead(prisma: PrismaClient, id: string) {
+export async function markNotificationAsRead(id: string): Promise<Notification> {
   return prisma.notification.update({
     where: { id },
-    data: { read: true },
+    data: { read: true }
   });
 }
 
@@ -80,9 +75,9 @@ export async function markAllNotificationsAsRead(prisma: PrismaClient, userId: s
   });
 }
 
-export async function deleteNotification(prisma: PrismaClient, id: string) {
+export async function deleteNotification(id: string): Promise<Notification> {
   return prisma.notification.delete({
-    where: { id },
+    where: { id }
   });
 }
 
