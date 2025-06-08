@@ -1,35 +1,10 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { getUserPurchases } from "@/lib/db-helpers";
 import Link from "next/link";
 
-export default function PurchasesPage() {
-  const { data: session } = useSession();
-  const [purchases, setPurchases] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const fetchPurchases = async () => {
-      if (!session?.user?.id) return;
-
-      try {
-        const data = await getUserPurchases(session.user.id);
-        setPurchases(data);
-      } catch (err) {
-        setError("Failed to load purchases");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPurchases();
-  }, [session?.user?.id]);
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+export default async function PurchasesPage({ searchParams }: { searchParams?: { userId?: string } }) {
+  // You may want to get the userId from session or props, here we assume it's passed in searchParams for demo
+  const userId = searchParams?.userId || "";
+  const purchases = userId ? await getUserPurchases(userId) : [];
 
   return (
     <div className="max-w-4xl mx-auto p-6">

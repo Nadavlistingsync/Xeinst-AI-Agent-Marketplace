@@ -1,48 +1,8 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { getDeployments } from "@/lib/db-helpers";
 import Link from "next/link";
 
-export default function DeploymentsPage() {
-  const { data: session } = useSession();
-  const [deployments, setDeployments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const fetchDeployments = async () => {
-      if (!session?.user?.id) return;
-
-      try {
-        const data = await getDeployments({});
-        setDeployments(data);
-      } catch (err) {
-        setError("Failed to load deployments");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDeployments();
-  }, [session?.user?.id]);
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="text-red-500">
-        {error}
-      </div>
-    );
-  }
+export default async function DeploymentsPage() {
+  const deployments = await getDeployments({});
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

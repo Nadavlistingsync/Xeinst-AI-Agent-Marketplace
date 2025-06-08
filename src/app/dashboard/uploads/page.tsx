@@ -1,35 +1,10 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { getUserProducts } from "@/lib/db-helpers";
 import Link from "next/link";
 
-export default function UploadsPage() {
-  const { data: session } = useSession();
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      if (!session?.user?.id) return;
-
-      try {
-        const data = await getUserProducts(session.user.id);
-        setProducts(data);
-      } catch (err) {
-        setError("Failed to load products");
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, [session?.user?.id]);
-
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div className="text-red-500">{error}</div>;
+export default async function UploadsPage({ searchParams }: { searchParams?: { userId?: string } }) {
+  // You may want to get the userId from session or props, here we assume it's passed in searchParams for demo
+  const userId = searchParams?.userId || "";
+  const products = userId ? await getUserProducts(userId) : [];
 
   return (
     <div className="max-w-4xl mx-auto p-6">
