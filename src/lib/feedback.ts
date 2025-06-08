@@ -1,5 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { z } from 'zod';
+import { prisma } from './db';
+import type { AgentFeedback } from '@/types/prisma';
 
 const prismaClient = new PrismaClient();
 
@@ -145,4 +147,78 @@ export async function getFeedbackHistory(deploymentId: string) {
     monthlyFeedback,
     recentFeedback: feedbacks.slice(0, 10),
   };
+}
+
+interface FeedbackSummary {
+  averageRating: number;
+  ratingDistribution: {
+    [key: number]: number;
+  };
+  sentimentDistribution: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  monthlyFeedback: {
+    [key: string]: {
+      count: number;
+      averageRating: number;
+    };
+  };
+}
+
+export async function getFeedbackSummary(deploymentId: string): Promise<FeedbackSummary> {
+  const feedbacks = await prisma.agentFeedback.findMany({
+    where: { deploymentId },
+    include: {
+      user: true
+    }
+  });
+
+  const averageRating = feedbacks.reduce((sum, feedback) => sum + feedback.rating, 0) / feedbacks.length;
+
+  const ratingDistribution = feedbacks.reduce((acc: { [key: number]: number }, feedback) => {
+    acc[feedback.rating] = (acc[feedback.rating] || 0) + 1;
+    return acc;
+  }, {});
+
+  const sentimentDistribution = feedbacks.reduce((acc: { positive: number; neutral: number; negative: number }, feedback) => {
+    if (feedback.sentimentScore > 0.3) acc.positive++;
+    else if (feedback.sentimentScore < -0.3) acc.negative++;
+    else acc.neutral++;
+    return acc;
+  }, { positive: 0, neutral: 0, negative: 0 });
+
+  const monthlyFeedback = feedbacks.reduce((acc: { [key: string]: { count: number; totalRating: number } }, feedback) => {
+    const month = feedback.createdAt.toISOString().slice(0, 7);
+    if (!acc[month]) {
+      acc[month] = { count: 0, totalRating: 0 };
+    }
+    acc[month].count++;
+    acc[month].totalRating += feedback.rating;
+    return acc;
+  }, {});
+
+  return {
+    averageRating,
+    ratingDistribution,
+    sentimentDistribution,
+    monthlyFeedback: Object.entries(monthlyFeedback).reduce((acc: { [key: string]: { count: number; averageRating: number } }, [month, data]) => {
+      acc[month] = {
+        count: data.count,
+        averageRating: data.totalRating / data.count
+      };
+      return acc;
+    }, {})
+  };
+}
+
+export async function getFeedbackById(id: string): Promise<AgentFeedback | null> {
+  return prisma.agentFeedback.findUnique({
+    where: { id },
+    include: {
+      user: true,
+      deployment: true
+    }
+  });
 } 

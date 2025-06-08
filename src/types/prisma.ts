@@ -1,32 +1,61 @@
-import { PrismaClient, Prisma } from '@prisma/client';
-
-// Re-export all types from Prisma
-export type {
+import type { PrismaClient } from '@prisma/client';
+import type {
   User,
-  Product,
+  UserRole,
+  SubscriptionTier,
   Deployment,
+  DeploymentStatus,
+  Product,
+  ProductStatus,
+  ProductAccessLevel,
+  ProductLicenseType,
   AgentFeedback,
   Review,
   Purchase,
   Earning,
   Notification,
+  NotificationType,
   AgentMetrics,
+  AgentLog,
   File,
-} from '.prisma/client';
+  Workflow,
+  WorkflowExecution,
+  WorkflowSchedule,
+  WorkflowTrigger,
+  WorkflowVersion,
+  WorkflowWebhook,
+  Rating,
+  Webhook
+} from '@prisma/client';
 
-// Re-export all enums from Prisma
-export {
+export type {
+  PrismaClient,
+  User,
   UserRole,
   SubscriptionTier,
+  Deployment,
   DeploymentStatus,
-  NotificationType,
+  Product,
   ProductStatus,
   ProductAccessLevel,
   ProductLicenseType,
-} from '.prisma/client';
+  AgentFeedback,
+  Review,
+  Purchase,
+  Earning,
+  Notification,
+  NotificationType,
+  AgentMetrics,
+  AgentLog,
+  File,
+  Workflow,
+  WorkflowExecution,
+  WorkflowSchedule,
+  WorkflowTrigger,
+  WorkflowVersion,
+  WorkflowWebhook,
+  Rating,
+  Webhook
+};
 
-// Export Prisma namespace
-export { Prisma } from '.prisma/client';
-
-// Export PrismaClient
-export { PrismaClient }; 
+export const prisma = new PrismaClient(); 
