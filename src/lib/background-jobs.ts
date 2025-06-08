@@ -1,6 +1,13 @@
 import { prisma } from './db';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
 import { Prisma, AgentLog, AgentFeedback, Deployment } from '../types/prisma';
+import type { AgentLog as AgentLogType } from '@/types/prisma';
+
+interface JobResult {
+  success: boolean;
+  error?: string;
+  data?: any;
+}
 
 export async function processFeedbackJob() {
   const feedback = await prisma.agentFeedback.findMany({
@@ -22,17 +29,69 @@ export async function processFeedbackJob() {
   }
 }
 
-export async function cleanupOldLogs() {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-  await prisma.agentLog.deleteMany({
-    where: {
-      timestamp: {
-        lt: thirtyDaysAgo,
+export async function processAgentLogs(): Promise<JobResult> {
+  try {
+    const logs = await prisma.agentLog.findMany({
+      where: {
+        processed: false
       },
-    },
-  });
+      orderBy: {
+        timestamp: 'asc'
+      }
+    });
+
+    for (const log of logs) {
+      await prisma.agentLog.update({
+        where: {
+          id: log.id
+        },
+        data: {
+          processed: true
+        }
+      });
+    }
+
+    return {
+      success: true,
+      data: {
+        processedLogs: logs.length
+      }
+    };
+  } catch (error) {
+    console.error('Error processing agent logs:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+export async function cleanupOldLogs(): Promise<JobResult> {
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const deletedLogs = await prisma.agentLog.deleteMany({
+      where: {
+        timestamp: {
+          lt: thirtyDaysAgo
+        }
+      }
+    });
+
+    return {
+      success: true,
+      data: {
+        deletedLogs: deletedLogs.count
+      }
+    };
+  } catch (error) {
+    console.error('Error cleaning up old logs:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
 }
 
 export async function updateAgentMetrics() {
@@ -53,7 +112,7 @@ export async function updateAgentMetrics() {
         },
       });
 
-      const errorCount = logs.filter((log: AgentLog) => log.level === 'error').length;
+      const errorCount = logs.filter((log: AgentLogType) => log.level === 'error').length;
       const totalRequests = logs.length;
       const errorRate = totalRequests > 0 ? errorCount / totalRequests : 0;
       const successRate = 1 - errorRate;

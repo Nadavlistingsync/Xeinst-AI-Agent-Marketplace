@@ -8,6 +8,13 @@ import type { AgentFeedback } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
+interface FeedbackInsight {
+  name: string;
+  count: number;
+  totalRating: number;
+  averageRating: number;
+}
+
 export async function GET(): Promise<NextResponse<FeedbackInsightsResponse>> {
   try {
     const session = await getServerSession(authOptions);

@@ -1,5 +1,10 @@
 import { prisma } from './db';
-import { Product } from './schema';
+import type { Product } from '@/types/prisma';
+
+interface ProductWithNumbers extends Omit<Product, 'price' | 'earningsSplit'> {
+  price: number;
+  earningsSplit: number;
+}
 
 export async function getProduct(id: string): Promise<Product | null> {
   return prisma.product.findUnique({
@@ -157,4 +162,78 @@ export async function updateProductRating(productId: string): Promise<void> {
       rating: average_rating,
     },
   });
+}
+
+export async function getProductById(id: string): Promise<ProductWithNumbers | null> {
+  return prisma.product.findUnique({
+    where: {
+      id
+    },
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          image: true
+        }
+      }
+    }
+  }).then(product => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
+}
+
+export async function getProductsByCategory(category: string): Promise<ProductWithNumbers[]> {
+  return prisma.product.findMany({
+    where: {
+      category,
+      status: 'published'
+    },
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          image: true
+        }
+      }
+    }
+  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
+}
+
+export async function getProductsByCreator(creatorId: string): Promise<ProductWithNumbers[]> {
+  return prisma.product.findMany({
+    where: {
+      createdBy: creatorId
+    },
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          image: true
+        }
+      }
+    }
+  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
+}
+
+export async function searchProducts(query: string): Promise<ProductWithNumbers[]> {
+  return prisma.product.findMany({
+    where: {
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+        { category: { contains: query, mode: 'insensitive' } }
+      ],
+      status: 'published'
+    },
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          image: true
+        }
+      }
+    }
+  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 } 

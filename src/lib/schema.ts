@@ -1,5 +1,16 @@
 import { z } from 'zod';
 import { Prisma, PrismaClient } from '../types/prisma';
+import type { 
+  User,
+  Product,
+  Purchase,
+  Earning,
+  Review,
+  Rating,
+  Notification,
+  File,
+  AgentFeedback
+} from '@/types/prisma';
 
 // Helper function to convert Decimal to number
 const decimalToNumber = (value: unknown): number => {
@@ -438,4 +449,49 @@ export interface RatingRangeResult<T> {
 export type File = Prisma.FileGetPayload<{}>;
 
 export const products = productSchema;
-export const Deployment = deploymentSchema; 
+export const Deployment = deploymentSchema;
+
+export type {
+  User,
+  Product,
+  Purchase,
+  Earning,
+  Review,
+  Rating,
+  Notification,
+  File,
+  AgentFeedback
+};
+
+export interface ProductWithNumbers extends Omit<Product, 'price' | 'earningsSplit'> {
+  price: number;
+  earningsSplit: number;
+}
+
+export interface PurchaseWithNumber extends Omit<Purchase, 'amount'> {
+  amount: number;
+}
+
+export interface EarningWithNumber extends Omit<Earning, 'amount'> {
+  amount: number;
+}
+
+export interface ReviewWithNumber extends Omit<Review, 'rating'> {
+  rating: number;
+}
+
+export interface RatingWithNumber extends Omit<Rating, 'score'> {
+  score: number;
+}
+
+export interface NotificationWithMetadata extends Notification {
+  metadata: Record<string, any>;
+}
+
+export interface FileWithMetadata extends File {
+  metadata: Record<string, any>;
+}
+
+export interface AgentFeedbackWithMetadata extends AgentFeedback {
+  metadata: Record<string, any>;
+} 

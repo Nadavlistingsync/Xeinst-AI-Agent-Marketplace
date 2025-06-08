@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/db';
 import { ApiError } from '@/lib/errors';
-import { Prisma } from '@prisma/client';
+import type { AgentFeedback } from '@/types/prisma';
 
 interface FeedbackTrend {
   date: string;
@@ -11,6 +11,10 @@ interface FeedbackTrend {
   averageRating: number;
   sentiment: number;
   categories: Record<string, number>;
+}
+
+interface GroupedFeedback {
+  [key: string]: AgentFeedback[];
 }
 
 export const dynamic = 'force-dynamic';
@@ -31,7 +35,7 @@ export async function GET(request: Request) {
     const endDate = searchParams.get('endDate');
     const groupBy = searchParams.get('groupBy') || 'day';
 
-    const where: Prisma.AgentFeedbackWhereInput = {
+    const where: AgentFeedbackWhereInput = {
       ...(agentId && { agentId }),
       ...(startDate && endDate && {
         createdAt: {
@@ -43,58 +47,50 @@ export async function GET(request: Request) {
 
     const feedbacks = await prisma.agentFeedback.findMany({
       where,
-      orderBy: { createdAt: 'asc' }
+      include: {
+        deployment: true,
+        user: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
 
-    // Group feedbacks by date
-    const groupedFeedbacks = feedbacks.reduce((acc, feedback) => {
-      const date = feedback.createdAt;
-      let key: string;
-
-      switch (groupBy) {
-        case 'week':
-          const weekStart = new Date(date);
-          weekStart.setDate(date.getDate() - date.getDay());
-          key = weekStart.toISOString().split('T')[0];
-          break;
-        case 'month':
-          key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-          break;
-        default: // day
-          key = date.toISOString().split('T')[0];
+    const groupedFeedbacks = feedbacks.reduce((acc: GroupedFeedback, feedback: AgentFeedback) => {
+      const date = feedback.createdAt.toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = [];
       }
-
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push(feedback);
+      acc[date].push(feedback);
       return acc;
-    }, {} as Record<string, typeof feedbacks>);
+    }, {});
 
-    // Calculate trends
     const trends: FeedbackTrend[] = Object.entries(groupedFeedbacks).map(([date, groupFeedbacks]) => {
       const sentimentScores = groupFeedbacks
-        .map(f => f.sentimentScore ? Number(f.sentimentScore) : 0)
-        .filter(score => !isNaN(score));
-      
+        .map((f: AgentFeedback) => f.sentimentScore ? Number(f.sentimentScore) : 0)
+        .filter((score: number) => !isNaN(score));
+
       const averageSentiment = sentimentScores.length > 0
-        ? sentimentScores.reduce((a, b) => a + b, 0) / sentimentScores.length
+        ? sentimentScores.reduce((a: number, b: number) => a + b, 0) / sentimentScores.length
         : 0;
 
-      const categories = groupFeedbacks.reduce((acc, feedback) => {
-        if (feedback.categories && typeof feedback.categories === 'object') {
-          const feedbackCategories = feedback.categories as Record<string, number>;
-          Object.entries(feedbackCategories).forEach(([category, value]) => {
-            acc[category] = (acc[category] || 0) + value;
+      const categories = groupFeedbacks.reduce((acc: Record<string, number>, feedback: AgentFeedback) => {
+        if (feedback.categories) {
+          const cats = feedback.categories as Record<string, string[]>;
+          Object.entries(cats).forEach(([category, values]) => {
+            values.forEach(value => {
+              const key = `${category}:${value}`;
+              acc[key] = (acc[key] || 0) + 1;
+            });
           });
         }
         return acc;
-      }, {} as Record<string, number>);
+      }, {});
 
       return {
         date,
         count: groupFeedbacks.length,
-        averageRating: groupFeedbacks.reduce((acc, f) => acc + f.rating, 0) / groupFeedbacks.length,
+        averageRating: groupFeedbacks.reduce((acc: number, f: AgentFeedback) => acc + f.rating, 0) / groupFeedbacks.length,
         sentiment: averageSentiment,
         categories
       };

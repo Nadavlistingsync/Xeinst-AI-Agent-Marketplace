@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { Feedback, FeedbackSuccess, FeedbackError } from '@/types/feedback';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { NotificationType } from '@prisma/client';
+import type { AgentFeedback } from '@/types/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,88 +18,33 @@ const feedbackSchema = z.object({
   metadata: z.record(z.any()).optional(),
 });
 
-export async function GET(): Promise<NextResponse<FeedbackSuccess | FeedbackError>> {
+export async function GET(request: Request): Promise<NextResponse<FeedbackSuccess | FeedbackError>> {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized', message: 'Unauthorized', status: 401 },
-        { status: 401 }
-      );
-    }
+    const { searchParams } = new URL(request.url);
+    const deploymentId = searchParams.get('deploymentId');
+    const userId = searchParams.get('userId');
 
-    const deployments = await prisma.deployment.findMany({
-      where: {
-        OR: [
-          { createdBy: session.user.id },
-          { accessLevel: 'public' }
-        ]
-      },
+    const where = {
+      ...(deploymentId && { deploymentId }),
+      ...(userId && { userId })
+    };
+
+    const feedback = await prisma.agentFeedback.findMany({
+      where,
       include: {
-        feedbacks: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                image: true
-              }
-            }
-          }
-        }
+        deployment: true,
+        user: true
+      },
+      orderBy: {
+        createdAt: 'desc'
       }
     });
 
-    const feedback = deployments.flatMap(deployment => 
-      deployment.feedbacks.map(feedback => ({
-        id: feedback.id,
-        deploymentId: feedback.deploymentId,
-        userId: feedback.userId,
-        rating: feedback.rating,
-        comment: feedback.comment,
-        sentimentScore: feedback.sentimentScore ?? 0,
-        categories: feedback.categories as Record<string, number> | null,
-        metadata: feedback.metadata as JsonValue,
-        createdAt: feedback.createdAt,
-        updatedAt: feedback.updatedAt,
-        creatorResponse: feedback.creatorResponse,
-        responseDate: feedback.responseDate,
-        user: {
-          id: feedback.user.id,
-          name: feedback.user.name,
-          email: feedback.user.email,
-          image: feedback.user.image
-        },
-        deployment: {
-          id: deployment.id,
-          name: deployment.name,
-          description: deployment.description,
-          createdBy: deployment.createdBy
-        }
-      }))
-    );
-
-    if (feedback.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'No feedback found', message: 'No feedback found', status: 404 },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      data: feedback[0]
-    });
+    return NextResponse.json({ feedback });
   } catch (error) {
     console.error('Error fetching feedback:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Internal server error',
-        message: 'Internal server error',
-        status: 500
-      },
+      { error: 'Failed to fetch feedback' },
       { status: 500 }
     );
   }

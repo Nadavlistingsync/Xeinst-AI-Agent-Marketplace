@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { handleApiError } from '@/lib/error-handling';
 import type { FeedbackSummaryApiResponse } from '@/types/feedback-analytics';
+import type { AgentFeedback } from '@/types/prisma';
 
 export async function GET(
   _req: Request,
@@ -43,24 +44,34 @@ export async function GET(
     });
 
     const averageRating = feedback.length > 0
-      ? feedback.reduce((acc, curr) => acc + curr.rating, 0) / feedback.length
+      ? feedback.reduce((acc: number, curr: AgentFeedback) => acc + curr.rating, 0) / feedback.length
       : 0;
+
+    const sentimentDistribution = feedback.reduce((acc: Record<string, number>, f: AgentFeedback) => {
+      const score = f.sentimentScore ? Math.round(f.sentimentScore * 10) / 10 : 0;
+      acc[score] = (acc[score] || 0) + 1;
+      return acc;
+    }, {});
+
+    const recentFeedback = feedback.map((f: AgentFeedback) => ({
+      id: f.id,
+      rating: f.rating,
+      comment: f.comment,
+      sentimentScore: f.sentimentScore,
+      createdAt: f.createdAt,
+      user: {
+        name: f.user?.name ?? null,
+        image: f.user?.image ?? null
+      }
+    }));
 
     return NextResponse.json({
       success: true,
       data: {
         totalFeedback,
         averageRating,
-        recentFeedback: feedback.map(f => ({
-          id: f.id,
-          rating: f.rating,
-          comment: f.comment,
-          createdAt: f.createdAt,
-          user: {
-            name: f.user?.name ?? null,
-            image: f.user?.image ?? null
-          }
-        }))
+        sentimentDistribution,
+        recentFeedback
       }
     });
   } catch (error) {

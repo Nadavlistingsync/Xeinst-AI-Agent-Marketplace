@@ -271,4 +271,66 @@ export async function getEarningsByProduct(prisma: PrismaClient, productId: stri
       orderBy: { createdAt: 'desc' },
     })
     .then((earnings: Earning[]) => earnings.map((e: Earning) => ({ ...e, amount: Number(e.amount) })));
+}
+
+interface EarningWithNumber extends Omit<Earning, 'amount'> {
+  amount: number;
+}
+
+export async function getEarningById(id: string): Promise<EarningWithNumber | null> {
+  return prisma.earning.findUnique({
+    where: {
+      id
+    },
+    include: {
+      product: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      }
+    }
+  }).then((earning) => earning ? { ...earning, amount: Number(earning.amount) } : null);
+}
+
+export async function getEarningsByUser(userId: string): Promise<EarningWithNumber[]> {
+  return prisma.earning.findMany({
+    where: {
+      userId
+    },
+    include: {
+      product: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  }).then(earnings => earnings.map(earning => ({
+    ...earning,
+    amount: Number(earning.amount)
+  })));
+}
+
+export async function getEarningsByProduct(productId: string): Promise<EarningWithNumber[]> {
+  return prisma.earning.findMany({
+    where: {
+      productId
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  }).then(earnings => earnings.map(earning => ({
+    ...earning,
+    amount: Number(earning.amount)
+  })));
 } 

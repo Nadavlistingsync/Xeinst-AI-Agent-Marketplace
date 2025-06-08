@@ -1,6 +1,6 @@
 import { prisma } from './db';
 import { Prisma } from '@prisma/client';
-import { Purchase } from './schema';
+import type { Purchase } from '@/types/prisma';
 
 export interface PurchaseOptions {
   userId?: string;
@@ -8,6 +8,10 @@ export interface PurchaseOptions {
   status?: string;
   startDate?: Date;
   endDate?: Date;
+}
+
+interface PurchaseWithNumber extends Omit<Purchase, 'amount'> {
+  amount: number;
 }
 
 export async function createPurchase(data: {
@@ -196,4 +200,56 @@ export async function updateProductDownloadCount(
       },
     },
   });
+}
+
+export async function getPurchaseById(id: string): Promise<PurchaseWithNumber | null> {
+  return prisma.purchase.findUnique({
+    where: {
+      id
+    },
+    include: {
+      product: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          image: true
+        }
+      }
+    }
+  }).then(purchase => purchase ? { ...purchase, amount: Number(purchase.amount) } : null);
+}
+
+export async function getPurchasesByUser(userId: string): Promise<PurchaseWithNumber[]> {
+  return prisma.purchase.findMany({
+    where: {
+      userId
+    },
+    include: {
+      product: true
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  }).then(purchases => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
+}
+
+export async function getPurchasesByProduct(productId: string): Promise<PurchaseWithNumber[]> {
+  return prisma.purchase.findMany({
+    where: {
+      productId
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          image: true
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  }).then(purchases => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
 } 

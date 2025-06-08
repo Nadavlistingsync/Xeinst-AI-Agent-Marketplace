@@ -1,6 +1,7 @@
 import { Prisma, NotificationType } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { createNotification } from './notification';
+import type { AgentFeedback } from '@/types/prisma';
 
 export interface FeedbackMetrics {
   totalFeedback: number;
@@ -55,21 +56,6 @@ export interface GetFeedbackOptions {
   limit?: number;
 }
 
-export interface AgentFeedback {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
-  rating: number;
-  deploymentId: string;
-  userId: string;
-  comment: string | null;
-  sentimentScore: number;
-  categories: Record<string, any> | null;
-  creatorResponse: string | null;
-  responseDate: Date | null;
-  metadata: Prisma.JsonValue;
-}
-
 export async function createFeedback(data: {
   deploymentId: string;
   userId: string;
@@ -101,56 +87,59 @@ export async function createFeedback(data: {
   };
 }
 
-export async function getFeedbackMetrics(deploymentId: string, timeRange?: { startDate?: Date; endDate?: Date }): Promise<FeedbackMetrics> {
-  const where: any = { deploymentId };
-  if (timeRange?.startDate) {
-    where.createdAt = { gte: timeRange.startDate };
-  }
-  if (timeRange?.endDate) {
-    if (where.createdAt) {
-      where.createdAt.lte = timeRange.endDate;
-    } else {
-      where.createdAt = { lte: timeRange.endDate };
-    }
-  }
-
+export async function getFeedbackMetrics(deploymentId: string): Promise<FeedbackMetrics> {
   const feedbacks = await prisma.agentFeedback.findMany({
-    where,
-    orderBy: { createdAt: 'asc' },
+    where: {
+      deploymentId
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
   });
 
   const totalFeedback = feedbacks.length;
-  const averageRating = feedbacks.reduce((acc, f) => acc + f.rating, 0) / totalFeedback || 0;
-  const averageSentiment = feedbacks.reduce((acc, f) => acc + Number(f.sentimentScore), 0) / totalFeedback || 0;
+  const averageRating = feedbacks.reduce((acc: number, f: AgentFeedback) => acc + f.rating, 0) / totalFeedback || 0;
+  const averageSentiment = feedbacks.reduce((acc: number, f: AgentFeedback) => acc + Number(f.sentimentScore), 0) / totalFeedback || 0;
 
-  const sentimentDistribution: Record<string, number> = {};
-  const categoryDistribution: Record<string, number> = {};
+  const sentimentDistribution = feedbacks.reduce((acc: Record<string, number>, feedback: AgentFeedback) => {
+    const score = feedback.sentimentScore ? Math.round(feedback.sentimentScore * 10) / 10 : 0;
+    acc[score] = (acc[score] || 0) + 1;
+    return acc;
+  }, {});
 
-  feedbacks.forEach(feedback => {
-    const sentiment = Number(feedback.sentimentScore);
-    const sentimentKey = sentiment < -0.5 ? 'negative' : sentiment > 0.5 ? 'positive' : 'neutral';
-    sentimentDistribution[sentimentKey] = (sentimentDistribution[sentimentKey] || 0) + 1;
+  const ratingDistribution = feedbacks.reduce((acc: Record<string, number>, feedback: AgentFeedback) => {
+    acc[feedback.rating] = (acc[feedback.rating] || 0) + 1;
+    return acc;
+  }, {});
 
-    if (feedback.categories && typeof feedback.categories === 'object') {
-      Object.entries(feedback.categories as Record<string, any>).forEach(([category]) => {
-        categoryDistribution[category] = (categoryDistribution[category] || 0) + 1;
+  feedbacks.forEach((feedback: AgentFeedback) => {
+    if (feedback.sentimentScore && feedback.sentimentScore < 0.3) {
+      createNotification({
+        type: 'feedback_alert' as NotificationType,
+        message: `Low sentiment score detected for deployment ${deploymentId}`,
+        userId: feedback.userId,
+        metadata: {
+          feedbackId: feedback.id,
+          sentimentScore: feedback.sentimentScore,
+          comment: feedback.comment
+        }
       });
     }
   });
 
-  const timeSeriesData = feedbacks.map(feedback => ({
-    date: feedback.createdAt,
+  const timeSeriesData = feedbacks.map((feedback: AgentFeedback) => ({
+    date: feedback.createdAt.toISOString().split('T')[0],
     rating: feedback.rating,
-    sentiment: Number(feedback.sentimentScore)
+    sentiment: feedback.sentimentScore || 0
   }));
 
   return {
-    totalFeedback,
     averageRating,
     averageSentiment,
+    totalFeedback,
     sentimentDistribution,
-    categoryDistribution,
-    timeSeriesData,
+    ratingDistribution,
+    timeSeriesData
   };
 }
 

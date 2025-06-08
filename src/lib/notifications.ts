@@ -1,22 +1,21 @@
 import { prisma } from './db';
-import { Notification, NotificationType } from '@prisma/client';
+import type { Notification, NotificationType } from '@/types/prisma';
 
-export interface CreateNotificationParams {
+interface CreateNotificationData {
   type: NotificationType;
-  userId: string;
   message: string;
+  userId: string;
   metadata?: Record<string, any>;
 }
 
-export async function createNotification(data: CreateNotificationParams): Promise<Notification> {
+export async function createNotification(data: CreateNotificationData): Promise<Notification> {
   return prisma.notification.create({
     data: {
-      userId: data.userId,
       type: data.type,
       message: data.message,
-      metadata: data.metadata || {},
-      read: false,
-    },
+      userId: data.userId,
+      metadata: data.metadata
+    }
   });
 }
 

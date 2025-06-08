@@ -1,5 +1,11 @@
 import { Prisma, Deployment, Product, Purchase } from "../types/prisma";
 import { prisma } from "./db";
+import type { Product as ProductType } from '@/types/prisma';
+
+interface ProductWithNumbers extends Omit<ProductType, 'price' | 'earningsSplit'> {
+  price: number;
+  earningsSplit: number;
+}
 
 // Product operations
 export async function getProduct(id: string) {
@@ -23,7 +29,7 @@ export async function getProduct(id: string) {
         },
       },
     },
-  }).then((product: Product | null) => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
+  }).then((product: ProductType | null) => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
 }
 
 export interface GetProductsParams {
@@ -72,7 +78,7 @@ export async function getProducts(params: GetProductsParams) {
     orderBy: {
       createdAt: "desc",
     },
-  }).then((products: Product[]) => products.map((p: Product) => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
+  }).then((products: ProductType[]) => products.map((p: ProductType) => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 }
 
 export async function getFeaturedProducts() {
@@ -88,14 +94,26 @@ export async function getFeaturedProducts() {
   }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 }
 
-export async function getProductsByCategory(category: string) {
+export async function getProductsByCategory(category: string): Promise<ProductWithNumbers[]> {
   return prisma.product.findMany({
-    where: { 
-      isPublic: true,
-      category 
+    where: {
+      category,
+      status: 'published'
     },
-    orderBy: { createdAt: 'desc' }
-  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          image: true
+        }
+      }
+    }
+  }).then(products => products.map(p => ({
+    ...p,
+    price: Number(p.price),
+    earningsSplit: Number(p.earningsSplit)
+  })));
 }
 
 export async function getProductsByUser(userId: string) {
@@ -400,28 +418,25 @@ export async function createAgentLog(data: Prisma.AgentLogCreateInput) {
 }
 
 // Product operations
-export async function getProductById(id: string) {
+export async function getProductById(id: string): Promise<ProductWithNumbers | null> {
   return prisma.product.findUnique({
-    where: { id },
+    where: {
+      id
+    },
     include: {
       creator: {
         select: {
+          id: true,
           name: true,
-          image: true,
-        },
-      },
-      reviews: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              image: true,
-            },
-          },
-        },
-      },
-    },
-  });
+          image: true
+        }
+      }
+    }
+  }).then(product => product ? {
+    ...product,
+    price: Number(product.price),
+    earningsSplit: Number(product.earningsSplit)
+  } : null);
 }
 
 // Deployment operations
@@ -481,4 +496,51 @@ export async function getAgentFeedbacksByDeploymentId(deploymentId: string) {
     where: { deploymentId },
     orderBy: { createdAt: 'desc' },
   });
+}
+
+export async function getProductsByCreator(creatorId: string): Promise<ProductWithNumbers[]> {
+  return prisma.product.findMany({
+    where: {
+      createdBy: creatorId
+    },
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          image: true
+        }
+      }
+    }
+  }).then(products => products.map(p => ({
+    ...p,
+    price: Number(p.price),
+    earningsSplit: Number(p.earningsSplit)
+  })));
+}
+
+export async function searchProducts(query: string): Promise<ProductWithNumbers[]> {
+  return prisma.product.findMany({
+    where: {
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+        { category: { contains: query, mode: 'insensitive' } }
+      ],
+      status: 'published'
+    },
+    include: {
+      creator: {
+        select: {
+          id: true,
+          name: true,
+          image: true
+        }
+      }
+    }
+  }).then(products => products.map(p => ({
+    ...p,
+    price: Number(p.price),
+    earningsSplit: Number(p.earningsSplit)
+  })));
 } 

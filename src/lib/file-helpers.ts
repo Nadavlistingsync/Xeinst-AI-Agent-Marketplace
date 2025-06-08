@@ -3,7 +3,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '@/lib/prisma';
-import { File } from '@prisma/client';
+import type { File } from '@/types/prisma';
 
 export async function uploadFile(file: { name: string; size: number; type: string; arrayBuffer: () => Promise<ArrayBuffer> }, userId: string) {
   const uploadDir = join(process.cwd(), 'public', 'uploads');
@@ -67,4 +67,43 @@ export async function listFiles(user_id: string): Promise<File[]> {
 
 export function getFileUrl(fileId: string) {
   return `/api/files/${fileId}`;
+}
+
+export async function getFileById(id: string): Promise<File | null> {
+  return prisma.file.findUnique({
+    where: {
+      id
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true
+        }
+      }
+    }
+  });
+}
+
+export async function getFilesByUser(userId: string): Promise<File[]> {
+  return prisma.file.findMany({
+    where: {
+      userId
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
+}
+
+export async function getFilesByDeployment(deploymentId: string): Promise<File[]> {
+  return prisma.file.findMany({
+    where: {
+      deploymentId
+    },
+    orderBy: {
+      createdAt: 'desc'
+    }
+  });
 } 

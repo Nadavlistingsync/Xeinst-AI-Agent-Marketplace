@@ -328,13 +328,26 @@ export async function updateDeploymentStatus(
   status: DeploymentStatus,
   health?: Record<string, any>
 ): Promise<Deployment> {
-  return prisma.deployment.update({
+  const deployment = await prisma.deployment.update({
     where: { id: deploymentId },
     data: {
       status,
       health: health ? (health as unknown as Prisma.InputJsonValue) : undefined,
     },
   });
+
+  await createNotificationHelper({
+    type: 'deployment_status',
+    message: `Deployment ${deployment.name} is now ${status}`,
+    userId: deployment.createdBy,
+    metadata: {
+      deploymentId,
+      status,
+      ...health
+    }
+  });
+
+  return deployment;
 }
 
 export async function addAgentFeedback(data: {
@@ -403,4 +416,35 @@ export async function getAgentHealth(deploymentId: string, options: GetAgentHeal
     } : defaultMetrics,
     logs: [],
   };
+}
+
+interface MonitoringMetrics {
+  errorRate: number;
+  responseTime: number;
+  successRate: number;
+  totalRequests: number;
+  activeUsers: number;
+}
+
+export async function recordMetrics(
+  deploymentId: string,
+  metrics: MonitoringMetrics
+) {
+  const latestMetrics = await prisma.agentMetrics.create({
+    data: {
+      deploymentId,
+      errorRate: metrics.errorRate,
+      responseTime: metrics.responseTime,
+      successRate: metrics.successRate,
+      totalRequests: metrics.totalRequests,
+      activeUsers: metrics.activeUsers,
+      averageResponseTime: metrics.responseTime,
+      requestsPerMinute: 0,
+      averageTokensUsed: 0,
+      costPerRequest: 0,
+      totalCost: 0
+    }
+  });
+
+  return latestMetrics;
 } 
