@@ -1,14 +1,16 @@
 import { PrismaClient, Prisma, Deployment, Product, Purchase } from "@prisma/client";
 import { prisma } from "./db";
-import type { Product as ProductType } from '@prisma/client';
+import type { ProductWithNumbers, PurchaseWithProduct } from './schema';
 
 interface ProductWithNumbers extends Omit<ProductType, 'price' | 'earningsSplit'> {
   price: number;
   earningsSplit: number;
 }
 
+export type PurchaseWithProduct = Purchase & { product: Product };
+
 // Product operations
-export async function getProduct(id: string) {
+export async function getProduct(id: string): Promise<ProductWithNumbers | null> {
   return prisma.product.findUnique({
     where: { id },
     include: {
@@ -29,7 +31,7 @@ export async function getProduct(id: string) {
         },
       },
     },
-  }).then((product: ProductType | null) => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
+  }).then((product) => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
 }
 
 export interface GetProductsParams {
@@ -213,25 +215,24 @@ export async function getUserReview(productId: string, userId: string) {
 }
 
 // Purchase operations
-export async function getUserPurchases(userId: string) {
+export async function getUserPurchases(userId: string): Promise<PurchaseWithProduct[]> {
   return prisma.purchase.findMany({
     where: { userId },
     include: {
-      product: {
-        include: {
-          creator: {
-            select: {
-              name: true,
-              image: true,
-            },
-          },
-        },
-      },
+      product: true,
     },
     orderBy: {
       createdAt: "desc",
     },
-  }).then((purchases: Purchase[]) => purchases.map((p: Purchase) => ({ ...p, amount: Number(p.amount) })));
+  }).then((purchases) => purchases.map((p) => ({
+    ...p,
+    amount: Number(p.amount),
+    product: {
+      ...p.product,
+      price: Number(p.product.price),
+      earningsSplit: Number(p.product.earningsSplit)
+    }
+  })));
 }
 
 export async function getUserProducts(userId: string) {

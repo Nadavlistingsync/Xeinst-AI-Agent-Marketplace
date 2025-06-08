@@ -3,11 +3,11 @@
 import { Star } from 'lucide-react';
 import Image from 'next/image';
 import { AgentReviews } from '@/components/AgentReviews';
-import { Product } from '@/lib/schema';
+import type { AppProduct } from '@/lib/schema';
 import { Decimal } from '@prisma/client/runtime/library';
 
 interface AgentPageClientProps {
-  product: Product;
+  product: AppProduct;
   isCreator: boolean;
 }
 

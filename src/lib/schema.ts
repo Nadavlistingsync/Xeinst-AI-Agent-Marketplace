@@ -1,16 +1,5 @@
 import { z } from 'zod';
-import type { Prisma } from '@prisma/client';
-import type { 
-  User as PrismaUser,
-  Product as PrismaProduct,
-  Purchase as PrismaPurchase,
-  Earning as PrismaEarning,
-  Review as PrismaReview,
-  Rating as PrismaRating,
-  Notification as PrismaNotification,
-  File as PrismaFile,
-  AgentFeedback as PrismaAgentFeedback
-} from '@prisma/client';
+import type { Prisma, Product, Purchase } from '@prisma/client';
 
 // Helper function to convert Decimal to number
 const decimalToNumber = (value: unknown): number => {
@@ -451,34 +440,22 @@ export interface RatingRangeResult<T> {
 
 export type File = Prisma.FileGetPayload<{}>;
 
-export const products = productSchema;
-export const Deployment = deploymentSchema;
-
-export type {
-  User,
-  Product,
-  Purchase,
-  Earning,
-  Review,
-  Notification,
-  File,
-  AgentFeedback
-};
-
+// Extended types with number fields
 export interface ProductWithNumbers extends Omit<Product, 'price' | 'earningsSplit'> {
   price: number;
   earningsSplit: number;
 }
 
-export interface PurchaseWithNumber extends Omit<Purchase, 'amount'> {
+export interface PurchaseWithProduct extends Omit<Purchase, 'amount'> {
+  amount: number;
+  product: ProductWithNumbers;
+}
+
+export interface EarningWithNumber extends Omit<AppEarning, 'amount'> {
   amount: number;
 }
 
-export interface EarningWithNumber extends Omit<Earning, 'amount'> {
-  amount: number;
-}
-
-export interface ReviewWithNumber extends Omit<Review, 'rating'> {
+export interface ReviewWithNumber extends Omit<AppReview, 'rating'> {
   rating: number;
 }
 
@@ -490,6 +467,32 @@ export interface FileWithMetadata extends File {
   metadata: Record<string, any>;
 }
 
-export interface AgentFeedbackWithMetadata extends AgentFeedback {
+export interface AgentFeedbackWithMetadata extends AppAgentFeedback {
   metadata: Record<string, any>;
-} 
+}
+
+// Extended types for Prisma
+export interface ProductWithNumbers extends Omit<Product, 'price' | 'earningsSplit'> {
+  price: number;
+  earningsSplit: number;
+}
+
+export interface PurchaseWithProduct extends Omit<Purchase, 'amount'> {
+  amount: number;
+  product: ProductWithNumbers;
+}
+
+// Prisma types
+export type ProductCreateInput = Prisma.ProductCreateInput;
+export type ProductUpdateInput = Prisma.ProductUpdateInput;
+export type ProductWhereInput = Prisma.ProductWhereInput;
+export type ProductWhereUniqueInput = Prisma.ProductWhereUniqueInput;
+export type ProductOrderByWithRelationInput = Prisma.ProductOrderByWithRelationInput;
+export type ProductInclude = Prisma.ProductInclude;
+
+export type PurchaseCreateInput = Prisma.PurchaseCreateInput;
+export type PurchaseUpdateInput = Prisma.PurchaseUpdateInput;
+export type PurchaseWhereInput = Prisma.PurchaseWhereInput;
+export type PurchaseWhereUniqueInput = Prisma.PurchaseWhereUniqueInput;
+export type PurchaseOrderByWithRelationInput = Prisma.PurchaseOrderByWithRelationInput;
+export type PurchaseInclude = Prisma.PurchaseInclude; 

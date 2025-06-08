@@ -79,6 +79,19 @@ export function handleDatabaseError(error: unknown): never {
     throw new DatabaseError('Database initialization error', 'INIT_ERROR', 500);
   }
 
+  // Handle known Prisma error codes
+  if (error instanceof PrismaClientKnownRequestError) {
+    if (error.code === 'P2002') {
+      throw new DatabaseError('Unique constraint violation', 'P2002', 409);
+    }
+    if (error.code === 'P2025') {
+      throw new DatabaseError('Record not found', 'P2025', 404);
+    }
+  }
+  if (error instanceof PrismaClientValidationError) {
+    throw new DatabaseError('Validation error', 'VALIDATION_ERROR', 400);
+  }
+
   throw new DatabaseError('An unexpected database error occurred', 'UNKNOWN_ERROR', 500);
 }
 

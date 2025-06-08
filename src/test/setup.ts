@@ -71,10 +71,56 @@ const mockPrisma = {
   $disconnect: vi.fn().mockResolvedValue(undefined),
 };
 
-// Mock Prisma client
+// Patch: ensure error classes are reference-equal between @prisma/client and @prisma/client/runtime/library
+const errorClassPatch = {};
 vi.mock('@prisma/client', () => {
+  // Mock DeploymentStatus enum as used in the codebase
+  const DeploymentStatus = {
+    pending: 'pending',
+    deploying: 'deploying',
+    active: 'active',
+    failed: 'failed',
+    stopped: 'stopped',
+  };
+
+  // Mock Prisma error classes
+  class PrismaClientKnownRequestError extends Error {
+    constructor(message, { code, clientVersion, meta }) {
+      super(message);
+      this.code = code;
+      this.clientVersion = clientVersion;
+      this.meta = meta;
+      this.name = 'PrismaClientKnownRequestError';
+    }
+  }
+  class PrismaClientValidationError extends Error {
+    constructor(message, { clientVersion }) {
+      super(message);
+      this.clientVersion = clientVersion;
+      this.name = 'PrismaClientValidationError';
+    }
+  }
+  class PrismaClientInitializationError extends Error {
+    constructor(message, { clientVersion }) {
+      super(message);
+      this.clientVersion = clientVersion;
+      this.name = 'PrismaClientInitializationError';
+    }
+  }
+  // Patch for reference equality
+  errorClassPatch.PrismaClientKnownRequestError = PrismaClientKnownRequestError;
+  errorClassPatch.PrismaClientValidationError = PrismaClientValidationError;
+  errorClassPatch.PrismaClientInitializationError = PrismaClientInitializationError;
+
+  const Prisma = {
+    PrismaClientKnownRequestError,
+    PrismaClientValidationError,
+  };
+
   return {
     PrismaClient: vi.fn(() => mockPrisma),
+    DeploymentStatus,
+    Prisma,
   };
 });
 
@@ -187,4 +233,13 @@ vi.mock('react-hot-toast', () => ({
     loading: vi.fn(),
     dismiss: vi.fn(),
   },
-})); 
+}));
+
+// Mock @prisma/client/runtime/library for error instanceof checks in db.ts
+vi.mock('@prisma/client/runtime/library', () => {
+  return {
+    PrismaClientKnownRequestError: errorClassPatch.PrismaClientKnownRequestError,
+    PrismaClientValidationError: errorClassPatch.PrismaClientValidationError,
+    PrismaClientInitializationError: errorClassPatch.PrismaClientInitializationError,
+  };
+}); 

@@ -1,10 +1,11 @@
 import { getUserPurchases } from "@/lib/db-helpers";
+import type { PurchaseWithProduct } from "@/lib/schema";
 import Link from "next/link";
 
 export default async function PurchasesPage({ searchParams }: { searchParams?: { userId?: string } }) {
   // You may want to get the userId from session or props, here we assume it's passed in searchParams for demo
   const userId = searchParams?.userId || "";
-  const purchases = userId ? await getUserPurchases(userId) : [];
+  const purchases: PurchaseWithProduct[] = userId ? await getUserPurchases(userId) : [];
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -18,16 +19,16 @@ export default async function PurchasesPage({ searchParams }: { searchParams?: {
             <div key={purchase.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-xl font-semibold mb-2">{purchase.name}</h2>
-                  <p className="text-gray-600 mb-2">{purchase.description}</p>
+                  <h2 className="text-xl font-semibold mb-2">{purchase.product.name}</h2>
+                  <p className="text-gray-600 mb-2">{purchase.product.description}</p>
                   <div className="flex items-center space-x-4 text-sm text-gray-500">
-                    <span>Category: {purchase.category}</span>
-                    <span>Price: ${purchase.price}</span>
-                    <span>Purchased: {new Date(purchase.created_at).toLocaleDateString()}</span>
+                    <span>Category: {purchase.product.category}</span>
+                    <span>Price: ${purchase.product.price}</span>
+                    <span>Purchased: {new Date(purchase.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
                 <Link
-                  href={`/product/${purchase.id}`}
+                  href={`/product/${purchase.productId}`}
                   className="text-blue-600 hover:text-blue-800"
                 >
                   View Details

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { ApiError } from '@/lib/errors';
 import type { AgentFeedback } from '@/types/prisma';
+import type { AgentFeedbackWhereInput } from '@/lib/schema';
 
 interface FeedbackTrend {
   date: string;
@@ -33,7 +34,6 @@ export async function GET(request: Request) {
     const agentId = searchParams.get('agentId');
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
-    const groupBy = searchParams.get('groupBy') || 'day';
 
     const where: AgentFeedbackWhereInput = {
       ...(agentId && { agentId }),
