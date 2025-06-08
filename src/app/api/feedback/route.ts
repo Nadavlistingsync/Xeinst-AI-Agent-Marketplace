@@ -39,7 +39,34 @@ export async function GET(request: Request): Promise<NextResponse<FeedbackSucces
       }
     });
 
-    return NextResponse.json({ success: true, data: feedback });
+    const formattedFeedback: Feedback[] = feedback.map(f => ({
+      id: f.id,
+      userId: f.userId,
+      createdAt: f.createdAt,
+      updatedAt: f.updatedAt,
+      rating: f.rating,
+      deploymentId: f.deploymentId,
+      comment: f.comment,
+      sentimentScore: f.sentimentScore ?? 0,
+      categories: f.categories as Record<string, any> | null,
+      creatorResponse: f.creatorResponse,
+      responseDate: f.responseDate,
+      metadata: f.metadata,
+      user: {
+        id: f.user.id,
+        name: f.user.name,
+        email: f.user.email,
+        image: f.user.image,
+      },
+      deployment: {
+        id: f.deployment.id,
+        name: f.deployment.name,
+        description: f.deployment.description,
+        createdBy: f.deployment.createdBy,
+      },
+    }));
+
+    return NextResponse.json({ success: true, data: formattedFeedback });
   } catch (error) {
     console.error('Error fetching feedback:', error);
     return NextResponse.json(
