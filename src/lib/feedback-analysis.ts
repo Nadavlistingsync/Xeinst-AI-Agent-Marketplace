@@ -1,4 +1,5 @@
-import { PrismaClient, AgentFeedback } from '../types/prisma';
+import type { AgentFeedback } from '../types/prisma';
+import { prisma } from './db';
 import { ApiError } from './errors';
 
 interface FeedbackAnalysis {
@@ -18,7 +19,7 @@ interface FeedbackAnalysis {
   }>;
 }
 
-export async function analyzeFeedback(prisma: PrismaClient, deploymentId: string): Promise<FeedbackAnalysis> {
+export async function analyzeFeedback(deploymentId: string): Promise<FeedbackAnalysis> {
   const feedbacks = await prisma.agentFeedback.findMany({
     where: { deploymentId },
     orderBy: { createdAt: 'desc' },

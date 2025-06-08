@@ -1,50 +1,55 @@
-import { prisma } from './db';
-import type { Webhook } from '@/types/prisma';
+import { prisma } from '@/types/prisma';
+import type { Webhook, Prisma } from '@prisma/client';
 
-interface WebhookEvent {
-  type: string;
-  payload: Record<string, any>;
-  timestamp: Date;
-}
-
-interface CreateWebhookData {
+export interface CreateWebhookInput {
   url: string;
-  events: string[];
-  secret: string;
-  userId: string;
+  method?: string;
+  headers?: Record<string, string>;
+  isActive?: boolean;
 }
 
-export async function createWebhook(data: CreateWebhookData): Promise<Webhook> {
+export interface UpdateWebhookInput {
+  url?: string;
+  method?: string;
+  headers?: Record<string, string>;
+  isActive?: boolean;
+}
+
+export async function createWebhook(data: CreateWebhookInput): Promise<Webhook> {
   return prisma.webhook.create({
     data: {
-      url: data.url,
-      events: data.events,
-      secret: data.secret,
-      userId: data.userId
+      ...data,
+      method: data.method || 'POST',
+      headers: data.headers || {},
+      isActive: data.isActive ?? true
     }
   });
 }
 
-export async function getWebhookById(id: string): Promise<Webhook | null> {
+export async function updateWebhook(id: string, data: UpdateWebhookInput): Promise<Webhook> {
+  return prisma.webhook.update({
+    where: { id },
+    data
+  });
+}
+
+export async function getWebhook(id: string): Promise<Webhook | null> {
   return prisma.webhook.findUnique({
     where: { id }
   });
 }
 
-export async function getWebhooksByUser(userId: string): Promise<Webhook[]> {
+export async function getWebhooks(params?: {
+  skip?: number;
+  take?: number;
+  where?: Prisma.WebhookWhereInput;
+  orderBy?: Prisma.WebhookOrderByWithRelationInput;
+}): Promise<Webhook[]> {
   return prisma.webhook.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' }
-  });
-}
-
-export async function updateWebhook(
-  id: string,
-  data: Partial<CreateWebhookData>
-): Promise<Webhook> {
-  return prisma.webhook.update({
-    where: { id },
-    data
+    skip: params?.skip,
+    take: params?.take,
+    where: params?.where,
+    orderBy: params?.orderBy
   });
 }
 
@@ -54,40 +59,36 @@ export async function deleteWebhook(id: string): Promise<void> {
   });
 }
 
-export async function sendWebhookEvent(
-  webhook: Webhook,
-  event: WebhookEvent
-): Promise<void> {
-  const payload = {
-    type: event.type,
-    payload: event.payload,
-    timestamp: event.timestamp.toISOString()
-  };
-
-  const signature = generateSignature(payload, webhook.secret);
-
-  try {
-    const response = await fetch(webhook.url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Webhook-Signature': signature
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Webhook delivery failed: ${response.statusText}`);
-    }
-  } catch (error) {
-    console.error('Webhook delivery failed:', error);
-    throw error;
-  }
+export async function getActiveWebhooks(): Promise<Webhook[]> {
+  return prisma.webhook.findMany({
+    where: { isActive: true }
+  });
 }
 
-function generateSignature(payload: any, secret: string): string {
-  const crypto = require('crypto');
-  const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(JSON.stringify(payload));
-  return hmac.digest('hex');
+export async function toggleWebhook(id: string, isActive: boolean): Promise<Webhook> {
+  return prisma.webhook.update({
+    where: { id },
+    data: { isActive }
+  });
+}
+
+export async function updateWebhookHeaders(id: string, headers: Record<string, string>): Promise<Webhook> {
+  return prisma.webhook.update({
+    where: { id },
+    data: { headers }
+  });
+}
+
+export async function updateWebhookMethod(id: string, method: string): Promise<Webhook> {
+  return prisma.webhook.update({
+    where: { id },
+    data: { method }
+  });
+}
+
+export async function updateWebhookUrl(id: string, url: string): Promise<Webhook> {
+  return prisma.webhook.update({
+    where: { id },
+    data: { url }
+  });
 } 

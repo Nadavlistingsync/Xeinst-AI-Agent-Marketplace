@@ -1,147 +1,105 @@
-import { PrismaClient, Prisma, Purchase } from '@prisma/client';
-import { prisma } from './db';
-import type { Purchase as PrismaPurchase } from '@/types/prisma';
+import { prisma } from '@/types/prisma';
+import type { Purchase } from '@prisma/client';
 
-const prismaClient = new PrismaClient();
-
-export type CreateOrderInput = {
+interface CreateOrderInput {
+  status: string;
   userId: string;
   productId: string;
   amount: number;
-  status: 'pending' | 'completed' | 'failed';
-  stripeTransferId?: string | null;
-};
+  stripeTransferId?: string;
+  paidAt?: Date;
+}
 
-export type UpdateOrderInput = {
-  status?: 'pending' | 'completed' | 'failed';
-  stripeTransferId?: string | null;
-  paidAt?: Date | null;
-};
+interface UpdateOrderInput {
+  status?: string;
+  stripeTransferId?: string;
+  paidAt?: Date;
+}
 
-export async function createOrder(data: CreateOrderInput) {
-  return prismaClient.purchase.create({
+export async function createOrder(data: CreateOrderInput): Promise<Purchase> {
+  return prisma.purchase.create({
     data: {
+      status: data.status,
       userId: data.userId,
       productId: data.productId,
       amount: data.amount,
-      status: data.status,
-      stripeTransferId: data.stripeTransferId || null
+      stripeTransferId: data.stripeTransferId,
+      paidAt: data.paidAt
     }
   });
 }
 
-export async function updateOrder(id: string, data: UpdateOrderInput) {
-  return prismaClient.purchase.update({
+export async function updateOrder(id: string, data: UpdateOrderInput): Promise<Purchase> {
+  return prisma.purchase.update({
     where: { id },
-    data: {
-      status: data.status,
-      stripeTransferId: data.stripeTransferId || null,
-      paidAt: data.paidAt || null
-    }
+    data
   });
 }
 
-export async function getOrder(id: string) {
-  return prismaClient.purchase.findUnique({
-    where: { id },
-    include: {
-      user: true,
-      product: true
-    }
-  });
+export async function getOrder(id: string): Promise<Purchase | null> {
+  return prisma.purchase.findUnique({
+    where: { id }
+  }).then(purchase => purchase ? { ...purchase, amount: Number(purchase.amount) } : null);
 }
 
-export async function getUserOrders(userId: string) {
-  return prismaClient.purchase.findMany({
+export async function getUserOrders(userId: string): Promise<Purchase[]> {
+  return prisma.purchase.findMany({
     where: { userId },
-    include: {
-      product: true
-    },
     orderBy: { createdAt: 'desc' }
-  });
+  }).then(purchases => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
 }
 
-export async function getOrders(options: {
-  userId?: string;
-  status?: string;
-  startDate?: Date;
-  endDate?: Date;
-} = {}): Promise<Purchase[]> {
-  const where: Prisma.PurchaseWhereInput = {};
-
-  if (options.userId) where.userId = options.userId;
-  if (options.status) where.status = options.status;
-  if (options.startDate || options.endDate) {
-    where.createdAt = {};
-    if (options.startDate) where.createdAt.gte = options.startDate;
-    if (options.endDate) where.createdAt.lte = options.endDate;
-  }
-
-  return await prismaClient.purchase.findMany({
-    where,
+export async function getOrders(): Promise<Purchase[]> {
+  return prisma.purchase.findMany({
     orderBy: { createdAt: 'desc' }
-  });
+  }).then(purchases => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
 }
 
-export async function deleteOrder(id: string): Promise<void> {
-  await prismaClient.purchase.delete({
+export async function deleteOrder(id: string): Promise<Purchase> {
+  return prisma.purchase.delete({
     where: { id }
   });
 }
 
-export async function getMonthlyOrderStats(userId: string): Promise<{
-  month: string;
-  total: number;
-  count: number;
-}[]> {
-  const orders = await getOrders({ userId });
-  const monthlyStats = new Map<string, { total: number; count: number }>();
-
-  orders.forEach(order => {
-    const month = order.createdAt.toISOString().slice(0, 7);
-    const current = monthlyStats.get(month) || { total: 0, count: 0 };
-    monthlyStats.set(month, {
-      total: current.total + Number(order.amount),
-      count: current.count + 1
-    });
+export async function getMonthlyOrderStats() {
+  const orders = await prisma.purchase.findMany({
+    orderBy: { createdAt: 'desc' }
   });
 
-  return Array.from(monthlyStats.entries()).map(([month, stats]) => ({
+  const monthlyStats = orders.reduce((acc: Record<string, { count: number; total: number }>, order) => {
+    const month = order.createdAt.toISOString().slice(0, 7);
+    if (!acc[month]) {
+      acc[month] = { count: 0, total: 0 };
+    }
+    acc[month].count++;
+    acc[month].total += Number(order.amount);
+    return acc;
+  }, {});
+
+  return Object.entries(monthlyStats).map(([month, stats]) => ({
     month,
-    ...stats
+    count: stats.count,
+    total: stats.total,
+    average: stats.total / stats.count
   }));
 }
 
-interface PurchaseWithNumber extends Omit<PrismaPurchase, 'amount'> {
-  amount: number;
-}
-
-export async function getPurchaseById(id: string): Promise<PurchaseWithNumber | null> {
+export async function getPurchaseById(id: string): Promise<Purchase | null> {
   return prisma.purchase.findUnique({
-    where: { id },
-    include: {
-      product: true,
-      user: true
-    }
-  }).then((purchase) => purchase ? { ...purchase, amount: Number(purchase.amount) } : null);
+    where: { id }
+  }).then(purchase => purchase ? { ...purchase, amount: Number(purchase.amount) } : null);
 }
 
-export async function getPurchasesByUser(userId: string): Promise<PurchaseWithNumber[]> {
+export async function getPurchasesByUser(userId: string): Promise<Purchase[]> {
   return prisma.purchase.findMany({
     where: { userId },
-    include: {
-      product: true
-    },
     orderBy: { createdAt: 'desc' }
-  }).then((purchases) => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
+  }).then(purchases => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
 }
 
-export async function getPurchasesByProduct(productId: string): Promise<PurchaseWithNumber[]> {
+export async function getPurchasesByProduct(productId: string): Promise<Purchase[]> {
   return prisma.purchase.findMany({
     where: { productId },
-    include: {
-      user: true
-    },
     orderBy: { createdAt: 'desc' }
-  }).then((purchases) => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
+  }).then(purchases => purchases.map(p => ({ ...p, amount: Number(p.amount) })));
 } 

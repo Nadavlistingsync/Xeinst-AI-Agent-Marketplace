@@ -1,23 +1,25 @@
 import { z } from 'zod';
-import { Prisma, PrismaClient } from '../types/prisma';
+import type { Prisma } from '@prisma/client';
 import type { 
-  User,
-  Product,
-  Purchase,
-  Earning,
-  Review,
-  Rating,
-  Notification,
-  File,
-  AgentFeedback
-} from '@/types/prisma';
+  User as PrismaUser,
+  Product as PrismaProduct,
+  Purchase as PrismaPurchase,
+  Earning as PrismaEarning,
+  Review as PrismaReview,
+  Rating as PrismaRating,
+  Notification as PrismaNotification,
+  File as PrismaFile,
+  AgentFeedback as PrismaAgentFeedback
+} from '@prisma/client';
 
 // Helper function to convert Decimal to number
 const decimalToNumber = (value: unknown): number => {
   if (value === null || value === undefined) return 0;
   if (typeof value === 'number') return value;
   if (typeof value === 'string') return parseFloat(value);
-  if (value instanceof Prisma.Decimal) return value.toNumber();
+  if (typeof value === 'object' && value !== null && 'toNumber' in value) {
+    return (value as { toNumber(): number }).toNumber();
+  }
   return 0;
 };
 
@@ -250,6 +252,7 @@ export type AgentLogInput = z.infer<typeof agentLogSchema>;
 export type AgentMetricsInput = z.infer<typeof agentMetricsSchema>;
 export type CategoryInput = z.infer<typeof categorySchema>;
 
+// Prisma types
 export type DeploymentCreateInput = Prisma.DeploymentCreateInput;
 export type DeploymentUpdateInput = Prisma.DeploymentUpdateInput;
 export type DeploymentWhereInput = Prisma.DeploymentWhereInput;
@@ -457,7 +460,6 @@ export type {
   Purchase,
   Earning,
   Review,
-  Rating,
   Notification,
   File,
   AgentFeedback
@@ -478,10 +480,6 @@ export interface EarningWithNumber extends Omit<Earning, 'amount'> {
 
 export interface ReviewWithNumber extends Omit<Review, 'rating'> {
   rating: number;
-}
-
-export interface RatingWithNumber extends Omit<Rating, 'score'> {
-  score: number;
 }
 
 export interface NotificationWithMetadata extends Notification {

@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import type { WorkflowExecution } from '@/types/prisma';
+import type { WorkflowExecution } from '@prisma/client';
 
 interface ExecutionStep {
   id: string;
@@ -18,12 +18,15 @@ interface CreateExecutionData {
   userId: string;
 }
 
+interface WorkflowExecutionWithSteps extends WorkflowExecution {
+  steps: ExecutionStep[];
+}
+
 export async function createExecution(data: CreateExecutionData): Promise<WorkflowExecution> {
   return prisma.workflowExecution.create({
     data: {
       workflowId: data.workflowId,
       input: data.input,
-      userId: data.userId,
       status: 'pending',
       steps: []
     }
@@ -78,7 +81,8 @@ export async function updateExecutionStep(
     throw new Error('Execution not found');
   }
 
-  const steps = execution.steps as ExecutionStep[];
+  const executionWithSteps = execution as WorkflowExecutionWithSteps;
+  const steps = executionWithSteps.steps;
   const stepIndex = steps.findIndex(step => step.id === stepId);
 
   if (stepIndex === -1) {
@@ -89,7 +93,7 @@ export async function updateExecutionStep(
 
   return prisma.workflowExecution.update({
     where: { id: executionId },
-    data: { steps }
+    data: { steps: steps as any }
   });
 }
 

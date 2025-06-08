@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import type { WorkflowVersion } from '@/types/prisma';
+import type { WorkflowVersion } from '@prisma/client';
 
 interface VersionConfig {
   steps: any[];
@@ -14,14 +14,17 @@ interface CreateVersionData {
   version: string;
 }
 
+interface WorkflowVersionWithConfig extends WorkflowVersion {
+  config: VersionConfig;
+}
+
 export async function createVersion(data: CreateVersionData): Promise<WorkflowVersion> {
   return prisma.workflowVersion.create({
     data: {
       workflowId: data.workflowId,
       version: data.version,
-      config: data.config,
-      userId: data.userId,
-      status: 'draft'
+      config: data.config as any,
+      isPublished: false
     }
   });
 }
@@ -53,12 +56,9 @@ export async function updateVersion(
   return prisma.workflowVersion.update({
     where: { id },
     data: {
-      ...data,
-      config: data.config ? {
-        steps: data.config.steps,
-        variables: data.config.variables,
-        metadata: data.config.metadata
-      } : undefined
+      ...(data.workflowId && { workflowId: data.workflowId }),
+      ...(data.version && { version: data.version }),
+      ...(data.config && { config: data.config as any })
     }
   });
 }
@@ -72,14 +72,14 @@ export async function deleteVersion(id: string): Promise<void> {
 export async function publishVersion(id: string): Promise<WorkflowVersion> {
   return prisma.workflowVersion.update({
     where: { id },
-    data: { status: 'published' }
+    data: { isPublished: true }
   });
 }
 
 export async function unpublishVersion(id: string): Promise<WorkflowVersion> {
   return prisma.workflowVersion.update({
     where: { id },
-    data: { status: 'draft' }
+    data: { isPublished: false }
   });
 }
 
@@ -104,8 +104,8 @@ export async function compareVersions(
     throw new Error('One or both versions not found');
   }
 
-  const config1 = version1.config as VersionConfig;
-  const config2 = version2.config as VersionConfig;
+  const config1 = (version1 as WorkflowVersionWithConfig).config;
+  const config2 = (version2 as WorkflowVersionWithConfig).config;
 
   const added = config2.steps.filter(
     step2 => !config1.steps.some(step1 => step1.id === step2.id)

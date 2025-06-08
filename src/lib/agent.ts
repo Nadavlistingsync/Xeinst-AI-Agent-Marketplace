@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import { Prisma, Deployment, DeploymentStatus, AgentMetrics, AgentLog, AgentFeedback } from '../types/prisma';
+import { DeploymentStatus, Prisma, Deployment, AgentMetrics, AgentFeedback, AgentLog } from '@prisma/client';
 
 export interface CreateAgentInput {
   name: string;

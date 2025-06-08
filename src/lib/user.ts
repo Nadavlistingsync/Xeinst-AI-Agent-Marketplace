@@ -224,32 +224,6 @@ export async function getUserPurchases(userId: string) {
   });
 }
 
-export async function getUserStats() {
-  const [totalUsers, roleDistribution, subscriptionDistribution] = await Promise.all([
-    prisma.user.count(),
-    prisma.user.groupBy({
-      by: ['role'],
-      _count: true,
-    }),
-    prisma.user.groupBy({
-      by: ['subscriptionTier'],
-      _count: true,
-    }),
-  ]);
-
-  return {
-    totalUsers,
-    roleDistribution: roleDistribution.reduce((acc, curr) => {
-      acc[curr.role] = curr._count;
-      return acc;
-    }, {} as Record<string, number>),
-    subscriptionDistribution: subscriptionDistribution.reduce((acc, curr) => {
-      acc[curr.subscriptionTier] = curr._count;
-      return acc;
-    }, {} as Record<string, number>),
-  };
-}
-
 export async function getUserHistory() {
   try {
     const users = await getUsers();

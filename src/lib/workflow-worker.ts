@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import type { WorkflowExecution } from '@/types/prisma';
+import type { WorkflowExecution } from '@prisma/client';
 
 interface WorkerConfig {
   concurrency: number;
@@ -16,6 +16,21 @@ interface ExecutionStep {
   error?: string;
   startedAt?: Date;
   completedAt?: Date;
+  nextStepId?: string;
+  config: {
+    url?: string;
+    method?: string;
+    headers?: Record<string, string>;
+    body?: any;
+    transform?: (input: any) => any;
+    condition?: (input: any) => boolean;
+    trueStepId?: string;
+    falseStepId?: string;
+  };
+}
+
+interface WorkflowExecutionWithSteps extends WorkflowExecution {
+  steps: ExecutionStep[];
 }
 
 export class WorkflowWorker {
@@ -64,7 +79,7 @@ export class WorkflowWorker {
     }
   }
 
-  private async getNextExecution(): Promise<WorkflowExecution | null> {
+  private async getNextExecution(): Promise<WorkflowExecutionWithSteps | null> {
     return prisma.workflowExecution.findFirst({
       where: {
         status: 'pending',
@@ -76,22 +91,25 @@ export class WorkflowWorker {
     });
   }
 
-  private async executeWorkflow(execution: WorkflowExecution): Promise<void> {
+  private async executeWorkflow(execution: WorkflowExecutionWithSteps): Promise<void> {
     try {
       await this.updateExecutionStatus(execution.id, 'running');
 
-      const steps = execution.steps as ExecutionStep[];
+      const steps = execution.steps;
       let currentStep = steps[0];
       let result = execution.input;
 
       while (currentStep) {
         result = await this.executeStep(currentStep, result);
+        if (!currentStep.nextStepId) break;
         currentStep = steps.find(step => step.id === currentStep.nextStepId);
+        if (!currentStep) break;
       }
 
       await this.updateExecutionStatus(execution.id, 'completed');
     } catch (error) {
-      await this.updateExecutionStatus(execution.id, 'failed', error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      await this.updateExecutionStatus(execution.id, 'failed', errorMessage);
       throw error;
     }
   }
@@ -118,7 +136,8 @@ export class WorkflowWorker {
       await this.updateStepStatus(step, 'completed', result);
       return result;
     } catch (error) {
-      await this.updateStepStatus(step, 'failed', null, error.message);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      await this.updateStepStatus(step, 'failed', null, errorMessage);
       throw error;
     } finally {
       const duration = Date.now() - startTime;
@@ -129,6 +148,9 @@ export class WorkflowWorker {
   }
 
   private async executeApiStep(step: ExecutionStep, input: any): Promise<any> {
+    if (!step.config.url || !step.config.method) {
+      throw new Error('Missing required API configuration');
+    }
     const { url, method, headers, body } = step.config;
     const response = await fetch(url, {
       method,
@@ -139,11 +161,16 @@ export class WorkflowWorker {
   }
 
   private executeTransformStep(step: ExecutionStep, input: any): any {
-    const { transform } = step.config;
-    return transform(input);
+    if (!step.config.transform) {
+      throw new Error('Missing transform function');
+    }
+    return step.config.transform(input);
   }
 
   private async executeConditionStep(step: ExecutionStep, input: any): Promise<any> {
+    if (!step.config.condition || !step.config.trueStepId || !step.config.falseStepId) {
+      throw new Error('Missing required condition configuration');
+    }
     const { condition, trueStepId, falseStepId } = step.config;
     const result = condition(input);
     return result ? trueStepId : falseStepId;
@@ -184,7 +211,8 @@ export class WorkflowWorker {
       throw new Error('Execution not found');
     }
 
-    const steps = execution.steps as ExecutionStep[];
+    const executionWithSteps = execution as WorkflowExecutionWithSteps;
+    const steps = executionWithSteps.steps;
     const stepIndex = steps.findIndex(s => s.id === step.id);
 
     if (stepIndex === -1) {
@@ -201,7 +229,7 @@ export class WorkflowWorker {
 
     await prisma.workflowExecution.update({
       where: { id: execution.id },
-      data: { steps }
+      data: { steps: steps as any }
     });
   }
 } 

@@ -1,428 +1,304 @@
-import { PrismaClient, Prisma, ProductStatus, ProductAccessLevel, ProductLicenseType, Product } from '../types/prisma';
-import { Product as PrismaProduct } from '@prisma/client';
-import { prisma } from './db';
-
-const prismaClient = new PrismaClient();
+import { prisma } from '@/types/prisma';
+import { ProductStatus, ProductAccessLevel, ProductLicenseType } from '@prisma/client';
+import type { Product, Prisma } from '@prisma/client';
 
 export interface CreateProductInput {
   name: string;
   description: string;
+  fileUrl: string;
+  requirements: string[];
+  longDescription?: string;
   price: number;
   category: string;
-  imageUrl?: string;
-  createdBy: string;
+  tags: string[];
+  version: string;
   status?: ProductStatus;
   accessLevel?: ProductAccessLevel;
   licenseType?: ProductLicenseType;
-  environment?: string;
-  framework?: string;
-  modelType?: string;
-  version?: string;
-  metadata?: Record<string, any>;
+  environment: string;
+  framework: string;
+  modelType: string;
+  createdBy: string;
+  earningsSplit: number;
+  isPublic?: boolean;
+  uploadedBy?: string;
 }
 
 export interface UpdateProductInput {
   name?: string;
   description?: string;
+  fileUrl?: string;
+  requirements?: string[];
+  longDescription?: string;
   price?: number;
   category?: string;
-  imageUrl?: string;
-  status?: ProductStatus;
-  accessLevel?: ProductAccessLevel;
-  licenseType?: ProductLicenseType;
-  environment?: string;
-  framework?: string;
-  modelType?: string;
+  tags?: string[];
   version?: string;
-  metadata?: Record<string, any>;
-}
-
-export interface ProductFilter {
-  search?: string;
-  category?: string;
-  minPrice?: number;
-  maxPrice?: number;
   status?: ProductStatus;
   accessLevel?: ProductAccessLevel;
   licenseType?: ProductLicenseType;
   environment?: string;
   framework?: string;
   modelType?: string;
-  createdBy?: string;
+  earningsSplit?: number;
+  isPublic?: boolean;
 }
 
-function toProduct(obj: Product): Product {
-  return {
-    ...obj,
-    price: Number(obj.price),
-    earningsSplit: Number(obj.earningsSplit),
-  };
-}
-
-export async function createProduct(data: CreateProductInput) {
-  return prismaClient.product.create({
+export async function createProduct(data: CreateProductInput): Promise<Product> {
+  return prisma.product.create({
     data: {
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      category: data.category,
-      createdBy: data.createdBy,
+      ...data,
       status: data.status || ProductStatus.draft,
       accessLevel: data.accessLevel || ProductAccessLevel.public,
       licenseType: data.licenseType || ProductLicenseType.free,
-      environment: data.environment || 'production',
-      framework: data.framework || 'custom',
-      modelType: data.modelType || 'general',
-      version: data.version || '1.0.0',
-      fileUrl: data.imageUrl || '',
-      earningsSplit: 0.8, // Default earnings split
-    },
-  }).then(toProduct);
+      isPublic: data.isPublic ?? true
+    }
+  });
 }
 
-export async function updateProduct(id: string, data: UpdateProductInput) {
-  return prismaClient.product.update({
+export async function updateProduct(id: string, data: UpdateProductInput): Promise<Product> {
+  return prisma.product.update({
     where: { id },
-    data: {
-      name: data.name,
-      description: data.description,
-      price: data.price,
-      category: data.category,
-      status: data.status,
-      accessLevel: data.accessLevel,
-      licenseType: data.licenseType,
-      environment: data.environment,
-      framework: data.framework,
-      modelType: data.modelType,
-      version: data.version,
-    },
-  }).then(toProduct);
+    data
+  });
 }
 
-export async function getProduct(id: string) {
-  return prismaClient.product.findUnique({
-    where: { id },
-    include: {
-      reviews: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              image: true,
-            },
-          },
-        },
-      },
-    },
-  }).then(product => (product ? toProduct(product) : null));
+export async function getProduct(id: string): Promise<Product | null> {
+  return prisma.product.findUnique({
+    where: { id }
+  });
 }
 
-export async function getProducts(filter: ProductFilter = {}) {
-  const where: Prisma.ProductWhereInput = {};
-
-  if (filter.search) {
-    where.OR = [
-      { name: { contains: filter.search, mode: 'insensitive' } },
-      { description: { contains: filter.search, mode: 'insensitive' } },
-    ];
-  }
-
-  if (filter.category) {
-    where.category = filter.category;
-  }
-
-  if (filter.minPrice !== undefined || filter.maxPrice !== undefined) {
-    where.price = {};
-    if (filter.minPrice !== undefined) where.price.gte = filter.minPrice;
-    if (filter.maxPrice !== undefined) where.price.lte = filter.maxPrice;
-  }
-
-  if (filter.status) where.status = filter.status;
-  if (filter.accessLevel) where.accessLevel = filter.accessLevel;
-  if (filter.licenseType) where.licenseType = filter.licenseType;
-  if (filter.environment) where.environment = filter.environment;
-  if (filter.framework) where.framework = filter.framework;
-  if (filter.modelType) where.modelType = filter.modelType;
-  if (filter.createdBy) where.createdBy = filter.createdBy;
-
-  return prismaClient.product.findMany({
-    where,
-    include: {
-      reviews: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              image: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  }).then(products => products.map(toProduct));
+export async function getProducts(params?: {
+  skip?: number;
+  take?: number;
+  where?: Prisma.ProductWhereInput;
+  orderBy?: Prisma.ProductOrderByWithRelationInput;
+}): Promise<Product[]> {
+  return prisma.product.findMany({
+    skip: params?.skip,
+    take: params?.take,
+    where: params?.where,
+    orderBy: params?.orderBy
+  });
 }
 
 export async function deleteProduct(id: string): Promise<void> {
-  try {
-    await prismaClient.product.delete({
-      where: { id },
-    });
-  } catch (error) {
-    console.error('Error deleting product:', error);
-    throw new Error('Failed to delete product');
-  }
-}
-
-interface ProductWithStats extends Product {
-  averageRating: number;
-  totalReviews: number;
-  categoryDistribution: Record<string, number>;
-  statusDistribution: Record<string, number>;
-  monthlyData: Array<{
-    month: string;
-    count: number;
-  }>;
-}
-
-export async function getProductStats(prisma: PrismaClient): Promise<ProductWithStats> {
-  const products = await prisma.product.findMany();
-  const reviews = await prisma.review.findMany();
-
-  const categoryDistribution = products.reduce((acc: Record<string, number>, curr: Product) => {
-    acc[curr.category] = (acc[curr.category] || 0) + 1;
-    return acc;
-  }, {});
-
-  const statusDistribution = products.reduce((acc: Record<string, number>, curr: Product) => {
-    acc[curr.status] = (acc[curr.status] || 0) + 1;
-    return acc;
-  }, {});
-
-  const monthlyData = products.reduce((acc: Array<{ month: string; count: number }>, product: Product) => {
-    const month = product.createdAt.toISOString().slice(0, 7);
-    const existingMonth = acc.find(m => m.month === month);
-    if (existingMonth) {
-      existingMonth.count++;
-    } else {
-      acc.push({ month, count: 1 });
-    }
-    return acc;
-  }, []);
-
-  return {
-    ...products[0],
-    averageRating: reviews.length > 0
-      ? reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / reviews.length
-      : 0,
-    totalReviews: reviews.length,
-    categoryDistribution,
-    statusDistribution,
-    monthlyData,
-  };
-}
-
-export async function getProductHistory() {
-  try {
-    const products = await getProducts();
-
-    const monthlyProducts = products.reduce((acc: Record<string, { total: number; categories: Record<string, number> }>, product: Product) => {
-      const month = product.createdAt.toISOString().slice(0, 7);
-      if (!acc[month]) {
-        acc[month] = { total: 0, categories: {} };
-      }
-      acc[month].total += 1;
-      acc[month].categories[product.category] = (acc[month].categories[product.category] || 0) + 1;
-      return acc;
-    }, {});
-
-    return {
-      monthlyProducts,
-      recentProducts: products.slice(0, 10),
-    };
-  } catch (error) {
-    console.error('Error getting product history:', error);
-    throw new Error('Failed to get product history');
-  }
-}
-
-export async function getProductReviews(productId: string) {
-  return prismaClient.review.findMany({
-    where: { deploymentId: productId },
-    include: {
-      user: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
+  await prisma.product.delete({
+    where: { id }
   });
 }
 
-export async function createProductReview(data: {
-  deploymentId: string;
-  userId: string;
-  rating: number;
-  comment: string;
-}) {
-  const review = await prismaClient.review.create({
-    data: {
-      deploymentId: data.deploymentId,
-      userId: data.userId,
-      rating: data.rating,
-      comment: data.comment,
-    },
-  });
-
-  await updateProductRating(data.deploymentId);
-
-  return review;
-}
-
-export async function updateProductRating(product_id: string): Promise<void> {
-  const reviews = await prismaClient.review.findMany({
-    where: { deploymentId: product_id },
-  });
-
-  const averageRating = reviews.length > 0
-    ? reviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / reviews.length
-    : 0;
-
-  await prismaClient.product.update({
-    where: { id: product_id },
-    data: { rating: averageRating },
+export async function getProductsByUser(userId: string): Promise<Product[]> {
+  return prisma.product.findMany({
+    where: { createdBy: userId }
   });
 }
 
-export async function getRelatedProducts(
-  product_id: string,
-  limit: number = 4
-): Promise<Product[]> {
-  const product = await getProduct(product_id);
-  if (!product) return [];
+export async function getProductsByCategory(category: string): Promise<Product[]> {
+  return prisma.product.findMany({
+    where: { category }
+  });
+}
 
-  return await prismaClient.product.findMany({
+export async function getProductsByTag(tag: string): Promise<Product[]> {
+  return prisma.product.findMany({
     where: {
-      category: product.category,
-      id: { not: product_id },
-    },
-    take: limit,
+      tags: {
+        has: tag
+      }
+    }
   });
 }
 
-export async function getProductPurchases(
-  product_id: string,
-  options: {
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<any[]> {
-  const where: Prisma.PurchaseWhereInput = { productId: product_id };
-
-  if (options.startDate) where.createdAt = { gte: options.startDate };
-  if (options.endDate) where.createdAt = { lte: options.endDate };
-
-  return await prismaClient.purchase.findMany({
-    where,
-    include: {
-      user: true,
-    },
-    orderBy: { createdAt: 'desc' },
-    take: options.limit,
+export async function getProductsByStatus(status: ProductStatus): Promise<Product[]> {
+  return prisma.product.findMany({
+    where: { status }
   });
 }
 
-export async function updateProductDownloadCount(
-  product_id: string
-): Promise<void> {
-  await prismaClient.product.update({
-    where: { id: product_id },
-    data: {
+export async function getProductsByAccessLevel(accessLevel: ProductAccessLevel): Promise<Product[]> {
+  return prisma.product.findMany({
+    where: { accessLevel }
+  });
+}
+
+export async function getProductsByLicenseType(licenseType: ProductLicenseType): Promise<Product[]> {
+  return prisma.product.findMany({
+    where: { licenseType }
+  });
+}
+
+export async function getProductsByEnvironment(environment: string): Promise<Product[]> {
+  return prisma.product.findMany({
+    where: { environment }
+  });
+}
+
+export async function getProductsByFramework(framework: string): Promise<Product[]> {
+  return prisma.product.findMany({
+    where: { framework }
+  });
+}
+
+export async function getProductsByModelType(modelType: string): Promise<Product[]> {
+  return prisma.product.findMany({
+    where: { modelType }
+  });
+}
+
+export async function getProductsByPriceRange(minPrice: number, maxPrice: number): Promise<Product[]> {
+  return prisma.product.findMany({
+    where: {
+      price: {
+        gte: minPrice,
+        lte: maxPrice
+      }
+    }
+  });
+}
+
+export async function getProductsByRating(minRating: number): Promise<Product[]> {
+  return prisma.product.findMany({
+    where: {
+      rating: {
+        gte: minRating
+      }
+    }
+  });
+}
+
+export async function getProductsByDownloadCount(minDownloads: number): Promise<Product[]> {
+  return prisma.product.findMany({
+    where: {
       downloadCount: {
-        increment: 1,
-      },
-    },
+        gte: minDownloads
+      }
+    }
   });
 }
 
-interface ProductWithNumbers extends Omit<Product, 'price' | 'earningsSplit'> {
-  price: number;
-  earningsSplit: number;
-}
-
-export async function getProductById(id: string): Promise<ProductWithNumbers | null> {
-  return prisma.product.findUnique({
-    where: {
-      id
-    },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          name: true,
-          image: true
-        }
-      }
-    }
-  }).then(product => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
-}
-
-export async function getProductsByCategory(category: string): Promise<ProductWithNumbers[]> {
+export async function getProductsByDateRange(startDate: Date, endDate: Date): Promise<Product[]> {
   return prisma.product.findMany({
     where: {
-      category,
-      status: 'published'
-    },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          name: true,
-          image: true
-        }
+      createdAt: {
+        gte: startDate,
+        lte: endDate
       }
     }
-  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
+  });
 }
 
-export async function getProductsByCreator(creatorId: string): Promise<ProductWithNumbers[]> {
-  return prisma.product.findMany({
-    where: {
-      createdBy: creatorId
-    },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          name: true,
-          image: true
-        }
-      }
-    }
-  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
-}
-
-export async function searchProducts(query: string): Promise<ProductWithNumbers[]> {
+export async function getProductsBySearchTerm(searchTerm: string): Promise<Product[]> {
   return prisma.product.findMany({
     where: {
       OR: [
-        { name: { contains: query, mode: 'insensitive' } },
-        { description: { contains: query, mode: 'insensitive' } },
-        { category: { contains: query, mode: 'insensitive' } }
-      ],
-      status: 'published'
-    },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          name: true,
-          image: true
-        }
-      }
+        { name: { contains: searchTerm, mode: 'insensitive' } },
+        { description: { contains: searchTerm, mode: 'insensitive' } },
+        { longDescription: { contains: searchTerm, mode: 'insensitive' } },
+        { category: { contains: searchTerm, mode: 'insensitive' } },
+        { tags: { has: searchTerm } }
+      ]
     }
-  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
+  });
+}
+
+export async function getProductsByMultipleFilters(filters: {
+  category?: string;
+  tags?: string[];
+  status?: ProductStatus;
+  accessLevel?: ProductAccessLevel;
+  licenseType?: ProductLicenseType;
+  environment?: string;
+  framework?: string;
+  modelType?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  minRating?: number;
+  minDownloads?: number;
+  startDate?: Date;
+  endDate?: Date;
+  searchTerm?: string;
+}): Promise<Product[]> {
+  const where: Prisma.ProductWhereInput = {};
+
+  if (filters.category) {
+    where.category = filters.category;
+  }
+
+  if (filters.tags && filters.tags.length > 0) {
+    where.tags = {
+      hasEvery: filters.tags
+    };
+  }
+
+  if (filters.status) {
+    where.status = filters.status;
+  }
+
+  if (filters.accessLevel) {
+    where.accessLevel = filters.accessLevel;
+  }
+
+  if (filters.licenseType) {
+    where.licenseType = filters.licenseType;
+  }
+
+  if (filters.environment) {
+    where.environment = filters.environment;
+  }
+
+  if (filters.framework) {
+    where.framework = filters.framework;
+  }
+
+  if (filters.modelType) {
+    where.modelType = filters.modelType;
+  }
+
+  if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+    where.price = {};
+    if (filters.minPrice !== undefined) {
+      where.price.gte = filters.minPrice;
+    }
+    if (filters.maxPrice !== undefined) {
+      where.price.lte = filters.maxPrice;
+    }
+  }
+
+  if (filters.minRating !== undefined) {
+    where.rating = {
+      gte: filters.minRating
+    };
+  }
+
+  if (filters.minDownloads !== undefined) {
+    where.downloadCount = {
+      gte: filters.minDownloads
+    };
+  }
+
+  if (filters.startDate || filters.endDate) {
+    where.createdAt = {};
+    if (filters.startDate) {
+      where.createdAt.gte = filters.startDate;
+    }
+    if (filters.endDate) {
+      where.createdAt.lte = filters.endDate;
+    }
+  }
+
+  if (filters.searchTerm) {
+    where.OR = [
+      { name: { contains: filters.searchTerm, mode: 'insensitive' } },
+      { description: { contains: filters.searchTerm, mode: 'insensitive' } },
+      { longDescription: { contains: filters.searchTerm, mode: 'insensitive' } },
+      { category: { contains: filters.searchTerm, mode: 'insensitive' } },
+      { tags: { has: filters.searchTerm } }
+    ];
+  }
+
+  return prisma.product.findMany({
+    where
+  });
 } 

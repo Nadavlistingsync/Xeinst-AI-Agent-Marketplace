@@ -4,6 +4,7 @@ import { Prisma, Deployment, DeploymentStatus } from '../types/prisma';
 import { z } from 'zod';
 import { createNotification as createNotificationHelper } from './notification';
 import { JsonValue } from '../types/json';
+import { Prisma as PrismaClient } from '@prisma/client';
 
 const metricsSchema = z.object({
   errorRate: z.number(),
@@ -90,7 +91,7 @@ export async function logAgentEvent(
       deploymentId,
       level,
       message,
-      metadata: metadata ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
+      metadata: metadata ? (metadata as PrismaClient.InputJsonValue) : PrismaClient.JsonNull,
       timestamp: new Date()
     }
   });
@@ -135,7 +136,7 @@ export async function updateAgentMetrics(deploymentId: string, metrics: Partial<
 }
 
 export async function getAgentLogs(deploymentId: string, options: GetAgentLogsOptions = {}): Promise<AgentLog[]> {
-  const where: Prisma.AgentLogWhereInput = {
+  const where: PrismaClient.AgentLogWhereInput = {
     deploymentId,
   };
 
@@ -159,16 +160,7 @@ export async function getAgentLogs(deploymentId: string, options: GetAgentLogsOp
     take: options.limit || 100,
   });
 
-  return (logs || []).map((log: AgentLog) => ({
-    id: log.id,
-    deploymentId: log.deploymentId,
-    level: log.level as 'info' | 'warning' | 'error',
-    message: log.message,
-    metadata: log.metadata as JsonValue,
-    timestamp: log.timestamp,
-    createdAt: log.createdAt,
-    updatedAt: log.updatedAt,
-  }));
+  return logs;
 }
 
 export async function getAgentMetrics(agentId: string): Promise<AgentMetrics | null> {
@@ -365,7 +357,7 @@ export async function addAgentFeedback(data: {
 export async function createNotification(data: CreateNotificationInput) {
   return createNotificationHelper({
     ...data,
-    metadata: data.metadata ? (data.metadata as Prisma.InputJsonValue) : undefined
+    metadata: data.metadata ? (data.metadata as Record<string, any>) : undefined,
   });
 }
 

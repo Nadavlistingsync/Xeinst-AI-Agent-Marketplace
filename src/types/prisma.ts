@@ -1,61 +1,68 @@
-import type { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import type {
   User,
   UserRole,
-  SubscriptionTier,
-  Deployment,
-  DeploymentStatus,
   Product,
   ProductStatus,
   ProductAccessLevel,
   ProductLicenseType,
+  Deployment,
+  DeploymentStatus,
   AgentFeedback,
   Review,
   Purchase,
   Earning,
   Notification,
   NotificationType,
-  AgentMetrics,
-  AgentLog,
   File,
   Workflow,
+  WorkflowVersion,
   WorkflowExecution,
   WorkflowSchedule,
   WorkflowTrigger,
-  WorkflowVersion,
   WorkflowWebhook,
   Rating,
-  Webhook
+  Webhook,
+  Prisma
 } from '@prisma/client';
 
+// Export all types
 export type {
-  PrismaClient,
   User,
   UserRole,
-  SubscriptionTier,
-  Deployment,
-  DeploymentStatus,
   Product,
   ProductStatus,
   ProductAccessLevel,
   ProductLicenseType,
+  Deployment,
+  DeploymentStatus,
   AgentFeedback,
   Review,
   Purchase,
   Earning,
   Notification,
   NotificationType,
-  AgentMetrics,
-  AgentLog,
   File,
   Workflow,
+  WorkflowVersion,
   WorkflowExecution,
   WorkflowSchedule,
   WorkflowTrigger,
-  WorkflowVersion,
   WorkflowWebhook,
   Rating,
-  Webhook
+  Webhook,
+  Prisma
 };
 
-export const prisma = new PrismaClient(); 
+// Create a singleton instance of PrismaClient
+declare global {
+  var prisma: PrismaClient | undefined;
+}
+
+const globalForPrisma = globalThis as { prisma: PrismaClient | undefined };
+
+export const prisma = globalForPrisma.prisma || new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+} 

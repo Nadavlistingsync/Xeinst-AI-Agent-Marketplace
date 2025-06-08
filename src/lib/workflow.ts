@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import type { Workflow } from '@/types/prisma';
+import type { Workflow } from '@prisma/client';
 
 interface WorkflowStep {
   id: string;
@@ -15,13 +15,17 @@ interface CreateWorkflowData {
   userId: string;
 }
 
+interface WorkflowWithSteps extends Workflow {
+  steps: WorkflowStep[];
+}
+
 export async function createWorkflow(data: CreateWorkflowData): Promise<Workflow> {
   return prisma.workflow.create({
     data: {
       name: data.name,
       description: data.description,
-      steps: data.steps,
-      userId: data.userId
+      steps: data.steps as any,
+      createdBy: data.userId
     }
   });
 }
@@ -34,7 +38,7 @@ export async function getWorkflowById(id: string): Promise<Workflow | null> {
 
 export async function getWorkflowsByUser(userId: string): Promise<Workflow[]> {
   return prisma.workflow.findMany({
-    where: { userId },
+    where: { createdBy: userId },
     orderBy: { createdAt: 'desc' }
   });
 }
@@ -45,7 +49,11 @@ export async function updateWorkflow(
 ): Promise<Workflow> {
   return prisma.workflow.update({
     where: { id },
-    data
+    data: {
+      ...(data.name && { name: data.name }),
+      ...(data.description && { description: data.description }),
+      ...(data.steps && { steps: data.steps as any })
+    }
   });
 }
 
@@ -55,14 +63,16 @@ export async function deleteWorkflow(id: string): Promise<void> {
   });
 }
 
-export async function executeWorkflow(workflow: Workflow, input: any): Promise<any> {
-  const steps = workflow.steps as WorkflowStep[];
+export async function executeWorkflow(workflow: WorkflowWithSteps, input: any): Promise<any> {
+  const steps = workflow.steps;
   let currentStep = steps[0];
   let result = input;
 
   while (currentStep) {
     result = await executeStep(currentStep, result);
+    if (!currentStep.nextStepId) break;
     currentStep = steps.find(step => step.id === currentStep.nextStepId);
+    if (!currentStep) break;
   }
 
   return result;

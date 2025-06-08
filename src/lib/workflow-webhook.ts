@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import type { WorkflowWebhook } from '@/types/prisma';
+import type { WorkflowWebhook } from '@prisma/client';
 
 interface WebhookConfig {
   url: string;
@@ -14,16 +14,21 @@ interface CreateWebhookData {
   userId: string;
 }
 
+interface WorkflowWebhookWithConfig extends WorkflowWebhook {
+  config: WebhookConfig;
+}
+
 export async function createWebhook(data: CreateWebhookData): Promise<WorkflowWebhook> {
   return prisma.workflowWebhook.create({
     data: {
       workflowId: data.workflowId,
       url: data.config.url,
       method: data.config.method,
-      headers: data.config.headers,
-      body: data.config.body,
-      userId: data.userId,
-      status: 'active'
+      headers: data.config.headers as any,
+      config: {
+        body: data.config.body
+      } as any,
+      isActive: true
     }
   });
 }
@@ -55,13 +60,15 @@ export async function updateWebhook(
   return prisma.workflowWebhook.update({
     where: { id },
     data: {
-      ...data,
-      config: data.config ? {
+      ...(data.workflowId && { workflowId: data.workflowId }),
+      ...(data.config && {
         url: data.config.url,
         method: data.config.method,
-        headers: data.config.headers,
-        body: data.config.body
-      } : undefined
+        headers: data.config.headers as any,
+        config: {
+          body: data.config.body
+        } as any
+      })
     }
   });
 }
@@ -75,27 +82,27 @@ export async function deleteWebhook(id: string): Promise<void> {
 export async function pauseWebhook(id: string): Promise<WorkflowWebhook> {
   return prisma.workflowWebhook.update({
     where: { id },
-    data: { status: 'paused' }
+    data: { isActive: false }
   });
 }
 
 export async function resumeWebhook(id: string): Promise<WorkflowWebhook> {
   return prisma.workflowWebhook.update({
     where: { id },
-    data: { status: 'active' }
+    data: { isActive: true }
   });
 }
 
-export async function executeWebhook(webhook: WorkflowWebhook, data: any): Promise<Response> {
-  const { url, method, headers, body } = webhook;
+export async function executeWebhook(webhook: WorkflowWebhookWithConfig, data: any): Promise<Response> {
+  const { url, method, headers, config } = webhook;
 
   const response = await fetch(url, {
     method,
     headers: {
       'Content-Type': 'application/json',
-      ...headers
+      ...(headers as Record<string, string>)
     },
-    body: body ? JSON.stringify(body) : JSON.stringify(data)
+    body: config.body ? JSON.stringify(config.body) : JSON.stringify(data)
   });
 
   if (!response.ok) {
@@ -109,7 +116,7 @@ export async function validateWebhook(webhook: WorkflowWebhook): Promise<boolean
   try {
     const response = await fetch(webhook.url, {
       method: 'HEAD',
-      headers: webhook.headers
+      headers: webhook.headers as Record<string, string>
     });
     return response.ok;
   } catch (error) {

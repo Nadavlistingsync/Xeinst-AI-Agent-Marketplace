@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import type { WorkflowTrigger } from '@/types/prisma';
+import type { WorkflowTrigger } from '@prisma/client';
 
 interface TriggerConfig {
   type: 'webhook' | 'event' | 'schedule';
@@ -12,14 +12,17 @@ interface CreateTriggerData {
   userId: string;
 }
 
+interface WorkflowTriggerWithConfig extends WorkflowTrigger {
+  config: TriggerConfig;
+}
+
 export async function createTrigger(data: CreateTriggerData): Promise<WorkflowTrigger> {
   return prisma.workflowTrigger.create({
     data: {
       workflowId: data.workflowId,
       type: data.config.type,
-      config: data.config.config,
-      userId: data.userId,
-      status: 'active'
+      config: data.config.config as any,
+      isActive: true
     }
   });
 }
@@ -51,11 +54,11 @@ export async function updateTrigger(
   return prisma.workflowTrigger.update({
     where: { id },
     data: {
-      ...data,
-      config: data.config ? {
+      ...(data.workflowId && { workflowId: data.workflowId }),
+      ...(data.config && {
         type: data.config.type,
-        config: data.config.config
-      } : undefined
+        config: data.config.config as any
+      })
     }
   });
 }
@@ -69,19 +72,19 @@ export async function deleteTrigger(id: string): Promise<void> {
 export async function pauseTrigger(id: string): Promise<WorkflowTrigger> {
   return prisma.workflowTrigger.update({
     where: { id },
-    data: { status: 'paused' }
+    data: { isActive: false }
   });
 }
 
 export async function resumeTrigger(id: string): Promise<WorkflowTrigger> {
   return prisma.workflowTrigger.update({
     where: { id },
-    data: { status: 'active' }
+    data: { isActive: true }
   });
 }
 
 export async function handleWebhookTrigger(
-  trigger: WorkflowTrigger,
+  trigger: WorkflowTriggerWithConfig,
   payload: any
 ): Promise<void> {
   if (trigger.type !== 'webhook') {
@@ -92,7 +95,6 @@ export async function handleWebhookTrigger(
     data: {
       workflowId: trigger.workflowId,
       input: payload,
-      userId: trigger.userId,
       status: 'pending',
       steps: []
     }
@@ -100,7 +102,7 @@ export async function handleWebhookTrigger(
 }
 
 export async function handleEventTrigger(
-  trigger: WorkflowTrigger,
+  trigger: WorkflowTriggerWithConfig,
   event: string,
   payload: any
 ): Promise<void> {
@@ -117,7 +119,6 @@ export async function handleEventTrigger(
     data: {
       workflowId: trigger.workflowId,
       input: payload,
-      userId: trigger.userId,
       status: 'pending',
       steps: []
     }

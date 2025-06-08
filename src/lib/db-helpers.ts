@@ -1,6 +1,6 @@
-import { Prisma, Deployment, Product, Purchase } from "../types/prisma";
+import { PrismaClient, Prisma, Deployment, Product, Purchase } from "@prisma/client";
 import { prisma } from "./db";
-import type { Product as ProductType } from '@/types/prisma';
+import type { Product as ProductType } from '@prisma/client';
 
 interface ProductWithNumbers extends Omit<ProductType, 'price' | 'earningsSplit'> {
   price: number;

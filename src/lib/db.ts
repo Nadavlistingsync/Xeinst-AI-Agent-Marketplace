@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { PrismaClientKnownRequestError, PrismaClientValidationError, PrismaClientInitializationError } from '@prisma/client/runtime/library';
 import * as Sentry from '@sentry/nextjs';
 
 declare global {
@@ -14,7 +15,7 @@ function getRetryDelay(retryCount: number): number {
 }
 
 function isRetryableError(error: unknown): boolean {
-  if (error instanceof PrismaClient.PrismaClientKnownRequestError) {
+  if (error instanceof PrismaClientKnownRequestError) {
     return error.code === 'P1001' || // Connection error
            error.code === 'P1002' || // Connection timed out
            error.code === 'P1008' || // Operations timed out
@@ -70,11 +71,11 @@ export function handleDatabaseError(error: unknown): never {
   
   // Only report to Sentry in production and for non-validation errors
   if (process.env.NODE_ENV === 'production' && 
-      !(error instanceof PrismaClient.PrismaClientValidationError)) {
+      !(error instanceof PrismaClientValidationError)) {
     Sentry.captureException(error);
   }
 
-  if (error instanceof PrismaClient.PrismaClientInitializationError) {
+  if (error instanceof PrismaClientInitializationError) {
     throw new DatabaseError('Database initialization error', 'INIT_ERROR', 500);
   }
 

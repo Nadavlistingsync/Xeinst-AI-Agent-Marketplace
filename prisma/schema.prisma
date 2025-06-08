@@ -278,3 +278,116 @@ model File {
   product         Product?  @relation(fields: [productId], references: [id])
   user            User      @relation(fields: [uploadedBy], references: [id])
 }
+
+model Workflow {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  version         String    @default("1.0.0")
+  status          String    @default("draft")
+  createdBy       String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  versions        WorkflowVersion[]
+  executions      WorkflowExecution[]
+  schedules       WorkflowSchedule[]
+  triggers        WorkflowTrigger[]
+  webhooks        WorkflowWebhook[]
+}
+
+model WorkflowVersion {
+  id              String    @id @default(cuid())
+  workflowId      String
+  version         String
+  config          Json
+  status          String    @default("draft")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  workflow        Workflow  @relation(fields: [workflowId], references: [id])
+  executions      WorkflowExecution[]
+}
+
+model WorkflowExecution {
+  id              String    @id @default(cuid())
+  workflowId      String
+  versionId       String
+  status          String    @default("pending")
+  input           Json?
+  output          Json?
+  error           String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  workflow        Workflow  @relation(fields: [workflowId], references: [id])
+  version         WorkflowVersion @relation(fields: [versionId], references: [id])
+}
+
+model WorkflowSchedule {
+  id              String    @id @default(cuid())
+  workflowId      String
+  cronExpression  String
+  timezone        String    @default("UTC")
+  isActive        Boolean   @default(true)
+  lastRunAt       DateTime?
+  nextRunAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  workflow        Workflow  @relation(fields: [workflowId], references: [id])
+}
+
+model WorkflowTrigger {
+  id              String    @id @default(cuid())
+  workflowId      String
+  type            String
+  config          Json
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  workflow        Workflow  @relation(fields: [workflowId], references: [id])
+}
+
+model WorkflowWebhook {
+  id              String    @id @default(cuid())
+  workflowId      String
+  url             String
+  method          String    @default("POST")
+  headers         Json?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  workflow        Workflow  @relation(fields: [workflowId], references: [id])
+}
+
+model Rating {
+  id              String    @id @default(cuid())
+  userId          String
+  productId       String?
+  deploymentId    String?
+  score           Float
+  comment         String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Webhook {
+  id              String    @id @default(cuid())
+  url             String
+  method          String    @default("POST")
+  headers         Json?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}

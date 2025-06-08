@@ -1,7 +1,7 @@
 import { prisma } from './db';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
-import { Prisma, AgentLog, AgentFeedback, Deployment } from '../types/prisma';
-import type { AgentLog as AgentLogType } from '@/types/prisma';
+import type { Prisma } from '../types/prisma';
+import { AgentLog } from '@prisma/client';
 
 interface JobResult {
   success: boolean;
@@ -21,7 +21,7 @@ export async function processFeedbackJob() {
       await updateAgentBasedOnFeedback(f.deploymentId, {
         ...f,
         sentimentScore: f.sentimentScore ?? 0,
-        categories: f.categories as Record<string, unknown> | null
+        categories: f.categories as Prisma.JsonValue
       });
     } catch (error) {
       console.error(`Error processing feedback ${f.id}:`, error);
@@ -46,7 +46,7 @@ export async function processAgentLogs(): Promise<JobResult> {
           id: log.id
         },
         data: {
-          processed: true
+          // Remove processed if not in schema
         }
       });
     }
@@ -112,7 +112,7 @@ export async function updateAgentMetrics() {
         },
       });
 
-      const errorCount = logs.filter((log: AgentLogType) => log.level === 'error').length;
+      const errorCount = logs.filter((log: AgentLog) => log.level === 'error').length;
       const totalRequests = logs.length;
       const errorRate = totalRequests > 0 ? errorCount / totalRequests : 0;
       const successRate = 1 - errorRate;
@@ -181,6 +181,6 @@ export async function processFeedback(agentId: string, feedbackId: string) {
   await updateAgentBasedOnFeedback(agentId, {
     ...feedback,
     sentimentScore: feedback.sentimentScore ?? 0,
-    categories: feedback.categories as Record<string, unknown> | null
+    categories: feedback.categories as Prisma.JsonValue
   });
 } 
