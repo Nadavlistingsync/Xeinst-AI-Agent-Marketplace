@@ -39,7 +39,7 @@ export async function GET(request: Request): Promise<NextResponse<FeedbackSucces
       }
     });
 
-    return NextResponse.json({ feedback });
+    return NextResponse.json({ success: true, data: feedback });
   } catch (error) {
     console.error('Error fetching feedback:', error);
     return NextResponse.json(
