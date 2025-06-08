@@ -53,7 +53,7 @@ export async function GET(
       return acc;
     }, {});
 
-    const recentFeedback = feedback.map((f: AgentFeedback) => ({
+    const recentFeedback = feedback.map((f: any) => ({
       id: f.id,
       rating: f.rating,
       comment: f.comment,
