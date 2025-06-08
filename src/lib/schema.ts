@@ -144,23 +144,23 @@ export const earningSchema = z.object({
   paidAt: z.date().nullable(),
 });
 
-// Type exports
-export type User = z.infer<typeof userSchema>;
-export type Product = z.infer<typeof productSchema>;
-export type Deployment = z.infer<typeof deploymentSchema>;
-export type AgentFeedback = z.infer<typeof agentFeedbackSchema>;
-export type Review = z.infer<typeof reviewSchema>;
-export type Purchase = z.infer<typeof purchaseSchema>;
-export type Earning = z.infer<typeof earningSchema>;
+// Type exports (aliased to avoid conflicts with Prisma types)
+export type AppUser = z.infer<typeof userSchema>;
+export type AppProduct = z.infer<typeof productSchema>;
+export type AppDeployment = z.infer<typeof deploymentSchema>;
+export type AppAgentFeedback = z.infer<typeof agentFeedbackSchema>;
+export type AppReview = z.infer<typeof reviewSchema>;
+export type AppPurchase = z.infer<typeof purchaseSchema>;
+export type AppEarning = z.infer<typeof earningSchema>;
 
-// Input types
-export type UserInput = z.infer<typeof userSchema>;
-export type ProductInput = z.infer<typeof productSchema>;
-export type DeploymentInput = z.infer<typeof deploymentSchema>;
-export type AgentFeedbackInput = z.infer<typeof agentFeedbackSchema>;
-export type ReviewInput = z.infer<typeof reviewSchema>;
-export type PurchaseInput = z.infer<typeof purchaseSchema>;
-export type EarningInput = z.infer<typeof earningSchema>;
+// Input types (aliased)
+export type AppUserInput = z.infer<typeof userSchema>;
+export type AppProductInput = z.infer<typeof productSchema>;
+export type AppDeploymentInput = z.infer<typeof deploymentSchema>;
+export type AppAgentFeedbackInput = z.infer<typeof agentFeedbackSchema>;
+export type AppReviewInput = z.infer<typeof reviewSchema>;
+export type AppPurchaseInput = z.infer<typeof purchaseSchema>;
+export type AppEarningInput = z.infer<typeof earningSchema>;
 
 // Pagination and filtering
 export interface PaginationParams {
