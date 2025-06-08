@@ -8,24 +8,8 @@ interface SubscriptionStatus {
 }
 
 export async function getUserSubscription(userId: string): Promise<SubscriptionStatus> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      subscriptionStatus: true,
-      subscriptionId: true,
-      subscriptionExpiresAt: true
-    }
-  });
-
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  return {
-    isActive: user.subscriptionStatus === 'active',
-    plan: user.subscriptionId,
-    expiresAt: user.subscriptionExpiresAt
-  };
+  // TODO: Add subscription fields to User model or handle subscription logic differently
+  throw new Error('Subscription fields are not implemented on User model');
 }
 
 export async function updateSubscriptionStatus(
@@ -33,41 +17,21 @@ export async function updateSubscriptionStatus(
   status: 'active' | 'canceled' | 'expired',
   expiresAt?: Date
 ): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      subscriptionStatus: status,
-      subscriptionExpiresAt: expiresAt
-    }
-  });
+  // TODO: Add subscription fields to User model or handle subscription logic differently
+  throw new Error('Subscription fields are not implemented on User model');
 }
 
 export async function cancelSubscription(userId: string): Promise<void> {
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      subscriptionStatus: 'canceled',
-      subscriptionExpiresAt: new Date()
-    }
-  });
+  // TODO: Add subscription fields to User model or handle subscription logic differently
+  throw new Error('Subscription fields are not implemented on User model');
 }
 
 export async function getExpiredSubscriptions(): Promise<User[]> {
-  const now = new Date();
-  return prisma.user.findMany({
-    where: {
-      subscriptionStatus: 'active',
-      subscriptionExpiresAt: {
-        lt: now
-      }
-    }
-  });
+  // TODO: Add subscription fields to User model or handle subscription logic differently
+  throw new Error('Subscription fields are not implemented on User model');
 }
 
 export async function handleExpiredSubscriptions(): Promise<void> {
-  const expiredUsers = await getExpiredSubscriptions();
-  
-  for (const user of expiredUsers) {
-    await updateSubscriptionStatus(user.id, 'expired');
-  }
+  // TODO: Add subscription fields to User model or handle subscription logic differently
+  throw new Error('Subscription fields are not implemented on User model');
 } 
