@@ -49,7 +49,7 @@ export async function createCheckoutSession(data: CreateCheckoutSessionData): Pr
           product_data: {
             name: product.name,
             description: product.description,
-            images: product.images
+            // images: product.images, // TODO: Add images field to Product model or handle differently
           },
           unit_amount: Math.round(Number(product.price) * 100)
         },
@@ -75,14 +75,16 @@ export async function createPortalSession(data: CreatePortalSessionData): Promis
     throw new Error('User not found');
   }
 
-  if (!user.stripeCustomerId) {
-    throw new Error('User has no Stripe customer ID');
-  }
+  // TODO: Add stripeCustomerId to User model or handle Stripe customer association differently
+  // if (!user.stripeCustomerId) {
+  //   throw new Error('User has no Stripe customer ID');
+  // }
 
-  return stripe.billingPortal.sessions.create({
-    customer: user.stripeCustomerId,
-    return_url: data.returnUrl
-  });
+  // return stripe.billingPortal.sessions.create({
+  //   customer: user.stripeCustomerId,
+  //   return_url: data.returnUrl
+  // });
+  throw new Error('Stripe customer portal is not implemented: missing stripeCustomerId on User');
 }
 
 export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
@@ -122,8 +124,8 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          subscriptionStatus: subscription.status,
-          subscriptionId: subscription.id
+          // subscriptionStatus: subscription.status, // TODO: Add subscriptionStatus to User model or handle differently
+          // subscriptionId: subscription.id // TODO: Add subscriptionId to User model or handle differently
         }
       });
       break;
