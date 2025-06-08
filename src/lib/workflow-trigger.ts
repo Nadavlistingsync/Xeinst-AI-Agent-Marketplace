@@ -12,9 +12,7 @@ interface CreateTriggerData {
   userId: string;
 }
 
-interface WorkflowTriggerWithConfig extends WorkflowTrigger {
-  config: TriggerConfig;
-}
+export type WorkflowTriggerWithConfig = Omit<WorkflowTrigger, 'config'> & { config: TriggerConfig };
 
 export async function createTrigger(data: CreateTriggerData): Promise<WorkflowTrigger> {
   return prisma.workflowTrigger.create({
@@ -110,7 +108,7 @@ export async function handleEventTrigger(
     throw new Error('Invalid trigger type');
   }
 
-  const config = trigger.config as { events: string[] };
+  const config = trigger.config as unknown as { events: string[] };
   if (!config.events.includes(event)) {
     return;
   }
