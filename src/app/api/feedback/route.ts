@@ -6,7 +6,6 @@ import { z } from 'zod';
 import { Feedback, FeedbackSuccess, FeedbackError } from '@/types/feedback';
 import { JsonValue } from '@prisma/client/runtime/library';
 import { NotificationType } from '@prisma/client';
-import type { AgentFeedback } from '@/types/prisma';
 
 export const dynamic = 'force-dynamic';
 
