@@ -1,3 +1,7 @@
 onlyBuiltDependencies:
   - '@prisma/client'
   - prisma
+
+packages:
+  - '.'
+  - 'packages/*'
