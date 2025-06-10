@@ -61,6 +61,7 @@ class DatabaseManager {
 
 // Export a singleton instance
 export const db = DatabaseManager.getInstance();
+export const prisma = db.getClient();
 
 // Helper function to get retry delay with exponential backoff
 function getRetryDelay(retryCount: number): number {
