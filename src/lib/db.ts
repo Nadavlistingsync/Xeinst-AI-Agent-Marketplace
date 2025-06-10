@@ -1,19 +1,73 @@
-import { PrismaClient } from '@prisma/client';
-import { PrismaClientKnownRequestError, PrismaClientValidationError, PrismaClientInitializationError } from '@prisma/client/runtime/library';
+import { PrismaClient, PrismaClientKnownRequestError, PrismaClientInitializationError, PrismaClientValidationError } from '@prisma/client';
 import * as Sentry from '@sentry/nextjs';
+import { AppError } from './error-handling';
+
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000; // 1 second
 
 declare global {
   var prisma: PrismaClient | undefined;
 }
 
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 1000;
-const MAX_RETRY_DELAY = 10000;
+class DatabaseManager {
+  private static instance: DatabaseManager;
+  private prisma: PrismaClient;
+  private isConnected: boolean = false;
 
-function getRetryDelay(retryCount: number): number {
-  return Math.min(INITIAL_RETRY_DELAY * Math.pow(2, retryCount), MAX_RETRY_DELAY);
+  private constructor() {
+    this.prisma = new PrismaClient({
+      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
+    });
+  }
+
+  public static getInstance(): DatabaseManager {
+    if (!DatabaseManager.instance) {
+      DatabaseManager.instance = new DatabaseManager();
+    }
+    return DatabaseManager.instance;
+  }
+
+  public getClient(): PrismaClient {
+    return this.prisma;
+  }
+
+  public async connect(): Promise<void> {
+    if (this.isConnected) return;
+
+    try {
+      await this.prisma.$connect();
+      this.isConnected = true;
+    } catch (error) {
+      throw new AppError(
+        'Failed to connect to database',
+        500,
+        'DB_CONNECTION_ERROR',
+        error
+      );
+    }
+  }
+
+  public async disconnect(): Promise<void> {
+    if (!this.isConnected) return;
+
+    try {
+      await this.prisma.$disconnect();
+      this.isConnected = false;
+    } catch (error) {
+      console.error('Error disconnecting from database:', error);
+    }
+  }
 }
 
+// Export a singleton instance
+export const db = DatabaseManager.getInstance();
+
+// Helper function to get retry delay with exponential backoff
+function getRetryDelay(retryCount: number): number {
+  return INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
+}
+
+// Helper function to check if an error is retryable
 function isRetryableError(error: unknown): boolean {
   if (error instanceof PrismaClientKnownRequestError) {
     return error.code === 'P1001' || // Connection error
@@ -24,96 +78,70 @@ function isRetryableError(error: unknown): boolean {
   return false;
 }
 
-async function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-export class DatabaseError extends Error {
-  constructor(
-    message: string,
-    public code?: string,
-    public status: number = 500
-  ) {
-    super(message);
-    this.name = 'DatabaseError';
-  }
-}
-
-export const prisma = global.prisma || new PrismaClient();
-
-if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma;
-}
-
-export function isPrismaError(error: unknown): boolean {
-  if (error && typeof error === 'object' && 'code' in error) {
-    const code = (error as { code: string }).code;
-    return code === 'P1001' || // Connection error
-           code === 'P1002' || // Connection timed out
-           code === 'P1008' || // Operations timed out
-           code === 'P1017';   // Server closed the connection
-  }
-  return false;
-}
-
-export function handlePrismaError(error: unknown): never {
-  if (isPrismaError(error)) {
-    throw new Error('Database connection error. Please try again later.');
-  }
-  throw error;
-}
-
-export function handleDatabaseError(error: unknown): never {
-  // Only log errors in non-test environments
-  if (process.env.NODE_ENV !== 'test') {
-    console.error('Database Error:', error);
-  }
-  
-  // Only report to Sentry in production and for non-validation errors
-  if (process.env.NODE_ENV === 'production' && 
-      !(error instanceof PrismaClientValidationError)) {
-    Sentry.captureException(error);
-  }
-
-  if (error instanceof PrismaClientInitializationError) {
-    throw new DatabaseError('Database initialization error', 'INIT_ERROR', 500);
-  }
-
-  // Handle known Prisma error codes
-  if (error instanceof PrismaClientKnownRequestError) {
-    if (error.code === 'P2002') {
-      throw new DatabaseError('Unique constraint violation', 'P2002', 409);
-    }
-    if (error.code === 'P2025') {
-      throw new DatabaseError('Record not found', 'P2025', 404);
-    }
-  }
-  if (error instanceof PrismaClientValidationError) {
-    throw new DatabaseError('Validation error', 'VALIDATION_ERROR', 400);
-  }
-
-  throw new DatabaseError('An unexpected database error occurred', 'UNKNOWN_ERROR', 500);
-}
-
+// Enhanced retry function with better error handling
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  retries = MAX_RETRIES
+  retries = MAX_RETRIES,
+  context?: Record<string, unknown>
 ): Promise<T> {
   try {
     return await operation();
   } catch (error) {
     if (retries > 0 && isRetryableError(error)) {
       const delayMs = getRetryDelay(MAX_RETRIES - retries);
-      await delay(delayMs);
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+      
+      if (context) {
+        Sentry.setContext('retry_context', {
+          ...context,
+          retryCount: MAX_RETRIES - retries,
+          delayMs
+        });
+      }
+      
       try {
-        return await withRetry(operation, retries - 1);
+        return await withRetry(operation, retries - 1, context);
       } catch (retryError) {
         // If the retry fails, throw the original error
         throw error;
       }
     }
-    // For non-retryable errors or when out of retries, handle the error
-    handleDatabaseError(error);
-    throw error; // This line should never be reached due to handleDatabaseError
+    
+    // Handle non-retryable errors
+    if (error instanceof PrismaClientInitializationError) {
+      throw new AppError('Database initialization error', 500, 'DB_INIT_ERROR', error);
+    }
+
+    if (error instanceof PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        throw new AppError('Unique constraint violation', 409, 'UNIQUE_CONSTRAINT', error.meta);
+      }
+      if (error.code === 'P2025') {
+        throw new AppError('Record not found', 404, 'NOT_FOUND', error.meta);
+      }
+    }
+
+    if (error instanceof PrismaClientValidationError) {
+      throw new AppError('Validation error', 400, 'VALIDATION_ERROR', error);
+    }
+
+    // Log unexpected errors to Sentry
+    if (process.env.NODE_ENV === 'production') {
+      Sentry.captureException(error, {
+        tags: {
+          type: 'database_error',
+          ...context
+        }
+      });
+    }
+
+    throw new AppError('An unexpected database error occurred', 500, 'DB_ERROR', error);
   }
+}
+
+// Cleanup function for development environment
+if (process.env.NODE_ENV !== 'production') {
+  process.on('beforeExit', async () => {
+    await db.disconnect();
+  });
 } 

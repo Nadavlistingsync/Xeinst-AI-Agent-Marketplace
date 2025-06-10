@@ -2,11 +2,22 @@ import { prisma } from './db';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
 import type { Prisma } from '../types/prisma';
 import { AgentLog } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { AppError } from './error-handling';
+
+const prismaClient = new PrismaClient();
 
 interface JobResult {
   success: boolean;
   error?: string;
   data?: any;
+}
+
+interface AgentLogInput {
+  deploymentId: string;
+  level: 'info' | 'error' | 'warning';
+  message: string;
+  metadata?: Prisma.JsonValue;
 }
 
 export async function processFeedbackJob() {
@@ -183,4 +194,72 @@ export async function processFeedback(agentId: string, feedbackId: string) {
     sentimentScore: feedback.sentimentScore ?? 0,
     categories: feedback.categories as Prisma.JsonValue
   });
+}
+
+export async function createAgentLog(input: AgentLogInput): Promise<AgentLog> {
+  try {
+    return await prismaClient.agentLog.create({
+      data: {
+        deploymentId: input.deploymentId,
+        level: input.level,
+        message: input.message,
+        metadata: input.metadata || {},
+        timestamp: new Date(),
+      },
+    });
+  } catch (error) {
+    throw new AppError(
+      'Failed to create agent log',
+      500,
+      'AGENT_LOG_ERROR',
+      error
+    );
+  }
+}
+
+export async function getAgentLogs(
+  deploymentId: string,
+  options: {
+    level?: 'info' | 'error' | 'warning';
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  } = {}
+): Promise<AgentLog[]> {
+  const { level, startDate, endDate, limit = 100 } = options;
+
+  const where: Prisma.AgentLogWhereInput = {
+    deploymentId,
+    ...(level && { level }),
+    ...(startDate && endDate && {
+      timestamp: {
+        gte: startDate,
+        lte: endDate,
+      },
+    }),
+  };
+
+  return prismaClient.agentLog.findMany({
+    where,
+    orderBy: {
+      timestamp: 'desc',
+    },
+    take: limit,
+  });
+}
+
+export async function deleteAgentLogs(
+  deploymentId: string,
+  beforeDate: Date
+): Promise<number> {
+  const result = await prismaClient.agentLog.deleteMany({
+    where: {
+      deploymentId,
+      timestamp: {
+        lt: beforeDate,
+      },
+    },
+  });
+
+  return result.count;
 } 

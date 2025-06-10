@@ -1,8 +1,9 @@
-import { getDeployments } from "@/lib/db-helpers";
+import { getDeployments } from '@/lib/deployments';
+import { formatDate } from '@/lib/utils';
 import Link from "next/link";
 
 export default async function DeploymentsPage() {
-  const deployments = await getDeployments({});
+  const deployments = await getDeployments();
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -34,16 +35,42 @@ export default async function DeploymentsPage() {
       ) : (
         <div className="grid gap-6">
           {deployments.map((deployment) => (
-            <div key={deployment.id} className="border rounded-lg p-4">
-              <h2 className="text-xl font-semibold mb-2">{deployment.name}</h2>
-              <p className="text-gray-600 mb-2">{deployment.description}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">
-                  Status: {deployment.status}
-                </span>
-                <span className="text-sm text-gray-500">
-                  Created: {new Date(deployment.created_at).toLocaleDateString()}
-                </span>
+            <div
+              key={deployment.id}
+              className="bg-white rounded-lg shadow p-6"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-xl font-semibold">{deployment.name}</h2>
+                  <p className="text-gray-600 mt-1">{deployment.description}</p>
+                </div>
+                <div className="text-right">
+                  <span className={`px-3 py-1 rounded-full text-sm ${
+                    deployment.status === 'active' ? 'bg-green-100 text-green-800' :
+                    deployment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {deployment.status}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500">Created</p>
+                  <p>{formatDate(deployment.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Last Updated</p>
+                  <p>{formatDate(deployment.updatedAt)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Version</p>
+                  <p>{deployment.version}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Environment</p>
+                  <p>{deployment.environment}</p>
+                </div>
               </div>
             </div>
           ))}

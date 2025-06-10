@@ -2,12 +2,31 @@ import { PrismaClient, Prisma, Deployment, Product, Purchase } from "@prisma/cli
 import { prisma } from "./db";
 import type { ProductWithNumbers, PurchaseWithProduct } from './schema';
 
-interface ProductWithNumbers extends Omit<ProductType, 'price' | 'earningsSplit'> {
+// Define types
+export type ProductType = 'template' | 'custom' | 'plugin';
+
+export interface ProductWithNumbers {
+  id: string;
+  name: string;
+  description: string;
   price: number;
-  earningsSplit: number;
+  type: ProductType;
+  downloadCount: number;
+  rating: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export type PurchaseWithProduct = Purchase & { product: Product };
+export interface PurchaseWithProduct {
+  id: string;
+  userId: string;
+  productId: string;
+  status: 'pending' | 'completed' | 'failed';
+  amount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  product: ProductWithNumbers;
+}
 
 // Product operations
 export async function getProduct(id: string): Promise<ProductWithNumbers | null> {
@@ -544,4 +563,49 @@ export async function searchProducts(query: string): Promise<ProductWithNumbers[
     price: Number(p.price),
     earningsSplit: Number(p.earningsSplit)
   })));
+}
+
+// Helper functions
+export async function getProductWithStats(
+  prisma: PrismaClient,
+  productId: string
+): Promise<ProductWithNumbers | null> {
+  return prisma.product.findUnique({
+    where: { id: productId },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
+      type: true,
+      downloadCount: true,
+      rating: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+}
+
+export async function getPurchaseWithProduct(
+  prisma: PrismaClient,
+  purchaseId: string
+): Promise<PurchaseWithProduct | null> {
+  return prisma.purchase.findUnique({
+    where: { id: purchaseId },
+    include: {
+      product: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          price: true,
+          type: true,
+          downloadCount: true,
+          rating: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+    },
+  });
 } 

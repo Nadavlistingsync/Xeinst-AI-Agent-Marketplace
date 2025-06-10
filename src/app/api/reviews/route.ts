@@ -4,74 +4,69 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { createErrorResponse } from '@/lib/api';
+import { withErrorHandling } from '@/lib/error-handling';
+import { db } from '@/lib/db';
+import { AppError } from '@/lib/error-handling';
+import { cache } from '@/lib/cache';
 
 const reviewSchema = z.object({
   productId: z.string().uuid(),
   rating: z.number().min(1).max(5),
-  comment: z.string().max(1000),
+  comment: z.string().min(1).max(1000),
   title: z.string().max(100).optional(),
   images: z.array(z.string().url()).max(5).optional(),
   deploymentId: z.string().uuid().optional(),
+  userId: z.string().uuid()
 });
 
+const CACHE_TTL = 60 * 5; // 5 minutes
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  try {
+  return withErrorHandling(async () => {
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get('productId');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-
+    
     if (!productId) {
-      return NextResponse.json(
-        { error: 'Product ID is required' },
-        { status: 400 }
-      );
+      throw new AppError('Product ID is required', 400, 'MISSING_PRODUCT_ID');
     }
 
-    const skip = (page - 1) * limit;
-
-    const [reviews, total] = await Promise.all([
-      prisma.review.findMany({
+    // Try to get from cache first
+    const cacheKey = `reviews:${productId}`;
+    const cachedReviews = await cache.get(cacheKey, [`product:${productId}`]);
+    
+    if (cachedReviews) {
+      return NextResponse.json(cachedReviews);
+    }
+    
+    // If not in cache, fetch from database
+    const reviews = await db.withRetry(
+      () => db.getClient().review.findMany({
         where: { productId },
         include: {
           user: {
             select: {
-              id: true,
               name: true,
-              image: true
+              email: true
             }
           }
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
+        }
       }),
-      prisma.review.count({
-        where: { productId }
-      })
-    ]);
-
-    return NextResponse.json({
-      reviews,
-      pagination: {
-        total,
-        page,
-        limit,
-        pages: Math.ceil(total / limit)
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching reviews:', error);
-    const errorResponse = createErrorResponse(error);
-    return NextResponse.json(
-      errorResponse,
-      { status: errorResponse.status }
+      undefined,
+      { operation: 'get_reviews', productId }
     );
-  }
+    
+    // Cache the results
+    await cache.set(cacheKey, reviews, {
+      ttl: CACHE_TTL,
+      tags: [`product:${productId}`]
+    });
+    
+    return NextResponse.json(reviews);
+  }, { endpoint: '/api/reviews', method: 'GET' });
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  try {
+  return withErrorHandling(async () => {
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
@@ -137,24 +132,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     });
 
-    return NextResponse.json(review);
-  } catch (error) {
-    console.error('Error creating review:', error);
-    
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        {
-          error: 'Validation error',
-          details: error.errors
-        },
-        { status: 400 }
-      );
-    }
+    // Invalidate cache for this product's reviews
+    await cache.invalidateByTags([`product:${validatedData.productId}`]);
 
-    const errorResponse = createErrorResponse(error);
-    return NextResponse.json(
-      errorResponse,
-      { status: errorResponse.status }
-    );
-  }
+    return NextResponse.json(review);
+  }, { endpoint: '/api/reviews', method: 'POST' });
 } 

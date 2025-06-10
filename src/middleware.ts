@@ -1,6 +1,30 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { Ratelimit } from '@upstash/ratelimit';
+import { Redis } from '@upstash/redis';
+import { AppError } from './lib/error-handling';
+
+// Create a new ratelimiter that allows 10 requests per 10 seconds
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, '10 s'),
+  analytics: true,
+  prefix: '@upstash/ratelimit',
+});
+
+// Paths that should be rate limited
+const RATE_LIMITED_PATHS = [
+  '/api/reviews',
+  '/api/auth',
+  '/api/contact',
+];
+
+// Paths that should be validated
+const VALIDATED_PATHS = [
+  '/api/reviews',
+  '/api/contact',
+];
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request });
@@ -28,7 +52,95 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/pricing', baseUrl));
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  
+  try {
+    // Add security headers
+    response.headers.set('X-DNS-Prefetch-Control', 'on');
+    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
+    response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+    response.headers.set('X-Content-Type-Options', 'nosniff');
+    response.headers.set('Referrer-Policy', 'origin-when-cross-origin');
+    response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+    // Check if the path should be rate limited
+    if (RATE_LIMITED_PATHS.some(path => request.nextUrl.pathname.startsWith(path))) {
+      const ip = request.ip ?? '127.0.0.1';
+      const { success, limit, reset, remaining } = await ratelimit.limit(
+        `${ip}:${request.nextUrl.pathname}`
+      );
+
+      response.headers.set('X-RateLimit-Limit', limit.toString());
+      response.headers.set('X-RateLimit-Remaining', remaining.toString());
+      response.headers.set('X-RateLimit-Reset', reset.toString());
+
+      if (!success) {
+        return new NextResponse(
+          JSON.stringify({
+            error: 'Too many requests',
+            message: 'Please try again later',
+          }),
+          {
+            status: 429,
+            headers: {
+              'Content-Type': 'application/json',
+              ...Object.fromEntries(response.headers),
+            },
+          }
+        );
+      }
+    }
+
+    // Validate request body for POST requests
+    if (request.method === 'POST' && VALIDATED_PATHS.some(path => request.nextUrl.pathname.startsWith(path))) {
+      const contentType = request.headers.get('content-type');
+      if (!contentType?.includes('application/json')) {
+        throw new AppError('Content-Type must be application/json', 400, 'INVALID_CONTENT_TYPE');
+      }
+
+      // Clone the request to read the body
+      const clonedRequest = request.clone();
+      try {
+        await clonedRequest.json();
+      } catch (error) {
+        throw new AppError('Invalid JSON body', 400, 'INVALID_JSON');
+      }
+    }
+
+    return response;
+  } catch (error) {
+    if (error instanceof AppError) {
+      return new NextResponse(
+        JSON.stringify({
+          error: error.message,
+          code: error.code,
+        }),
+        {
+          status: error.status,
+          headers: {
+            'Content-Type': 'application/json',
+            ...Object.fromEntries(response.headers),
+          },
+        }
+      );
+    }
+
+    // Log unexpected errors
+    console.error('Middleware error:', error);
+    return new NextResponse(
+      JSON.stringify({
+        error: 'Internal server error',
+        message: 'An unexpected error occurred',
+      }),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          ...Object.fromEntries(response.headers),
+        },
+      }
+    );
+  }
 }
 
 export const config = {
@@ -39,6 +151,7 @@ export const config = {
     '/pricing',
     '/upload/:path*',
     '/deploy/:path*',
-    '/checkout/:path*'
+    '/checkout/:path*',
+    '/api/:path*'
   ]
 }; 

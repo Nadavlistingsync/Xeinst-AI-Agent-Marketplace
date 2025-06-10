@@ -1,13 +1,61 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
+import { ZodError } from 'zod';
+import { Prisma } from '@prisma/client';
 
 export interface ApiError {
   message: string;
   status: number;
   code?: string;
+  details?: unknown;
+}
+
+export class AppError extends Error {
+  constructor(
+    message: string,
+    public status: number = 500,
+    public code?: string,
+    public details?: unknown
+  ) {
+    super(message);
+    this.name = 'AppError';
+  }
 }
 
 export function handleApiError(error: unknown): ApiError {
+  // Handle known error types
+  if (error instanceof AppError) {
+    return {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+      details: error.details
+    };
+  }
+
+  if (error instanceof ZodError) {
+    return {
+      message: 'Validation error',
+      status: 400,
+      code: 'VALIDATION_ERROR',
+      details: error.errors
+    };
+  }
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return {
+      message: error.message,
+      status: 400,
+      code: error.code,
+      details: error.meta
+    };
+  }
+
   if (error instanceof Error) {
+    // Log unexpected errors to Sentry
+    if (!(error instanceof ZodError) && !(error instanceof Prisma.PrismaClientKnownRequestError)) {
+      Sentry.captureException(error);
+    }
     return {
       message: error.message,
       status: 500,
@@ -15,23 +63,40 @@ export function handleApiError(error: unknown): ApiError {
     };
   }
 
-  if (typeof error === 'string') {
-    return {
-      message: error,
-      status: 500
-    };
-  }
-
+  // Handle unknown error types
+  Sentry.captureException(error);
   return {
     message: 'An unexpected error occurred',
-    status: 500
+    status: 500,
+    code: 'UNKNOWN_ERROR'
   };
 }
 
 export function createErrorResponse(error: unknown) {
   const errorResponse = handleApiError(error);
   return NextResponse.json(
-    { error: errorResponse.message },
+    { error: errorResponse },
     { status: errorResponse.status }
   );
+}
+
+// Utility function to wrap async operations with error handling
+export async function withErrorHandling<T>(
+  operation: () => Promise<T>,
+  context?: Record<string, unknown>
+): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    const apiError = handleApiError(error);
+    if (context) {
+      Sentry.setContext('operation_context', context);
+    }
+    throw new AppError(
+      apiError.message,
+      apiError.status,
+      apiError.code,
+      apiError.details
+    );
+  }
 } 

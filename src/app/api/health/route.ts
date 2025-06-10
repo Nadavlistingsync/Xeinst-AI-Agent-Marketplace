@@ -1,100 +1,47 @@
 import { NextResponse } from 'next/server';
-import { createErrorResponse } from '@/lib/api';
-import { 
-  type HealthCheckApiResponse,
-  healthCheckSchema,
-  type HealthCheckInput
-} from '@/types/health';
+import { withErrorHandling } from '@/lib/error-handling';
+import { db } from '@/lib/db';
+import { cache } from '@/lib/cache';
 
-export async function GET(): Promise<NextResponse<HealthCheckApiResponse>> {
-  try {
-    // Check database connection
-    const dbStatus = await checkDatabase();
-    
-    // Check external services
-    const services = await checkExternalServices();
-    
-    // Calculate overall status
-    const status = calculateOverallStatus(dbStatus, services);
-    
-    const healthCheck: HealthCheckInput = {
-      status,
-      timestamp: new Date(),
+export async function GET(): Promise<NextResponse> {
+  return withErrorHandling(async () => {
+    const startTime = Date.now();
+    const health = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
       services: {
-        database: {
-          status: dbStatus.status,
-          latency: dbStatus.latency,
-          ...(dbStatus.error && { error: dbStatus.error }),
-        },
-        ...services,
+        database: 'healthy',
+        cache: 'healthy',
       },
-      version: process.env.npm_package_version || '1.0.0',
-      uptime: process.uptime(),
+      metrics: {
+        responseTime: 0,
+      },
     };
 
-    const validatedHealthCheck = healthCheckSchema.parse(healthCheck);
+    try {
+      // Check database connection
+      await db.getClient().$queryRaw`SELECT 1`;
+    } catch (error) {
+      health.services.database = 'unhealthy';
+      health.status = 'degraded';
+    }
 
-    return NextResponse.json({
-      success: true,
-      data: validatedHealthCheck,
-    } as HealthCheckApiResponse);
-  } catch (error) {
-    console.error('Health check failed:', error);
-    const errorResponse = createErrorResponse(error);
-    const errorData = await errorResponse.json();
-    return NextResponse.json({
-      success: false,
-      error: errorData.message
-    } as HealthCheckApiResponse, { status: errorData.statusCode });
-  }
-}
+    try {
+      // Check cache connection
+      await cache.set('health-check', 'ok', { ttl: 10 });
+      const result = await cache.get('health-check');
+      if (result !== 'ok') {
+        throw new Error('Cache health check failed');
+      }
+    } catch (error) {
+      health.services.cache = 'unhealthy';
+      health.status = 'degraded';
+    }
 
-async function checkDatabase() {
-  const startTime = Date.now();
-  try {
-    // Add your database health check logic here
-    // For example, try to connect to the database and run a simple query
-    return {
-      status: 'healthy' as const,
-      latency: Date.now() - startTime,
-    };
-  } catch (error) {
-    return {
-      status: 'unhealthy' as const,
-      latency: Date.now() - startTime,
-      error: error instanceof Error ? error.message : 'Database check failed',
-    };
-  }
-}
+    health.metrics.responseTime = Date.now() - startTime;
 
-async function checkExternalServices() {
-  const services: Record<string, {
-    status: 'healthy' | 'degraded' | 'unhealthy';
-    latency: number;
-    error?: string;
-  }> = {};
-
-  // Add your external service health checks here
-  // For example, check API endpoints, third-party services, etc.
-
-  return services;
-}
-
-function calculateOverallStatus(
-  dbStatus: { status: 'healthy' | 'degraded' | 'unhealthy' },
-  services: Record<string, { status: 'healthy' | 'degraded' | 'unhealthy' }>
-): 'healthy' | 'degraded' | 'unhealthy' {
-  if (dbStatus.status === 'unhealthy') {
-    return 'unhealthy';
-  }
-
-  const serviceStatuses = Object.values(services).map(s => s.status);
-  if (serviceStatuses.includes('unhealthy')) {
-    return 'unhealthy';
-  }
-  if (serviceStatuses.includes('degraded') || dbStatus.status === 'degraded') {
-    return 'degraded';
-  }
-
-  return 'healthy';
+    return NextResponse.json(health, {
+      status: health.status === 'healthy' ? 200 : 503,
+    });
+  }, { endpoint: '/api/health', method: 'GET' });
 } 

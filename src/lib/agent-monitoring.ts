@@ -4,7 +4,8 @@ import { Prisma, Deployment, DeploymentStatus } from '../types/prisma';
 import { z } from 'zod';
 import { createNotification as createNotificationHelper } from './notification';
 import { JsonValue } from '../types/json';
-import { Prisma as PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma, AgentLog as PrismaAgentLog } from '@prisma/client';
+import { AppError } from './error-handling';
 
 const metricsSchema = z.object({
   errorRate: z.number(),
@@ -80,6 +81,10 @@ export interface GetAgentHealthOptions {
   includeMetrics?: boolean;
 }
 
+export interface AgentLogWithMetadata extends PrismaAgentLog {
+  metadata: Prisma.JsonValue;
+}
+
 export async function logAgentEvent(
   deploymentId: string,
   level: 'info' | 'warning' | 'error',
@@ -135,32 +140,115 @@ export async function updateAgentMetrics(deploymentId: string, metrics: Partial<
   }
 }
 
-export async function getAgentLogs(deploymentId: string, options: GetAgentLogsOptions = {}): Promise<AgentLog[]> {
-  const where: PrismaClient.AgentLogWhereInput = {
+export async function getAgentLogs(
+  deploymentId: string,
+  options: {
+    level?: 'info' | 'error' | 'warning';
+    startDate?: Date;
+    endDate?: Date;
+    limit?: number;
+  } = {}
+): Promise<AgentLogWithMetadata[]> {
+  const { level, startDate, endDate, limit = 100 } = options;
+
+  const where: Prisma.AgentLogWhereInput = {
     deploymentId,
+    ...(level && { level }),
+    ...(startDate && endDate && {
+      timestamp: {
+        gte: startDate,
+        lte: endDate,
+      },
+    }),
   };
-
-  if (options.level) {
-    where.level = options.level;
-  }
-
-  if (options.startDate || options.endDate) {
-    where.timestamp = {};
-    if (options.startDate) {
-      where.timestamp.gte = options.startDate;
-    }
-    if (options.endDate) {
-      where.timestamp.lte = options.endDate;
-    }
-  }
 
   const logs = await prisma.agentLog.findMany({
     where,
-    orderBy: { timestamp: 'desc' },
-    take: options.limit || 100,
+    orderBy: {
+      timestamp: 'desc',
+    },
+    take: limit,
   });
 
-  return logs;
+  return logs.map(log => ({
+    ...log,
+    metadata: log.metadata || {},
+  }));
+}
+
+export async function getAgentLogsByLevel(
+  deploymentId: string,
+  level: 'info' | 'error' | 'warning'
+): Promise<AgentLogWithMetadata[]> {
+  const logs = await prisma.agentLog.findMany({
+    where: {
+      deploymentId,
+      level,
+    },
+    orderBy: {
+      timestamp: 'desc',
+    },
+  });
+
+  return logs.map(log => ({
+    ...log,
+    metadata: log.metadata || {},
+  }));
+}
+
+export async function getAgentLogsByDateRange(
+  deploymentId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<AgentLogWithMetadata[]> {
+  const logs = await prisma.agentLog.findMany({
+    where: {
+      deploymentId,
+      timestamp: {
+        gte: startDate,
+        lte: endDate,
+      },
+    },
+    orderBy: {
+      timestamp: 'desc',
+    },
+  });
+
+  return logs.map(log => ({
+    ...log,
+    metadata: log.metadata || {},
+  }));
+}
+
+export async function createAgentLog(
+  deploymentId: string,
+  level: 'info' | 'error' | 'warning',
+  message: string,
+  metadata?: Prisma.JsonValue
+): Promise<AgentLogWithMetadata> {
+  try {
+    const log = await prisma.agentLog.create({
+      data: {
+        deploymentId,
+        level,
+        message,
+        metadata: metadata || {},
+        timestamp: new Date(),
+      },
+    });
+
+    return {
+      ...log,
+      metadata: log.metadata || {},
+    };
+  } catch (error) {
+    throw new AppError(
+      'Failed to create agent log',
+      500,
+      'AGENT_LOG_ERROR',
+      error
+    );
+  }
 }
 
 export async function getAgentMetrics(agentId: string): Promise<AgentMetrics | null> {
@@ -214,7 +302,7 @@ export async function getAgentWarnings(deploymentId: string): Promise<AgentLog[]
     },
     orderBy: { createdAt: 'desc' },
   });
-  return logs.map((log: AgentLog) => ({
+  return logs.map(log => ({
     id: log.id,
     deploymentId: log.deploymentId,
     level: log.level as 'info' | 'warning' | 'error',
@@ -234,7 +322,7 @@ export async function getAgentErrors(deploymentId: string): Promise<AgentLog[]> 
     },
     orderBy: { createdAt: 'desc' },
   });
-  return logs.map((log: AgentLog) => ({
+  return logs.map(log => ({
     id: log.id,
     deploymentId: log.deploymentId,
     level: log.level as 'info' | 'warning' | 'error',
