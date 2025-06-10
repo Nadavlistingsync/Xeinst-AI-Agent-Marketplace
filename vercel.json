@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "corepack prepare pnpm@10.12.1 --activate && pnpm build",
+  "buildCommand": "npm install -g pnpm@10.12.1 && pnpm build",
   "devCommand": "pnpm run dev",
-  "installCommand": "corepack prepare pnpm@10.12.1 --activate && pnpm install",
+  "installCommand": "npm install -g pnpm@10.12.1 && pnpm install",
   "framework": "nextjs",
   "regions": ["iad1"],
   "builds": [
