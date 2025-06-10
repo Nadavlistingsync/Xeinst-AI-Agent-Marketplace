@@ -4,7 +4,7 @@ import { Deployment, DeploymentStatus } from '../types/prisma';
 import { z } from 'zod';
 import { createNotification as createNotificationHelper } from './notification';
 import { JsonValue } from '../types/json';
-import { PrismaClient, Prisma, AgentLog as PrismaAgentLog } from '@prisma/client';
+import { Prisma, AgentLog as PrismaAgentLog } from '@prisma/client';
 import { AppError } from './error-handling';
 
 const metricsSchema = z.object({
