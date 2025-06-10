@@ -1,21 +1,22 @@
 import { PrismaClient, Prisma, Deployment } from "@prisma/client";
 import { prisma } from "./db";
-import type { ProductWithNumbers, PurchaseWithProduct } from './schema';
+import type { PurchaseWithProduct } from './schema';
 
 // Define types
 export type ProductType = 'template' | 'custom' | 'plugin';
 
-export interface ProductWithNumbers {
+export type ProductWithNumbers = {
   id: string;
   name: string;
   description: string;
-  price: number;
   type: ProductType;
-  downloadCount: number;
-  rating: number;
+  price: number;
+  features: string[];
   createdAt: Date;
   updatedAt: Date;
-}
+  purchaseCount: number;
+  deploymentCount: number;
+};
 
 export interface PurchaseWithProduct {
   id: string;
