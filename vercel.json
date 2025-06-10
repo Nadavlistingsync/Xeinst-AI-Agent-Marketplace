@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install -g pnpm@10.12.1 && pnpm build",
+  "buildCommand": "npm install -g pnpm@10.12.1 && pnpm install && pnpm build",
   "devCommand": "pnpm run dev",
   "installCommand": "npm install -g pnpm@10.12.1 && pnpm install",
   "framework": "nextjs",
