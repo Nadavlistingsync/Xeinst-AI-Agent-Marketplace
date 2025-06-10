@@ -96,7 +96,7 @@ export async function logAgentEvent(
       deploymentId,
       level,
       message,
-      metadata: metadata ? (metadata as PrismaClient.InputJsonValue) : PrismaClient.JsonNull,
+      metadata: metadata ? (metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
       timestamp: new Date()
     }
   });
