@@ -44,7 +44,7 @@ export async function processAgentLogs(): Promise<JobResult> {
   try {
     const logs = await prisma.agentLog.findMany({
       where: {
-        status: 'pending'
+        processedAt: null
       },
       orderBy: {
         timestamp: 'asc'
@@ -58,17 +58,15 @@ export async function processAgentLogs(): Promise<JobResult> {
         await prisma.agentLog.update({
           where: { id: log.id },
           data: {
-            status: 'processed',
             processedAt: new Date()
           }
         });
       } catch (error) {
         console.error(`Error processing log ${log.id}:`, error);
-        // Mark as failed
+        // Mark as failed by setting error field
         await prisma.agentLog.update({
           where: { id: log.id },
           data: {
-            status: 'failed',
             error: error instanceof Error ? error.message : 'Unknown error'
           }
         });
