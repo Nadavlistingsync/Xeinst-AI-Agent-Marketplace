@@ -44,7 +44,7 @@ export async function processAgentLogs(): Promise<JobResult> {
   try {
     const logs = await prisma.agentLog.findMany({
       where: {
-        processedAt: null
+        level: 'pending'
       },
       orderBy: {
         timestamp: 'asc'
@@ -58,16 +58,25 @@ export async function processAgentLogs(): Promise<JobResult> {
         await prisma.agentLog.update({
           where: { id: log.id },
           data: {
-            processedAt: new Date()
+            level: 'processed',
+            metadata: {
+              ...log.metadata,
+              processedAt: new Date().toISOString()
+            }
           }
         });
       } catch (error) {
         console.error(`Error processing log ${log.id}:`, error);
-        // Mark as failed by setting error field
+        // Mark as failed by setting error in metadata
         await prisma.agentLog.update({
           where: { id: log.id },
           data: {
-            error: error instanceof Error ? error.message : 'Unknown error'
+            level: 'error',
+            metadata: {
+              ...log.metadata,
+              error: error instanceof Error ? error.message : 'Unknown error',
+              processedAt: new Date().toISOString()
+            }
           }
         });
       }
