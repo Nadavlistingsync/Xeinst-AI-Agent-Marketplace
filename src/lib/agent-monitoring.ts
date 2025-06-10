@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { type AgentHealth, type AgentMetrics, type AgentLog, type AgentFeedback, type CreateNotificationInput } from '@/types/agent-monitoring';
-import { Prisma, Deployment, DeploymentStatus } from '../types/prisma';
+import { Deployment, DeploymentStatus } from '../types/prisma';
 import { z } from 'zod';
 import { createNotification as createNotificationHelper } from './notification';
 import { JsonValue } from '../types/json';
