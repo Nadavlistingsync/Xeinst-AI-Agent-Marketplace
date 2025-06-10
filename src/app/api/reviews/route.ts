@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { createErrorResponse } from '@/lib/api';
 import { withErrorHandling } from '@/lib/error-handling';
 import { db } from '@/lib/db';
 import { AppError } from '@/lib/error-handling';
