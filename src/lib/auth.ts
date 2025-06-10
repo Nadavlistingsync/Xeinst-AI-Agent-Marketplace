@@ -7,7 +7,6 @@ import type { User } from '../types/prisma';
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth-options";
 
 const providers = [
   GoogleProvider({
@@ -26,49 +25,23 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: "jwt",
   },
-  pages: {
-    signIn: "/login",
-  },
   callbacks: {
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub!;
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
       }
       return session;
     },
     async jwt({ token, user }) {
-      const dbUser = await prisma.user.findFirst({
-        where: {
-          email: token.email!,
-        },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          image: true,
-          role: true,
-          subscriptionTier: true,
-          password: true,
-        },
-      });
-
-      if (!dbUser) {
-        if (user) {
-          token.id = user?.id;
-        }
-        return token;
+      if (user) {
+        token.role = user.role;
       }
-
-      return {
-        id: dbUser.id,
-        name: dbUser.name,
-        email: dbUser.email,
-        picture: dbUser.image,
-        role: dbUser.role,
-        subscriptionTier: dbUser.subscriptionTier,
-        password: dbUser.password,
-      };
+      return token;
     },
+  },
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/error",
   },
 };
 
