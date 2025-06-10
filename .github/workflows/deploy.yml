@@ -33,8 +33,11 @@ jobs:
         node-version: '18'
         cache: 'npm'
     
+    - name: Install pnpm
+      run: npm install -g pnpm
+    
     - name: Install dependencies
-      run: npm ci
+      run: pnpm install
     
     - name: Run tests
       env:
@@ -90,8 +93,11 @@ jobs:
         node-version: '18'
         cache: 'npm'
     
+    - name: Install pnpm
+      run: npm install -g pnpm
+    
     - name: Install dependencies
-      run: npm ci
+      run: pnpm install
     
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25
@@ -124,8 +130,11 @@ jobs:
         node-version: '18'
         cache: 'npm'
     
+    - name: Install pnpm
+      run: npm install -g pnpm
+    
     - name: Install dependencies
-      run: npm ci
+      run: pnpm install
     
     - name: Configure Git
       run: |
