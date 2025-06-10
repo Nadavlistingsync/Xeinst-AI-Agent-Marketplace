@@ -10,6 +10,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ai_agency_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v4
     
@@ -40,6 +55,9 @@ jobs:
     
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
+    
+    - name: Generate Prisma Client
+      run: pnpm prisma generate
     
     - name: Run type check
       run: pnpm type-check
@@ -50,15 +68,15 @@ jobs:
     - name: Run tests
       run: pnpm test
       env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-        GITHUB_ID: ${{ secrets.GITHUB_ID }}
-        GITHUB_SECRET: ${{ secrets.GITHUB_SECRET }}
-        GOOGLE_ID: ${{ secrets.GOOGLE_ID }}
-        GOOGLE_SECRET: ${{ secrets.GOOGLE_SECRET }}
-        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-        NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
+        NEXTAUTH_SECRET: test-secret
+        NEXTAUTH_URL: http://localhost:3000
+        GITHUB_ID: test
+        GITHUB_SECRET: test
+        GOOGLE_ID: test
+        GOOGLE_SECRET: test
+        SENTRY_AUTH_TOKEN: test
+        NEXT_PUBLIC_SENTRY_DSN: test
 
   build:
     needs: test
@@ -67,24 +85,24 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
+    
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
         cache: 'pnpm'
-
+    
     - name: Install pnpm
       uses: pnpm/action-setup@v2
       with:
         version: 10.2.5
         run_install: false
-
+    
     - name: Get pnpm store directory
       shell: bash
       run: |
         echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
+    
     - name: Setup pnpm cache
       uses: actions/cache@v3
       with:
@@ -92,10 +110,13 @@ jobs:
         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
-
+    
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
-
+    
+    - name: Generate Prisma Client
+      run: pnpm prisma generate
+    
     - name: Build
       run: pnpm build
       env:
