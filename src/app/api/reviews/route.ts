@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { withErrorHandling } from '@/lib/error-handling';
-import { db } from '@/lib/db';
+import { db, withRetry } from '@/lib/db';
 import { AppError } from '@/lib/error-handling';
 import { cache } from '@/lib/cache';
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
     
     // If not in cache, fetch from database
-    const reviews = await db.withRetry(
+    const reviews = await withRetry(
       () => db.getClient().review.findMany({
         where: { productId },
         include: {
