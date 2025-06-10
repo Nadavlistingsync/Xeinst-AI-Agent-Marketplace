@@ -37,7 +37,7 @@ jobs:
     - name: Install pnpm
       uses: pnpm/action-setup@v2
       with:
-        version: 10.2.5
+        version: 10.12.1
         run_install: false
     
     - name: Get pnpm store directory
@@ -58,6 +58,11 @@ jobs:
     
     - name: Generate Prisma Client
       run: pnpm prisma generate
+    
+    - name: Run database migrations
+      run: pnpm prisma migrate deploy
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
     
     - name: Run type check
       run: pnpm type-check
@@ -95,7 +100,7 @@ jobs:
     - name: Install pnpm
       uses: pnpm/action-setup@v2
       with:
-        version: 10.2.5
+        version: 10.12.1
         run_install: false
     
     - name: Get pnpm store directory
