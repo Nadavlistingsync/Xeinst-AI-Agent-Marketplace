@@ -24,6 +24,8 @@ export type PurchaseWithProduct = {
   status: 'pending' | 'completed' | 'failed';
   amount: number;
   currency: string;
+  stripeTransferId: string | null;
+  paidAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   product: ProductWithNumbers;
