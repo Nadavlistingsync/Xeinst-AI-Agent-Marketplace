@@ -44,22 +44,35 @@ export async function processAgentLogs(): Promise<JobResult> {
   try {
     const logs = await prisma.agentLog.findMany({
       where: {
-        processed: false
+        status: 'pending'
       },
       orderBy: {
         timestamp: 'asc'
-      }
+      },
+      take: 100
     });
 
     for (const log of logs) {
-      await prisma.agentLog.update({
-        where: {
-          id: log.id
-        },
-        data: {
-          // Remove processed if not in schema
-        }
-      });
+      try {
+        // Process the log
+        await prisma.agentLog.update({
+          where: { id: log.id },
+          data: {
+            status: 'processed',
+            processedAt: new Date()
+          }
+        });
+      } catch (error) {
+        console.error(`Error processing log ${log.id}:`, error);
+        // Mark as failed
+        await prisma.agentLog.update({
+          where: { id: log.id },
+          data: {
+            status: 'failed',
+            error: error instanceof Error ? error.message : 'Unknown error'
+          }
+        });
+      }
     }
 
     return {
@@ -69,11 +82,8 @@ export async function processAgentLogs(): Promise<JobResult> {
       }
     };
   } catch (error) {
-    console.error('Error processing agent logs:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
+    console.error('Error in processAgentLogs:', error);
+    throw error;
   }
 }
 
