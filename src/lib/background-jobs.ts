@@ -60,7 +60,7 @@ export async function processAgentLogs(): Promise<JobResult> {
           data: {
             level: 'processed',
             metadata: {
-              ...log.metadata,
+              ...(log.metadata as Record<string, unknown> || {}),
               processedAt: new Date().toISOString()
             }
           }
@@ -73,7 +73,7 @@ export async function processAgentLogs(): Promise<JobResult> {
           data: {
             level: 'error',
             metadata: {
-              ...log.metadata,
+              ...(log.metadata as Record<string, unknown> || {}),
               error: error instanceof Error ? error.message : 'Unknown error',
               processedAt: new Date().toISOString()
             }
