@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma, Deployment, Purchase } from "@prisma/client";
+import { PrismaClient, Prisma, Deployment } from "@prisma/client";
 import { prisma } from "./db";
 import type { ProductWithNumbers, PurchaseWithProduct } from './schema';
 
