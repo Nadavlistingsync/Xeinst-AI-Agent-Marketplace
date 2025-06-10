@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "corepack enable && corepack prepare pnpm@10.12.1 --activate && pnpm install && pnpm build",
+  "buildCommand": "corepack enable && corepack prepare pnpm@10.12.1 --activate && pnpm install && pnpm run vercel-build",
   "devCommand": "pnpm run dev",
   "installCommand": "corepack enable && corepack prepare pnpm@10.12.1 --activate && pnpm install",
   "framework": "nextjs",
