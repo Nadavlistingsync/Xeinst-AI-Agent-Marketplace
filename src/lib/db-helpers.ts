@@ -1,6 +1,5 @@
 import { PrismaClient, Prisma, Deployment } from "@prisma/client";
 import { prisma } from "./db";
-import type { PurchaseWithProduct } from './schema';
 
 // Define types
 export type ProductType = 'template' | 'custom' | 'plugin';
@@ -18,16 +17,17 @@ export type ProductWithNumbers = {
   deploymentCount: number;
 };
 
-export interface PurchaseWithProduct {
+export type PurchaseWithProduct = {
   id: string;
   userId: string;
   productId: string;
   status: 'pending' | 'completed' | 'failed';
   amount: number;
+  currency: string;
   createdAt: Date;
   updatedAt: Date;
   product: ProductWithNumbers;
-}
+};
 
 // Product operations
 export async function getProduct(id: string): Promise<ProductWithNumbers | null> {
