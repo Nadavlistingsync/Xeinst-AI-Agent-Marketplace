@@ -6,7 +6,6 @@ import { UserRole, SubscriptionTier } from '@prisma/client';
 import type { User } from '../types/prisma';
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
-import { getServerSession } from "next-auth";
 
 const providers = [
   GoogleProvider({
