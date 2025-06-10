@@ -74,6 +74,7 @@ jobs:
       run: pnpm test
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
+        TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
         NEXTAUTH_SECRET: test-secret
         NEXTAUTH_URL: http://localhost:3000
         GITHUB_ID: test
@@ -82,6 +83,7 @@ jobs:
         GOOGLE_SECRET: test
         SENTRY_AUTH_TOKEN: test
         NEXT_PUBLIC_SENTRY_DSN: test
+        NODE_ENV: test
 
   build:
     needs: test
