@@ -7,7 +7,7 @@ import { io as Client } from 'socket.io-client';
 import type { DeploymentStatusUpdate } from '@/types/websocket';
 import { WebSocketServer } from 'ws';
 import { prisma } from '@/lib/prisma';
-import type { DeploymentStatus as PrismaDeploymentStatus } from '@/types/prisma';
+import { DeploymentStatus as PrismaDeploymentStatus } from '@/types/prisma';
 
 describe('WebSocket', () => {
   let io: Server;

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { prisma } from "./db";
-import type { DeploymentStatus, Prisma } from '@/types/prisma';
+import { DeploymentStatus, Prisma } from '@/types/prisma';
 import { logAgentEvent } from './agent-monitoring';
 
 export const agentValidationSchema = z.object({
