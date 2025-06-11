@@ -123,7 +123,7 @@ export async function getProducts(params: GetProductsParams) {
     orderBy: {
       createdAt: "desc",
     },
-  }).then((products: ProductType[]) => products.map((p: ProductType) => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
+  }).then(products => products.map(p => ({ ...p, price: Number(p.price), earningsSplit: Number(p.earningsSplit) })));
 }
 
 export async function getFeaturedProducts() {
