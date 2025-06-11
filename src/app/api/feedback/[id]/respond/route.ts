@@ -2,85 +2,70 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/types/prisma';
-import { NotificationType } from '@/types/prisma';
 import { createNotification } from '@/lib/notifications';
+import { NotificationType } from '@/types/prisma';
 import { withErrorHandling } from '@/lib/error-handling';
 import { withRateLimit } from '@/lib/rate-limit';
 import { withValidation } from '@/lib/validation';
 import { z } from 'zod';
 
+// Define response schema
 const responseSchema = z.object({
-  response: z.string().min(1).max(1000),
+  response: z.string().min(1, 'Response is required'),
 });
 
+// Handler function
 async function handler(
   request: NextRequest,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json(
-      { success: false, error: 'Unauthorized' },
-      { status: 401 }
-    );
+  if (!session?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const feedback = await prisma.agentFeedback.findUnique({
+  const feedback = await prisma.feedback.findUnique({
     where: { id: params.id },
-    include: {
-      deployment: {
-        select: {
-          id: true,
-          name: true,
-          createdBy: true,
-        },
-      },
-    },
+    include: { user: true }
   });
 
   if (!feedback) {
-    return NextResponse.json(
-      { success: false, error: 'Feedback not found' },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: 'Feedback not found' }, { status: 404 });
   }
 
-  if (feedback.deployment.createdBy !== session.user.id) {
+  if (feedback.userId === session.user.id) {
     return NextResponse.json(
-      { success: false, error: 'Unauthorized' },
-      { status: 403 }
+      { error: 'Cannot respond to your own feedback' },
+      { status: 400 }
     );
   }
 
   const body = await request.json();
   const validatedData = responseSchema.parse(body);
 
-  await prisma.agentFeedback.update({
+  const updatedFeedback = await prisma.feedback.update({
     where: { id: params.id },
     data: {
-      creatorResponse: validatedData.response,
-      responseDate: new Date(),
-    },
-  });
-
-  // Create notification for the feedback author
-  await createNotification({
-    userId: feedback.userId,
-    type: NotificationType.feedback_alert,
-    message: `Your feedback for ${feedback.deployment.name} has received a response`,
-    metadata: {
-      feedbackId: feedback.id,
-      deploymentId: feedback.deployment.id
+      response: validatedData.response,
+      respondedAt: new Date(),
+      respondedBy: session.user.id
     }
   });
 
-  return NextResponse.json({
-    success: true,
+  // Create notification for feedback author
+  await createNotification({
+    userId: feedback.userId,
+    type: NotificationType.FEEDBACK_RESPONSE,
+    message: 'Your feedback has received a response',
+    metadata: {
+      feedbackId: feedback.id,
+      responderId: session.user.id,
+      responderName: session.user.name || 'A team member'
+    }
   });
+
+  return NextResponse.json(updatedFeedback);
 }
 
-export const POST = withErrorHandling(
-  withRateLimit(
-    withValidation(responseSchema, handler)
-  )
-); 
+// Export the wrapped handler
+export const POST = withErrorHandling(withRateLimit(withValidation(handler, responseSchema))); 
