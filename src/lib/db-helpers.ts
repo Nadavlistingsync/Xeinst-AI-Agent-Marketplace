@@ -36,25 +36,29 @@ export type PurchaseWithProduct = {
 export async function getProduct(id: string): Promise<ProductWithNumbers | null> {
   return prisma.product.findUnique({
     where: { id },
-    include: {
-      creator: {
-        select: {
-          name: true,
-          image: true,
-        },
-      },
-      reviews: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              image: true,
-            },
-          },
-        },
-      },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      type: true,
+      price: true,
+      features: true,
+      createdAt: true,
+      updatedAt: true,
+      purchaseCount: true,
+      deploymentCount: true,
+      category: true,
+      // Optionally add other fields as needed
     },
-  }).then((product) => product ? { ...product, price: Number(product.price), earningsSplit: Number(product.earningsSplit) } : null);
+  }).then((product) =>
+    product
+      ? {
+          ...product,
+          price: Number(product.price),
+          earningsSplit: Number((product as any).earningsSplit ?? 0),
+        }
+      : null
+  );
 }
 
 export interface GetProductsParams {
