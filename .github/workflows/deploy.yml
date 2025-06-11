@@ -49,18 +49,18 @@ jobs:
         pnpm --version || true
 
     - name: Install dependencies
-      run: pnpm install
+      run: npx pnpm install
     
     - name: Run tests
       env:
         TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
-      run: pnpm test
+      run: npx pnpm test
     
     - name: Build
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-      run: pnpm run build
+      run: npx pnpm run build
 
     - name: List build directory
       run: ls -la .next/
@@ -106,7 +106,7 @@ jobs:
         cache: 'pnpm'
 
     - name: Install dependencies
-      run: pnpm install
+      run: npx pnpm install
     
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25
@@ -140,7 +140,7 @@ jobs:
         cache: 'pnpm'
 
     - name: Install dependencies
-      run: pnpm install
+      run: npx pnpm install
     
     - name: Configure Git
       run: |

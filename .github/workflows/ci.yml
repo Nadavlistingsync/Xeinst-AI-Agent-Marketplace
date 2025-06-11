@@ -63,24 +63,24 @@ jobs:
           ${{ runner.os }}-pnpm-store-
     
     - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      run: npx pnpm install --frozen-lockfile
     
     - name: Generate Prisma Client
-      run: pnpm prisma generate
+      run: npx pnpm prisma generate
     
     - name: Run database migrations
-      run: pnpm prisma migrate deploy
+      run: npx pnpm prisma migrate deploy
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
     
     - name: Run type check
-      run: pnpm type-check
+      run: npx pnpm type-check
     
     - name: Run linting
-      run: pnpm lint
+      run: npx pnpm lint
     
     - name: Run tests
-      run: pnpm test
+      run: npx pnpm test
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
         TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
@@ -137,13 +137,13 @@ jobs:
           ${{ runner.os }}-pnpm-store-
     
     - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      run: npx pnpm install --frozen-lockfile
     
     - name: Generate Prisma Client
-      run: pnpm prisma generate
+      run: npx pnpm prisma generate
     
     - name: Build
-      run: pnpm build
+      run: npx pnpm build
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
@@ -201,7 +201,7 @@ jobs:
           ${{ runner.os }}-pnpm-store-
 
     - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      run: npx pnpm install --frozen-lockfile
 
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25

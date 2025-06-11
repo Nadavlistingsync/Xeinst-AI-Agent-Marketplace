@@ -52,16 +52,16 @@ jobs:
           ${{ runner.os }}-pnpm-store-
     
     - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      run: npx pnpm install --frozen-lockfile
     
     - name: Generate Prisma Client
-      run: pnpm prisma generate
+      run: npx pnpm prisma generate
     
     - name: Run linting
-      run: pnpm run lint
+      run: npx pnpm run lint
     
     - name: Run tests with coverage
-      run: pnpm run test:coverage
+      run: npx pnpm run test:coverage
     
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
