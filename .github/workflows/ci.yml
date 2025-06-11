@@ -37,6 +37,12 @@ jobs:
     - name: Install pnpm globally
       run: npm install -g pnpm
 
+    - name: Debug pnpm install
+      run: |
+        echo $PATH
+        which pnpm || true
+        pnpm --version || true
+
     - name: Get pnpm store directory
       shell: bash
       run: |

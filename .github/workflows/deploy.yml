@@ -36,7 +36,7 @@ jobs:
     - name: Install pnpm globally
       run: npm install -g pnpm
 
-    - name: Debug pnpm and PATH
+    - name: Debug pnpm install
       run: |
         echo $PATH
         which pnpm || true
