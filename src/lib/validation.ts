@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { NextResponse } from 'next/server';
 
 export const paginationSchema = z.object({
   page: z.number().int().min(1).optional().default(1),
@@ -94,4 +95,37 @@ export type ProductInput = z.infer<typeof productSchema>;
 export type ReviewInput = z.infer<typeof reviewSchema>;
 export type FeedbackInput = z.infer<typeof feedbackSchema>;
 export type FileInput = z.infer<typeof fileSchema>;
-export type NotificationInput = z.infer<typeof notificationSchema>; 
+export type NotificationInput = z.infer<typeof notificationSchema>;
+
+export function withValidation<T extends z.ZodType>(
+  schema: T,
+  handler: (request: Request, context: any) => Promise<NextResponse>
+) {
+  return async (request: Request, context: any): Promise<NextResponse> => {
+    try {
+      const body = await request.json();
+      const validatedData = schema.parse(body);
+      
+      // Create a new request with the validated data
+      const newRequest = new Request(request.url, {
+        method: request.method,
+        headers: request.headers,
+        body: JSON.stringify(validatedData)
+      });
+
+      return handler(newRequest, context);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Validation error', 
+            details: error.errors 
+          },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
+  };
+} 
