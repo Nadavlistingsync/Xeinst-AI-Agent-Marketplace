@@ -157,7 +157,11 @@ export async function getProductsByCategory(category: string): Promise<ProductWi
   }).then(products => products.map(p => ({
     ...p,
     price: Number(p.price),
-    earningsSplit: Number(p.earningsSplit)
+    earningsSplit: Number(p.earningsSplit),
+    type: 'template' as ProductType,
+    features: [],
+    purchaseCount: 0,
+    deploymentCount: 0
   })));
 }
 
