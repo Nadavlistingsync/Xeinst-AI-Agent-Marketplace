@@ -34,8 +34,11 @@ jobs:
         node-version: '18'
         cache: 'pnpm'
     
-    - name: Enable corepack
-      run: corepack enable
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 10
+        run_install: false
     
     - name: Get pnpm store directory
       shell: bash
@@ -49,12 +52,6 @@ jobs:
         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
-    
-    - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 10
-        run_install: false
     
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
@@ -102,8 +99,11 @@ jobs:
         node-version: '18'
         cache: 'pnpm'
     
-    - name: Enable corepack
-      run: corepack enable
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 10
+        run_install: false
     
     - name: Get pnpm store directory
       shell: bash
@@ -117,12 +117,6 @@ jobs:
         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
-    
-    - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 10
-        run_install: false
     
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
