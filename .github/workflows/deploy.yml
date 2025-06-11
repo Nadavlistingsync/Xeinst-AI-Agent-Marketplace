@@ -45,13 +45,13 @@ jobs:
     - name: Run tests
       env:
         TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
-      run: npm test
+      run: pnpm test
     
     - name: Build
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-      run: npm run build
+      run: pnpm run build
 
     - name: List build directory
       run: ls -la .next/
