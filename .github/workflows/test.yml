@@ -28,8 +28,11 @@ jobs:
         node-version: '20'
         cache: 'pnpm'
 
-    - name: Install pnpm globally
-      run: npm install -g pnpm
+    - name: Install pnpm via official script
+      run: |
+        curl -fsSL https://get.pnpm.io/install.sh | sh -
+        export PATH="$HOME/.local/share/pnpm:$PATH"
+        echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
 
     - name: Debug pnpm install
       run: |
