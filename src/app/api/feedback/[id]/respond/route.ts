@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/types/prisma';
 import { NotificationType } from '@/types/prisma';
-import { sendNotification } from '@/lib/notifications';
+import { createNotification } from '@/lib/notifications';
 import { withRetry } from '@/lib/retry';
 import { withErrorHandling } from '@/lib/error-handling';
 import { withRateLimit } from '@/lib/rate-limit';
@@ -66,7 +66,7 @@ export async function POST(
     });
 
     // Create notification for the feedback author
-    await sendNotification({
+    await createNotification({
       userId: feedback.userId,
       type: NotificationType.feedback_alert,
       message: `Your feedback for ${feedback.deployment.name} has received a response`,
