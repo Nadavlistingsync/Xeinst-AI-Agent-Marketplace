@@ -28,10 +28,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Clean npm cache and update PATH
+      run: |
+        npm cache clean --force
+        echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
+    
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'pnpm'
     
     - name: Install pnpm globally
@@ -93,10 +98,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Clean npm cache and update PATH
+      run: |
+        npm cache clean --force
+        echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
+    
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'pnpm'
     
     - name: Install pnpm globally
@@ -163,7 +173,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'pnpm'
 
     - name: Get pnpm store directory
