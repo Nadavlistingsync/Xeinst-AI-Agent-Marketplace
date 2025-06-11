@@ -66,15 +66,13 @@ export async function POST(
     });
 
     // Create notification for the feedback author
-    await prisma.notification.create({
-      data: {
-        userId: feedback.userId,
-        type: NotificationType.feedback_alert,
-        message: `Your feedback for ${feedback.deployment.name} has received a response`,
-        metadata: {
-          feedbackId: feedback.id,
-          deploymentId: feedback.deployment.id
-        }
+    await sendNotification({
+      userId: feedback.userId,
+      type: NotificationType.feedback_alert,
+      message: `Your feedback for ${feedback.deployment.name} has received a response`,
+      metadata: {
+        feedbackId: feedback.id,
+        deploymentId: feedback.deployment.id
       }
     });
 
