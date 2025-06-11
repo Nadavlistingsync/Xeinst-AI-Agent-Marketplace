@@ -48,7 +48,20 @@ export async function getProduct(id: string): Promise<ProductWithNumbers | null>
       purchaseCount: true,
       deploymentCount: true,
       category: true,
-      // Optionally add other fields as needed
+      environment: true,
+      status: true,
+      fileUrl: true,
+      rating: true,
+      downloadCount: true,
+      requirements: true,
+      longDescription: true,
+      tags: true,
+      version: true,
+      accessLevel: true,
+      licenseType: true,
+      modelType: true,
+      createdBy: true,
+      earningsSplit: true,
     },
   }).then((product) =>
     product
