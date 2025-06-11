@@ -279,20 +279,21 @@ export async function getUserPurchases(userId: string): Promise<PurchaseWithProd
           purchaseCount: true,
           deploymentCount: true,
           category: true,
-        }
+        },
       },
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-  }).then((purchases) => purchases.map((p) => ({
-    ...p,
-    amount: Number(p.amount),
+  }).then(purchases => purchases.map(purchase => ({
+    ...purchase,
+    amount: Number(purchase.amount),
+    currency: 'USD',
     product: {
-      ...p.product,
-      price: Number(p.product.price),
-      earningsSplit: Number((p.product as any).earningsSplit ?? 0)
-    }
+      ...purchase.product,
+      price: Number(purchase.product.price),
+      type: purchase.product.type as ProductType,
+      features: purchase.product.features || [],
+      purchaseCount: purchase.product.purchaseCount || 0,
+      deploymentCount: purchase.product.deploymentCount || 0,
+    },
   })));
 }
 
