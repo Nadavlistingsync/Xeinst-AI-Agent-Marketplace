@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import type {
+import {
   User,
   UserRole,
   Product,
@@ -26,8 +26,8 @@ import type {
   Prisma
 } from '@prisma/client';
 
-// Export all types
-export type {
+// Export all types and enums
+export {
   User,
   UserRole,
   Product,
