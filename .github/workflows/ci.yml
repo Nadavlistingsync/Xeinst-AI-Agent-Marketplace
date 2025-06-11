@@ -42,6 +42,12 @@ jobs:
         if ! command -v pnpm &> /dev/null; then
           npm install -g pnpm
         fi
+
+    - name: Debug pnpm and PATH
+      run: |
+        echo $PATH
+        which pnpm || true
+        pnpm --version || true
     
     - name: Get pnpm store directory
       shell: bash
@@ -110,6 +116,12 @@ jobs:
         if ! command -v pnpm &> /dev/null; then
           npm install -g pnpm
         fi
+
+    - name: Debug pnpm and PATH
+      run: |
+        echo $PATH
+        which pnpm || true
+        pnpm --version || true
     
     - name: Get pnpm store directory
       shell: bash

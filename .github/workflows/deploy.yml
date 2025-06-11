@@ -42,6 +42,12 @@ jobs:
           npm install -g pnpm
         fi
 
+    - name: Debug pnpm and PATH
+      run: |
+        echo $PATH
+        which pnpm || true
+        pnpm --version || true
+
     - name: Install dependencies
       run: pnpm install
     
