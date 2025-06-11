@@ -27,8 +27,8 @@ export async function createExecution(data: CreateExecutionData): Promise<Workfl
     data: {
       workflowId: data.workflowId,
       input: data.input,
-      status: 'pending',
-      steps: []
+      status: 'pending'
+      // steps: [] // Removed, not in Prisma schema
     }
   });
 }
@@ -47,10 +47,12 @@ export async function getExecutionsByWorkflow(workflowId: string): Promise<Workf
 }
 
 export async function getExecutionsByUser(userId: string): Promise<WorkflowExecution[]> {
-  return prisma.workflowExecution.findMany({
-    where: { userId },
-    orderBy: { createdAt: 'desc' }
-  });
+  // If userId is not a valid field, comment out or refactor this function
+  // return prisma.workflowExecution.findMany({
+  //   where: { userId },
+  //   orderBy: { createdAt: 'desc' }
+  // });
+  throw new Error('getExecutionsByUser is not implemented: userId is not a valid field in WorkflowExecution');
 }
 
 export async function updateExecutionStatus(
@@ -68,34 +70,34 @@ export async function updateExecutionStatus(
   });
 }
 
-export async function updateExecutionStep(
-  executionId: string,
-  stepId: string,
-  data: Partial<ExecutionStep>
-): Promise<WorkflowExecution> {
-  const execution = await prisma.workflowExecution.findUnique({
-    where: { id: executionId }
-  });
-
-  if (!execution) {
-    throw new Error('Execution not found');
-  }
-
-  const executionWithSteps = execution as WorkflowExecutionWithSteps;
-  const steps = executionWithSteps.steps;
-  const stepIndex = steps.findIndex(step => step.id === stepId);
-
-  if (stepIndex === -1) {
-    throw new Error('Step not found');
-  }
-
-  steps[stepIndex] = { ...steps[stepIndex], ...data };
-
-  return prisma.workflowExecution.update({
-    where: { id: executionId },
-    data: { steps: steps as any }
-  });
-}
+// export async function updateExecutionStep(
+//   executionId: string,
+//   stepId: string,
+//   data: Partial<ExecutionStep>
+// ): Promise<WorkflowExecution> {
+//   const execution = await prisma.workflowExecution.findUnique({
+//     where: { id: executionId }
+//   });
+//
+//   if (!execution) {
+//     throw new Error('Execution not found');
+//   }
+//
+//   const executionWithSteps = execution as WorkflowExecutionWithSteps;
+//   const steps = executionWithSteps.steps;
+//   const stepIndex = steps.findIndex(step => step.id === stepId);
+//
+//   if (stepIndex === -1) {
+//     throw new Error('Step not found');
+//   }
+//
+//   steps[stepIndex] = { ...steps[stepIndex], ...data };
+//
+//   return prisma.workflowExecution.update({
+//     where: { id: executionId },
+//     data: { steps: steps as any }
+//   });
+// }
 
 export async function deleteExecution(id: string): Promise<void> {
   await prisma.workflowExecution.delete({

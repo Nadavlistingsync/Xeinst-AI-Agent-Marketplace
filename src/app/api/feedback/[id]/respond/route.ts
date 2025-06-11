@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { NotificationType } from '@prisma/client';
+import type { NotificationType } from '@/types/prisma';
 
 const responseSchema = z.object({
   response: z.string().min(1).max(1000),

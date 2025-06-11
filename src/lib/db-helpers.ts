@@ -1,4 +1,4 @@
-import { PrismaClient, Prisma, Deployment } from "@prisma/client";
+import type { Prisma, Deployment } from '@/types/prisma';
 import { prisma } from "./db";
 
 // Define types
@@ -266,34 +266,26 @@ export async function getUserPurchases(userId: string): Promise<PurchaseWithProd
   return prisma.purchase.findMany({
     where: { userId },
     include: {
-      product: {
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          type: true,
-          price: true,
-          features: true,
-          createdAt: true,
-          updatedAt: true,
-          purchaseCount: true,
-          deploymentCount: true,
-          category: true,
-        },
-      },
-    },
+      product: true
+    }
   }).then(purchases => purchases.map(purchase => ({
     ...purchase,
+    status: purchase.status as 'pending' | 'completed' | 'failed',
     amount: Number(purchase.amount),
     currency: 'USD',
     product: {
-      ...purchase.product,
+      id: purchase.product.id,
+      name: purchase.product.name,
+      description: purchase.product.description,
+      type: 'template',
       price: Number(purchase.product.price),
-      type: purchase.product.type as ProductType,
-      features: purchase.product.features || [],
-      purchaseCount: purchase.product.purchaseCount || 0,
-      deploymentCount: purchase.product.deploymentCount || 0,
-    },
+      features: [],
+      createdAt: purchase.product.createdAt,
+      updatedAt: purchase.product.updatedAt,
+      purchaseCount: 0,
+      deploymentCount: 0,
+      category: purchase.product.category
+    }
   })));
 }
 
@@ -483,22 +475,19 @@ export async function createAgentLog(data: Prisma.AgentLogCreateInput) {
 // Product operations
 export async function getProductById(id: string): Promise<ProductWithNumbers | null> {
   return prisma.product.findUnique({
-    where: {
-      id
-    },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          name: true,
-          image: true
-        }
-      }
-    }
+    where: { id }
   }).then(product => product ? {
-    ...product,
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    type: 'template',
     price: Number(product.price),
-    earningsSplit: Number(product.earningsSplit)
+    features: [],
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
+    purchaseCount: 0,
+    deploymentCount: 0,
+    category: product.category
   } : null);
 }
 
@@ -563,22 +552,19 @@ export async function getAgentFeedbacksByDeploymentId(deploymentId: string) {
 
 export async function getProductsByCreator(creatorId: string): Promise<ProductWithNumbers[]> {
   return prisma.product.findMany({
-    where: {
-      createdBy: creatorId
-    },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          name: true,
-          image: true
-        }
-      }
-    }
-  }).then(products => products.map(p => ({
-    ...p,
-    price: Number(p.price),
-    earningsSplit: Number(p.earningsSplit)
+    where: { createdBy: creatorId }
+  }).then(products => products.map(product => ({
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    type: 'template',
+    price: Number(product.price),
+    features: [],
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
+    purchaseCount: 0,
+    deploymentCount: 0,
+    category: product.category
   })));
 }
 
@@ -591,26 +577,25 @@ export async function searchProducts(query: string): Promise<ProductWithNumbers[
         { category: { contains: query, mode: 'insensitive' } }
       ],
       status: 'published'
-    },
-    include: {
-      creator: {
-        select: {
-          id: true,
-          name: true,
-          image: true
-        }
-      }
     }
-  }).then(products => products.map(p => ({
-    ...p,
-    price: Number(p.price),
-    earningsSplit: Number(p.earningsSplit)
+  }).then(products => products.map(product => ({
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    type: 'template',
+    price: Number(product.price),
+    features: [],
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
+    purchaseCount: 0,
+    deploymentCount: 0,
+    category: product.category
   })));
 }
 
 // Helper functions
 export async function getProductWithStats(
-  prisma: PrismaClient,
+  prisma: Prisma,
   productId: string
 ): Promise<ProductWithNumbers | null> {
   return prisma.product.findUnique({
@@ -620,35 +605,51 @@ export async function getProductWithStats(
       name: true,
       description: true,
       price: true,
-      type: true,
-      downloadCount: true,
-      rating: true,
       createdAt: true,
       updatedAt: true,
+      category: true,
     },
-  });
+  }).then(product => product ? {
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    type: 'template',
+    price: Number(product.price),
+    features: [],
+    createdAt: product.createdAt,
+    updatedAt: product.updatedAt,
+    purchaseCount: 0,
+    deploymentCount: 0,
+    category: product.category
+  } : null);
 }
 
 export async function getPurchaseWithProduct(
-  prisma: PrismaClient,
+  prisma: Prisma,
   purchaseId: string
 ): Promise<PurchaseWithProduct | null> {
   return prisma.purchase.findUnique({
     where: { id: purchaseId },
     include: {
-      product: {
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          price: true,
-          type: true,
-          downloadCount: true,
-          rating: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      },
-    },
-  });
+      product: true
+    }
+  }).then(purchase => purchase ? {
+    ...purchase,
+    status: purchase.status as 'pending' | 'completed' | 'failed',
+    amount: Number(purchase.amount),
+    currency: 'USD',
+    product: {
+      id: purchase.product.id,
+      name: purchase.product.name,
+      description: purchase.product.description,
+      type: 'template',
+      price: Number(purchase.product.price),
+      features: [],
+      createdAt: purchase.product.createdAt,
+      updatedAt: purchase.product.updatedAt,
+      purchaseCount: 0,
+      deploymentCount: 0,
+      category: purchase.product.category
+    }
+  } : null);
 } 

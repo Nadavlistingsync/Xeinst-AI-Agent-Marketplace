@@ -1,6 +1,5 @@
-import { prisma } from '@/types/prisma';
-import { ProductStatus, ProductAccessLevel, ProductLicenseType } from '@prisma/client';
-import type { Product, Prisma } from '@prisma/client';
+import { prisma } from './db';
+import type { Product, Prisma, ProductStatus, ProductAccessLevel, ProductLicenseType } from '@/types/prisma';
 
 export interface CreateProductInput {
   name: string;

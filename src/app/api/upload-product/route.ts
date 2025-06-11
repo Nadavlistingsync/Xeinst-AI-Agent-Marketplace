@@ -3,10 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import type { PrismaClient } from '@/types/prisma';
 import { z } from 'zod';
 
-const prisma = new PrismaClient();
+const prismaClient = new PrismaClient();
 
 const productSchema = z.object({
   name: z.string().min(1),
@@ -63,7 +64,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const validatedData = productSchema.parse(productData);
 
-    const product = await prisma.product.create({
+    const product = await prismaClient.product.create({
       data: {
         name: validatedData.name,
         description: validatedData.description,

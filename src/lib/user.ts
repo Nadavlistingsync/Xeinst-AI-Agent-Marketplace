@@ -1,6 +1,5 @@
-import { Prisma, DeploymentStatus, UserRole, SubscriptionTier } from '@prisma/client';
+import type { Prisma, User, UserRole, SubscriptionTier, DeploymentStatus } from '@/types/prisma';
 import { prisma } from './db';
-import type { User } from '@/types/prisma';
 
 export interface CreateUserInput {
   name: string;
@@ -157,13 +156,17 @@ export async function getUserAgents(userId: string, options: GetUserAgentsOption
   }
 
   if (options.startDate) {
-    if (!where.createdAt || typeof where.createdAt !== 'object') where.createdAt = {};
-    (where.createdAt as any).gte = options.startDate;
+    where.createdAt = {
+      ...where.createdAt,
+      gte: options.startDate
+    };
   }
 
   if (options.endDate) {
-    if (!where.createdAt || typeof where.createdAt !== 'object') where.createdAt = {};
-    (where.createdAt as any).lte = options.endDate;
+    where.createdAt = {
+      ...where.createdAt,
+      lte: options.endDate
+    };
   }
 
   return prisma.deployment.findMany({
@@ -182,13 +185,17 @@ export async function getUserDeployments(userId: string, options: GetUserDeploym
   }
 
   if (options.startDate) {
-    if (!where.createdAt || typeof where.createdAt !== 'object') where.createdAt = {};
-    (where.createdAt as any).gte = options.startDate;
+    where.createdAt = {
+      ...where.createdAt,
+      gte: options.startDate
+    };
   }
 
   if (options.endDate) {
-    if (!where.createdAt || typeof where.createdAt !== 'object') where.createdAt = {};
-    (where.createdAt as any).lte = options.endDate;
+    where.createdAt = {
+      ...where.createdAt,
+      lte: options.endDate
+    };
   }
 
   return prisma.deployment.findMany({
@@ -257,27 +264,23 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
 export async function getUserStats(userId: string): Promise<UserStats> {
   const [purchases, earnings, products, ratings] = await Promise.all([
-    prisma.purchase.count({
-      where: { userId }
-    }),
+    prisma.purchase.count({ where: { userId } }),
     prisma.earning.aggregate({
       where: { userId },
       _sum: { amount: true }
     }),
-    prisma.product.count({
-      where: { createdBy: userId }
-    }),
-    prisma.rating.aggregate({
+    prisma.deployment.count({ where: { createdBy: userId } }),
+    prisma.agentFeedback.aggregate({
       where: { userId },
-      _avg: { score: true }
+      _avg: { rating: true }
     })
   ]);
 
   return {
     totalPurchases: purchases,
-    totalEarnings: earnings._sum.amount ? Number(earnings._sum.amount) : 0,
+    totalEarnings: earnings._sum.amount || 0,
     totalProducts: products,
-    averageRating: ratings._avg.score ? Number(ratings._avg.score) : 0
+    averageRating: ratings._avg.rating || 0
   };
 }
 

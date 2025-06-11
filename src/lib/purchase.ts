@@ -1,6 +1,5 @@
 import { prisma } from './db';
-import { Prisma } from '@prisma/client';
-import type { Purchase } from '@/types/prisma';
+import type { Prisma, Purchase } from '@/types/prisma';
 
 export interface PurchaseOptions {
   userId?: string;

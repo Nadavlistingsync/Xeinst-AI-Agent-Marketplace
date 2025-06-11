@@ -8,6 +8,8 @@ import { DeploymentMetrics } from "@/components/dashboard/DeploymentMetrics";
 import { DeploymentLogs } from "@/components/dashboard/DeploymentLogs";
 import { DeploymentWithMetrics } from '@/types/deployment';
 import { DeploymentStatus } from '@prisma/client';
+import { Suspense } from 'react';
+import type { DeploymentStatus as PrismaDeploymentStatus } from '@/types/prisma';
 
 interface DeploymentPageProps {
   params: {

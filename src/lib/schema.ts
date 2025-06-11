@@ -263,13 +263,6 @@ export type AgentMetricsWhereUniqueInput = Prisma.AgentMetricsWhereUniqueInput;
 export type AgentMetricsOrderByWithRelationInput = Prisma.AgentMetricsOrderByWithRelationInput;
 export type AgentMetricsInclude = Prisma.AgentMetricsInclude;
 
-export type ProductCreateInput = Prisma.ProductCreateInput;
-export type ProductUpdateInput = Prisma.ProductUpdateInput;
-export type ProductWhereInput = Prisma.ProductWhereInput;
-export type ProductWhereUniqueInput = Prisma.ProductWhereUniqueInput;
-export type ProductOrderByWithRelationInput = Prisma.ProductOrderByWithRelationInput;
-export type ProductInclude = Prisma.ProductInclude;
-
 export type FeedbackAnalysis = {
   sentimentScore: number;
   positiveFeedback: number;
@@ -488,11 +481,4 @@ export type ProductUpdateInput = Prisma.ProductUpdateInput;
 export type ProductWhereInput = Prisma.ProductWhereInput;
 export type ProductWhereUniqueInput = Prisma.ProductWhereUniqueInput;
 export type ProductOrderByWithRelationInput = Prisma.ProductOrderByWithRelationInput;
-export type ProductInclude = Prisma.ProductInclude;
-
-export type PurchaseCreateInput = Prisma.PurchaseCreateInput;
-export type PurchaseUpdateInput = Prisma.PurchaseUpdateInput;
-export type PurchaseWhereInput = Prisma.PurchaseWhereInput;
-export type PurchaseWhereUniqueInput = Prisma.PurchaseWhereUniqueInput;
-export type PurchaseOrderByWithRelationInput = Prisma.PurchaseOrderByWithRelationInput;
-export type PurchaseInclude = Prisma.PurchaseInclude; 
+export type ProductInclude = Prisma.ProductInclude; 

@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DeploymentStatus } from '@prisma/client';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import type { DeploymentStatus } from '@/types/prisma';
 import { AgentMetrics } from '@/types/agent-monitoring';
 
 interface DeploymentMetricsProps {

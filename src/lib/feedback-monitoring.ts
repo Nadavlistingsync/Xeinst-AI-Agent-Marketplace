@@ -1,7 +1,6 @@
-import { Prisma, NotificationType } from '@prisma/client';
+import type { Prisma, NotificationType, AgentFeedback } from '@/types/prisma';
 import { prisma } from '@/lib/prisma';
 import { createNotification } from './notification';
-import type { AgentFeedback } from '@/types/prisma';
 
 export interface FeedbackMetrics {
   totalFeedback: number;

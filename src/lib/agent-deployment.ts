@@ -1,8 +1,7 @@
 import { z } from 'zod';
 import { prisma } from "./db";
-import { DeploymentStatus } from "@prisma/client";
+import type { DeploymentStatus, Prisma } from '@/types/prisma';
 import { logAgentEvent } from './agent-monitoring';
-import { Prisma } from '@prisma/client';
 
 export const agentValidationSchema = z.object({
   name: z.string().min(1).max(100),

@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { createErrorResponse, createSuccessResponse } from '@/lib/api';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@/types/prisma';
 
 const feedbackSchema = z.object({
   rating: z.number().min(1).max(5),

@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi, beforeAll, afterEach } from 'vitest';
 import React from 'react';
-import { PrismaClient } from '@prisma/client';
 import { execSync } from 'child_process';
 
 // Set test environment using vi.stubEnv
@@ -72,7 +71,7 @@ const mockPrisma = {
 };
 
 // Patch: ensure error classes are reference-equal between @prisma/client and @prisma/client/runtime/library
-const errorClassPatch = {};
+const errorClassPatch: any = {};
 vi.mock('@prisma/client', () => {
   // Mock DeploymentStatus enum as used in the codebase
   const DeploymentStatus = {
@@ -85,7 +84,10 @@ vi.mock('@prisma/client', () => {
 
   // Mock Prisma error classes
   class PrismaClientKnownRequestError extends Error {
-    constructor(message, { code, clientVersion, meta }) {
+    code: string;
+    clientVersion: string;
+    meta: any;
+    constructor(message: string, { code, clientVersion, meta }: { code: string; clientVersion: string; meta: any }) {
       super(message);
       this.code = code;
       this.clientVersion = clientVersion;
@@ -94,14 +96,16 @@ vi.mock('@prisma/client', () => {
     }
   }
   class PrismaClientValidationError extends Error {
-    constructor(message, { clientVersion }) {
+    clientVersion: string;
+    constructor(message: string, { clientVersion }: { clientVersion: string }) {
       super(message);
       this.clientVersion = clientVersion;
       this.name = 'PrismaClientValidationError';
     }
   }
   class PrismaClientInitializationError extends Error {
-    constructor(message, { clientVersion }) {
+    clientVersion: string;
+    constructor(message: string, { clientVersion }: { clientVersion: string }) {
       super(message);
       this.clientVersion = clientVersion;
       this.name = 'PrismaClientInitializationError';

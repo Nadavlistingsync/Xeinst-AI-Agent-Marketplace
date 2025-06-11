@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import * as Sentry from '@sentry/nextjs';
 import { ZodError } from 'zod';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@/types/prisma';
 
 export interface ApiError {
   message: string;

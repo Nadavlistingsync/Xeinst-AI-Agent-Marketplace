@@ -1,4 +1,5 @@
-import { PrismaClient, PrismaClientKnownRequestError, PrismaClientInitializationError, PrismaClientValidationError } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { PrismaClientKnownRequestError, PrismaClientInitializationError, PrismaClientValidationError } from '@prisma/client/runtime/library';
 import * as Sentry from '@sentry/nextjs';
 import { AppError } from './error-handling';
 
@@ -71,10 +72,11 @@ function getRetryDelay(retryCount: number): number {
 // Helper function to check if an error is retryable
 function isRetryableError(error: unknown): boolean {
   if (error instanceof PrismaClientKnownRequestError) {
-    return error.code === 'P1001' || // Connection error
-           error.code === 'P1002' || // Connection timed out
-           error.code === 'P1008' || // Operations timed out
-           error.code === 'P1017';   // Server closed the connection
+    const code = (error as any).code;
+    return code === 'P1001' || // Connection error
+           code === 'P1002' || // Connection timed out
+           code === 'P1008' || // Operations timed out
+           code === 'P1017';   // Server closed the connection
   }
   return false;
 }
@@ -114,11 +116,12 @@ export async function withRetry<T>(
     }
 
     if (error instanceof PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
-        throw new AppError('Unique constraint violation', 409, 'UNIQUE_CONSTRAINT', error.meta);
+      const code = (error as any).code;
+      if (code === 'P2002') {
+        throw new AppError('Unique constraint violation', 409, 'UNIQUE_CONSTRAINT', (error as any).meta);
       }
-      if (error.code === 'P2025') {
-        throw new AppError('Record not found', 404, 'NOT_FOUND', error.meta);
+      if (code === 'P2025') {
+        throw new AppError('Record not found', 404, 'NOT_FOUND', (error as any).meta);
       }
     }
 

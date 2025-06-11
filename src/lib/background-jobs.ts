@@ -1,11 +1,7 @@
 import { prisma } from './db';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
-import type { Prisma } from '../types/prisma';
-import { AgentLog } from '@prisma/client';
-import { PrismaClient } from '@prisma/client';
+import type { Prisma, AgentLog } from '@/types/prisma';
 import { AppError } from './error-handling';
-
-const prismaClient = new PrismaClient();
 
 interface JobResult {
   success: boolean;
@@ -215,7 +211,7 @@ export async function processFeedback(agentId: string, feedbackId: string) {
 
 export async function createAgentLog(input: AgentLogInput): Promise<AgentLog> {
   try {
-    return await prismaClient.agentLog.create({
+    return await prisma.agentLog.create({
       data: {
         deploymentId: input.deploymentId,
         level: input.level,
@@ -256,7 +252,7 @@ export async function getAgentLogs(
     }),
   };
 
-  return prismaClient.agentLog.findMany({
+  return prisma.agentLog.findMany({
     where,
     orderBy: {
       timestamp: 'desc',
@@ -269,7 +265,7 @@ export async function deleteAgentLogs(
   deploymentId: string,
   beforeDate: Date
 ): Promise<number> {
-  const result = await prismaClient.agentLog.deleteMany({
+  const result = await prisma.agentLog.deleteMany({
     where: {
       deploymentId,
       timestamp: {

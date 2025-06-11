@@ -2,8 +2,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
 import { hash } from "bcryptjs";
 import { prisma } from "./prisma";
-import { UserRole, SubscriptionTier } from '@prisma/client';
-import type { User } from '../types/prisma';
+import type { User, UserRole, SubscriptionTier } from '@/types/prisma';
 import GoogleProvider from "next-auth/providers/google";
 import GitHubProvider from "next-auth/providers/github";
 

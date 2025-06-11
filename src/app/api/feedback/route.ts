@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { Feedback, FeedbackSuccess, FeedbackError, FeedbackListResponse } from '@/types/feedback';
 import { JsonValue } from '@prisma/client/runtime/library';
-import { NotificationType } from '@prisma/client';
+import type { NotificationType } from '@/types/prisma';
 
 export const dynamic = 'force-dynamic';
 

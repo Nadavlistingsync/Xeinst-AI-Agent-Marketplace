@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { ApiError } from '@/lib/errors';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@/types/prisma';
 
 export async function GET(
   request: Request,

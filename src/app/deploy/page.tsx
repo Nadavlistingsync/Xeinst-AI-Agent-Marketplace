@@ -1,9 +1,10 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
-import { DeploymentStatus } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import type { DeploymentStatus } from '@/types/prisma';
 
 export default function DeployPage() {
   const router = useRouter();

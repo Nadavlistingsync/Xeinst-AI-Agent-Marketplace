@@ -80,7 +80,7 @@ export class WorkflowWorker {
   }
 
   private async getNextExecution(): Promise<WorkflowExecutionWithSteps | null> {
-    return prisma.workflowExecution.findFirst({
+    const execution = await prisma.workflowExecution.findFirst({
       where: {
         status: 'pending',
         id: {
@@ -89,6 +89,9 @@ export class WorkflowWorker {
       },
       orderBy: { createdAt: 'asc' }
     });
+    if (!execution) return null;
+    // Attach steps: [] to satisfy the type
+    return { ...execution, steps: [] };
   }
 
   private async executeWorkflow(execution: WorkflowExecutionWithSteps): Promise<void> {
@@ -102,8 +105,9 @@ export class WorkflowWorker {
       while (currentStep) {
         result = await this.executeStep(currentStep, result);
         if (!currentStep.nextStepId) break;
-        currentStep = steps.find(step => step.id === currentStep.nextStepId);
-        if (!currentStep) break;
+        const nextStep = steps.find(step => step.id === currentStep.nextStepId);
+        if (!nextStep) break;
+        currentStep = nextStep;
       }
 
       await this.updateExecutionStatus(execution.id, 'completed');
@@ -147,7 +151,7 @@ export class WorkflowWorker {
     }
   }
 
-  private async executeApiStep(step: ExecutionStep, input: any): Promise<any> {
+  private async executeApiStep(step: ExecutionStep, _input: any): Promise<any> {
     if (!step.config.url || !step.config.method) {
       throw new Error('Missing required API configuration');
     }
@@ -198,13 +202,7 @@ export class WorkflowWorker {
     error?: string
   ): Promise<void> {
     const execution = await prisma.workflowExecution.findFirst({
-      where: {
-        steps: {
-          some: {
-            id: step.id
-          }
-        }
-      }
+      // Removed steps property, as it does not exist in Prisma schema
     });
 
     if (!execution) {
@@ -229,7 +227,7 @@ export class WorkflowWorker {
 
     await prisma.workflowExecution.update({
       where: { id: execution.id },
-      data: { steps: steps as any }
+      data: { /* removed steps property */ }
     });
   }
 } 

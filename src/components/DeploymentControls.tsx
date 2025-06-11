@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DeploymentStatus } from '@prisma/client';
+import type { DeploymentStatus } from '@/types/prisma';
 
 interface DeploymentControlsProps {
   deploymentId: string;

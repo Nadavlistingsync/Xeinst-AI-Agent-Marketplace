@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createErrorResponse } from '@/lib/api';
 import { handleDatabaseError, DatabaseError, withRetry } from '../lib/db';
-import { Prisma } from '@prisma/client';
+import type { Prisma } from '@/types/prisma';
 import { ZodError } from 'zod';
 import * as Sentry from '@sentry/nextjs';
 import { z } from 'zod';
+import { handleApiError } from '@/lib/error-handling';
 
 process.on('unhandledRejection', (_reason, _promise) => {
   // Suppress unhandled rejection warnings in tests
