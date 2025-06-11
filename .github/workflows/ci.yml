@@ -28,28 +28,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Clean npm cache and update PATH
-      run: |
-        npm cache clean --force
-        echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
-    
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'pnpm'
     
-    - name: Install pnpm via official script
-      run: |
-        curl -fsSL https://get.pnpm.io/install.sh | sh -
-        export PATH="$HOME/.local/share/pnpm:$PATH"
-        echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
-
-    - name: Debug pnpm install
-      run: |
-        echo $PATH
-        which pnpm || true
-        pnpm --version || true
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9
+        run_install: false
 
     - name: Get pnpm store directory
       shell: bash
@@ -63,6 +52,9 @@ jobs:
         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
+    
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
     
     - name: Generate Prisma Client
       run: pnpm prisma generate
@@ -101,22 +93,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Clean npm cache and update PATH
-      run: |
-        npm cache clean --force
-        echo "$HOME/.npm-global/bin" >> $GITHUB_PATH
-    
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'pnpm'
     
-    - name: Install pnpm via official script
-      run: |
-        curl -fsSL https://get.pnpm.io/install.sh | sh -
-        export PATH="$HOME/.local/share/pnpm:$PATH"
-        echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9
+        run_install: false
 
     - name: Get pnpm store directory
       shell: bash
@@ -170,17 +157,17 @@ jobs:
         name: build
         path: .next
 
-    - name: Install pnpm via official script
-      run: |
-        curl -fsSL https://get.pnpm.io/install.sh | sh -
-        export PATH="$HOME/.local/share/pnpm:$PATH"
-        echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
         cache: 'pnpm'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 9
+        run_install: false
 
     - name: Get pnpm store directory
       shell: bash
