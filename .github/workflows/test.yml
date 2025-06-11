@@ -23,14 +23,8 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'pnpm'
 
-    - name: Enable corepack
-      run: corepack enable
-
-    - name: Ensure pnpm is available
-      run: |
-        if ! command -v pnpm &> /dev/null; then
-          npm install -g pnpm
-        fi
+    - name: Install pnpm globally
+      run: npm install -g pnpm
 
     - name: Debug pnpm and PATH
       run: |
@@ -52,16 +46,16 @@ jobs:
           ${{ runner.os }}-pnpm-store-
     
     - name: Install dependencies
-      run: npx pnpm install --frozen-lockfile
+      run: pnpm install --frozen-lockfile
     
     - name: Generate Prisma Client
-      run: npx pnpm prisma generate
+      run: pnpm prisma generate
     
     - name: Run linting
-      run: npx pnpm run lint
+      run: pnpm run lint
     
     - name: Run tests with coverage
-      run: npx pnpm run test:coverage
+      run: pnpm run test:coverage
     
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3

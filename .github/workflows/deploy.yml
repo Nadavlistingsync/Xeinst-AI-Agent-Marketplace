@@ -33,14 +33,8 @@ jobs:
         node-version: '18'
         cache: 'pnpm'
 
-    - name: Enable corepack
-      run: corepack enable
-
-    - name: Ensure pnpm is available
-      run: |
-        if ! command -v pnpm &> /dev/null; then
-          npm install -g pnpm
-        fi
+    - name: Install pnpm globally
+      run: npm install -g pnpm
 
     - name: Debug pnpm and PATH
       run: |
@@ -49,18 +43,18 @@ jobs:
         pnpm --version || true
 
     - name: Install dependencies
-      run: npx pnpm install
+      run: pnpm install
     
     - name: Run tests
       env:
         TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
-      run: npx pnpm test
+      run: pnpm test
     
     - name: Build
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-      run: npx pnpm run build
+      run: pnpm run build
 
     - name: List build directory
       run: ls -la .next/
@@ -106,7 +100,7 @@ jobs:
         cache: 'pnpm'
 
     - name: Install dependencies
-      run: npx pnpm install
+      run: pnpm install
     
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25
@@ -140,7 +134,7 @@ jobs:
         cache: 'pnpm'
 
     - name: Install dependencies
-      run: npx pnpm install
+      run: pnpm install
     
     - name: Configure Git
       run: |

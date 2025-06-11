@@ -34,21 +34,9 @@ jobs:
         node-version: '18'
         cache: 'pnpm'
     
-    - name: Enable corepack
-      run: corepack enable
+    - name: Install pnpm globally
+      run: npm install -g pnpm
 
-    - name: Ensure pnpm is available
-      run: |
-        if ! command -v pnpm &> /dev/null; then
-          npm install -g pnpm
-        fi
-
-    - name: Debug pnpm and PATH
-      run: |
-        echo $PATH
-        which pnpm || true
-        pnpm --version || true
-    
     - name: Get pnpm store directory
       shell: bash
       run: |
@@ -62,25 +50,22 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
     
-    - name: Install dependencies
-      run: npx pnpm install --frozen-lockfile
-    
     - name: Generate Prisma Client
-      run: npx pnpm prisma generate
+      run: pnpm prisma generate
     
     - name: Run database migrations
-      run: npx pnpm prisma migrate deploy
+      run: pnpm prisma migrate deploy
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
     
     - name: Run type check
-      run: npx pnpm type-check
+      run: pnpm type-check
     
     - name: Run linting
-      run: npx pnpm lint
+      run: pnpm lint
     
     - name: Run tests
-      run: npx pnpm test
+      run: pnpm test
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
         TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
@@ -108,21 +93,9 @@ jobs:
         node-version: '18'
         cache: 'pnpm'
     
-    - name: Enable corepack
-      run: corepack enable
+    - name: Install pnpm globally
+      run: npm install -g pnpm
 
-    - name: Ensure pnpm is available
-      run: |
-        if ! command -v pnpm &> /dev/null; then
-          npm install -g pnpm
-        fi
-
-    - name: Debug pnpm and PATH
-      run: |
-        echo $PATH
-        which pnpm || true
-        pnpm --version || true
-    
     - name: Get pnpm store directory
       shell: bash
       run: |
@@ -137,13 +110,13 @@ jobs:
           ${{ runner.os }}-pnpm-store-
     
     - name: Install dependencies
-      run: npx pnpm install --frozen-lockfile
+      run: pnpm install --frozen-lockfile
     
     - name: Generate Prisma Client
-      run: npx pnpm prisma generate
+      run: pnpm prisma generate
     
     - name: Build
-      run: npx pnpm build
+      run: pnpm build
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
@@ -201,7 +174,7 @@ jobs:
           ${{ runner.os }}-pnpm-store-
 
     - name: Install dependencies
-      run: npx pnpm install --frozen-lockfile
+      run: pnpm install --frozen-lockfile
 
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25
