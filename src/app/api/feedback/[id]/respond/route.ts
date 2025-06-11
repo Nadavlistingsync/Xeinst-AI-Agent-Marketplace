@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/types/prisma';
+import { NotificationType } from '@/types/prisma';
+import { sendNotification } from '@/lib/notifications';
+import { withRetry } from '@/lib/retry';
+import { withErrorHandling } from '@/lib/error-handling';
+import { withRateLimit } from '@/lib/rate-limit';
+import { withValidation } from '@/lib/validation';
 import { z } from 'zod';
-import type { NotificationType } from '@/types/prisma';
 
 const responseSchema = z.object({
   response: z.string().min(1).max(1000),
