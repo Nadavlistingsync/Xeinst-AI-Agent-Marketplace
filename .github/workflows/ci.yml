@@ -170,11 +170,11 @@ jobs:
         name: build
         path: .next
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 10
-        run_install: false
+    - name: Install pnpm via official script
+      run: |
+        curl -fsSL https://get.pnpm.io/install.sh | sh -
+        export PATH="$HOME/.local/share/pnpm:$PATH"
+        echo "$HOME/.local/share/pnpm" >> $GITHUB_PATH
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
