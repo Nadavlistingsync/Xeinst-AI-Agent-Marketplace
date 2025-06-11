@@ -68,7 +68,7 @@ export async function getProduct(id: string): Promise<ProductWithNumbers | null>
           ...product,
           price: Number(product.price),
           earningsSplit: Number((product as any).earningsSplit ?? 0),
-          type: "",
+          type: "template",
           features: [],
           purchaseCount: 0,
           deploymentCount: 0,
