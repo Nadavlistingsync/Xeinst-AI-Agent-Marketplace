@@ -67,6 +67,10 @@ export async function getProduct(id: string): Promise<ProductWithNumbers | null>
     product
       ? {
           ...product,
+          type: product.type ?? "",
+          features: product.features ?? [],
+          purchaseCount: product.purchaseCount ?? 0,
+          deploymentCount: product.deploymentCount ?? 0,
           price: Number(product.price),
           earningsSplit: Number((product as any).earningsSplit ?? 0),
         }
