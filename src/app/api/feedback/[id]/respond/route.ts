@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/types/prisma';
@@ -14,9 +14,9 @@ const responseSchema = z.object({
 });
 
 async function handler(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
-): Promise<NextResponse<{ success: boolean; error?: string }>> {
+): Promise<NextResponse> {
   const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json(
