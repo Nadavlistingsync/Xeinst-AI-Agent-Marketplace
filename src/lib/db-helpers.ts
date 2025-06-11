@@ -15,6 +15,7 @@ export type ProductWithNumbers = {
   updatedAt: Date;
   purchaseCount: number;
   deploymentCount: number;
+  category: string;
 };
 
 export type PurchaseWithProduct = {
@@ -241,7 +242,21 @@ export async function getUserPurchases(userId: string): Promise<PurchaseWithProd
   return prisma.purchase.findMany({
     where: { userId },
     include: {
-      product: true,
+      product: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          type: true,
+          price: true,
+          features: true,
+          createdAt: true,
+          updatedAt: true,
+          purchaseCount: true,
+          deploymentCount: true,
+          category: true,
+        }
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -252,7 +267,7 @@ export async function getUserPurchases(userId: string): Promise<PurchaseWithProd
     product: {
       ...p.product,
       price: Number(p.product.price),
-      earningsSplit: Number(p.product.earningsSplit)
+      earningsSplit: Number((p.product as any).earningsSplit ?? 0)
     }
   })));
 }
