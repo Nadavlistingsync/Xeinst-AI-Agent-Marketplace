@@ -28,25 +28,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      id: pnpm-setup
-      with:
-        version: 9
-        run_install: false
-
-    - name: Debug pnpm installation
-      run: |
-        which pnpm
-        pnpm --version
-        echo $PATH
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'pnpm'
-    
+
+    - name: Install pnpm
+      run: |
+        npm install -g pnpm@9
+        pnpm --version
+
     - name: Get pnpm store directory
       shell: bash
       run: |
@@ -100,25 +91,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      id: pnpm-setup
-      with:
-        version: 9
-        run_install: false
-
-    - name: Debug pnpm installation
-      run: |
-        which pnpm
-        pnpm --version
-        echo $PATH
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'pnpm'
-    
+
+    - name: Install pnpm
+      run: |
+        npm install -g pnpm@9
+        pnpm --version
+
     - name: Get pnpm store directory
       shell: bash
       run: |
@@ -171,24 +153,15 @@ jobs:
         name: build
         path: .next
 
-    - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      id: pnpm-setup
-      with:
-        version: 9
-        run_install: false
-
-    - name: Debug pnpm installation
-      run: |
-        which pnpm
-        pnpm --version
-        echo $PATH
-
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'pnpm'
+
+    - name: Install pnpm
+      run: |
+        npm install -g pnpm@9
+        pnpm --version
 
     - name: Get pnpm store directory
       shell: bash
