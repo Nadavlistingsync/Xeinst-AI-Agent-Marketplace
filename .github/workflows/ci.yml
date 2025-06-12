@@ -30,9 +30,16 @@ jobs:
     
     - name: Install pnpm
       uses: pnpm/action-setup@v2
+      id: pnpm-setup
       with:
         version: 9
         run_install: false
+
+    - name: Debug pnpm installation
+      run: |
+        which pnpm
+        pnpm --version
+        echo $PATH
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -95,9 +102,16 @@ jobs:
     
     - name: Install pnpm
       uses: pnpm/action-setup@v2
+      id: pnpm-setup
       with:
         version: 9
         run_install: false
+
+    - name: Debug pnpm installation
+      run: |
+        which pnpm
+        pnpm --version
+        echo $PATH
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -159,9 +173,16 @@ jobs:
 
     - name: Install pnpm
       uses: pnpm/action-setup@v2
+      id: pnpm-setup
       with:
         version: 9
         run_install: false
+
+    - name: Debug pnpm installation
+      run: |
+        which pnpm
+        pnpm --version
+        echo $PATH
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
