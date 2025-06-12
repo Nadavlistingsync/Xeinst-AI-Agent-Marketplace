@@ -1,9 +1,10 @@
 import type { User } from '@/types/prisma';
 import { prisma } from '@/types/prisma';
+import type { SubscriptionTier } from '@prisma/client';
 
 interface SubscriptionStatus {
   isActive: boolean;
-  plan: string | null;
+  plan: SubscriptionTier;
   expiresAt: Date | null;
 }
 
@@ -12,7 +13,6 @@ export async function getUserSubscription(userId: string): Promise<SubscriptionS
     where: { id: userId },
     select: {
       subscriptionTier: true,
-      subscriptionExpiresAt: true
     }
   });
 
@@ -21,9 +21,9 @@ export async function getUserSubscription(userId: string): Promise<SubscriptionS
   }
 
   return {
-    isActive: user.subscriptionExpiresAt ? user.subscriptionExpiresAt > new Date() : false,
+    isActive: true, // Since we don't have expiration, all subscriptions are active
     plan: user.subscriptionTier,
-    expiresAt: user.subscriptionExpiresAt
+    expiresAt: null
   };
 }
 
@@ -32,7 +32,6 @@ export async function updateSubscriptionStatus(userId: string, status: Subscript
     where: { id: userId },
     data: {
       subscriptionTier: status.plan,
-      subscriptionExpiresAt: status.expiresAt
     }
   });
 }
@@ -42,7 +41,6 @@ export async function cancelSubscription(userId: string): Promise<void> {
     where: { id: userId },
     data: {
       subscriptionTier: 'free',
-      subscriptionExpiresAt: null
     }
   });
 }
@@ -50,9 +48,7 @@ export async function cancelSubscription(userId: string): Promise<void> {
 export async function getExpiredSubscriptions(): Promise<User[]> {
   return prisma.user.findMany({
     where: {
-      subscriptionExpiresAt: {
-        lt: new Date()
-      }
+      subscriptionTier: 'free'
     }
   });
 }

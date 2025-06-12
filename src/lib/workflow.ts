@@ -1,113 +1,110 @@
 import { prisma } from '@/types/prisma';
-import type { Workflow } from '@prisma/client';
+import { Workflow, WorkflowStatus } from '@prisma/client';
 
-interface WorkflowStep {
+export interface WorkflowStep {
   id: string;
-  type: string;
+  type: 'API' | 'CONDITION' | 'LOOP' | 'TRANSFORM';
   config: Record<string, any>;
-  nextStepId?: string;
 }
 
-interface CreateWorkflowData {
+export interface CreateWorkflowInput {
   name: string;
-  description: string;
-  steps: WorkflowStep[];
-  userId: string;
-}
-
-interface WorkflowWithSteps extends Workflow {
+  description?: string;
   steps: WorkflowStep[];
 }
 
-export async function createWorkflow(data: CreateWorkflowData): Promise<Workflow> {
+export async function createWorkflow(
+  userId: string,
+  data: CreateWorkflowInput
+): Promise<Workflow> {
   return prisma.workflow.create({
     data: {
+      createdBy: userId,
       name: data.name,
       description: data.description,
-      createdBy: data.userId,
-      status: 'draft'
-    }
+      status: 'DRAFT',
+      metadata: {
+        steps: data.steps,
+      },
+    },
   });
 }
 
-export async function getWorkflowById(id: string): Promise<Workflow | null> {
+export async function updateWorkflow(
+  workflowId: string,
+  data: Partial<CreateWorkflowInput>
+): Promise<Workflow> {
+  return prisma.workflow.update({
+    where: { id: workflowId },
+    data: {
+      name: data.name,
+      description: data.description,
+      metadata: data.steps ? {
+        steps: data.steps,
+      } : undefined,
+    },
+  });
+}
+
+export async function publishWorkflow(workflowId: string): Promise<Workflow> {
+  return prisma.workflow.update({
+    where: { id: workflowId },
+    data: { status: 'PUBLISHED' },
+  });
+}
+
+export async function archiveWorkflow(workflowId: string): Promise<Workflow> {
+  return prisma.workflow.update({
+    where: { id: workflowId },
+    data: { status: 'ARCHIVED' },
+  });
+}
+
+export async function getWorkflow(workflowId: string): Promise<Workflow | null> {
   return prisma.workflow.findUnique({
-    where: { id }
+    where: { id: workflowId },
   });
 }
 
 export async function getWorkflowsByUser(userId: string): Promise<Workflow[]> {
   return prisma.workflow.findMany({
     where: { createdBy: userId },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
 }
 
-export async function updateWorkflow(
-  id: string,
-  data: Partial<CreateWorkflowData>
-): Promise<Workflow> {
-  return prisma.workflow.update({
-    where: { id },
-    data: {
-      ...(data.name && { name: data.name }),
-      ...(data.description && { description: data.description })
-    }
+export async function getPublishedWorkflows(): Promise<Workflow[]> {
+  return prisma.workflow.findMany({
+    where: { status: 'PUBLISHED' },
+    orderBy: { createdAt: 'desc' },
   });
 }
 
-export async function deleteWorkflow(id: string): Promise<void> {
-  await prisma.workflow.delete({
-    where: { id }
-  });
+export async function executeApiStep(_input: Record<string, any>): Promise<Record<string, any>> {
+  // TODO: Implement actual API step execution
+  return { success: true };
 }
 
-export async function executeWorkflow(workflow: WorkflowWithSteps, input: any): Promise<any> {
-  const steps = workflow.steps;
-  let currentStep = steps[0];
-  let result = input;
-
-  while (currentStep) {
-    result = await executeStep(currentStep, result);
-    if (!currentStep.nextStepId) break;
-    const nextStep = steps.find(step => step.id === currentStep!.nextStepId);
-    if (!nextStep) break;
-    currentStep = nextStep;
-  }
-
-  return result;
+export async function executeConditionStep(
+  condition: string,
+  input: Record<string, any>
+): Promise<boolean> {
+  // TODO: Implement actual condition evaluation
+  return true;
 }
 
-async function executeStep(step: WorkflowStep, input: any): Promise<any> {
-  switch (step.type) {
-    case 'api':
-      return executeApiStep(step, input);
-    case 'transform':
-      return executeTransformStep(step, input);
-    case 'condition':
-      return executeConditionStep(step, input);
-    default:
-      throw new Error(`Unknown step type: ${step.type}`);
-  }
+export async function executeLoopStep(
+  items: any[],
+  step: WorkflowStep
+): Promise<any[]> {
+  // TODO: Implement actual loop execution
+  return items;
 }
 
-async function executeApiStep(step: WorkflowStep, input: any): Promise<any> {
-  const { url, method, headers, body } = step.config;
-  const response = await fetch(url, {
-    method,
-    headers,
-    body: JSON.stringify(body)
-  });
-  return response.json();
-}
-
-function executeTransformStep(step: WorkflowStep, input: any): any {
-  const { transform } = step.config;
-  return transform(input);
-}
-
-async function executeConditionStep(step: WorkflowStep, input: any): Promise<any> {
-  const { condition, trueStepId, falseStepId } = step.config;
-  const result = condition(input);
-  return result ? trueStepId : falseStepId;
+export async function executeTransformStep(
+  input: Record<string, any>,
+  transform: Record<string, any>
+): Promise<Record<string, any>> {
+  // TODO: Implement actual data transformation
+  return input;
 } 

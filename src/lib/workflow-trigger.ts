@@ -1,70 +1,89 @@
 import { prisma } from '@/types/prisma';
 import type { WorkflowTrigger } from '@prisma/client';
 
-interface TriggerConfig {
-  type: 'webhook' | 'event' | 'schedule';
+export interface WorkflowTriggerWithConfig extends WorkflowTrigger {
   config: Record<string, any>;
 }
 
-interface CreateTriggerData {
+export interface CreateTriggerInput {
   workflowId: string;
-  config: TriggerConfig;
   userId: string;
+  type: 'webhook' | 'schedule' | 'event';
+  config: Record<string, any>;
+  isActive?: boolean;
 }
 
-export type WorkflowTriggerWithConfig = Omit<WorkflowTrigger, 'config'> & { config: TriggerConfig };
-
-export async function createTrigger(data: CreateTriggerData): Promise<WorkflowTrigger> {
+export async function createTrigger(data: CreateTriggerInput): Promise<WorkflowTrigger> {
   return prisma.workflowTrigger.create({
     data: {
       workflowId: data.workflowId,
-      type: data.config.type,
-      config: data.config.config as any,
-      isActive: true,
-      createdBy: data.userId
-    }
+      type: data.type,
+      config: data.config,
+      isActive: data.isActive ?? true,
+    },
   });
 }
 
-export async function getTriggerById(id: string): Promise<WorkflowTrigger | null> {
-  return prisma.workflowTrigger.findUnique({
-    where: { id }
-  });
-}
-
-export async function getTriggersByWorkflow(workflowId: string): Promise<WorkflowTrigger[]> {
+export async function getTriggers(userId: string) {
   return prisma.workflowTrigger.findMany({
-    where: { workflowId },
-    orderBy: { createdAt: 'desc' }
-  });
-}
-
-export async function getTriggersByUser(userId: string): Promise<WorkflowTrigger[]> {
-  return prisma.workflowTrigger.findMany({
-    where: { createdBy: userId },
-    orderBy: { createdAt: 'desc' }
+    where: { workflow: { createdBy: userId } },
+    orderBy: { createdAt: 'desc' },
   });
 }
 
 export async function updateTrigger(
   id: string,
-  data: Partial<CreateTriggerData>
+  data: Partial<CreateTriggerInput>
 ): Promise<WorkflowTrigger> {
   return prisma.workflowTrigger.update({
     where: { id },
     data: {
-      ...(data.workflowId && { workflowId: data.workflowId }),
-      ...(data.config && {
-        type: data.config.type,
-        config: data.config.config as any
-      })
-    }
+      workflowId: data.workflowId,
+      type: data.type,
+      config: data.config,
+      isActive: data.isActive,
+    },
   });
 }
 
-export async function deleteTrigger(id: string): Promise<void> {
-  await prisma.workflowTrigger.delete({
-    where: { id }
+export async function deleteTrigger(id: string): Promise<WorkflowTrigger> {
+  return prisma.workflowTrigger.delete({
+    where: { id },
+  });
+}
+
+export async function getTriggerById(id: string) {
+  return prisma.workflowTrigger.findUnique({
+    where: { id },
+    include: {
+      workflow: true,
+    },
+  });
+}
+
+export async function getTriggersByWorkflow(workflowId: string) {
+  return prisma.workflowTrigger.findMany({
+    where: { workflowId },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function getActiveTriggers() {
+  return prisma.workflowTrigger.findMany({
+    where: { isActive: true },
+    include: {
+      workflow: true,
+    },
+  });
+}
+
+export async function getTriggersByUser(userId: string) {
+  return prisma.workflowTrigger.findMany({
+    where: { workflow: { createdBy: userId } },
+    include: {
+      workflow: true,
+    },
+    orderBy: { createdAt: 'desc' },
   });
 }
 
@@ -94,7 +113,7 @@ export async function handleWebhookTrigger(
     data: {
       workflowId: trigger.workflowId,
       input: payload,
-      status: 'pending',
+      status: 'PENDING',
       versionId: trigger.workflowId,
       startedAt: new Date()
     }
@@ -110,7 +129,7 @@ export async function handleEventTrigger(
     throw new Error('Invalid trigger type');
   }
 
-  const config = trigger.config as unknown as { events: string[] };
+  const config = trigger.config as { events: string[] };
   if (!config.events.includes(event)) {
     return;
   }
@@ -119,7 +138,7 @@ export async function handleEventTrigger(
     data: {
       workflowId: trigger.workflowId,
       input: payload,
-      status: 'pending',
+      status: 'PENDING',
       versionId: trigger.workflowId,
       startedAt: new Date()
     }

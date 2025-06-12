@@ -1,94 +1,111 @@
 import { prisma } from '@/types/prisma';
-import type { WorkflowSchedule } from '@prisma/client';
+import { WorkflowSchedule, WorkflowScheduleStatus } from '@prisma/client';
 
-interface ScheduleConfig {
-  cron: string;
+export interface ScheduleConfig {
+  cronExpression: string;
   timezone: string;
-  input: any;
+  input?: Record<string, any>;
 }
 
-interface CreateScheduleData {
-  workflowId: string;
-  config: ScheduleConfig;
-  userId: string;
-}
-
-interface WorkflowScheduleWithConfig extends WorkflowSchedule {
-  config: ScheduleConfig;
-}
-
-export async function createSchedule(data: CreateScheduleData): Promise<WorkflowSchedule> {
+export async function createSchedule(
+  workflowId: string,
+  data: {
+    name: string;
+    description?: string;
+    config: ScheduleConfig;
+  }
+): Promise<WorkflowSchedule> {
   return prisma.workflowSchedule.create({
     data: {
-      workflowId: data.workflowId,
-      cronExpression: data.config.cron,
-      timezone: data.config.timezone,
-      isActive: true,
-      createdBy: data.userId
-    }
+      workflowId,
+      name: data.name,
+      description: data.description,
+      status: 'ACTIVE',
+      metadata: {
+        cronExpression: data.config.cronExpression,
+        timezone: data.config.timezone,
+        input: data.config.input ?? {},
+      },
+    },
   });
 }
 
-export async function getScheduleById(id: string): Promise<WorkflowSchedule | null> {
+export async function updateSchedule(
+  scheduleId: string,
+  data: {
+    name?: string;
+    description?: string;
+    config?: ScheduleConfig;
+    status?: WorkflowScheduleStatus;
+  }
+): Promise<WorkflowSchedule> {
+  return prisma.workflowSchedule.update({
+    where: { id: scheduleId },
+    data: {
+      name: data.name,
+      description: data.description,
+      status: data.status,
+      metadata: data.config ? {
+        cronExpression: data.config.cronExpression,
+        timezone: data.config.timezone,
+        input: data.config.input ?? {},
+      } : undefined,
+    },
+  });
+}
+
+export async function deleteSchedule(scheduleId: string): Promise<WorkflowSchedule> {
+  return prisma.workflowSchedule.delete({
+    where: { id: scheduleId },
+  });
+}
+
+export async function getSchedule(scheduleId: string): Promise<WorkflowSchedule | null> {
   return prisma.workflowSchedule.findUnique({
-    where: { id }
+    where: { id: scheduleId },
   });
 }
 
 export async function getSchedulesByWorkflow(workflowId: string): Promise<WorkflowSchedule[]> {
   return prisma.workflowSchedule.findMany({
     where: { workflowId },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
   });
 }
 
-export async function getSchedulesByUser(userId: string): Promise<WorkflowSchedule[]> {
+export async function getActiveSchedules(): Promise<WorkflowSchedule[]> {
   return prisma.workflowSchedule.findMany({
-    where: { createdBy: userId },
-    orderBy: { createdAt: 'desc' }
+    where: { status: 'ACTIVE' },
+    orderBy: { createdAt: 'desc' },
   });
 }
 
-export async function updateSchedule(
-  id: string,
-  data: Partial<CreateScheduleData>
-): Promise<WorkflowSchedule> {
+export async function pauseSchedule(scheduleId: string): Promise<WorkflowSchedule> {
   return prisma.workflowSchedule.update({
-    where: { id },
-    data: {
-      ...(data.workflowId && { workflowId: data.workflowId }),
-      ...(data.config && {
-        cronExpression: data.config.cron,
-        timezone: data.config.timezone
-      })
-    }
+    where: { id: scheduleId },
+    data: { status: 'PAUSED' },
   });
 }
 
-export async function deleteSchedule(id: string): Promise<void> {
-  await prisma.workflowSchedule.delete({
-    where: { id }
-  });
-}
-
-export async function pauseSchedule(id: string): Promise<WorkflowSchedule> {
+export async function resumeSchedule(scheduleId: string): Promise<WorkflowSchedule> {
   return prisma.workflowSchedule.update({
-    where: { id },
-    data: { isActive: false }
+    where: { id: scheduleId },
+    data: { status: 'ACTIVE' },
   });
 }
 
-export async function resumeSchedule(id: string): Promise<WorkflowSchedule> {
-  return prisma.workflowSchedule.update({
-    where: { id },
-    data: { isActive: true }
+export async function getNextExecutionTime(scheduleId: string): Promise<Date | null> {
+  const schedule = await prisma.workflowSchedule.findUnique({
+    where: { id: scheduleId },
+    select: { metadata: true },
   });
-}
 
-export async function getNextExecutionTime(): Promise<Date | null> {
-  // This is a placeholder for actual cron expression parsing and next execution time calculation
-  // In a real implementation, you would use a cron library to calculate the next execution time
-  return null;
+  if (!schedule?.metadata?.cronExpression) {
+    return null;
+  }
+
+  // TODO: Implement cron expression parsing and next execution time calculation
+  return new Date(Date.now() + 3600000); // Placeholder: 1 hour from now
 }
 
 export async function executeScheduledWorkflows(): Promise<void> {
@@ -107,11 +124,12 @@ export async function executeScheduledWorkflows(): Promise<void> {
         data: {
           workflowId: schedule.workflowId,
           input: scheduleWithConfig.config.input,
-          status: 'pending',
+          status: 'PENDING',
           versionId: schedule.workflowId,
           startedAt: new Date()
         }
       });
     }
   }
+} 
 } 

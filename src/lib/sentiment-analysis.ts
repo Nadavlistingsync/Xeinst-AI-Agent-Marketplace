@@ -1,85 +1,51 @@
-import type { AgentFeedback } from '@/types/prisma';
+import { prisma } from '@/types/prisma';
 
-interface SentimentAnalysisResult {
+export interface SentimentAnalysisResult {
   score: number;
-  label: 'positive' | 'negative' | 'neutral';
-  confidence: number;
+  label: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
 }
 
-interface FeedbackWithSentiment extends Omit<AgentFeedback, 'sentimentScore'> {
-  sentimentScore: number;
-}
-
-export async function analyzeSentiment(text: string): Promise<SentimentAnalysisResult> {
-  // This is a placeholder for actual sentiment analysis implementation
-  // In a real implementation, you would use a sentiment analysis API or library
+export async function analyzeSentiment(_text: string): Promise<SentimentAnalysisResult> {
+  // TODO: Implement actual sentiment analysis
   const score = Math.random() * 2 - 1; // Random score between -1 and 1
-  const confidence = Math.random(); // Random confidence between 0 and 1
-  const label = score > 0.2 ? 'positive' : score < -0.2 ? 'negative' : 'neutral';
-
-  return {
-    score,
-    label,
-    confidence
-  };
+  const label = score > 0.3 ? 'POSITIVE' : score < -0.3 ? 'NEGATIVE' : 'NEUTRAL';
+  return { score, label };
 }
 
-export async function getFeedbackWithSentiment(feedbackId: string): Promise<FeedbackWithSentiment | null> {
-  return prisma.agentFeedback.findUnique({
-    where: {
-      id: feedbackId
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          image: true
-        }
+export async function saveSentimentAnalysis(
+  userId: string,
+  content: string,
+  sentiment: SentimentAnalysisResult
+) {
+  return prisma.agentFeedback.create({
+    data: {
+      userId,
+      comment: content,
+      sentimentScore: sentiment.score,
+      metadata: {
+        sentiment: sentiment.label,
       },
-      deployment: true
-    }
-  }).then(feedback => feedback ? { ...feedback, sentimentScore: Number(feedback.sentimentScore) } : null);
-}
-
-export async function getAverageSentiment(deploymentId: string): Promise<number> {
-  const result = await prisma.agentFeedback.aggregate({
-    where: {
-      deploymentId
     },
-    _avg: {
-      sentimentScore: true
-    }
   });
-  return result._avg.sentimentScore ? Number(result._avg.sentimentScore) : 0;
 }
 
-export async function getSentimentDistribution(deploymentId: string): Promise<{
-  positive: number;
-  negative: number;
-  neutral: number;
-}> {
+export async function getSentimentHistory(userId: string) {
+  return prisma.agentFeedback.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function getAverageSentiment(userId: string): Promise<number> {
   const feedback = await prisma.agentFeedback.findMany({
-    where: {
-      deploymentId
-    },
-    select: {
-      sentimentScore: true
-    }
+    where: { userId },
+    select: { sentimentScore: true },
   });
 
-  const distribution = {
-    positive: 0,
-    negative: 0,
-    neutral: 0
-  };
+  if (feedback.length === 0) {
+    return 0;
+  }
 
-  feedback.forEach(f => {
-    const score = Number(f.sentimentScore);
-    if (score > 0.2) distribution.positive++;
-    else if (score < -0.2) distribution.negative++;
-    else distribution.neutral++;
-  });
-
-  return distribution;
+  const totalSentiment = feedback.reduce((sum, f) => sum + (f.sentimentScore || 0), 0);
+  return totalSentiment / feedback.length;
 } 

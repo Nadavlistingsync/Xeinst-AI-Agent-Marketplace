@@ -1,22 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { createNotification } from '@/lib/notifications';
+import { prisma } from '@/types/prisma';
+import { createNotification } from '@/lib/notification';
 import { withErrorHandling } from '@/lib/error-handling';
-import { withRateLimit } from '@/lib/rate-limit';
+import { withRateLimit } from '@/lib/rate-limiting';
 import { withValidation } from '@/lib/validation';
 import { z } from 'zod';
 import { NotificationType } from '@/types/prisma';
+import { handleApiError } from '@/lib/error-handling';
+import type { NotificationType as PrismaNotificationType } from '@prisma/client';
 
 // Define response schema
 const responseSchema = z.object({
-  response: z.string().min(1, 'Response is required'),
+  response: z.string().min(1),
 });
 
 // Handler function
 async function handler(
-  request: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   const session = await getServerSession(authOptions);
@@ -24,13 +26,15 @@ async function handler(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const feedback = await prisma.feedback.findUnique({
+  const feedback = await prisma.agentFeedback.findUnique({
     where: { id: params.id },
-    include: { user: true }
   });
 
   if (!feedback) {
-    return NextResponse.json({ error: 'Feedback not found' }, { status: 404 });
+    return NextResponse.json(
+      { error: 'Feedback not found' },
+      { status: 404 }
+    );
   }
 
   if (feedback.userId === session.user.id) {
@@ -40,32 +44,64 @@ async function handler(
     );
   }
 
-  const body = await request.json();
-  const validatedData = responseSchema.parse(body);
+  const validatedData = responseSchema.parse(await request.json());
 
-  const updatedFeedback = await prisma.feedback.update({
+  const updatedFeedback = await prisma.agentFeedback.update({
     where: { id: params.id },
     data: {
       creatorResponse: validatedData.response,
       responseDate: new Date(),
-      respondedBy: session.user.id
-    }
+      metadata: {
+        status: 'responded',
+      },
+    },
   });
 
-  // Create notification for feedback author
-  await createNotification({
-    userId: feedback.userId,
-    type: NotificationType.FEEDBACK_RESPONSE,
-    message: 'Your feedback has received a response',
-    metadata: {
-      feedbackId: feedback.id,
-      responderId: session.user.id,
-      responderName: session.user.name || 'A team member'
-    }
+  await prisma.notification.create({
+    data: {
+      userId: feedback.userId,
+      type: 'feedback_alert',
+      message: 'Your feedback has received a response',
+      metadata: {
+        feedbackId: feedback.id,
+        response: validatedData.response,
+      },
+    },
   });
 
   return NextResponse.json(updatedFeedback);
 }
 
 // Export the wrapped handler
-export const POST = withErrorHandling(withRateLimit(withValidation(handler, responseSchema))); 
+export const POST = withErrorHandling(withRateLimit(withValidation(handler, responseSchema)));
+
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> {
+  const feedback = await prisma.agentFeedback.findUnique({
+    where: { id: params.id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          subscriptionTier: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+    },
+  });
+
+  if (!feedback) {
+    return NextResponse.json(
+      { error: 'Feedback not found' },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json(feedback);
+} 

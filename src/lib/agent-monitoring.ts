@@ -412,4 +412,83 @@ export async function recordMetrics(
   metrics: MonitoringMetrics
 ) {
   await updateAgentMetrics(deploymentId, metrics);
+}
+
+export interface DeploymentMetrics {
+  errorRate: number;
+  responseTime: number;
+  successRate: number;
+  totalRequests: number;
+  activeUsers: number;
+}
+
+export async function getDeploymentMetrics(deploymentId: string): Promise<DeploymentMetrics> {
+  const deployment = await prisma.deployment.findUnique({
+    where: { id: deploymentId },
+    include: {
+      metrics: {
+        orderBy: { timestamp: 'desc' },
+        take: 1,
+      },
+    },
+  });
+
+  if (!deployment) {
+    throw new Error('Deployment not found');
+  }
+
+  const latestMetrics = deployment.metrics[0];
+  if (!latestMetrics) {
+    return {
+      errorRate: 0,
+      responseTime: 0,
+      successRate: 0,
+      totalRequests: 0,
+      activeUsers: 0,
+    };
+  }
+
+  return {
+    errorRate: latestMetrics.errorRate,
+    responseTime: latestMetrics.responseTime,
+    successRate: latestMetrics.successRate,
+    totalRequests: latestMetrics.totalRequests,
+    activeUsers: latestMetrics.activeUsers,
+  };
+}
+
+export async function getDeploymentById(id: string) {
+  return prisma.deployment.findUnique({
+    where: { id },
+    include: {
+      metrics: true,
+    },
+  });
+}
+
+export async function getDeploymentsByAgent(agentId: string) {
+  return prisma.deployment.findMany({
+    where: { createdBy: agentId },
+    include: {
+      metrics: true,
+    },
+  });
+}
+
+export async function getActiveDeployments() {
+  return prisma.deployment.findMany({
+    where: { status: 'active' },
+    include: {
+      metrics: true,
+    },
+  });
+}
+
+export async function getDeploymentsByUser(userId: string) {
+  return prisma.deployment.findMany({
+    where: { createdBy: userId },
+    include: {
+      metrics: true,
+    },
+  });
 } 

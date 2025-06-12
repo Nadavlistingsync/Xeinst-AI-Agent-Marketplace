@@ -1,76 +1,93 @@
 import { prisma } from '@/types/prisma';
 import type { WorkflowWebhook } from '@prisma/client';
 
-interface WebhookConfig {
+export interface CreateWebhookInput {
+  workflowId: string;
+  userId: string;
   url: string;
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  headers: Record<string, string>;
-  body?: any;
+  headers?: Record<string, string>;
+  isActive?: boolean;
 }
 
-interface CreateWebhookData {
-  workflowId: string;
-  config: WebhookConfig;
-  userId: string;
-}
-
-interface WorkflowWebhookWithConfig extends WorkflowWebhook {
-  config: WebhookConfig;
-}
-
-export async function createWebhook(data: CreateWebhookData): Promise<WorkflowWebhook> {
+export async function createWebhook(data: CreateWebhookInput): Promise<WorkflowWebhook> {
   return prisma.workflowWebhook.create({
     data: {
-      workflowId: data.workflowId,
-      url: data.config.url,
-      method: data.config.method,
-      headers: data.config.headers as any,
-      isActive: true,
-      createdBy: data.userId
-    }
+      workflow: { connect: { id: data.workflowId } },
+      url: data.url,
+      method: data.method,
+      headers: data.headers,
+      isActive: data.isActive ?? true,
+    },
   });
 }
 
-export async function getWebhookById(id: string): Promise<WorkflowWebhook | null> {
-  return prisma.workflowWebhook.findUnique({
-    where: { id }
-  });
-}
-
-export async function getWebhooksByWorkflow(workflowId: string): Promise<WorkflowWebhook[]> {
+export async function getWebhooks(userId: string) {
   return prisma.workflowWebhook.findMany({
-    where: { workflowId },
-    orderBy: { createdAt: 'desc' }
-  });
-}
-
-export async function getWebhooksByUser(userId: string): Promise<WorkflowWebhook[]> {
-  return prisma.workflowWebhook.findMany({
-    where: { createdBy: userId },
-    orderBy: { createdAt: 'desc' }
+    where: { workflow: { createdBy: userId } },
+    orderBy: { createdAt: 'desc' },
   });
 }
 
 export async function updateWebhook(
   id: string,
-  data: Partial<CreateWebhookData>
+  data: Partial<CreateWebhookInput>
 ): Promise<WorkflowWebhook> {
+  const updateData: any = {
+    url: data.url,
+    method: data.method,
+    headers: data.headers,
+    isActive: data.isActive,
+  };
+
+  if (data.workflowId) {
+    updateData.workflow = { connect: { id: data.workflowId } };
+  }
+
   return prisma.workflowWebhook.update({
     where: { id },
-    data: {
-      ...(data.workflowId && { workflowId: data.workflowId }),
-      ...(data.config && {
-        url: data.config.url,
-        method: data.config.method,
-        headers: data.config.headers as any
-      })
-    }
+    data: updateData,
   });
 }
 
-export async function deleteWebhook(id: string): Promise<void> {
-  await prisma.workflowWebhook.delete({
-    where: { id }
+export async function deleteWebhook(id: string): Promise<WorkflowWebhook> {
+  return prisma.workflowWebhook.delete({
+    where: { id },
+  });
+}
+
+export async function getWebhookById(id: string) {
+  return prisma.workflowWebhook.findUnique({
+    where: { id },
+    include: {
+      workflow: true,
+    },
+  });
+}
+
+export async function getWebhooksByWorkflow(workflowId: string) {
+  return prisma.workflowWebhook.findMany({
+    where: { workflowId },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+export async function getActiveWebhooks() {
+  return prisma.workflowWebhook.findMany({
+    where: { isActive: true },
+    include: {
+      workflow: true,
+    },
+  });
+}
+
+export async function getWebhooksByUser(userId: string) {
+  return prisma.workflowWebhook.findMany({
+    where: { workflow: { createdBy: userId } },
+    include: {
+      workflow: true,
+    },
+    orderBy: { createdAt: 'desc' },
   });
 }
 
@@ -88,8 +105,8 @@ export async function resumeWebhook(id: string): Promise<WorkflowWebhook> {
   });
 }
 
-export async function executeWebhook(webhook: WorkflowWebhookWithConfig, data: any): Promise<Response> {
-  const { url, method, headers, config } = webhook;
+export async function executeWebhook(webhook: WorkflowWebhook, data: any): Promise<Response> {
+  const { url, method, headers } = webhook;
 
   const response = await fetch(url, {
     method,
@@ -97,7 +114,7 @@ export async function executeWebhook(webhook: WorkflowWebhookWithConfig, data: a
       'Content-Type': 'application/json',
       ...(headers as Record<string, string>)
     },
-    body: config.body ? JSON.stringify(config.body) : JSON.stringify(data)
+    body: JSON.stringify(data)
   });
 
   if (!response.ok) {
