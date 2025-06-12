@@ -1,4 +1,5 @@
-import type { Prisma, NotificationType, AgentFeedback } from '@/types/prisma';
+import { Prisma } from '@prisma/client';
+import type { NotificationType, AgentFeedback } from '@/types/prisma';
 import { prisma } from '@/lib/prisma';
 import { createNotification } from './notification';
 
@@ -106,8 +107,12 @@ export async function getFeedbackMetrics(deploymentId: string): Promise<Feedback
     return acc;
   }, {});
 
-  const ratingDistribution = feedbacks.reduce((acc: Record<string, number>, feedback: AgentFeedback) => {
-    acc[feedback.rating] = (acc[feedback.rating] || 0) + 1;
+  const categoryDistribution = feedbacks.reduce((acc: Record<string, number>, feedback: AgentFeedback) => {
+    if (feedback.categories) {
+      Object.entries(feedback.categories as Record<string, any>).forEach(([category]) => {
+        acc[category] = (acc[category] || 0) + 1;
+      });
+    }
     return acc;
   }, {});
 
@@ -127,7 +132,7 @@ export async function getFeedbackMetrics(deploymentId: string): Promise<Feedback
   });
 
   const timeSeriesData = feedbacks.map((feedback: AgentFeedback) => ({
-    date: feedback.createdAt.toISOString().split('T')[0],
+    date: new Date(feedback.createdAt),
     rating: feedback.rating,
     sentiment: feedback.sentimentScore || 0
   }));
@@ -137,7 +142,7 @@ export async function getFeedbackMetrics(deploymentId: string): Promise<Feedback
     averageSentiment,
     totalFeedback,
     sentimentDistribution,
-    ratingDistribution,
+    categoryDistribution,
     timeSeriesData
   };
 }
@@ -153,7 +158,7 @@ export async function monitorFeedback(deploymentId: string) {
   if (metrics.averageSentiment < -0.5) {
     await createNotification({
       userId: deployment.createdBy,
-      type: NotificationType.feedback_alert,
+      type: 'feedback_alert' as NotificationType,
       message: `Your agent "${deployment.name}" is receiving negative feedback`,
       metadata: {
         sentimentScore: metrics.averageSentiment,

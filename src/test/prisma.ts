@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@/types/prisma';
+import { PrismaClient } from '@/types/prisma';
 
 const prismaClientSingleton = () => {
   return new PrismaClient({
@@ -19,4 +19,14 @@ export const prisma = global.prisma ?? prismaClientSingleton();
 
 if (process.env.NODE_ENV !== 'production') {
   global.prisma = prisma;
+}
+
+export function getTestPrismaClient() {
+  return new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL
+      }
+    }
+  });
 } 

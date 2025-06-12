@@ -1,16 +1,5 @@
-import { prisma } from './db';
+import { prisma } from '@/types/prisma';
 import type { WorkflowExecution } from '@prisma/client';
-
-interface ExecutionStep {
-  id: string;
-  type: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  input: any;
-  output: any;
-  error?: string;
-  startedAt?: Date;
-  completedAt?: Date;
-}
 
 interface CreateExecutionData {
   workflowId: string;
@@ -18,17 +7,14 @@ interface CreateExecutionData {
   userId: string;
 }
 
-interface WorkflowExecutionWithSteps extends WorkflowExecution {
-  steps: ExecutionStep[];
-}
-
 export async function createExecution(data: CreateExecutionData): Promise<WorkflowExecution> {
   return prisma.workflowExecution.create({
     data: {
       workflowId: data.workflowId,
       input: data.input,
-      status: 'pending'
-      // steps: [] // Removed, not in Prisma schema
+      status: 'pending',
+      versionId: data.workflowId, // Using workflowId as versionId since it's required
+      startedAt: new Date()
     }
   });
 }
@@ -47,12 +33,10 @@ export async function getExecutionsByWorkflow(workflowId: string): Promise<Workf
 }
 
 export async function getExecutionsByUser(userId: string): Promise<WorkflowExecution[]> {
-  // If userId is not a valid field, comment out or refactor this function
-  // return prisma.workflowExecution.findMany({
-  //   where: { userId },
-  //   orderBy: { createdAt: 'desc' }
-  // });
-  throw new Error('getExecutionsByUser is not implemented: userId is not a valid field in WorkflowExecution');
+  return prisma.workflowExecution.findMany({
+    where: { createdBy: userId },
+    orderBy: { createdAt: 'desc' }
+  });
 }
 
 export async function updateExecutionStatus(

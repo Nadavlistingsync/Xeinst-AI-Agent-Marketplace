@@ -1,4 +1,4 @@
-import { prisma } from './db';
+import { prisma } from '@/types/prisma';
 import type { WorkflowSchedule } from '@prisma/client';
 
 interface ScheduleConfig {
@@ -23,10 +23,8 @@ export async function createSchedule(data: CreateScheduleData): Promise<Workflow
       workflowId: data.workflowId,
       cronExpression: data.config.cron,
       timezone: data.config.timezone,
-      config: {
-        input: data.config.input
-      } as any,
-      isActive: true
+      isActive: true,
+      createdBy: data.userId
     }
   });
 }
@@ -46,7 +44,7 @@ export async function getSchedulesByWorkflow(workflowId: string): Promise<Workfl
 
 export async function getSchedulesByUser(userId: string): Promise<WorkflowSchedule[]> {
   return prisma.workflowSchedule.findMany({
-    where: { userId },
+    where: { createdBy: userId },
     orderBy: { createdAt: 'desc' }
   });
 }
@@ -61,10 +59,7 @@ export async function updateSchedule(
       ...(data.workflowId && { workflowId: data.workflowId }),
       ...(data.config && {
         cronExpression: data.config.cron,
-        timezone: data.config.timezone,
-        config: {
-          input: data.config.input
-        } as any
+        timezone: data.config.timezone
       })
     }
   });
@@ -90,7 +85,7 @@ export async function resumeSchedule(id: string): Promise<WorkflowSchedule> {
   });
 }
 
-export async function getNextExecutionTime(schedule: WorkflowScheduleWithConfig): Promise<Date | null> {
+export async function getNextExecutionTime(): Promise<Date | null> {
   // This is a placeholder for actual cron expression parsing and next execution time calculation
   // In a real implementation, you would use a cron library to calculate the next execution time
   return null;
@@ -105,7 +100,7 @@ export async function executeScheduledWorkflows(): Promise<void> {
 
   for (const schedule of schedules) {
     const scheduleWithConfig = schedule as WorkflowScheduleWithConfig;
-    const nextExecution = await getNextExecutionTime(scheduleWithConfig);
+    const nextExecution = await getNextExecutionTime();
     if (nextExecution && nextExecution <= now) {
       // Execute the workflow
       await prisma.workflowExecution.create({
@@ -113,7 +108,8 @@ export async function executeScheduledWorkflows(): Promise<void> {
           workflowId: schedule.workflowId,
           input: scheduleWithConfig.config.input,
           status: 'pending',
-          steps: []
+          versionId: schedule.workflowId,
+          startedAt: new Date()
         }
       });
     }

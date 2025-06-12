@@ -1,6 +1,6 @@
 import { prisma } from './db';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
-import type { Prisma, AgentLog } from '@/types/prisma';
+import { Prisma, AgentLog } from '@prisma/client';
 import { AppError } from './error-handling';
 
 interface JobResult {

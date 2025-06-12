@@ -3,10 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
-import { prisma } from '@/lib/prisma';
-import type { PrismaClient } from '@/types/prisma';
-
-const prismaClient = new PrismaClient();
+import { prisma } from '@/types/prisma';
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,7 +36,7 @@ export async function POST(req: NextRequest) {
     await writeFile(filePath, buffer);
 
     // Create deployment record
-    const deployment = await prismaClient.deployment.create({
+    const deployment = await prisma.deployment.create({
       data: {
         name: name,
         description: description,

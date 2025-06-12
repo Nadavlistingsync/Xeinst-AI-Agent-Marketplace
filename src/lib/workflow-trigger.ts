@@ -1,4 +1,4 @@
-import { prisma } from './db';
+import { prisma } from '@/types/prisma';
 import type { WorkflowTrigger } from '@prisma/client';
 
 interface TriggerConfig {
@@ -20,7 +20,8 @@ export async function createTrigger(data: CreateTriggerData): Promise<WorkflowTr
       workflowId: data.workflowId,
       type: data.config.type,
       config: data.config.config as any,
-      isActive: true
+      isActive: true,
+      createdBy: data.userId
     }
   });
 }
@@ -40,7 +41,7 @@ export async function getTriggersByWorkflow(workflowId: string): Promise<Workflo
 
 export async function getTriggersByUser(userId: string): Promise<WorkflowTrigger[]> {
   return prisma.workflowTrigger.findMany({
-    where: { userId },
+    where: { createdBy: userId },
     orderBy: { createdAt: 'desc' }
   });
 }
@@ -94,7 +95,8 @@ export async function handleWebhookTrigger(
       workflowId: trigger.workflowId,
       input: payload,
       status: 'pending',
-      steps: []
+      versionId: trigger.workflowId,
+      startedAt: new Date()
     }
   });
 }
@@ -118,7 +120,8 @@ export async function handleEventTrigger(
       workflowId: trigger.workflowId,
       input: payload,
       status: 'pending',
-      steps: []
+      versionId: trigger.workflowId,
+      startedAt: new Date()
     }
   });
 } 

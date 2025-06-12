@@ -1,4 +1,4 @@
-import { prisma } from './db';
+import { prisma } from '@/types/prisma';
 import type { WorkflowVersion } from '@prisma/client';
 
 interface VersionConfig {
@@ -22,7 +22,8 @@ export async function createVersion(data: CreateVersionData): Promise<WorkflowVe
       workflowId: data.workflowId,
       version: data.version,
       config: data.config as any,
-      isPublished: false
+      createdBy: data.userId,
+      status: 'draft'
     }
   });
 }
@@ -70,14 +71,14 @@ export async function deleteVersion(id: string): Promise<void> {
 export async function publishVersion(id: string): Promise<WorkflowVersion> {
   return prisma.workflowVersion.update({
     where: { id },
-    data: { isPublished: true }
+    data: { status: 'published' }
   });
 }
 
 export async function unpublishVersion(id: string): Promise<WorkflowVersion> {
   return prisma.workflowVersion.update({
     where: { id },
-    data: { isPublished: false }
+    data: { status: 'draft' }
   });
 }
 

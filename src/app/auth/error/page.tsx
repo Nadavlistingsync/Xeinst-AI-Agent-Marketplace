@@ -2,7 +2,6 @@
 
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Suspense } from 'react';
 
 function ErrorContent() {
   const searchParams = useSearchParams();
@@ -40,13 +39,5 @@ function ErrorContent() {
 }
 
 export default function ErrorPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-white">Loading...</div>
-      </div>
-    }>
-      <ErrorContent />
-    </Suspense>
-  );
+  return <ErrorContent />;
 } 

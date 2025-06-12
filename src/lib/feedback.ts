@@ -1,5 +1,5 @@
 import { prisma } from '@/types/prisma';
-import type { AgentFeedback, Prisma } from '@prisma/client';
+import type { AgentFeedback } from '@prisma/client';
 import { z } from 'zod';
 
 const feedbackSchema = z.object({

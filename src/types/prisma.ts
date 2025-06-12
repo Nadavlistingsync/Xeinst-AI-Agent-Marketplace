@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import {
+import type {
   User,
   UserRole,
   Product,
@@ -27,7 +27,7 @@ import {
 } from '@prisma/client';
 
 // Export all types and enums
-export {
+export type {
   User,
   UserRole,
   Product,
@@ -61,6 +61,7 @@ declare global {
 
 const globalForPrisma = globalThis as { prisma: PrismaClient | undefined };
 
+// Export the PrismaClient instance
 export const prisma = globalForPrisma.prisma || new PrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {

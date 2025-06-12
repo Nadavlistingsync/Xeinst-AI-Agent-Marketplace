@@ -1,5 +1,6 @@
-import { prisma } from '@/types/prisma';
-import type { Notification, NotificationType } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
+import { NotificationType } from '@prisma/client';
+import type { Notification } from '@prisma/client';
 
 interface CreateNotificationInput {
   type: NotificationType;

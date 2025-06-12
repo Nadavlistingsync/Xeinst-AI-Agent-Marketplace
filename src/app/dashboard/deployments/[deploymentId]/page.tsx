@@ -7,9 +7,7 @@ import { DeploymentOverview } from '@/components/dashboard/DeploymentOverview';
 import { DeploymentMetrics } from "@/components/dashboard/DeploymentMetrics";
 import { DeploymentLogs } from "@/components/dashboard/DeploymentLogs";
 import { DeploymentWithMetrics } from '@/types/deployment';
-import { DeploymentStatus } from '@/types/prisma';
-import { Suspense } from 'react';
-import type { DeploymentStatus as PrismaDeploymentStatus } from '@/types/prisma';
+import { DeploymentStatus } from '@prisma/client';
 
 interface DeploymentPageProps {
   params: {

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
-import type { Prisma } from '@/types/prisma';
+import { Prisma } from '@prisma/client';
 import { ApiError, ApiResponse, ApiSuccess } from '@/types/api';
 import * as Sentry from '@sentry/nextjs';
 

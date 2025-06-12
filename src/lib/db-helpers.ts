@@ -1,4 +1,5 @@
-import type { Prisma, Deployment } from '@/types/prisma';
+import { Prisma } from '@prisma/client';
+import type { Deployment } from '@/types/prisma';
 import { prisma } from "./db";
 
 // Define types
@@ -595,7 +596,7 @@ export async function searchProducts(query: string): Promise<ProductWithNumbers[
 
 // Helper functions
 export async function getProductWithStats(
-  prisma: Prisma,
+  prisma: any,
   productId: string
 ): Promise<ProductWithNumbers | null> {
   return prisma.product.findUnique({
@@ -609,7 +610,7 @@ export async function getProductWithStats(
       updatedAt: true,
       category: true,
     },
-  }).then(product => product ? {
+  }).then((product: any) => product ? {
     id: product.id,
     name: product.name,
     description: product.description,
@@ -625,7 +626,7 @@ export async function getProductWithStats(
 }
 
 export async function getPurchaseWithProduct(
-  prisma: Prisma,
+  prisma: any,
   purchaseId: string
 ): Promise<PurchaseWithProduct | null> {
   return prisma.purchase.findUnique({
@@ -633,7 +634,7 @@ export async function getPurchaseWithProduct(
     include: {
       product: true
     }
-  }).then(purchase => purchase ? {
+  }).then((purchase: any) => purchase ? {
     ...purchase,
     status: purchase.status as 'pending' | 'completed' | 'failed',
     amount: Number(purchase.amount),

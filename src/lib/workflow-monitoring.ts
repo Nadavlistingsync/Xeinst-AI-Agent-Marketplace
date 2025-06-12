@@ -1,5 +1,5 @@
-import { prisma } from './db';
-import type { WorkflowExecution } from '@/types/prisma';
+import { prisma } from '@/types/prisma';
+import type { WorkflowExecution } from '@prisma/client';
 
 interface WorkflowMetrics {
   totalExecutions: number;
@@ -13,7 +13,7 @@ interface WorkflowMetrics {
     failed: number;
   };
   timeSeriesData: {
-    date: string;
+    date: Date;
     count: number;
     successRate: number;
     averageDuration: number;
@@ -88,8 +88,8 @@ function analyzeTimeSeriesData(executions: WorkflowExecution[]): WorkflowMetrics
     dailyData.set(date, data);
   });
 
-  return Array.from(dailyData.entries()).map(([date, data]) => ({
-    date,
+  return Array.from(dailyData.entries()).map(([dateStr, data]) => ({
+    date: new Date(dateStr),
     count: data.count,
     successRate: data.count > 0 ? (data.completed / data.count) * 100 : 0,
     averageDuration: data.completed > 0 ? data.duration / data.completed : 0
@@ -106,7 +106,6 @@ export async function getExecutionHistory(workflowId: string): Promise<WorkflowE
 
 export async function getErrorDetails(executionId: string): Promise<{
   error: string;
-  steps: any[];
 }> {
   const execution = await prisma.workflowExecution.findUnique({
     where: { id: executionId }
@@ -117,7 +116,6 @@ export async function getErrorDetails(executionId: string): Promise<{
   }
 
   return {
-    error: execution.error || 'No error details available',
-    steps: execution.steps as any[]
+    error: execution.error || 'No error details available'
   };
 } 

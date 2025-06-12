@@ -1,9 +1,7 @@
 import { Metadata } from "next";
-import { Suspense } from "react";
 import { MarketplaceGrid } from "@/components/marketplace/MarketplaceGrid";
 import { MarketplaceFilters } from "@/components/marketplace/MarketplaceFilters";
 import { MarketplaceSearch } from "@/components/marketplace/MarketplaceSearch";
-import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
@@ -55,9 +53,7 @@ export default function MarketplacePage({
             <MarketplaceSearch />
           </div>
           
-          <Suspense fallback={<LoadingSpinner />}>
-            <MarketplaceGrid searchParams={searchParams} />
-          </Suspense>
+          <MarketplaceGrid searchParams={searchParams} />
         </div>
       </div>
     </div>

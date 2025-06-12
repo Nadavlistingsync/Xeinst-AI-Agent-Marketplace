@@ -1,13 +1,12 @@
 import Stripe from 'stripe';
 import { prisma } from './db';
-import type { User, Product } from '@/types/prisma';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not set');
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
+  apiVersion: '2025-05-28.basil',
   typescript: true
 });
 
@@ -114,7 +113,7 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
       const customerId = subscription.customer as string;
 
       const user = await prisma.user.findFirst({
-        where: { stripeCustomerId: customerId }
+        where: { id: customerId }
       });
 
       if (!user) {

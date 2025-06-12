@@ -1,5 +1,6 @@
-import type { Prisma, User, UserRole, SubscriptionTier, DeploymentStatus } from '@/types/prisma';
-import { prisma } from './db';
+import type { Prisma, UserRole, SubscriptionTier } from '@prisma/client';
+import type { User, DeploymentStatus } from '@/types/prisma';
+import { prisma } from '@/types/prisma';
 
 export interface CreateUserInput {
   name: string;
@@ -64,19 +65,19 @@ interface UserStats {
   averageRating: number;
 }
 
-export async function createUser(data: CreateUserInput) {
+export async function createUser(data: CreateUserInput): Promise<User> {
   return prisma.user.create({
     data: {
       name: data.name,
       email: data.email,
       image: data.image,
-      role: data.role || UserRole.user,
-      subscriptionTier: data.subscriptionTier || SubscriptionTier.free,
+      role: data.role || 'user',
+      subscriptionTier: data.subscriptionTier || 'free',
     },
   });
 }
 
-export async function updateUser(id: string, data: UpdateUserInput) {
+export async function updateUser(id: string, data: UpdateUserInput): Promise<User> {
   return prisma.user.update({
     where: { id },
     data: {
@@ -89,7 +90,7 @@ export async function updateUser(id: string, data: UpdateUserInput) {
   });
 }
 
-export async function getUser(id: string, options: GetUserOptions = {}) {
+export async function getUser(id: string, options: GetUserOptions = {}): Promise<User | null> {
   const include: Prisma.UserInclude = {};
 
   if (options.includeAgents) {
@@ -122,7 +123,7 @@ export async function getUsers(filter: {
   search?: string;
   role?: UserRole;
   subscriptionTier?: SubscriptionTier;
-} = {}) {
+} = {}): Promise<User[]> {
   const where: Prisma.UserWhereInput = {};
 
   if (filter.search) {
@@ -155,16 +156,17 @@ export async function getUserAgents(userId: string, options: GetUserAgentsOption
     where.status = options.status;
   }
 
-  if (options.startDate) {
+  if (options.startDate && options.endDate) {
     where.createdAt = {
-      ...where.createdAt,
+      gte: options.startDate,
+      lte: options.endDate
+    };
+  } else if (options.startDate) {
+    where.createdAt = {
       gte: options.startDate
     };
-  }
-
-  if (options.endDate) {
+  } else if (options.endDate) {
     where.createdAt = {
-      ...where.createdAt,
       lte: options.endDate
     };
   }
@@ -184,16 +186,17 @@ export async function getUserDeployments(userId: string, options: GetUserDeploym
     where.status = options.status;
   }
 
-  if (options.startDate) {
+  if (options.startDate && options.endDate) {
     where.createdAt = {
-      ...where.createdAt,
+      gte: options.startDate,
+      lte: options.endDate
+    };
+  } else if (options.startDate) {
+    where.createdAt = {
       gte: options.startDate
     };
-  }
-
-  if (options.endDate) {
+  } else if (options.endDate) {
     where.createdAt = {
-      ...where.createdAt,
       lte: options.endDate
     };
   }
@@ -252,13 +255,13 @@ export async function getUserHistory() {
 
 export async function getUserById(id: string): Promise<User | null> {
   return prisma.user.findUnique({
-    where: { id }
+    where: { id },
   });
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
   return prisma.user.findUnique({
-    where: { email }
+    where: { email },
   });
 }
 
@@ -278,7 +281,7 @@ export async function getUserStats(userId: string): Promise<UserStats> {
 
   return {
     totalPurchases: purchases,
-    totalEarnings: earnings._sum.amount || 0,
+    totalEarnings: earnings._sum.amount ? Number(earnings._sum.amount) : 0,
     totalProducts: products,
     averageRating: ratings._avg.rating || 0
   };
@@ -290,13 +293,13 @@ export async function updateUserProfile(
 ): Promise<User> {
   return prisma.user.update({
     where: { id: userId },
-    data
+    data,
   });
 }
 
 export async function deleteUser(userId: string): Promise<void> {
   await prisma.user.delete({
-    where: { id: userId }
+    where: { id: userId },
   });
 }
 
@@ -305,8 +308,8 @@ export async function searchUsers(query: string): Promise<User[]> {
     where: {
       OR: [
         { name: { contains: query, mode: 'insensitive' } },
-        { email: { contains: query, mode: 'insensitive' } }
-      ]
-    }
+        { email: { contains: query, mode: 'insensitive' } },
+      ],
+    },
   });
 } 

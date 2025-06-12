@@ -1,4 +1,4 @@
-import { prisma } from './db';
+import { prisma } from '@/types/prisma';
 import type { WorkflowWebhook } from '@prisma/client';
 
 interface WebhookConfig {
@@ -25,10 +25,8 @@ export async function createWebhook(data: CreateWebhookData): Promise<WorkflowWe
       url: data.config.url,
       method: data.config.method,
       headers: data.config.headers as any,
-      config: {
-        body: data.config.body
-      } as any,
-      isActive: true
+      isActive: true,
+      createdBy: data.userId
     }
   });
 }
@@ -48,7 +46,7 @@ export async function getWebhooksByWorkflow(workflowId: string): Promise<Workflo
 
 export async function getWebhooksByUser(userId: string): Promise<WorkflowWebhook[]> {
   return prisma.workflowWebhook.findMany({
-    where: { userId },
+    where: { createdBy: userId },
     orderBy: { createdAt: 'desc' }
   });
 }
@@ -64,10 +62,7 @@ export async function updateWebhook(
       ...(data.config && {
         url: data.config.url,
         method: data.config.method,
-        headers: data.config.headers as any,
-        config: {
-          body: data.config.body
-        } as any
+        headers: data.config.headers as any
       })
     }
   });

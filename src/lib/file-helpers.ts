@@ -89,7 +89,7 @@ export async function getFileById(id: string): Promise<File | null> {
 export async function getFilesByUser(userId: string): Promise<File[]> {
   return prisma.file.findMany({
     where: {
-      userId
+      uploadedBy: userId
     },
     orderBy: {
       createdAt: 'desc'
@@ -97,13 +97,14 @@ export async function getFilesByUser(userId: string): Promise<File[]> {
   });
 }
 
-export async function getFilesByDeployment(deploymentId: string): Promise<File[]> {
-  return prisma.file.findMany({
-    where: {
-      deploymentId
-    },
-    orderBy: {
-      createdAt: 'desc'
-    }
-  });
-} 
+// Remove getFilesByDeployment if File model does not have deploymentId
+// export async function getFilesByDeployment(deploymentId: string): Promise<File[]> {
+//   return prisma.file.findMany({
+//     where: {
+//       deploymentId
+//     },
+//     orderBy: {
+//       createdAt: 'desc'
+//     }
+//   });
+// } 

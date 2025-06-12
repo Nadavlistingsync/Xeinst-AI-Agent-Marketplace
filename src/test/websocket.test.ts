@@ -2,12 +2,16 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import { emitDeploymentStatus, initializeWebSocket } from '@/lib/websocket';
-import { DeploymentStatus } from '@prisma/client';
+import type { DeploymentStatus } from '@prisma/client';
 import { io as Client } from 'socket.io-client';
 import type { DeploymentStatusUpdate } from '@/types/websocket';
-import { WebSocketServer } from 'ws';
-import { prisma } from '@/lib/prisma';
-import { DeploymentStatus as PrismaDeploymentStatus } from '@/types/prisma';
+
+// Add type declaration for 'ws' module
+declare module 'ws' {
+  export class WebSocketServer {
+    constructor(options: any);
+  }
+}
 
 describe('WebSocket', () => {
   let io: Server;
@@ -40,7 +44,7 @@ describe('WebSocket', () => {
   it('should emit deployment status', async () => {
     const mockDeploymentStatus: DeploymentStatusUpdate = {
       id: 'test-deployment',
-      status: DeploymentStatus.active,
+      status: 'active' as DeploymentStatus,
       lastUpdated: new Date().toISOString()
     };
 

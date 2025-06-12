@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/types/prisma';
+import { prisma } from '@/lib/prisma';
 import { createNotification } from '@/lib/notifications';
-import { NotificationType } from '@/types/prisma';
 import { withErrorHandling } from '@/lib/error-handling';
 import { withRateLimit } from '@/lib/rate-limit';
 import { withValidation } from '@/lib/validation';
 import { z } from 'zod';
+import { NotificationType } from '@/types/prisma';
 
 // Define response schema
 const responseSchema = z.object({
@@ -46,8 +46,8 @@ async function handler(
   const updatedFeedback = await prisma.feedback.update({
     where: { id: params.id },
     data: {
-      response: validatedData.response,
-      respondedAt: new Date(),
+      creatorResponse: validatedData.response,
+      responseDate: new Date(),
       respondedBy: session.user.id
     }
   });

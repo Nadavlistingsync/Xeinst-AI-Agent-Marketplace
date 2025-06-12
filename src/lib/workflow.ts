@@ -1,4 +1,4 @@
-import { prisma } from './db';
+import { prisma } from '@/types/prisma';
 import type { Workflow } from '@prisma/client';
 
 interface WorkflowStep {
@@ -24,8 +24,8 @@ export async function createWorkflow(data: CreateWorkflowData): Promise<Workflow
     data: {
       name: data.name,
       description: data.description,
-      steps: data.steps as any,
-      createdBy: data.userId
+      createdBy: data.userId,
+      status: 'draft'
     }
   });
 }
@@ -51,8 +51,7 @@ export async function updateWorkflow(
     where: { id },
     data: {
       ...(data.name && { name: data.name }),
-      ...(data.description && { description: data.description }),
-      ...(data.steps && { steps: data.steps as any })
+      ...(data.description && { description: data.description })
     }
   });
 }
@@ -71,8 +70,9 @@ export async function executeWorkflow(workflow: WorkflowWithSteps, input: any): 
   while (currentStep) {
     result = await executeStep(currentStep, result);
     if (!currentStep.nextStepId) break;
-    currentStep = steps.find(step => step.id === currentStep.nextStepId);
-    if (!currentStep) break;
+    const nextStep = steps.find(step => step.id === currentStep!.nextStepId);
+    if (!nextStep) break;
+    currentStep = nextStep;
   }
 
   return result;

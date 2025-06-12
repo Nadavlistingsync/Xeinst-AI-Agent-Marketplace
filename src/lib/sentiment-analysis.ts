@@ -1,4 +1,3 @@
-import { prisma } from './db';
 import type { AgentFeedback } from '@/types/prisma';
 
 interface SentimentAnalysisResult {

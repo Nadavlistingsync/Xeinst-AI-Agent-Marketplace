@@ -1,11 +1,11 @@
 import { prisma } from './db';
 // import { Agent } from '@/types/agents';
-import { Deployment } from '@prisma/client';
+import { Deployment, DeploymentStatus } from '@prisma/client';
 
 export async function getFeaturedAgents(): Promise<Deployment[]> {
   try {
     const agents = await prisma.deployment.findMany({
-      where: { status: 'active' },
+      where: { status: DeploymentStatus.active },
       orderBy: { downloadCount: 'desc' },
       take: 5,
     });
@@ -19,7 +19,7 @@ export async function getFeaturedAgents(): Promise<Deployment[]> {
 export async function getTrendingAgents(): Promise<Deployment[]> {
   try {
     const agents = await prisma.deployment.findMany({
-      where: { status: 'active' },
+      where: { status: DeploymentStatus.active },
       orderBy: { rating: 'desc' },
       take: 5,
     });
