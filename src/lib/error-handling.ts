@@ -73,11 +73,50 @@ export function handleApiError(error: unknown): ApiError {
 }
 
 export function createErrorResponse(error: unknown) {
-  const errorResponse = handleApiError(error);
-  return NextResponse.json(
-    { error: errorResponse },
-    { status: errorResponse.status }
-  );
+  if (error instanceof ZodError) {
+    return {
+      status: 400,
+      json: async () => ({
+        statusCode: 400,
+        name: 'Validation error',
+        message: 'Invalid input',
+        details: error.errors,
+      }),
+    };
+  }
+
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return {
+      status: 500,
+      json: async () => ({
+        statusCode: 500,
+        name: 'Server error',
+        message: error.message,
+        details: error.meta,
+      }),
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      status: 500,
+      json: async () => ({
+        statusCode: 500,
+        name: 'Server error',
+        message: error.message,
+        details: error.stack,
+      }),
+    };
+  }
+
+  return {
+    status: 500,
+    json: async () => ({
+      statusCode: 500,
+      name: 'Server error',
+      message: 'An unexpected error occurred',
+    }),
+  };
 }
 
 // Utility function to wrap async operations with error handling

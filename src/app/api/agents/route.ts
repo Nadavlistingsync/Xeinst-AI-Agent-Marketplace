@@ -6,13 +6,20 @@ import { agentSchema } from '@/lib/schema';
 
 export async function GET() {
   try {
-    const agents = await prisma.deployment.findMany({
+    const agents = await prisma.agent.findMany({
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    return NextResponse.json(agents);
+    // Serialize dates to ISO strings
+    const serializedAgents = agents.map(agent => ({
+      ...agent,
+      createdAt: agent.createdAt.toISOString(),
+      updatedAt: agent.updatedAt.toISOString(),
+    }));
+
+    return NextResponse.json(serializedAgents);
   } catch (error) {
     console.error('Error fetching agents:', error);
     return NextResponse.json(
@@ -35,7 +42,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validatedData = agentSchema.parse(body);
 
-    const agent = await prisma.deployment.create({
+    const agent = await prisma.agent.create({
       data: {
         ...validatedData,
         modelType: body.modelType || 'standard',
@@ -44,7 +51,14 @@ export async function POST(request: Request) {
       },
     });
 
-    return NextResponse.json(agent);
+    // Serialize dates to ISO strings
+    const serializedAgent = {
+      ...agent,
+      createdAt: agent.createdAt.toISOString(),
+      updatedAt: agent.updatedAt.toISOString(),
+    };
+
+    return NextResponse.json(serializedAgent);
   } catch (error) {
     console.error('Error creating agent:', error);
     return NextResponse.json(

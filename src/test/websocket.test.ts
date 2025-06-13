@@ -1,65 +1,69 @@
 import { Server } from 'socket.io';
+import { io as createIO } from 'socket.io-client';
 import { createServer } from 'http';
 import type { DeploymentStatus } from '@prisma/client';
-import { io as Client } from 'socket.io-client';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 
 describe('WebSocket Server', () => {
   let httpServer: any;
   let io: Server;
-  let clientSocket: any;
+  let clientSocket: ReturnType<typeof createIO>;
 
-  beforeEach(() => {
-    return new Promise<void>((resolve) => {
-      httpServer = createServer();
-      io = new Server(httpServer);
-      httpServer.listen(() => {
-        const port = (httpServer.address() as any).port;
-        clientSocket = Client(`http://localhost:${port}`);
-        clientSocket.on('connect', () => resolve());
+  beforeAll((done) => {
+    httpServer = createServer();
+    io = new Server(httpServer);
+    
+    httpServer.listen(() => {
+      const port = (httpServer.address() as any).port;
+      clientSocket = createIO(`http://localhost:${port}`);
+      clientSocket.on('connect', () => {
+        done();
       });
     });
   });
 
-  afterEach(() => {
-    io.close();
-    clientSocket.close();
+  afterAll(() => {
+    if (io) io.close();
+    if (clientSocket) clientSocket.close();
+    if (httpServer) httpServer.close();
   });
 
-  it('should emit deployment status', () => {
-    return new Promise<void>((resolve) => {
-      const mockDeploymentStatus = {
-        id: '1',
-        status: 'active' as DeploymentStatus,
-        message: 'Deployment is active',
-      };
+  it('should emit deployment status', (done) => {
+    const mockDeployment = {
+      id: 'test-deployment',
+      status: 'running',
+      timestamp: new Date().toISOString(),
+    };
 
-      clientSocket.on('deployment_status', (data: any) => {
-        expect(data).toEqual(mockDeploymentStatus);
-        resolve();
+    clientSocket.on('connect', () => {
+      clientSocket.on('deployment-status', (data) => {
+        expect(data).toEqual(mockDeployment);
+        done();
       });
-
-      io.emit('deployment_status', mockDeploymentStatus);
+      io.emit('deployment-status', mockDeployment);
     });
   });
 
-  it('should handle connection', () => {
-    return new Promise<void>((resolve) => {
-      io.on('connection', (socket) => {
-        expect(socket).toBeDefined();
-        resolve();
-      });
+  it('should handle connection', (done) => {
+    const newClient = createIO(`http://localhost:${(httpServer.address() as any).port}`);
+    
+    newClient.on('connect', () => {
+      expect(newClient.connected).toBe(true);
+      newClient.close();
+      done();
     });
   });
 
-  it('should handle disconnection', () => {
-    return new Promise<void>((resolve) => {
-      io.on('connection', (socket) => {
-        socket.on('disconnect', () => {
-          resolve();
-        });
-        socket.disconnect();
-      });
+  it('should handle disconnection', (done) => {
+    const newClient = createIO(`http://localhost:${(httpServer.address() as any).port}`);
+    
+    newClient.on('connect', () => {
+      newClient.close();
+    });
+
+    newClient.on('disconnect', () => {
+      expect(newClient.connected).toBe(false);
+      done();
     });
   });
 }); 
