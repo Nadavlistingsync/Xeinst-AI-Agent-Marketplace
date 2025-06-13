@@ -15,7 +15,7 @@ const agentSchema = z.object({
 
 export async function GET() {
   try {
-    const agents = await (prisma as any).agent.findMany();
+    const agents = await prisma.deployment.findMany();
     return NextResponse.json(agents.map((agent: any) => ({
       ...agent,
       createdAt: agent.createdAt.toISOString(),
