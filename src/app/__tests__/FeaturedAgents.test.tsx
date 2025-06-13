@@ -35,11 +35,20 @@ describe('FeaturedAgents', () => {
   it('renders featured agents', async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
-      json: async () => mockAgents,
+      json: async () => [{
+        id: '1',
+        name: 'Test Agent',
+        description: 'Test Description',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        metadata: {},
+        isFeatured: true,
+        isTrending: false,
+      }],
     } as Response);
 
     render(<FeaturedAgents />);
-
     // Wait for the agent name to appear
     const agentName = await screen.findByText('Test Agent');
     expect(agentName).toBeInTheDocument();
@@ -47,10 +56,24 @@ describe('FeaturedAgents', () => {
 
   it('renders loading state initially', () => {
     render(<FeaturedAgents />);
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Loading agents' })).toBeInTheDocument();
   });
 
   it('renders featured and trending agents after loading', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [{
+        id: '1',
+        name: 'Test Agent',
+        description: 'Test Description',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        metadata: {},
+        isFeatured: true,
+        isTrending: true,
+      }],
+    } as Response);
     render(<FeaturedAgents />);
     await waitFor(() => {
       expect(screen.getByText('Test Agent')).toBeInTheDocument();
@@ -63,7 +86,7 @@ describe('FeaturedAgents', () => {
     );
     render(<FeaturedAgents />);
     await waitFor(() => {
-      expect(screen.getByText('Error loading agents')).toBeInTheDocument();
+      expect(screen.getByText('Network error')).toBeInTheDocument();
     });
   });
 
@@ -71,12 +94,13 @@ describe('FeaturedAgents', () => {
     vi.spyOn(global, 'fetch').mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve([])
+        json: () => Promise.resolve({ agents: [] })
       } as Response)
     );
     render(<FeaturedAgents />);
     await waitFor(() => {
-      expect(screen.getByText('No agents found')).toBeInTheDocument();
+      expect(screen.getByText('No featured agents found')).toBeInTheDocument();
+      expect(screen.getByText('No trending agents found')).toBeInTheDocument();
     });
   });
 
@@ -90,7 +114,7 @@ describe('FeaturedAgents', () => {
     );
     render(<FeaturedAgents />);
     await waitFor(() => {
-      expect(screen.getByText('Error loading agents')).toBeInTheDocument();
+      expect(screen.getByText('Failed to load featured agents')).toBeInTheDocument();
     });
   });
 }); 
