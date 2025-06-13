@@ -17,11 +17,12 @@ export default function Header() {
   }, [scrollY]);
 
   const menuItems = [
-    { label: 'Home', href: '/' },
     { label: 'Marketplace', href: '/marketplace' },
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'Benefits', href: '#benefits' },
-    { label: 'Contact', href: '#contact' }
+    { label: 'Services', href: '/services' },
+    { label: 'AI Agents', href: '/marketplace' },
+    { label: 'Case Studies', href: '/case-studies' },
+    { label: 'Blog', href: '/blog' },
+    { label: 'Contact', href: '/contact' }
   ];
 
   return (
@@ -38,19 +39,22 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link href="#services" className="text-gray-300 hover:text-white transition-colors">
+            <Link href="/marketplace" className="text-gray-300 hover:text-white transition-colors">
+              Marketplace
+            </Link>
+            <Link href="/services" className="text-gray-300 hover:text-white transition-colors">
               Services
             </Link>
-            <Link href="#agents" className="text-gray-300 hover:text-white transition-colors">
+            <Link href="/marketplace" className="text-gray-300 hover:text-white transition-colors">
               AI Agents
             </Link>
-            <Link href="#case-studies" className="text-gray-300 hover:text-white transition-colors">
+            <Link href="/case-studies" className="text-gray-300 hover:text-white transition-colors">
               Case Studies
             </Link>
-            <Link href="#blog" className="text-gray-300 hover:text-white transition-colors">
+            <Link href="/blog" className="text-gray-300 hover:text-white transition-colors">
               Blog
             </Link>
-            <Link href="#contact" className="text-gray-300 hover:text-white transition-colors">
+            <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
               Contact
             </Link>
             <Link 
