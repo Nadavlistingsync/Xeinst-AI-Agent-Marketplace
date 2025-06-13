@@ -89,6 +89,11 @@ export default function DeployPage() {
         file_url = uploadData.data.url;
       }
 
+      // Convert requirements to array of strings
+      const requirementsArray = formData.requirements
+        ? formData.requirements.split(',').map((r) => r.trim()).filter(Boolean)
+        : [];
+
       // Create deployment
       const response = await fetch('/api/deployments', {
         method: 'POST',
@@ -98,31 +103,27 @@ export default function DeployPage() {
         body: JSON.stringify({
           name: formData.name,
           description: formData.description,
-          status: 'pending' as DeploymentStatus,
           framework: formData.framework,
           version: formData.version,
-          environment: formData.environment,
-          modelType: formData.modelType,
+          requirements: requirementsArray,
           accessLevel: 'public',
-          licenseType: 'standard',
-          deployedBy: session.user.id,
-          createdBy: session.user.id,
-          source: file_url,
-          health: {},
-          tags: [],
-          earningsSplit: 0
+          licenseType: 'free',
+          environment: 'production',
+          modelType: 'gpt-3.5-turbo',
+          source: 'marketplace',
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create deployment');
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to create deployment');
       }
 
       toast.success('Deployment created successfully!');
       router.push('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating deployment:', error);
-      toast.error('Failed to create deployment');
+      toast.error(error.message || 'Failed to create deployment');
     } finally {
       setIsUploading(false);
     }
