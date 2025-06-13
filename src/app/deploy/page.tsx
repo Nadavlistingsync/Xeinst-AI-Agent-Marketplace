@@ -3,7 +3,6 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
-import type { DeploymentStatus } from '@/types/prisma';
 
 export default function DeployPage() {
   const router = useRouter();
