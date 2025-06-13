@@ -65,7 +65,7 @@ export default function SignupPage() {
           placeholder="Password"
           value={password}
           onChange={e => setPassword(e.target.value)}
-          className="w-full border p-2 rounded"
+          className="w-full border p-2 rounded text-black bg-white dark:text-white dark:bg-black border-gray-300 dark:border-gray-600"
           required
         />
         {error && <div className="text-red-500">{error}</div>}
