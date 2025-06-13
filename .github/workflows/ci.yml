@@ -89,18 +89,20 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v3
     
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v3
       with:
         node-version: '20'
-
+        cache: 'pnpm'
+    
     - name: Install pnpm
-      run: |
-        npm install -g pnpm@9
-        pnpm --version
-
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        run_install: false
+    
     - name: Get pnpm store directory
       shell: bash
       run: |
@@ -115,8 +117,14 @@ jobs:
           ${{ runner.os }}-pnpm-store-
     
     - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      run: pnpm install
     
+    - name: Type check
+      run: pnpm type-check
+    
+    - name: Run tests
+      run: pnpm test
+
     - name: Generate Prisma Client
       run: pnpm prisma generate
     
