@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { FeaturedAgents } from '../FeaturedAgents';
+import { FeaturedAgents } from '@/components/FeaturedAgents';
 import { vi } from 'vitest';
 
 // Mock the fetch function
