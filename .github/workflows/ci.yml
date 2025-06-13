@@ -96,10 +96,16 @@ jobs:
       with:
         node-version: '20'
     
-    - name: Install pnpm
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      id: pnpm-setup
+      with:
+        version: 8
+        run_install: false
+    
+    - name: Add pnpm to PATH
       run: |
-        npm install -g pnpm@8
-        pnpm --version
+        echo "$(pnpm env path --global)" >> $GITHUB_PATH
     
     - name: Get pnpm store directory
       shell: bash
