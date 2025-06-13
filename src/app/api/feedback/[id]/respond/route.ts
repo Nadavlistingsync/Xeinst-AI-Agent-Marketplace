@@ -1,22 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/types/prisma';
-import { createNotification } from '@/lib/notification';
-import { withErrorHandling } from '@/lib/error-handling';
-import { withRateLimit } from '@/lib/rate-limiting';
-import { withValidation } from '@/lib/validation';
 import { z } from 'zod';
-import { NotificationType } from '@/types/prisma';
-import { handleApiError } from '@/lib/error-handling';
-import type { NotificationType as PrismaNotificationType } from '@prisma/client';
 
-// Define response schema
 const responseSchema = z.object({
   response: z.string().min(1),
 });
 
-// Handler function
 async function handler(
   request: Request,
   { params }: { params: { id: string } }
@@ -72,11 +63,10 @@ async function handler(
   return NextResponse.json(updatedFeedback);
 }
 
-// Export the wrapped handler
-export const POST = withErrorHandling(withRateLimit(withValidation(handler, responseSchema)));
+export const POST = handler;
 
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   const feedback = await prisma.agentFeedback.findUnique({

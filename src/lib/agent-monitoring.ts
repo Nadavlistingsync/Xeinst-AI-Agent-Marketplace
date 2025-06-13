@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { DeploymentStatus, Prisma, AgentLog, AgentFeedback } from '@prisma/client';
-import type { AgentHealth, AgentMetrics, CreateNotificationInput } from '@/types/agent-monitoring';
+import { DeploymentStatus, Prisma, AgentLog as PrismaAgentLog, AgentFeedback } from '@prisma/client';
+import type { AgentHealth, AgentMetrics, CreateNotificationInput, AgentLog as AgentLogType } from '@/types/agent-monitoring';
 import type { Deployment } from '@/types/prisma';
 import { z } from 'zod';
 import { createNotification as createNotificationHelper } from './notification';
@@ -80,8 +80,19 @@ export interface GetAgentHealthOptions {
   includeMetrics?: boolean;
 }
 
-export interface AgentLogWithMetadata extends AgentLog {
+export interface AgentLogWithMetadata extends PrismaAgentLog {
   metadata: Prisma.JsonValue;
+}
+
+export interface AgentLog {
+  id: string;
+  deploymentId: string;
+  level: string;
+  message: string;
+  metadata: JsonValue;
+  timestamp: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export async function logAgentEvent(
@@ -269,40 +280,43 @@ export async function getAgentAnalytics(agentId: string): Promise<{
   };
 }
 
-export async function getAgentWarnings(deploymentId: string): Promise<AgentLog[]> {
-  return prisma.agentLog.findMany({
+export async function getAgentWarnings(deploymentId: string): Promise<AgentLogType[]> {
+  const rawLogs = await prisma.agentLog.findMany({
     where: {
       deploymentId,
-      level: 'warning'
+      level: 'warning',
     },
-    orderBy: {
-      timestamp: 'desc'
-    }
+    orderBy: { timestamp: 'desc' },
+    take: 50,
   });
+
+  return mapPrismaLogsToAgentLogs(rawLogs);
 }
 
-export async function getAgentErrors(deploymentId: string): Promise<AgentLog[]> {
-  return prisma.agentLog.findMany({
+export async function getAgentErrors(deploymentId: string): Promise<AgentLogType[]> {
+  const rawLogs = await prisma.agentLog.findMany({
     where: {
       deploymentId,
-      level: 'error'
+      level: 'error',
     },
-    orderBy: {
-      timestamp: 'desc'
-    }
+    orderBy: { timestamp: 'desc' },
+    take: 50,
   });
+
+  return mapPrismaLogsToAgentLogs(rawLogs);
 }
 
-export async function getAgentInfo(deploymentId: string): Promise<AgentLog[]> {
-  return prisma.agentLog.findMany({
+export async function getAgentInfo(deploymentId: string): Promise<AgentLogType[]> {
+  const rawLogs = await prisma.agentLog.findMany({
     where: {
       deploymentId,
-      level: 'info'
+      level: 'info',
     },
-    orderBy: {
-      timestamp: 'desc'
-    }
+    orderBy: { timestamp: 'desc' },
+    take: 50,
   });
+
+  return mapPrismaLogsToAgentLogs(rawLogs);
 }
 
 export async function getAgentFeedback(deploymentId: string): Promise<AgentFeedback[]> {
@@ -375,27 +389,57 @@ export async function createNotification(data: CreateNotificationInput) {
   });
 }
 
-export async function getAgentHealth(deploymentId: string, options: GetAgentHealthOptions = {}): Promise<AgentHealth | null> {
+export async function getAgentHealth(deploymentId: string, options: { detailed?: boolean } = {}): Promise<AgentHealth | null> {
   const deployment = await prisma.deployment.findUnique({
     where: { id: deploymentId },
     include: {
-      metrics: options.includeMetrics
-    }
+      metrics: {
+        orderBy: { timestamp: 'desc' },
+        take: 1,
+      },
+    },
   });
 
   if (!deployment) return null;
 
+  const latestMetrics = deployment.metrics[0];
+  const metrics = latestMetrics ? {
+    errorRate: latestMetrics.errorRate,
+    responseTime: latestMetrics.responseTime,
+    successRate: latestMetrics.successRate,
+    totalRequests: latestMetrics.totalRequests,
+    activeUsers: latestMetrics.activeUsers,
+  } : {
+    errorRate: 0,
+    responseTime: 0,
+    successRate: 0,
+    totalRequests: 0,
+    activeUsers: 0,
+  };
+
+  let logs: AgentLogType[] = [];
+  if (options.detailed) {
+    const rawLogs = await prisma.agentLog.findMany({
+      where: { deploymentId },
+      orderBy: { timestamp: 'desc' },
+      take: 50,
+    });
+
+    const validLogs = rawLogs
+      .filter(log => isValidLogLevel(log.level))
+      .map(log => ({
+        ...log,
+        level: log.level as 'info' | 'warning' | 'error'
+      }));
+
+    logs = validLogs;
+  }
+
   return {
     status: deployment.status,
     lastChecked: new Date(),
-    metrics: options.includeMetrics && deployment.metrics ? deployment.metrics : {
-      errorRate: 0,
-      responseTime: 0,
-      successRate: 0,
-      totalRequests: 0,
-      activeUsers: 0
-    },
-    health: deployment.health as unknown as AgentHealth
+    metrics,
+    logs: logs as unknown as AgentLogType[],
   };
 }
 
@@ -422,7 +466,7 @@ export interface DeploymentMetrics {
   activeUsers: number;
 }
 
-export async function getDeploymentMetrics(deploymentId: string): Promise<DeploymentMetrics> {
+export async function getDeploymentMetrics(deploymentId: string) {
   const deployment = await prisma.deployment.findUnique({
     where: { id: deploymentId },
     include: {
@@ -434,7 +478,13 @@ export async function getDeploymentMetrics(deploymentId: string): Promise<Deploy
   });
 
   if (!deployment) {
-    throw new Error('Deployment not found');
+    return {
+      errorRate: 0,
+      responseTime: 0,
+      successRate: 0,
+      totalRequests: 0,
+      activeUsers: 0,
+    };
   }
 
   const latestMetrics = deployment.metrics[0];
@@ -491,4 +541,29 @@ export async function getDeploymentsByUser(userId: string) {
       metrics: true,
     },
   });
+}
+
+type PrismaLog = Omit<PrismaAgentLog, 'level'> & {
+  level: string;
+};
+
+function isValidLogLevel(level: string): level is 'info' | 'warning' | 'error' {
+  return ['info', 'warning', 'error'].includes(level);
+}
+
+function mapPrismaLogToAgentLog(log: PrismaLog): AgentLogType | null {
+  if (!isValidLogLevel(log.level)) {
+    return null;
+  }
+
+  return {
+    ...log,
+    level: log.level
+  };
+}
+
+function mapPrismaLogsToAgentLogs(logs: PrismaLog[]): AgentLogType[] {
+  return logs
+    .map(mapPrismaLogToAgentLog)
+    .filter((log): log is AgentLogType => log !== null);
 } 

@@ -63,7 +63,7 @@ export async function GET(
 
     const validatedParams = healthQuerySchema.parse(queryParams);
 
-    const health = await getAgentHealth(params.id, validatedParams);
+    const health = await getAgentHealth(params.id, { detailed: validatedParams.detailed });
     if (!health) {
       return createErrorResponse('Health check failed');
     }

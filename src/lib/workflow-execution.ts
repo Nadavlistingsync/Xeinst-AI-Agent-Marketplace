@@ -1,5 +1,5 @@
 import { prisma } from '@/types/prisma';
-import { WorkflowExecution, WorkflowExecutionStatus } from '@prisma/client';
+import { WorkflowExecution } from '@prisma/client';
 
 export interface CreateExecutionInput {
   workflowId: string;
@@ -9,16 +9,17 @@ export interface CreateExecutionInput {
 
 export async function createExecution(
   workflowId: string,
+  versionId: string,
   input: Record<string, any>
 ): Promise<WorkflowExecution> {
   return prisma.workflowExecution.create({
     data: {
       workflowId,
-      status: 'PENDING',
+      versionId,
       input,
-      metadata: {
-        startTime: new Date().toISOString(),
-      },
+      output: {},
+      status: 'pending',
+      startedAt: new Date(),
     },
   });
 }
@@ -38,17 +39,17 @@ export async function getExecution(executionId: string): Promise<WorkflowExecuti
 
 export async function updateExecutionStatus(
   executionId: string,
-  status: WorkflowExecutionStatus,
-  output?: Record<string, any>
+  status: string,
+  output?: Record<string, any>,
+  error?: string
 ): Promise<WorkflowExecution> {
   return prisma.workflowExecution.update({
     where: { id: executionId },
     data: {
       status,
-      output,
-      metadata: {
-        endTime: new Date().toISOString(),
-      },
+      output: output ?? {},
+      error,
+      completedAt: status === 'completed' || status === 'failed' ? new Date() : null,
     },
   });
 }
@@ -115,38 +116,36 @@ export async function deleteWorkflowExecution(id: string) {
   });
 }
 
-export async function getRecentExecutions(limit = 10): Promise<WorkflowExecution[]> {
+export async function getRecentExecutions(limit: number = 10): Promise<WorkflowExecution[]> {
   return prisma.workflowExecution.findMany({
-    take: limit,
     orderBy: { createdAt: 'desc' },
+    take: limit,
   });
 }
 
 export async function getFailedExecutions(): Promise<WorkflowExecution[]> {
   return prisma.workflowExecution.findMany({
-    where: { status: 'FAILED' },
+    where: { status: 'failed' },
     orderBy: { createdAt: 'desc' },
   });
 }
 
-export async function getExecutionMetrics(executionId: string) {
+export async function getExecutionMetrics(executionId: string): Promise<{
+  duration: number | null;
+  status: string;
+  error: string | null;
+}> {
   const execution = await prisma.workflowExecution.findUnique({
     where: { id: executionId },
-    select: {
-      metadata: true,
-      status: true,
-    },
   });
-
   if (!execution) {
-    return null;
+    throw new Error('Execution not found');
   }
-
-  const startTime = execution.metadata?.startTime ? new Date(execution.metadata.startTime) : null;
-  const endTime = execution.metadata?.endTime ? new Date(execution.metadata.endTime) : null;
-
+  const startTime = execution.startedAt;
+  const endTime = execution.completedAt;
   return {
     duration: startTime && endTime ? endTime.getTime() - startTime.getTime() : null,
     status: execution.status,
+    error: execution.error,
   };
 } 
