@@ -97,10 +97,9 @@ jobs:
         node-version: '20'
     
     - name: Install pnpm
-      uses: pnpm/action-setup@v2
-      with:
-        version: 8
-        run_install: false
+      run: |
+        npm install -g pnpm@8
+        pnpm --version
     
     - name: Get pnpm store directory
       shell: bash
