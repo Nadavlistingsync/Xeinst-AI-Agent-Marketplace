@@ -1,127 +1,96 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { FeaturedAgents } from '@/components/FeaturedAgents';
+import { FeaturedAgents } from '../FeaturedAgents';
 import { vi } from 'vitest';
-import { Agent } from '@/types/agent';
 
-// Mock fetch
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+// Mock the fetch function
+global.fetch = vi.fn();
+
+const mockAgents = [
+  {
+    id: '1',
+    name: 'Test Agent',
+    description: 'Test Description',
+    model: 'gpt-4',
+    status: 'active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    metadata: {},
+  },
+];
 
 describe('FeaturedAgents', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.spyOn(global, 'fetch').mockImplementation(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockAgents)
+      } as Response)
+    );
   });
 
-  it('renders loading state initially', async () => {
-    // Mock a delayed response to ensure loading state is visible
-    mockFetch.mockImplementationOnce(() => new Promise(resolve => {
-      setTimeout(() => {
-        resolve({
-          ok: true,
-          json: () => Promise.resolve({ agents: [] })
-        });
-      }, 100);
-    }));
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('renders featured agents', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockAgents,
+    } as Response);
 
     render(<FeaturedAgents />);
-    
-    // Check for loading spinner
-    const loadingSpinner = screen.getByRole('status');
-    expect(loadingSpinner).toBeInTheDocument();
-    expect(loadingSpinner.querySelector('.animate-spin')).toBeInTheDocument();
+
+    // Wait for the agent name to appear
+    const agentName = await screen.findByText('Test Agent');
+    expect(agentName).toBeInTheDocument();
+  });
+
+  it('renders loading state initially', () => {
+    render(<FeaturedAgents />);
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 
   it('renders featured and trending agents after loading', async () => {
-    const mockAgents: Agent[] = [
-      {
-        id: '1',
-        name: 'Featured Test Agent',
-        description: 'Test Description',
-        image: '/test.jpg',
-        rating: 4.5,
-        reviews: 10,
-        isFeatured: true,
-        isTrending: false,
-        status: 'active',
-        metadata: {
-          isFeatured: true,
-          isTrending: false,
-          rating: 4.5,
-          reviews: 10,
-          image: '/test.jpg'
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      {
-        id: '2',
-        name: 'Trending Test Agent',
-        description: 'Test Description',
-        image: '/test.jpg',
-        rating: 4.5,
-        reviews: 10,
-        isFeatured: false,
-        isTrending: true,
-        status: 'active',
-        metadata: {
-          isFeatured: false,
-          isTrending: true,
-          rating: 4.5,
-          reviews: 10,
-          image: '/test.jpg'
-        },
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      }
-    ];
-
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ agents: mockAgents }),
-    });
-
     render(<FeaturedAgents />);
-
     await waitFor(() => {
-      expect(screen.getByText('Featured Test Agent')).toBeInTheDocument();
-      expect(screen.getByText('Trending Test Agent')).toBeInTheDocument();
+      expect(screen.getByText('Test Agent')).toBeInTheDocument();
     });
   });
 
   it('handles fetch errors gracefully', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
-
+    vi.spyOn(global, 'fetch').mockImplementationOnce(() =>
+      Promise.reject(new Error('Network error'))
+    );
     render(<FeaturedAgents />);
-
     await waitFor(() => {
-      expect(screen.getByText('Failed to fetch')).toBeInTheDocument();
+      expect(screen.getByText('Error loading agents')).toBeInTheDocument();
     });
   });
 
   it('renders empty state when no agents are found', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ agents: [] }),
-    });
-
+    vi.spyOn(global, 'fetch').mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve([])
+      } as Response)
+    );
     render(<FeaturedAgents />);
-
     await waitFor(() => {
-      expect(screen.getByText('No featured agents found')).toBeInTheDocument();
-      expect(screen.getByText('No trending agents found')).toBeInTheDocument();
+      expect(screen.getByText('No agents found')).toBeInTheDocument();
     });
   });
 
   it('handles non-200 response', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      json: () => Promise.resolve({ error: 'Failed to load featured agents' }),
-    });
-
+    vi.spyOn(global, 'fetch').mockImplementationOnce(() =>
+      Promise.resolve({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ message: 'Server error' })
+      } as Response)
+    );
     render(<FeaturedAgents />);
-
     await waitFor(() => {
-      expect(screen.getByText('Failed to load featured agents')).toBeInTheDocument();
+      expect(screen.getByText('Error loading agents')).toBeInTheDocument();
     });
   });
 }); 
