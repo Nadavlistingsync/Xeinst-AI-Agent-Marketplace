@@ -6,6 +6,7 @@ import { join } from 'path';
 import { prisma } from '@/types/prisma';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
+import stream from 'stream';
 
 export async function POST(req: NextRequest) {
   try {
@@ -50,7 +51,9 @@ export async function POST(req: NextRequest) {
       const fileName = `${Date.now()}_${repo}.zip`;
       filePath = join(process.cwd(), 'public', 'uploads', fileName);
       const fileStream = createWriteStream(filePath);
-      await pipeline(zipRes.body, fileStream);
+      if (!zipRes.body) throw new Error('No response body from GitHub');
+      const nodeStream = stream.Readable.fromWeb(zipRes.body);
+      await pipeline(nodeStream, fileStream);
     } else {
       // Handle file upload
       const formData = await req.formData();
