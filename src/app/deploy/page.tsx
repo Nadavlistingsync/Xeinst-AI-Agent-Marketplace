@@ -22,12 +22,19 @@ export default function DeployPage() {
     licenseType: "",
     source: "",
   });
+  const [file, setFile] = useState<File | null>(null);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,41 +46,34 @@ export default function DeployPage() {
         throw new Error('User not authenticated');
       }
 
-      // Convert requirements to array of strings
-      const requirementsArray = formData.requirements
-        ? formData.requirements.split(',').map((r) => r.trim()).filter(Boolean)
-        : [];
+      if (!file) {
+        throw new Error('Please upload a file for your agent.');
+      }
 
-      // Create deployment
-      const response = await fetch('/api/deployments', {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('name', formData.name);
+      form.append('description', formData.description);
+      form.append('framework', formData.framework);
+      form.append('modelType', formData.modelType);
+      form.append('environment', formData.environment);
+      form.append('source', formData.source);
+
+      const response = await fetch('/api/upload-agent', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          description: formData.description,
-          framework: formData.framework,
-          version: formData.version,
-          requirements: requirementsArray,
-          accessLevel: 'public',
-          licenseType: 'free',
-          environment: 'production',
-          modelType: 'gpt-3.5-turbo',
-          source: 'marketplace',
-        }),
+        body: form,
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText || 'Failed to create deployment');
+        throw new Error(errorText || 'Failed to upload agent');
       }
 
-      toast.success('Deployment created successfully!');
+      toast.success('Agent uploaded and deployed successfully!');
       router.push('/dashboard');
     } catch (error: any) {
-      console.error('Error creating deployment:', error);
-      toast.error(error.message || 'Failed to create deployment');
+      console.error('Error uploading agent:', error);
+      toast.error(error.message || 'Failed to upload agent');
     } finally {
       setIsUploading(false);
     }
@@ -157,6 +157,19 @@ export default function DeployPage() {
                 placeholder="e.g. python, tensorflow, numpy"
               />
             </div>
+          </div>
+          <div>
+            <label htmlFor="file" className="block text-sm font-medium text-gray-200">
+              Agent File (code, model, or archive)
+            </label>
+            <input
+              type="file"
+              id="file"
+              name="file"
+              onChange={handleFileChange}
+              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
           </div>
           <div className="flex justify-end">
             <button
