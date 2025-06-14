@@ -62,32 +62,6 @@ export default function DeployPage() {
         throw new Error('User not authenticated');
       }
 
-      let file_url = '';
-      if (uploadType === 'file') {
-        if (!file) throw new Error('No file selected');
-        const formData = new FormData();
-        formData.append('file', file);
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        const uploadData = await uploadRes.json();
-        if (!uploadData.success) throw new Error('File upload failed');
-        file_url = uploadData.data.url;
-      } else if (uploadType === 'github') {
-        if (!githubUrl) throw new Error('No GitHub URL provided');
-        const zipFile = await fetchGithubRepoAsZip(githubUrl);
-        const formData = new FormData();
-        formData.append('file', zipFile);
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        const uploadData = await uploadRes.json();
-        if (!uploadData.success) throw new Error('File upload failed');
-        file_url = uploadData.data.url;
-      }
-
       // Convert requirements to array of strings
       const requirementsArray = formData.requirements
         ? formData.requirements.split(',').map((r) => r.trim()).filter(Boolean)
