@@ -36,7 +36,7 @@ export default function MarketplacePage({
           </p>
         </div>
         <Button asChild>
-          <Link href="/deploy/new" className="flex items-center gap-2">
+          <Link href="/deploy" className="flex items-center gap-2">
             <Plus className="w-4 h-4" />
             Deploy New Agent
           </Link>
