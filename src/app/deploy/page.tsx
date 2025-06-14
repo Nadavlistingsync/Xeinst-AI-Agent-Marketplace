@@ -160,16 +160,18 @@ export default function DeployPage() {
           </div>
           <div>
             <label htmlFor="file" className="block text-sm font-medium text-gray-200">
-              Agent File (code, model, or archive)
+              Agent Folder (Upload as .zip file)
             </label>
             <input
               type="file"
               id="file"
               name="file"
+              accept=".zip"
               onChange={handleFileChange}
               className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
+            <p className="text-xs text-gray-400 mt-1">Please compress your agent folder into a .zip file and upload it here.</p>
           </div>
           <div className="flex justify-end">
             <button
