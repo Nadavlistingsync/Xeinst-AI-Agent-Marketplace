@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { prisma } from '@/types/prisma';
-import fetch from 'node-fetch';
 import { createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
 
