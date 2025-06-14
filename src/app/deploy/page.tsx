@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { toast } from "react-hot-toast";
@@ -23,34 +23,11 @@ export default function DeployPage() {
     source: "",
   });
 
-  const [file, setFile] = useState<File | null>(null);
-  const [uploadType, setUploadType] = useState<'file' | 'github'>("file");
-  const [githubUrl, setGithubUrl] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (fileInputRef.current) {
-      (fileInputRef.current as HTMLInputElement).webkitdirectory = true;
-      (fileInputRef.current as HTMLInputElement).directory = true;
-    }
-  }, [uploadType]);
-
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
-  };
-
-  const handleGithubUrlChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const url = e.target.value;
-    setGithubUrl(url);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -100,18 +77,6 @@ export default function DeployPage() {
     } finally {
       setIsUploading(false);
     }
-  };
-
-  const fetchGithubRepoAsZip = async (repoUrl: string): Promise<File> => {
-    const match = repoUrl.match(/github.com\/(.+?)\/(.+?)(?:\.git)?(?:\/|$)/);
-    if (!match) throw new Error("Invalid GitHub URL");
-    const owner = match[1];
-    const repo = match[2];
-    const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/main.zip`;
-    const response = await fetch(zipUrl);
-    if (!response.ok) throw new Error("Failed to fetch GitHub repo ZIP");
-    const blob = await response.blob();
-    return new File([blob], `${repo}-main.zip`, { type: "application/zip" });
   };
 
   return (
@@ -179,77 +144,20 @@ export default function DeployPage() {
               />
             </div>
             <div>
-              <label htmlFor="version" className="block text-sm font-medium text-gray-200">
-                Version
+              <label htmlFor="requirements" className="block text-sm font-medium text-gray-200">
+                Requirements (comma-separated)
               </label>
               <input
                 type="text"
-                id="version"
-                name="version"
-                value={formData.version}
+                id="requirements"
+                name="requirements"
+                value={formData.requirements}
                 onChange={handleInputChange}
                 className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                required
+                placeholder="e.g. python, tensorflow, numpy"
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-200 mb-2">
-              Upload Type
-            </label>
-            <div className="flex space-x-4">
-              <button
-                type="button"
-                onClick={() => setUploadType('file')}
-                className={`px-4 py-2 rounded-md ${
-                  uploadType === 'file'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-gray-300'
-                }`}
-              >
-                File Upload
-              </button>
-              <button
-                type="button"
-                onClick={() => setUploadType('github')}
-                className={`px-4 py-2 rounded-md ${
-                  uploadType === 'github'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-700 text-gray-300'
-                }`}
-              >
-                GitHub Repository
-              </button>
-            </div>
-          </div>
-          {uploadType === 'file' ? (
-            <div>
-              <label htmlFor="file" className="block text-sm font-medium text-gray-200">
-                Upload File or Folder
-              </label>
-              <input
-                type="file"
-                id="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                className="mt-1 block w-full text-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
-              />
-            </div>
-          ) : (
-            <div>
-              <label htmlFor="githubUrl" className="block text-sm font-medium text-gray-200">
-                GitHub Repository URL
-              </label>
-              <input
-                type="text"
-                id="githubUrl"
-                value={githubUrl}
-                onChange={handleGithubUrlChange}
-                placeholder="https://github.com/username/repo"
-                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-          )}
           <div className="flex justify-end">
             <button
               type="submit"
