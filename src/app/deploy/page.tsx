@@ -23,6 +23,8 @@ export default function DeployPage() {
     source: "",
   });
   const [file, setFile] = useState<File | null>(null);
+  const [uploadMethod, setUploadMethod] = useState<'zip' | 'github'>('zip');
+  const [githubUrl, setGithubUrl] = useState('');
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -46,26 +48,44 @@ export default function DeployPage() {
         throw new Error('User not authenticated');
       }
 
-      if (!file) {
-        throw new Error('Please upload a file for your agent.');
+      let response;
+      if (uploadMethod === 'zip') {
+        if (!file) {
+          throw new Error('Please upload a .zip file for your agent.');
+        }
+        const form = new FormData();
+        form.append('file', file);
+        form.append('name', formData.name);
+        form.append('description', formData.description);
+        form.append('framework', formData.framework);
+        form.append('modelType', formData.modelType);
+        form.append('environment', formData.environment);
+        form.append('source', formData.source);
+        response = await fetch('/api/upload-agent', {
+          method: 'POST',
+          body: form,
+        });
+      } else if (uploadMethod === 'github') {
+        if (!githubUrl) {
+          throw new Error('Please provide a GitHub repository URL.');
+        }
+        response = await fetch('/api/upload-agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            githubUrl,
+            name: formData.name,
+            description: formData.description,
+            framework: formData.framework,
+            modelType: formData.modelType,
+            environment: formData.environment,
+            source: formData.source,
+          }),
+        });
       }
 
-      const form = new FormData();
-      form.append('file', file);
-      form.append('name', formData.name);
-      form.append('description', formData.description);
-      form.append('framework', formData.framework);
-      form.append('modelType', formData.modelType);
-      form.append('environment', formData.environment);
-      form.append('source', formData.source);
-
-      const response = await fetch('/api/upload-agent', {
-        method: 'POST',
-        body: form,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
+      if (!response || !response.ok) {
+        const errorText = await response?.text();
         throw new Error(errorText || 'Failed to upload agent');
       }
 
@@ -158,21 +178,45 @@ export default function DeployPage() {
               />
             </div>
           </div>
-          <div>
-            <label htmlFor="file" className="block text-sm font-medium text-gray-200">
-              Agent Folder (Upload as .zip file)
-            </label>
-            <input
-              type="file"
-              id="file"
-              name="file"
-              accept=".zip"
-              onChange={handleFileChange}
-              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              required
-            />
-            <p className="text-xs text-gray-400 mt-1">Please compress your agent folder into a .zip file and upload it here.</p>
+          <div className="mb-6 flex gap-4">
+            <button type="button" onClick={() => setUploadMethod('zip')} className={`px-4 py-2 rounded-md ${uploadMethod === 'zip' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Upload ZIP</button>
+            <button type="button" onClick={() => setUploadMethod('github')} className={`px-4 py-2 rounded-md ${uploadMethod === 'github' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}>GitHub Link</button>
           </div>
+          {uploadMethod === 'zip' && (
+            <div>
+              <label htmlFor="file" className="block text-sm font-medium text-gray-200">
+                Agent Folder (Upload as .zip file)
+              </label>
+              <input
+                type="file"
+                id="file"
+                name="file"
+                accept=".zip"
+                onChange={handleFileChange}
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required={uploadMethod === 'zip'}
+              />
+              <p className="text-xs text-gray-400 mt-1">Please compress your agent folder into a .zip file and upload it here.</p>
+            </div>
+          )}
+          {uploadMethod === 'github' && (
+            <div>
+              <label htmlFor="githubUrl" className="block text-sm font-medium text-gray-200">
+                GitHub Repository URL
+              </label>
+              <input
+                type="url"
+                id="githubUrl"
+                name="githubUrl"
+                value={githubUrl}
+                onChange={e => setGithubUrl(e.target.value)}
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="https://github.com/username/repo"
+                required={uploadMethod === 'github'}
+              />
+              <p className="text-xs text-gray-400 mt-1">Paste the public GitHub repository URL for your agent.</p>
+            </div>
+          )}
           <div className="flex justify-end">
             <button
               type="submit"

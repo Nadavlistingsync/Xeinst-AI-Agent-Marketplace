@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { prisma } from '@/types/prisma';
+import fetch from 'node-fetch';
+import { createWriteStream } from 'fs';
+import { pipeline } from 'stream/promises';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,28 +15,68 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const formData = await req.formData();
-    const file = formData.get('file') as File;
-    const name = formData.get('name') as string;
-    const description = formData.get('description') as string;
-    const modelType = formData.get('modelType') as string;
-    const framework = formData.get('framework') as string;
-    const environment = formData.get('environment') as string;
-    const source = formData.get('source') as string;
+    let name, description, modelType, framework, environment, source, filePath;
 
-    if (!file || !name || !description || !modelType || !framework) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+    if (req.headers.get('content-type')?.includes('application/json')) {
+      // Handle GitHub link
+      const body = await req.json();
+      const githubUrl = body.githubUrl;
+      name = body.name;
+      description = body.description;
+      modelType = body.modelType;
+      framework = body.framework;
+      environment = body.environment;
+      source = body.source;
+
+      if (!githubUrl || !name || !description || !modelType || !framework) {
+        return NextResponse.json(
+          { error: 'Missing required fields' },
+          { status: 400 }
+        );
+      }
+
+      // Parse repo info
+      const match = githubUrl.match(/github.com\/(.+?)\/(.+?)(?:\.git)?(?:\/|$)/);
+      if (!match) {
+        return NextResponse.json({ error: 'Invalid GitHub URL' }, { status: 400 });
+      }
+      const owner = match[1];
+      const repo = match[2];
+      // Download default branch as zip
+      const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/main.zip`;
+      const zipRes = await fetch(zipUrl);
+      if (!zipRes.ok) {
+        return NextResponse.json({ error: 'Failed to fetch repo ZIP from GitHub' }, { status: 400 });
+      }
+      const fileName = `${Date.now()}_${repo}.zip`;
+      filePath = join(process.cwd(), 'public', 'uploads', fileName);
+      const fileStream = createWriteStream(filePath);
+      await pipeline(zipRes.body, fileStream);
+    } else {
+      // Handle file upload
+      const formData = await req.formData();
+      const file = formData.get('file') as File;
+      name = formData.get('name') as string;
+      description = formData.get('description') as string;
+      modelType = formData.get('modelType') as string;
+      framework = formData.get('framework') as string;
+      environment = formData.get('environment') as string;
+      source = formData.get('source') as string;
+
+      if (!file || !name || !description || !modelType || !framework) {
+        return NextResponse.json(
+          { error: 'Missing required fields' },
+          { status: 400 }
+        );
+      }
+
+      // Save file to local storage
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const fileName = `${Date.now()}_${file.name}`;
+      filePath = join(process.cwd(), 'public', 'uploads', fileName);
+      await writeFile(filePath, buffer);
     }
-
-    // Save file to local storage
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const fileName = `${Date.now()}_${file.name}`;
-    const filePath = join(process.cwd(), 'public', 'uploads', fileName);
-    await writeFile(filePath, buffer);
 
     // Create deployment record
     const deployment = await prisma.deployment.create({
