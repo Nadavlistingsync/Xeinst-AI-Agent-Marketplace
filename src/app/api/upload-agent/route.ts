@@ -4,9 +4,6 @@ import { authOptions } from '@/lib/auth';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { prisma } from '@/lib/prisma';
-import { createWriteStream } from 'fs';
-import { pipeline } from 'stream/promises';
-import stream from 'stream';
 
 export async function POST(req: NextRequest) {
   try {
