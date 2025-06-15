@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { prisma } from '@/lib/prisma';
 import { toast } from "react-hot-toast";
 
 export default function UploadPage() {
@@ -18,8 +17,6 @@ export default function UploadPage() {
     documentation: "",
   });
   const [file, setFile] = useState<File | null>(null);
-  const [uploadType, setUploadType] = useState<'file' | 'github'>("file");
-  const [githubUrl, setGithubUrl] = useState("");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -28,259 +25,168 @@ export default function UploadPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      if (!selectedFile.name.endsWith('.zip')) {
+        setError('Please upload a ZIP file');
+        return;
+      }
+      setFile(selectedFile);
+      setError('');
     }
-  };
-
-  const handleGithubUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setGithubUrl(e.target.value);
-  };
-
-  const fetchGithubRepoAsZip = async (repoUrl: string): Promise<File> => {
-    const match = repoUrl.match(/github.com\/(.+?)\/(.+?)(?:\.git)?(?:\/|$)/);
-    if (!match) throw new Error("Invalid GitHub URL");
-    const owner = match[1];
-    const repo = match[2];
-    const zipUrl = `https://github.com/${owner}/${repo}/archive/refs/heads/main.zip`;
-    const response = await fetch(zipUrl);
-    if (!response.ok) throw new Error("Failed to fetch GitHub repo ZIP");
-    const blob = await response.blob();
-    return new File([blob], `${repo}-main.zip`, { type: "application/zip" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-    
-    if (!session?.user?.id) {
-      setError("You must be logged in to upload a product");
-      setLoading(false);
-      return;
-    }
 
     try {
-      let file_url = '';
-
-      if (uploadType === 'file') {
-        if (!file) throw new Error('No file selected');
-        const formData = new FormData();
-        formData.append('file', file);
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        const uploadData = await uploadRes.json();
-        if (!uploadData.success) throw new Error('File upload failed');
-        file_url = uploadData.data.url;
-      } else if (uploadType === 'github') {
-        if (!githubUrl) throw new Error('No GitHub URL provided');
-        const zipFile = await fetchGithubRepoAsZip(githubUrl);
-        const formData = new FormData();
-        formData.append('file', zipFile);
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-        const uploadData = await uploadRes.json();
-        if (!uploadData.success) throw new Error('File upload failed');
-        file_url = uploadData.data.url;
+      if (!file) {
+        throw new Error('Please upload a ZIP file');
       }
 
-      // Insert product into database
-      const product = await prisma.product.create({
-        data: {
-          name: formData.name,
-          category: formData.category,
-          description: formData.description,
-          longDescription: formData.documentation,
-          price: parseFloat(formData.price),
-          fileUrl: file_url,
-          createdBy: session.user.id,
-          isPublic: true,
-          earningsSplit: 0.8, // Default earnings split
-          requirements: [],
-          tags: [],
-          version: '1.0.0',
-          environment: 'production',
-          framework: 'custom',
-          modelType: 'custom'
-        }
+      const form = new FormData();
+      form.append('file', file);
+      Object.entries(formData).forEach(([key, value]) => {
+        form.append(key, value);
       });
 
-      toast.success('Product uploaded successfully!');
-      router.push(`/product/${product.id}`);
+      const response = await fetch('/api/upload-agent', {
+        method: 'POST',
+        body: form,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to upload agent');
+      }
+
+      toast.success('Agent uploaded successfully!');
+      router.push('/dashboard');
     } catch (err) {
-      console.error('Error uploading product:', err);
-      toast.error('Failed to upload product');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during upload';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto mt-10 p-6 bg-white rounded shadow" role="main">
-      <h1 className="text-3xl font-bold mb-6">Upload Your AI Agent</h1>
-      
-      {error && (
-        <div 
-          className="mb-4 p-4 bg-red-100 text-red-700 rounded" 
-          role="alert"
-          aria-live="assertive"
-        >
-          {error}
-        </div>
-      )}
-
-      <div 
-        className="flex mb-4" 
-        role="radiogroup" 
-        aria-label="Upload type selection"
-      >
-        <button
-          type="button"
-          className={`mr-2 px-4 py-2 rounded ${uploadType === "file" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-          onClick={() => setUploadType("file")}
-          aria-pressed={uploadType === "file"}
-          aria-label="Upload file option"
-        >
-          Upload File
-        </button>
-        <button
-          type="button"
-          className={`px-4 py-2 rounded ${uploadType === "github" ? "bg-blue-600 text-white" : "bg-gray-200"}`}
-          onClick={() => setUploadType("github")}
-          aria-pressed={uploadType === "github"}
-          aria-label="Import from GitHub option"
-        >
-          Import from GitHub
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4" role="form" aria-label="AI Agent upload form">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            aria-required="true"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-            Category
-          </label>
-          <input
-            type="text"
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleInputChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            aria-required="true"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-            Description
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            rows={4}
-            aria-required="true"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-            Price
-          </label>
-          <input
-            type="number"
-            id="price"
-            name="price"
-            value={formData.price}
-            onChange={handleInputChange}
-            required
-            min="0"
-            step="0.01"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            aria-required="true"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="documentation" className="block text-sm font-medium text-gray-700">
-            Documentation
-          </label>
-          <textarea
-            id="documentation"
-            name="documentation"
-            value={formData.documentation}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            rows={4}
-          />
-        </div>
-
-        {uploadType === "file" ? (
+    <div className="min-h-screen bg-black text-white p-8">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Upload New Agent</h1>
+        
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="file" className="block text-sm font-medium text-gray-700">
-              File
+            <label htmlFor="name" className="block text-sm font-medium text-gray-200">
+              Agent Name
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-200">
+              Category
+            </label>
+            <input
+              type="text"
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              required
+              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-200">
+              Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              required
+              rows={4}
+              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="price" className="block text-sm font-medium text-gray-200">
+              Price
+            </label>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              value={formData.price}
+              onChange={handleInputChange}
+              required
+              min="0"
+              step="0.01"
+              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="documentation" className="block text-sm font-medium text-gray-200">
+              Documentation
+            </label>
+            <textarea
+              id="documentation"
+              name="documentation"
+              value={formData.documentation}
+              onChange={handleInputChange}
+              required
+              rows={4}
+              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="file" className="block text-sm font-medium text-gray-200">
+              Agent Files (ZIP)
             </label>
             <input
               type="file"
               id="file"
+              accept=".zip"
               onChange={handleFileChange}
               required
-              className="mt-1 block w-full"
-              aria-required="true"
+              className="mt-1 block w-full text-gray-200"
             />
+            <p className="text-xs text-gray-400 mt-1">Upload your agent files as a ZIP archive.</p>
           </div>
-        ) : (
-          <div>
-            <label htmlFor="githubUrl" className="block text-sm font-medium text-gray-700">
-              GitHub Repository URL
-            </label>
-            <input
-              type="url"
-              id="githubUrl"
-              value={githubUrl}
-              onChange={handleGithubUrlChange}
-              required
-              placeholder="https://github.com/username/repo"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              aria-required="true"
-            />
-          </div>
-        )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full py-2 px-4 rounded-md text-white font-medium ${
-            loading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
-          }`}
-          aria-disabled={loading}
-        >
-          {loading ? "Uploading..." : "Upload"}
-        </button>
-      </form>
+          {error && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+            >
+              {loading ? 'Uploading...' : 'Upload Agent'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 } 
