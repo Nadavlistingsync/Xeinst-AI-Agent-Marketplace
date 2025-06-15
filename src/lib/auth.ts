@@ -5,16 +5,11 @@ import { prisma } from "./prisma";
 import { UserRole, SubscriptionTier } from '@prisma/client';
 import type { User } from '@/types/prisma';
 import GoogleProvider from "next-auth/providers/google";
-import GitHubProvider from "next-auth/providers/github";
 
 const providers = [
   GoogleProvider({
     clientId: process.env.GOOGLE_CLIENT_ID!,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  }),
-  GitHubProvider({
-    clientId: process.env.GITHUB_ID!,
-    clientSecret: process.env.GITHUB_SECRET!,
   }),
 ];
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { FaGithub } from 'react-icons/fa';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -14,7 +13,7 @@ export default function SignIn() {
     setIsLoading(true);
     setError(null);
     try {
-      const result = await signIn('github', { 
+      const result = await signIn('google', { 
         callbackUrl: '/',
         redirect: false 
       });
@@ -45,10 +44,9 @@ export default function SignIn() {
         <button
           onClick={handleSignIn}
           disabled={isLoading}
-          className="w-full bg-[#24292F] text-white py-3 px-4 rounded-lg hover:bg-[#1B1F23] transition-colors duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <FaGithub className="w-5 h-5" />
-          <span>{isLoading ? 'Signing in...' : 'Continue with GitHub'}</span>
+          <span>{isLoading ? 'Signing in...' : 'Continue with Google'}</span>
         </button>
       </div>
     </div>

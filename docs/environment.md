@@ -16,12 +16,8 @@ TEST_DATABASE_URL="postgresql://user:password@localhost:5432/ai_agency_test"
 ```env
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-nextauth-secret"
-```
-
-### GitHub OAuth
-```env
-GITHUB_ID="your-github-client-id"
-GITHUB_SECRET="your-github-client-secret"
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
 ```
 
 ### Sentry
@@ -60,12 +56,6 @@ NEXT_PUBLIC_WS_URL="ws://localhost:3000"
 ### Authentication
 1. Generate a secure random string for `NEXTAUTH_SECRET`
 2. Set `NEXTAUTH_URL` to your application's URL
-
-### GitHub OAuth
-1. Go to GitHub Developer Settings
-2. Create a new OAuth application
-3. Set the callback URL to `{NEXTAUTH_URL}/api/auth/callback/github`
-4. Copy the Client ID and Client Secret
 
 ### Sentry
 1. Create a Sentry account
