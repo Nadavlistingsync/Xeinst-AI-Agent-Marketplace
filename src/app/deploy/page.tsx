@@ -21,6 +21,8 @@ export default function DeployPage() {
     accessLevel: "",
     licenseType: "",
     source: "",
+    category: "",
+    documentation: "",
   });
   const [file, setFile] = useState<File | null>(null);
   const [uploadMethod, setUploadMethod] = useState<'zip' | 'github'>('zip');
@@ -61,6 +63,9 @@ export default function DeployPage() {
         form.append('modelType', formData.modelType);
         form.append('environment', formData.environment);
         form.append('source', formData.source);
+        form.append('category', formData.category || '');
+        form.append('price', formData.price || '0');
+        form.append('documentation', formData.documentation || '');
         response = await fetch('/api/upload-agent', {
           method: 'POST',
           body: form,
@@ -164,6 +169,38 @@ export default function DeployPage() {
               />
             </div>
             <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-200">
+                Category
+              </label>
+              <input
+                type="text"
+                id="category"
+                name="category"
+                value={formData.category || ''}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-200">
+                Price
+              </label>
+              <input
+                type="number"
+                id="price"
+                name="price"
+                value={formData.price || ''}
+                onChange={handleInputChange}
+                min="0"
+                step="0.01"
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
               <label htmlFor="requirements" className="block text-sm font-medium text-gray-200">
                 Requirements (comma-separated)
               </label>
@@ -177,6 +214,20 @@ export default function DeployPage() {
                 placeholder="e.g. python, tensorflow, numpy"
               />
             </div>
+          </div>
+          <div>
+            <label htmlFor="documentation" className="block text-sm font-medium text-gray-200">
+              Documentation
+            </label>
+            <textarea
+              id="documentation"
+              name="documentation"
+              value={formData.documentation || ''}
+              onChange={handleInputChange}
+              rows={3}
+              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
           </div>
           <div className="mb-6 flex gap-4">
             <button type="button" onClick={() => setUploadMethod('zip')} className={`px-4 py-2 rounded-md ${uploadMethod === 'zip' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}>Upload ZIP</button>
