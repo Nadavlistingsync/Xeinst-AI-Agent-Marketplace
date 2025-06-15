@@ -30,8 +30,6 @@ set_secret_if_missing "DATABASE_URL" "postgresql://postgres:postgres@localhost:5
 set_secret_if_missing "NEXTAUTH_URL" "http://localhost:3000"
 set_secret_if_missing "NEXTAUTH_SECRET" "$(openssl rand -base64 32)"
 set_secret_if_missing "NEXT_PUBLIC_API_URL" "http://localhost:3000/api"
-set_secret_if_missing "GOOGLE_CLIENT_ID" "your-google-client-id"
-set_secret_if_missing "GOOGLE_CLIENT_SECRET" "your-google-client-secret"
 set_secret_if_missing "VERCEL_TOKEN" "your-vercel-token"
 set_secret_if_missing "VERCEL_ORG_ID" "your-vercel-org-id"
 set_secret_if_missing "VERCEL_PROJECT_ID" "your-vercel-project-id"

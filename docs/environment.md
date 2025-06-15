@@ -16,8 +16,6 @@ TEST_DATABASE_URL="postgresql://user:password@localhost:5432/ai_agency_test"
 ```env
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-nextauth-secret"
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
 ```
 
 ### Sentry
@@ -87,8 +85,7 @@ For production:
 1. Set up environment variables in your hosting platform
 2. Use production database URLs
 3. Use production WebSocket URL
-4. Use production OAuth credentials
-5. Use production Sentry project
+4. Use production Sentry project
 
 ## Security Notes
 
@@ -107,7 +104,7 @@ If you encounter issues:
 
 1. Check if all required variables are set
 2. Verify database connection
-3. Check OAuth configuration
+3. Check authentication setup
 4. Verify Sentry setup
 5. Check WebSocket connection
 6. Look for error messages in logs
