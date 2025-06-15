@@ -1,5 +1,5 @@
 import Stripe from 'stripe';
-import { prisma } from './db';
+import { prisma } from '@/lib/prisma';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not set');

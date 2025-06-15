@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import type { Deployment } from '@/types/prisma';
-import { prisma } from "./db";
+import { prisma } from '@/lib/prisma';
 
 // Define types
 export type ProductType = 'template' | 'custom' | 'plugin';

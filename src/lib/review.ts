@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import type { Review } from '@/types/prisma';
-import { prisma } from './db';
+import { prisma } from '@/lib/prisma';
 
 export interface ReviewOptions {
   productId?: string;

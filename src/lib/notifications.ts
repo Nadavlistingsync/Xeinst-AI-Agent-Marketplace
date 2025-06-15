@@ -1,4 +1,4 @@
-import { prisma } from './db';
+import { prisma } from '@/lib/prisma';
 import type { Notification, NotificationType } from '@/types/prisma';
 
 interface CreateNotificationData {

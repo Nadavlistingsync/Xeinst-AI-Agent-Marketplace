@@ -1,4 +1,4 @@
-import { prisma } from './db';
+import { prisma } from '@/lib/prisma';
 import type { Prisma, Purchase } from '@/types/prisma';
 
 export interface PurchaseOptions {
