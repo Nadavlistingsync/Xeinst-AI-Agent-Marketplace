@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
-import { DashboardStats } from '@/components/dashboard/DashboardStats';
+import { CreatorDashboard } from '@/components/dashboard/CreatorDashboard';
 
 export const metadata: Metadata = {
   title: 'Dashboard | AI Agency',
@@ -25,7 +25,7 @@ export default async function DashboardPage() {
         image: session.user.image ?? null,
       }} />
       <div className="mt-8 space-y-8">
-        <DashboardStats />
+        <CreatorDashboard />
         {/* Fetch deployments and pass as prop to DeploymentsList */}
         {/* <DeploymentsList deployments={deployments} /> */}
       </div>
