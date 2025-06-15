@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       filePath = join(process.cwd(), 'public', 'uploads', fileName);
       const fileStream = createWriteStream(filePath);
       if (!zipRes.body) throw new Error('No response body from GitHub');
-      const nodeStream = stream.Readable.fromWeb(zipRes.body);
+      const nodeStream = stream.Readable.fromWeb(zipRes.body as any);
       await pipeline(nodeStream, fileStream);
     } else {
       // Handle file upload
