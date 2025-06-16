@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
 import { prisma } from '@/lib/prisma';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { v4 as uuidv4 } from 'uuid';
+
+const s3 = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+const BUCKET_NAME = process.env.S3_BUCKET_NAME!;
 
 export async function POST(req: NextRequest) {
   try {
@@ -34,20 +43,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads');
-    await createDirIfNotExists(uploadsDir);
-
-    // Generate unique filename
-    const fileName = `${Date.now()}_${file.name}`;
-    const filePath = join(uploadsDir, fileName);
-
-    // Convert File to Buffer
+    // Upload file to S3
+    const fileExt = file.name.split('.').pop();
+    const s3Key = `uploads/${uuidv4()}.${fileExt}`;
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Write file to disk
-    await writeFile(filePath, buffer);
+    await s3.send(new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: s3Key,
+      Body: buffer,
+      ContentType: file.type,
+    }));
+
+    const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
 
     // Create agent in database
     const agent = await prisma.agent.create({
@@ -57,7 +66,7 @@ export async function POST(req: NextRequest) {
         category,
         price: parseFloat(price),
         documentation,
-        fileUrl: `/uploads/${fileName}`,
+        fileUrl: s3Url,
         createdBy: session.user.id,
         isPublic: true,
         version: '1.0.0',
@@ -82,15 +91,5 @@ export async function POST(req: NextRequest) {
       { error: 'Failed to upload agent' },
       { status: 500 }
     );
-  }
-}
-
-async function createDirIfNotExists(dir: string) {
-  try {
-    await writeFile(dir, '', { flag: 'wx' });
-  } catch (error: any) {
-    if (error.code !== 'EEXIST') {
-      throw error;
-    }
   }
 } 
