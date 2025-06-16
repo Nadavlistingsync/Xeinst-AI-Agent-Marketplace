@@ -63,9 +63,6 @@ export async function POST(req: NextRequest) {
       data: {
         name,
         description,
-        category,
-        price: parseFloat(price),
-        documentation,
         fileUrl: s3Url,
         createdBy: session.user.id,
         isPublic: true,
