@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
 
     // Create agent in database
-    const agent = await prisma.agent.create({
+    const agent = await prisma.deployment.create({
       data: {
         name,
         description,
@@ -72,7 +72,16 @@ export async function POST(req: NextRequest) {
         version: '1.0.0',
         environment: 'production',
         framework: 'custom',
-        modelType: 'custom'
+        modelType: 'custom',
+        status: 'active',
+        accessLevel: 'public',
+        licenseType: 'free',
+        deployedBy: session.user.id,
+        startDate: new Date(),
+        rating: 0,
+        totalRatings: 0,
+        downloadCount: 0,
+        health: {},
       }
     });
 
