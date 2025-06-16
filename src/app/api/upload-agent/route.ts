@@ -25,11 +25,8 @@ export async function POST(req: NextRequest) {
     const file = formData.get('file') as File;
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
-    const category = formData.get('category') as string;
-    const price = formData.get('price') as string;
-    const documentation = formData.get('documentation') as string;
 
-    if (!file || !name || !description || !category || !price) {
+    if (!file || !name || !description) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
