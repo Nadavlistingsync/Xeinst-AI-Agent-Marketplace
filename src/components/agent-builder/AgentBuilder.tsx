@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useSession } from 'next-auth/react';
 import JSZip from 'jszip';
 import { Sun, Moon, Maximize2, Minimize2, Music } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
 
 interface AgentBuilderProps {
   onSave?: (agent: {
@@ -25,10 +26,13 @@ interface AgentBuilderProps {
 export function AgentBuilder({ onSave }: AgentBuilderProps) {
   const { data: session } = useSession();
   const { toast } = useToast();
+  const [instruction, setInstruction] = useState('');
+  const [code, setCode] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [framework, setFramework] = useState('python');
+  const [generated, setGenerated] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [framework, setFramework] = useState('python');
-  const [code, setCode] = useState('# Your agent code here\n');
   const [requirements, setRequirements] = useState('');
   const [theme, setTheme] = useState<'vs-dark' | 'light'>('vs-dark');
   const [zenMode, setZenMode] = useState(false);
@@ -43,17 +47,40 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
   const quote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
   const [showMusic, setShowMusic] = useState(false);
 
+  const handleGenerate = async () => {
+    if (!instruction) {
+      toast({ description: 'Please enter a description for your agent.', variant: 'destructive' });
+      return;
+    }
+    setLoading(true);
+    setGenerated(false);
+    try {
+      const response = await fetch('/api/agents/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction, framework }),
+      });
+      if (!response.ok) throw new Error('Failed to generate agent code');
+      const data = await response.json();
+      setCode(data.code);
+      setGenerated(true);
+      toast({ description: 'Agent code generated successfully.' });
+    } catch (error) {
+      toast({ description: 'Error generating agent code.', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!session) {
       toast({ description: 'Authentication required. Please sign in to save your agent.', variant: 'destructive' });
       return;
     }
-
-    if (!name || !code) {
-      toast({ description: 'Missing required fields. Please provide a name and code for your agent.', variant: 'destructive' });
+    if (!code) {
+      toast({ description: 'No code to save. Please generate your agent first.', variant: 'destructive' });
       return;
     }
-
     // Create a zip file with the agent code and requirements
     const zip = new JSZip();
     zip.file('agent.py', code);
@@ -152,82 +179,41 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
       <Card className={`p-6 shadow-2xl rounded-2xl transition-all duration-500 ${zenMode ? 'w-[90vw] h-[90vh] max-w-none max-h-none' : ''} bg-white/80 backdrop-blur-md`}> 
         <div className="space-y-4">
           <div>
-            <Label htmlFor="name">Agent Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter agent name"
+            <Label htmlFor="instruction">Describe your agent in English</Label>
+            <Textarea
+              id="instruction"
+              value={instruction}
+              onChange={e => setInstruction(e.target.value)}
+              placeholder="e.g. Create an agent that summarizes news articles daily and emails me the summary."
+              rows={4}
             />
           </div>
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter agent description"
-            />
-          </div>
-          <div>
+          <div className="flex items-center gap-4 mt-4">
             <Label htmlFor="framework">Framework</Label>
-            <Select
-              value={framework}
-              onValueChange={setFramework}
-            >
+            <Select value={framework} onValueChange={setFramework} id="framework">
               <option value="python">Python</option>
               <option value="javascript">JavaScript</option>
               <option value="typescript">TypeScript</option>
             </Select>
-          </div>
-          <div>
-            <Label htmlFor="requirements">Requirements (optional)</Label>
-            <Input
-              id="requirements"
-              value={requirements}
-              onChange={(e) => setRequirements(e.target.value)}
-              placeholder="Enter requirements (e.g., numpy==1.21.0)"
-            />
+            <Button onClick={handleGenerate} disabled={loading} className="ml-auto">
+              {loading ? 'Generating...' : 'Generate Agent'}
+            </Button>
           </div>
         </div>
       </Card>
-      <Card
-        ref={editorContainerRef}
-        className={`p-0 shadow-2xl rounded-2xl mt-6 transition-all duration-500 overflow-hidden ${zenMode ? 'w-[90vw] h-[60vh] max-w-none max-h-none' : 'bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100'}`}
-        style={{ border: zenMode ? '2px solid #a78bfa' : undefined }}
-      >
-        <Label className="px-6 pt-6 text-lg font-semibold text-gray-700">Agent Code</Label>
-        <div className={`h-[500px] mt-2 ${zenMode ? 'h-[60vh]' : ''}`}>
+      {generated && (
+        <Card className="p-6 mt-6">
+          <Label className="mb-2 block">Generated Agent Code</Label>
           <Editor
-            height={zenMode ? '60vh' : '500px'}
+            height="400px"
             defaultLanguage={framework}
             language={framework}
             value={code}
-            onChange={(value: string | undefined) => setCode(value || '')}
-            theme={theme}
-            options={{
-              minimap: { enabled: false },
-              fontSize: 16,
-              wordWrap: 'on',
-              smoothScrolling: true,
-              fontFamily: 'Fira Mono, monospace',
-              cursorSmoothCaretAnimation: true,
-              renderLineHighlight: 'all',
-              scrollBeyondLastLine: false,
-              padding: { top: 16 },
-              lineNumbers: 'on',
-              renderValidationDecorations: 'on',
-              ariaLabel: 'Agent code editor',
-              placeholder: '# Start coding your agent here!\n# Write code, add comments, and vibe.'
-            }}
+            options={{ readOnly: true, minimap: { enabled: false } }}
           />
-        </div>
-      </Card>
-      <div className={`flex justify-end ${zenMode ? 'w-[90vw]' : ''}`}>
-        <Button onClick={handleSave} className="mt-6 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold shadow-lg hover:from-blue-600 hover:to-purple-600 transition">
-          Save Agent
-        </Button>
-      </div>
+          <Button onClick={handleSave} className="mt-4">Save Agent</Button>
+        </Card>
+      )}
     </div>
   );
 } 
