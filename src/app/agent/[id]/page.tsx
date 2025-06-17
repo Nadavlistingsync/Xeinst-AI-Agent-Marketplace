@@ -38,7 +38,29 @@ export default async function Page({ params }: AgentPageProps) {
 
   const agent = await prisma.deployment.findUnique({
     where: { id: params.id },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      description: true,
+      accessLevel: true,
+      licenseType: true,
+      environment: true,
+      framework: true,
+      modelType: true,
+      source: true,
+      deployedBy: true,
+      createdBy: true,
+      rating: true,
+      totalRatings: true,
+      downloadCount: true,
+      startDate: true,
+      createdAt: true,
+      updatedAt: true,
+      isPublic: true,
+      version: true,
+      health: true,
+      config: true,
       metrics: {
         orderBy: {
           createdAt: 'desc'
@@ -69,6 +91,7 @@ export default async function Page({ params }: AgentPageProps) {
   // Add required fields for DeploymentWithMetrics
   const deploymentWithMetrics: DeploymentWithMetrics = {
     ...agent,
+    config: agent.config || {},
     isPublic: agent.isPublic,
     version: agent.version,
     health: agent.health ?? {},
