@@ -60,7 +60,6 @@ export default async function Page({ params }: AgentPageProps) {
       isPublic: true,
       version: true,
       health: true,
-      config: true,
       metrics: {
         orderBy: {
           createdAt: 'desc'
