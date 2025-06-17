@@ -17,25 +17,25 @@ export async function GET() {
 
     const [
       totalAgents,
-      totalDeployments,
-      activeDeployments,
-      averageRating,
+      activeAgents,
+      totalDownloads
     ] = await Promise.all([
-      prisma.deployment.count(),
-      prisma.deployment.count(),
-      prisma.deployment.count({ where: { status: 'active' } }),
+      prisma.deployment.count({ where: { createdBy: session.user.id } }),
+      prisma.deployment.count({ where: { createdBy: session.user.id, status: 'active' } }),
       prisma.deployment.aggregate({
-        _avg: {
-          rating: true,
-        },
-      }),
+        _sum: { downloadCount: true },
+        where: { createdBy: session.user.id }
+      })
     ]);
 
+    // Placeholder for revenue, replace with actual calculation if available
+    const totalRevenue = 0;
+
     return NextResponse.json({
+      totalRevenue,
       totalAgents,
-      totalDeployments,
-      activeDeployments,
-      averageRating: averageRating._avg.rating || 0,
+      activeAgents,
+      totalDownloads: totalDownloads._sum.downloadCount || 0,
     });
   } catch (error) {
     console.error('Error fetching agent stats:', error);
