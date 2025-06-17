@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
       data: { 
         id: agent.id,
         name: agent.name,
-        fileUrl: agent.fileUrl
+        fileUrl: `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`
       } 
     });
 
