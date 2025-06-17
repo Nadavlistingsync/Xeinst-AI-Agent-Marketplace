@@ -30,8 +30,6 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
   const [loading, setLoading] = useState(false);
   const [framework, setFramework] = useState('python');
   const [generated, setGenerated] = useState(false);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
   const [requirements, setRequirements] = useState('');
   const [theme, setTheme] = useState<'vs-dark' | 'light'>('vs-dark');
   const [zenMode, setZenMode] = useState(false);
@@ -106,8 +104,8 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
 
       // Save the agent metadata
       const agentData = {
-        name,
-        description,
+        name: '',
+        description: '',
         framework,
         file_url: file_url,
         requirements,
