@@ -73,6 +73,7 @@ export async function POST(req: NextRequest) {
         totalRatings: 0,
         downloadCount: 0,
         health: {},
+        source: s3Key,
       }
     });
 
