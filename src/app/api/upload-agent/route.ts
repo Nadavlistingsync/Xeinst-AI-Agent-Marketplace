@@ -53,8 +53,6 @@ export async function POST(req: NextRequest) {
       ContentType: file.type,
     }));
 
-    const s3Url = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
-
     // Create agent in database
     const agent = await prisma.deployment.create({
       data: {
