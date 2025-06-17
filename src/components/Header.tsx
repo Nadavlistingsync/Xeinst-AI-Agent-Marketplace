@@ -17,6 +17,7 @@ export default function Header() {
   }, [scrollY]);
 
   const menuItems = [
+    { label: 'Dashboard', href: '/dashboard' },
     { label: 'Marketplace', href: '/marketplace' },
     { label: 'Services', href: '/services' },
     { label: 'AI Agents', href: '/marketplace' },
@@ -39,6 +40,9 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
+            <Link href="/dashboard" className="text-gray-300 hover:text-white transition-colors">
+              Dashboard
+            </Link>
             <Link href="/marketplace" className="text-gray-300 hover:text-white transition-colors">
               Marketplace
             </Link>
