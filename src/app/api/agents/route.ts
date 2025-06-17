@@ -13,14 +13,31 @@ const agentSchema = z.object({
   metadata: z.record(z.any()).optional(),
 });
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const agents = await prisma.deployment.findMany();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const url = new URL(req.url);
+    const creator = url.searchParams.get('creator');
+
+    let where: any = {};
+    if (creator === 'true') {
+      where = { createdBy: session.user.id };
+    }
+
+    const agents = await prisma.deployment.findMany({ where });
+
+    // Map to the structure expected by the dashboard
     return NextResponse.json({
       agents: agents.map((agent: any) => ({
-        ...agent,
-        createdAt: agent.createdAt.toISOString(),
-        updatedAt: agent.updatedAt.toISOString(),
+        id: agent.id,
+        name: agent.name,
+        downloads: agent.downloadCount ?? 0,
+        revenue: 0, // Replace with actual revenue if available
+        status: agent.status,
       }))
     });
   } catch (error) {
