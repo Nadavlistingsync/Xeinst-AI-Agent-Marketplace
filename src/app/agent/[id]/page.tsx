@@ -90,7 +90,7 @@ export default async function Page({ params }: AgentPageProps) {
   // Add required fields for DeploymentWithMetrics
   const deploymentWithMetrics: DeploymentWithMetrics = {
     ...agent,
-    config: agent.config || {},
+    config: {},
     isPublic: agent.isPublic,
     version: agent.version,
     health: agent.health ?? {},
