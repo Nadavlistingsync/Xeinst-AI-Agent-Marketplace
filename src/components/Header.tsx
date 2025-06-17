@@ -21,8 +21,6 @@ export default function Header() {
     { label: 'Marketplace', href: '/marketplace' },
     { label: 'Services', href: '/services' },
     { label: 'AI Agents', href: '/marketplace' },
-    { label: 'Case Studies', href: '/case-studies' },
-    { label: 'Blog', href: '/blog' },
     { label: 'Contact', href: '/contact' }
   ];
 
@@ -51,12 +49,6 @@ export default function Header() {
             </Link>
             <Link href="/marketplace" className="text-gray-300 hover:text-white transition-colors">
               AI Agents
-            </Link>
-            <Link href="/case-studies" className="text-gray-300 hover:text-white transition-colors">
-              Case Studies
-            </Link>
-            <Link href="/blog" className="text-gray-300 hover:text-white transition-colors">
-              Blog
             </Link>
             <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
               Contact
