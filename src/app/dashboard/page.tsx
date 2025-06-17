@@ -18,16 +18,18 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <DashboardHeader user={{
-        name: session.user.name ?? null,
-        email: session.user.email ?? null,
-        image: session.user.image ?? null,
-      }} />
-      <div className="mt-8 space-y-8">
-        <CreatorDashboard />
-        {/* Fetch deployments and pass as prop to DeploymentsList */}
-        {/* <DeploymentsList deployments={deployments} /> */}
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 flex justify-center items-start">
+      <div className="container mx-auto px-4 py-12 max-w-5xl bg-white/90 rounded-2xl shadow-2xl mt-12 mb-12">
+        <DashboardHeader user={{
+          name: session.user.name ?? null,
+          email: session.user.email ?? null,
+          image: session.user.image ?? null,
+        }} />
+        <div className="mt-8 space-y-8">
+          <CreatorDashboard />
+          {/* Fetch deployments and pass as prop to DeploymentsList */}
+          {/* <DeploymentsList deployments={deployments} /> */}
+        </div>
       </div>
     </div>
   );
