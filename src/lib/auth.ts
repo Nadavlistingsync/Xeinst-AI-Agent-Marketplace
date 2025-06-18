@@ -182,6 +182,7 @@ export async function deleteUser(id: string): Promise<User> {
       emailVerified: true,
       createdAt: true,
       updatedAt: true,
+      credits: true,
     } as const,
   });
 } 
