@@ -163,6 +163,7 @@ export async function updateUser(
       emailVerified: true,
       createdAt: true,
       updatedAt: true,
+      credits: true,
     } as const,
   });
 }
