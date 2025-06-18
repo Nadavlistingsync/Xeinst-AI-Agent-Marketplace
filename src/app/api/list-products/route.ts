@@ -8,14 +8,6 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -45,13 +37,19 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const products = await prisma.product.findMany({
-      where: {
+    // Allow unauthenticated users to see public products
+    let whereClause: any = { accessLevel: 'public' };
+    if (session?.user) {
+      whereClause = {
         OR: [
           { createdBy: session.user.id },
           { accessLevel: 'public' }
         ]
-      },
+      };
+    }
+
+    const products = await prisma.product.findMany({
+      where: whereClause,
       include: {
         creator: {
           select: {
