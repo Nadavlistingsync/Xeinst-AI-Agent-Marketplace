@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,9 +23,6 @@ export default function AgentPage({
   onDelete
 }: AgentPageProps) {
   const { data: session } = useSession();
-  if (!session) {
-    return null;
-  }
 
   const isActive = deployment.status === 'active';
   const isPending = deployment.status === 'pending' || deployment.status === 'deploying';
@@ -39,17 +36,27 @@ export default function AgentPage({
     }
   };
 
-  const canAccess = () => {
-    if (deployment.accessLevel === 'public') return true;
-    if (deployment.createdBy === session.user.id) return true;
-    if (deployment.accessLevel === 'basic' && session.user.subscriptionTier === 'basic') return true;
-    if (deployment.accessLevel === 'premium' && session.user.subscriptionTier === 'premium') return true;
-    return false;
+  // Download handler
+  const handleDownload = async () => {
+    if (!session) {
+      signIn();
+      return;
+    }
+    // Download logic here (e.g., fetch(`/api/agents/${deployment.id}/download`))
+    // ...
+    alert('Download logic goes here!');
   };
 
-  if (!canAccess()) {
-    return null;
-  }
+  // Run handler
+  const handleRun = async () => {
+    if (!session) {
+      signIn();
+      return;
+    }
+    // Run logic here (e.g., call run endpoint)
+    // ...
+    alert('Run logic goes here!');
+  };
 
   return (
     <div className="container mx-auto py-8">
@@ -59,7 +66,7 @@ export default function AgentPage({
             <h1 className="text-3xl font-bold">{deployment.name}</h1>
             <p className="text-muted-foreground">{deployment.description}</p>
           </div>
-          <Badge variant={isActive ? 'success' : isPending ? 'warning' : 'destructive'}>
+          <Badge variant={deployment.status === 'active' ? 'success' : deployment.status === 'pending' || deployment.status === 'deploying' ? 'warning' : 'destructive'}>
             {deployment.status}
           </Badge>
         </div>
@@ -113,7 +120,7 @@ export default function AgentPage({
           </CardContent>
         </Card>
 
-        {deployment.createdBy === session.user.id && (
+        {deployment.createdBy === session?.user.id && (
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -153,6 +160,15 @@ export default function AgentPage({
             </Button>
           </div>
         )}
+
+        <div className="flex gap-4 mt-4">
+          <Button onClick={handleDownload} variant="outline">
+            Download
+          </Button>
+          <Button onClick={handleRun} variant="default">
+            Run Agent
+          </Button>
+        </div>
       </div>
     </div>
   );
