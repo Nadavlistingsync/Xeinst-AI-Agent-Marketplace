@@ -66,6 +66,8 @@ model User {
   subscriptionTier SubscriptionTier @default(free)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  credits         Int                @default(0)
+  creditTxs       CreditTransaction[]
 
   // Relations
   products        Product[]
@@ -136,6 +138,7 @@ model Deployment {
   isPublic        Boolean   @default(true)
   version         String    @default("1.0.0")
   health          Json?     @default("{}")
+  pricePerRun     Int                @default(1)
 
   // Relations
   creator         User      @relation("DeploymentCreator", fields: [createdBy], references: [id])
@@ -412,4 +415,15 @@ model Agent {
 
   // Relations
   creator         User      @relation(fields: [createdBy], references: [id])
+}
+
+model CreditTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   // 'purchase', 'spend', 'earn', 'redeem'
+  amount      Int
+  agentId     String?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
 }

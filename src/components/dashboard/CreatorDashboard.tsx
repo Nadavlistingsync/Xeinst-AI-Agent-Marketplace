@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Users, Download, DollarSign, User } from 'lucide-react';
+import { DashboardHeader } from './DashboardHeader';
 
 interface AgentStats {
   id: string;
@@ -40,25 +41,37 @@ export function CreatorDashboard() {
     totalDownloads: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<{ name: string; email: string; image: string; credits: number }>({ name: '', email: '', image: '', credits: 0 });
+  const [showBuyCredits, setShowBuyCredits] = useState(false);
+  const [buying, setBuying] = useState(false);
+  const [buyAmount, setBuyAmount] = useState(100);
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const [agentsResponse, statsResponse] = await Promise.all([
+      const [agentsResponse, statsResponse, userResponse] = await Promise.all([
         fetch('/api/agents?creator=true'),
         fetch('/api/agents/stats'),
+        fetch('/api/user/me'),
       ]);
 
-      if (!agentsResponse.ok || !statsResponse.ok) {
+      if (!agentsResponse.ok || !statsResponse.ok || !userResponse.ok) {
         throw new Error('Failed to fetch dashboard data');
       }
 
-      const [agentsData, statsData] = await Promise.all([
+      const [agentsData, statsData, userData] = await Promise.all([
         agentsResponse.json(),
         statsResponse.json(),
+        userResponse.json(),
       ]);
 
       setAgents(agentsData.agents);
       setStats(statsData);
+      setUser({
+        name: userData.name,
+        email: userData.email,
+        image: userData.image,
+        credits: userData.credits || 0,
+      });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast({ description: 'Failed to load dashboard data. Please try again.', variant: 'destructive' });
@@ -69,7 +82,32 @@ export function CreatorDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+    const openModal = () => setShowBuyCredits(true);
+    window.addEventListener('openBuyCreditsModal', openModal);
+    return () => window.removeEventListener('openBuyCreditsModal', openModal);
   }, [fetchDashboardData]);
+
+  const handleBuyCredits = async () => {
+    setBuying(true);
+    try {
+      const res = await fetch('/api/credits/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ credits: buyAmount }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast({ description: data.error || 'Failed to start checkout', variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ description: 'Failed to start checkout', variant: 'destructive' });
+    } finally {
+      setBuying(false);
+      setShowBuyCredits(false);
+    }
+  };
 
   if (loading) {
     return <div>Loading dashboard...</div>;
@@ -77,6 +115,40 @@ export function CreatorDashboard() {
 
   return (
     <div className="space-y-8">
+      <DashboardHeader user={user} />
+      {/* Buy Credits Modal */}
+      {showBuyCredits && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-8 shadow-xl w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Buy Credits</h2>
+            <label className="block mb-2 font-medium">How many credits?</label>
+            <input
+              type="number"
+              min={100}
+              step={100}
+              value={buyAmount}
+              onChange={e => setBuyAmount(Number(e.target.value))}
+              className="w-full border rounded px-3 py-2 mb-4"
+            />
+            <div className="flex justify-between items-center">
+              <button
+                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+                onClick={() => setShowBuyCredits(false)}
+                disabled={buying}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                onClick={handleBuyCredits}
+                disabled={buying}
+              >
+                {buying ? 'Redirecting...' : `Buy for $${(buyAmount / 100).toFixed(2)}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="p-6 flex items-center gap-4 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100">
