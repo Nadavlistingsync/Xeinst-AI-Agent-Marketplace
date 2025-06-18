@@ -134,6 +134,7 @@ export async function createUser(data: {
       emailVerified: true,
       createdAt: true,
       updatedAt: true,
+      credits: true,
     } as const,
   });
 }
