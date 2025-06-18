@@ -18,12 +18,35 @@ export default async function DashboardPage() {
   }
 
   // Fetch user credits from API
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-  const res = await fetch(baseUrl + '/api/user/me', {
-    headers: { Cookie: '' }, // Pass cookies if needed for auth
-    cache: 'no-store',
-  });
-  const userData = res.ok ? await res.json() : { credits: 0 };
+  let userData = { credits: 0 };
+  let userError = null;
+  try {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+    const res = await fetch(baseUrl + '/api/user/me', {
+      headers: { Cookie: '' }, // Pass cookies if needed for auth
+      cache: 'no-store',
+    });
+    if (res.ok) {
+      userData = await res.json();
+    } else {
+      const err = await res.json();
+      userError = err.error || 'Failed to load user data.';
+    }
+  } catch (e) {
+    userError = 'Failed to load user data.';
+  }
+
+  if (userError) {
+    return (
+      <div className="min-h-screen w-full bg-black flex justify-center items-center">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-12 border border-white/20 text-center">
+          <h1 className="text-3xl font-bold mb-4 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">Dashboard Error</h1>
+          <p className="text-white/80 mb-6">{userError}</p>
+          <a href="/auth/signin" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Sign In Again</a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-black flex justify-center items-start">
