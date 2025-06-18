@@ -81,6 +81,7 @@ export async function getUserById(id: string): Promise<User | null> {
       createdAt: true,
       updatedAt: true,
       password: true,
+      credits: true,
     } as const,
   });
 }
@@ -99,6 +100,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
       createdAt: true,
       updatedAt: true,
       password: true,
+      credits: true,
     } as const,
   });
 }
