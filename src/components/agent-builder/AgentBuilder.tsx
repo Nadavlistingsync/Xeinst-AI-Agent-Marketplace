@@ -32,7 +32,6 @@ export function AgentBuilder({ onSave }: AgentBuilderProps) {
   const [generated, setGenerated] = useState(false);
   const [theme, setTheme] = useState<'vs-dark' | 'light'>('vs-dark');
   const [zenMode, setZenMode] = useState(false);
-  const editorContainerRef = useRef<HTMLDivElement>(null);
   const motivationalQuotes = [
     "Code is like humor. When you have to explain it, it's bad.",
     "Simplicity is the soul of efficiency.",
