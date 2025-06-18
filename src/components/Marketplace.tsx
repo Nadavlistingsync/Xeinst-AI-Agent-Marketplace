@@ -58,14 +58,12 @@ export default function Marketplace({ session }: MarketplaceProps) {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetchApi<{ products: any[] }>('/api/list-products');
-      
+      const response = await fetchApi<{ agents: any[] }>('/api/agents');
       if (response.error) {
         throw new Error(response.error);
       }
-
-      if (response.data) {
-        setAgents(response.data.products);
+      if (response.agents) {
+        setAgents(response.agents);
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch agents';
@@ -77,35 +75,16 @@ export default function Marketplace({ session }: MarketplaceProps) {
   }, []);
 
   useEffect(() => {
-    if (session) {
-      fetchAgents();
-    } else {
-      setLoading(false);
-    }
-  }, [session, fetchAgents]);
+    fetchAgents();
+  }, [fetchAgents]);
 
   const filteredAgents = agents.filter(agent =>
-    agent.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-    agent.description?.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+    agent.name?.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
   const handleViewAgent = (agentId: number) => {
     router.push(`/agent/${agentId}`);
   };
-
-  if (!session) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold mb-4">Sign in to view agents</h2>
-        <button
-          onClick={() => signIn()}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Sign In
-        </button>
-      </div>
-    );
-  }
 
   if (loading) {
     return <PageSkeleton />;
@@ -144,28 +123,14 @@ export default function Marketplace({ session }: MarketplaceProps) {
             key={agent.id}
             className="glass-card card-hover p-6"
           >
-            {/* agent.imageUrl && (
-              <div className="mb-4 relative w-full h-48">
-                <Image
-                  src={agent.imageUrl}
-                  alt={agent.name}
-                  fill
-                  className="object-cover rounded-lg"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                />
-              </div>
-            ) */}
             <div className="flex items-center justify-between mb-4">
-              {/* <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                {agent.tag}
-              </span> */}
               <div className="flex items-center">
                 <Star className="w-5 h-5 text-yellow-400 fill-current" />
                 <span className="ml-1 text-gray-600">{agent.rating}</span>
               </div>
             </div>
             <h3 className="text-xl font-semibold mb-2">{agent.name}</h3>
-            <p className="text-gray-600 mb-4">{agent.description}</p>
+            <p className="text-gray-600 mb-4">{agent.status}</p>
             <button
               onClick={() => handleViewAgent(agent.id)}
               className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
