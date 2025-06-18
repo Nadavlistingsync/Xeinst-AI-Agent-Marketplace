@@ -26,8 +26,9 @@ export default async function DashboardPage() {
   const userData = res.ok ? await res.json() : { credits: 0 };
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 flex justify-center items-start">
-      <div className="container mx-auto px-4 py-12 max-w-5xl bg-white/90 rounded-2xl shadow-2xl mt-12 mb-12">
+    <div className="min-h-screen w-full bg-black flex justify-center items-start">
+      <div className="container mx-auto px-4 py-12 max-w-5xl bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl mt-12 mb-12 border border-white/20">
+        <h1 className="text-4xl font-bold mb-6 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] text-center">Dashboard</h1>
         <DashboardHeader user={{
           name: session.user.name ?? null,
           email: session.user.email ?? null,
