@@ -53,19 +53,22 @@ export default function ProductDetails({ product, isPurchased }: ProductDetailsP
     setDownloading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/download-product`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ product_id: product.id }),
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.open(data.url, '_blank');
-      } else {
-        setError(data.error || 'Failed to get download link');
+      const res = await fetch(`/api/agents/${product.id}/download`);
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || 'Download failed');
       }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${product.name}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      setError('Failed to download');
+      setError('Failed to download agent');
     } finally {
       setDownloading(false);
     }
