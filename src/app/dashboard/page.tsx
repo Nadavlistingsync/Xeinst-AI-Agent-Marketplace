@@ -18,7 +18,8 @@ export default async function DashboardPage() {
   }
 
   // Fetch user credits from API
-  const res = await fetch(process.env.NEXT_PUBLIC_BASE_URL + '/api/user/me', {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
+  const res = await fetch(baseUrl + '/api/user/me', {
     headers: { Cookie: '' }, // Pass cookies if needed for auth
     cache: 'no-store',
   });
