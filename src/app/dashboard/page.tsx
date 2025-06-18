@@ -17,6 +17,13 @@ export default async function DashboardPage() {
     redirect('/auth/signin');
   }
 
+  // Fetch user credits from API
+  const res = await fetch(process.env.NEXT_PUBLIC_BASE_URL + '/api/user/me', {
+    headers: { Cookie: '' }, // Pass cookies if needed for auth
+    cache: 'no-store',
+  });
+  const userData = res.ok ? await res.json() : { credits: 0 };
+
   return (
     <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-700 flex justify-center items-start">
       <div className="container mx-auto px-4 py-12 max-w-5xl bg-white/90 rounded-2xl shadow-2xl mt-12 mb-12">
@@ -24,6 +31,7 @@ export default async function DashboardPage() {
           name: session.user.name ?? null,
           email: session.user.email ?? null,
           image: session.user.image ?? null,
+          credits: userData.credits ?? 0,
         }} />
         <div className="mt-8 space-y-8">
           <CreatorDashboard />
