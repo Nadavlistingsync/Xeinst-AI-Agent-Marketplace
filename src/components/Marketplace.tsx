@@ -5,7 +5,6 @@ import { Star } from 'lucide-react';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Session } from 'next-auth';
-import { signIn } from 'next-auth/react';
 import { PageSkeleton } from './LoadingSkeleton';
 import { toast } from 'react-hot-toast';
 
