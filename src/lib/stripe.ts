@@ -1,14 +1,15 @@
 import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set');
+let stripe: Stripe | null = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    apiVersion: '2025-05-28.basil',
+    typescript: true
+  });
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-05-28.basil',
-  typescript: true
-});
+export { stripe };
 
 interface CreateCheckoutSessionData {
   productId: string;
@@ -23,6 +24,10 @@ interface CreatePortalSessionData {
 }
 
 export async function createCheckoutSession(data: CreateCheckoutSessionData): Promise<Stripe.Checkout.Session> {
+  if (!stripe) {
+    throw new Error('Stripe is not configured');
+  }
+
   const product = await prisma.product.findUnique({
     where: { id: data.productId }
   });
@@ -66,6 +71,10 @@ export async function createCheckoutSession(data: CreateCheckoutSessionData): Pr
 }
 
 export async function createPortalSession(data: CreatePortalSessionData): Promise<Stripe.BillingPortal.Session> {
+  if (!stripe) {
+    throw new Error('Stripe is not configured');
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: data.userId }
   });
@@ -87,6 +96,10 @@ export async function createPortalSession(data: CreatePortalSessionData): Promis
 }
 
 export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
+  if (!stripe) {
+    throw new Error('Stripe is not configured');
+  }
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
