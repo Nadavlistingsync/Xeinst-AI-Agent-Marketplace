@@ -64,7 +64,7 @@ export default async function DashboardPage() {
           credits: user.credits ?? 0,
         }} />
         <div className="mt-8 space-y-8">
-          <CreatorDashboard user={user} />
+          <CreatorDashboard />
           {/* Fetch deployments and pass as prop to DeploymentsList */}
           {/* <DeploymentsList deployments={deployments} /> */}
         </div>

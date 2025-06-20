@@ -30,14 +30,7 @@ interface DashboardStats {
   totalDownloads: number;
 }
 
-interface User {
-  name: string | null;
-  email: string | null;
-  image: string | null;
-  credits: number;
-}
-
-export function CreatorDashboard({ user }: { user: User }) {
+export function CreatorDashboard() {
   const { toast } = useToast();
   const [agents, setAgents] = useState<AgentStats[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
