@@ -8,7 +8,6 @@ import { Play, Pause, RefreshCw, Trash2, Download, Coins } from 'lucide-react';
 import { DeploymentWithMetrics } from '@/types/deployment';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface AgentPageProps {
@@ -27,7 +26,6 @@ export default function AgentPage({
   onDelete
 }: AgentPageProps) {
   const { data: session } = useSession();
-  const router = useRouter();
   const [isDownloading, setIsDownloading] = useState(false);
 
   const isActive = deployment.status === 'active';
