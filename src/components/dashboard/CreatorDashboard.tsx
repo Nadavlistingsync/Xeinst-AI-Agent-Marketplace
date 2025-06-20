@@ -31,7 +31,14 @@ interface DashboardStats {
   totalDownloads: number;
 }
 
-export function CreatorDashboard() {
+interface User {
+  name: string | null;
+  email: string | null;
+  image: string | null;
+  credits: number;
+}
+
+export function CreatorDashboard({ user }: { user: User }) {
   const { toast } = useToast();
   const [agents, setAgents] = useState<AgentStats[]>([]);
   const [stats, setStats] = useState<DashboardStats>({
@@ -41,37 +48,28 @@ export function CreatorDashboard() {
     totalDownloads: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<{ name: string; email: string; image: string; credits: number }>({ name: '', email: '', image: '', credits: 0 });
   const [showBuyCredits, setShowBuyCredits] = useState(false);
   const [buying, setBuying] = useState(false);
   const [buyAmount, setBuyAmount] = useState(100);
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      const [agentsResponse, statsResponse, userResponse] = await Promise.all([
+      const [agentsResponse, statsResponse] = await Promise.all([
         fetch('/api/agents?creator=true'),
         fetch('/api/agents/stats'),
-        fetch('/api/user/me'),
       ]);
 
-      if (!agentsResponse.ok || !statsResponse.ok || !userResponse.ok) {
+      if (!agentsResponse.ok || !statsResponse.ok) {
         throw new Error('Failed to fetch dashboard data');
       }
 
-      const [agentsData, statsData, userData] = await Promise.all([
+      const [agentsData, statsData] = await Promise.all([
         agentsResponse.json(),
         statsResponse.json(),
-        userResponse.json(),
       ]);
 
       setAgents(agentsData.agents);
       setStats(statsData);
-      setUser({
-        name: userData.name,
-        email: userData.email,
-        image: userData.image,
-        credits: userData.credits || 0,
-      });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       toast({ description: 'Failed to load dashboard data. Please try again.', variant: 'destructive' });
@@ -115,7 +113,6 @@ export function CreatorDashboard() {
 
   return (
     <div className="space-y-8">
-      <DashboardHeader user={user} />
       {/* Buy Credits Modal */}
       {showBuyCredits && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
