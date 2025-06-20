@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Play, Pause, RefreshCw, Trash2, Download, Coins } from 'lucide-react';
 import { DeploymentWithMetrics } from '@/types/deployment';
 import { useState } from 'react';
-import { toast, Toast } from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
