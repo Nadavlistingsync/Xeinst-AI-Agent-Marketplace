@@ -102,7 +102,7 @@ export default function AgentPage({
     }
     // Run logic here (e.g., call run endpoint)
     // ...
-    toast.info('Run functionality is not yet implemented.');
+    toast('Run functionality is not yet implemented.');
   };
 
   return (
