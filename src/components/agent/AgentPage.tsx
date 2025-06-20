@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Play, Pause, RefreshCw, Trash2, Download, Coins } from 'lucide-react';
 import { DeploymentWithMetrics } from '@/types/deployment';
 import { useState } from 'react';
-import { toast } from 'react-hot-toast';
+import { toast, Toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 interface AgentPageProps {
   deployment: DeploymentWithMetrics;
@@ -69,12 +70,24 @@ export default function AgentPage({
     } catch (error) {
       const errorMessage = (error as Error).message;
       if (errorMessage.includes('Insufficient credits')) {
-        toast.error('Insufficient credits. Please buy more to download.', {
-          action: {
-            label: 'Buy Credits',
-            onClick: () => router.push('/pricing'),
-          },
-        });
+        toast.error(
+          (t) => (
+            <span className="flex items-center justify-between w-full">
+              <span>Insufficient credits.</span>
+              <Link href="/pricing">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-4"
+                  onClick={() => toast.dismiss(t.id)}
+                >
+                  Buy Credits
+                </Button>
+              </Link>
+            </span>
+          ),
+          { duration: 6000 }
+        );
       } else {
         toast.error(errorMessage);
       }
