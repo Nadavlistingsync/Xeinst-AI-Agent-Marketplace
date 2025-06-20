@@ -14,21 +14,6 @@ import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
 import { CreateAgentButton, ViewAgentButton } from './DashboardActions';
 
-interface AgentStats {
-  id: string;
-  name: string;
-  downloads: number;
-  revenue: number;
-  status: string;
-}
-
-interface DashboardStats {
-  totalRevenue: number;
-  totalAgents: number;
-  activeAgents: number;
-  totalDownloads: number;
-}
-
 export async function CreatorDashboard() {
   const session = await getServerSession(authOptions);
 
