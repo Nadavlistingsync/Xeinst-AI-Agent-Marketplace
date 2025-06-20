@@ -80,17 +80,11 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
 
     // If userId is provided, only return deployments for that user
-    const where = userId ? { createdBy: userId } : {};
+    const where = userId ? { createdBy: userId } : { isPublic: true };
 
     const deployments = await prisma.deployment.findMany({
       where,
