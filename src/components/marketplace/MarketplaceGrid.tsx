@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Deployment } from '@/types/deployment';
 import { AgentCard } from './AgentCard';
+import Link from 'next/link';
 
 interface MarketplaceGridProps {
   searchParams: {
@@ -70,10 +71,11 @@ export function MarketplaceGrid({ searchParams }: MarketplaceGridProps) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {deployments.map((deployment) => (
-            <AgentCard
-              key={deployment.id}
-              deployment={deployment}
-            />
+            <Link href={`/marketplace/${deployment.id}`} key={deployment.id}>
+              <AgentCard
+                deployment={deployment}
+              />
+            </Link>
           ))}
         </div>
       )}
