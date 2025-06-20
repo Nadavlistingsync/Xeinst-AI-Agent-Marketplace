@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, Users, Download, DollarSign, User } from 'lucide-react';
-import { DashboardHeader } from './DashboardHeader';
 
 interface AgentStats {
   id: string;
