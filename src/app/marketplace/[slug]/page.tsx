@@ -2,8 +2,6 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDeploymentById } from "@/lib/db-helpers";
 import { AgentDetails } from "@/components/marketplace/AgentDetails";
-import { Deployment } from "@/types/deployment";
-import { DeploymentStatus } from "@prisma/client";
 
 interface PageProps {
   params: {
