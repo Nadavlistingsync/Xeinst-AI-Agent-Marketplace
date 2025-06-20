@@ -329,9 +329,29 @@ export async function getDeployments(filters?: DeploymentFilters): Promise<Deplo
 }
 
 export async function getDeploymentById(id: string): Promise<Deployment | null> {
-  return prisma.deployment.findUnique({
+  const deployment = await prisma.deployment.findUnique({
     where: { id },
+    include: {
+      creator: {
+        select: {
+          name: true,
+          image: true,
+        },
+      },
+      metrics: true,
+    },
   });
+
+  if (!deployment) return null;
+
+  // Manually construct the final object to match the Deployment type
+  // This ensures all fields are present, even if some relations are null
+  return {
+    ...deployment,
+    name: deployment.name || 'Untitled Agent',
+    description: deployment.description || 'No description available.',
+    // Add other fields from the Deployment model, with defaults if necessary
+  };
 }
 
 export async function getDeploymentMetrics(id: string) {
