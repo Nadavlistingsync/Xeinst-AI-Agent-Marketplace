@@ -23,6 +23,7 @@ export interface Deployment {
   isPublic: boolean;
   version: string;
   health: JsonValue;
+  price: number | null;
   config?: Record<string, unknown>;
 }
 

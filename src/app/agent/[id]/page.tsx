@@ -60,6 +60,7 @@ export default async function Page({ params }: AgentPageProps) {
       isPublic: true,
       version: true,
       health: true,
+      price: true,
       metrics: {
         orderBy: {
           createdAt: 'desc'
@@ -94,6 +95,7 @@ export default async function Page({ params }: AgentPageProps) {
     isPublic: agent.isPublic,
     version: agent.version,
     health: agent.health ?? {},
+    price: agent.price ?? 0,
     metrics: agent.metrics.map((metric) => ({
       id: metric.id,
       createdAt: metric.createdAt,
