@@ -17,6 +17,7 @@ import { TrendingUp, Users, Download, DollarSign, User } from 'lucide-react';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { CreateAgentButton, ViewAgentButton } from './DashboardActions';
 
 interface AgentStats {
   id: string;
@@ -114,12 +115,7 @@ export async function CreatorDashboard() {
           <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
             <User className="w-6 h-6 text-blue-500" /> Your Agents
           </h2>
-          <Button
-            className="bg-gradient-to-r from-blue-500 to-purple-500 text-white font-semibold shadow-lg hover:from-blue-600 hover:to-purple-600 transition"
-            size="lg"
-          >
-            <a href="/agent-builder">+ Create New Agent</a>
-          </Button>
+          <CreateAgentButton />
         </div>
 
         <div className="overflow-x-auto rounded-lg border border-gray-100">
@@ -155,13 +151,7 @@ export async function CreatorDashboard() {
                     <TableCell>{agent.downloads}</TableCell>
                     <TableCell>${agent.revenue.toFixed(2)}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="hover:bg-blue-100 hover:text-blue-700 transition"
-                      >
-                        <a href={`/agent/${agent.id}`}>View</a>
-                      </Button>
+                      <ViewAgentButton agentId={agent.id} />
                     </TableCell>
                   </TableRow>
                 ))
