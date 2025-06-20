@@ -60,6 +60,7 @@ export default async function DeploymentPage({
     name: deployment.name,
     status: deployment.status as DeploymentStatus,
     description: deployment.description || '',
+    price: deployment.price ?? 0,
     accessLevel: deployment.accessLevel,
     licenseType: deployment.licenseType,
     environment: deployment.environment,
