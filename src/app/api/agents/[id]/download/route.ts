@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { createErrorResponse, CustomError } from '@/lib/error-handling';
+import { createErrorResponse, AppError } from '@/lib/error-handling';
 import path from 'path';
 import fs from 'fs';
 
@@ -45,12 +45,12 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return createErrorResponse(new CustomError('Unauthorized', { status: 401 }));
+      return createErrorResponse(new AppError('Unauthorized', 401));
     }
 
     const { authorized, error, agent } = await canDownloadAgent(params.id, session.user.id);
     if (!authorized || !agent) {
-      return createErrorResponse(new CustomError(error || 'Forbidden', { status: 403 }));
+      return createErrorResponse(new AppError(error || 'Forbidden', 403));
     }
     
     // Deduct credits if the agent is not free

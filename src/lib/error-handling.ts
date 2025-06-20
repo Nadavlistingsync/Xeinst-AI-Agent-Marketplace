@@ -73,6 +73,16 @@ export function handleApiError(error: unknown): ApiError {
 }
 
 export function createErrorResponse(error: unknown) {
+  if (error instanceof AppError) {
+    return NextResponse.json(
+      {
+        error: error.message,
+        details: error.details,
+      },
+      { status: error.status }
+    );
+  }
+  
   if (error instanceof ZodError) {
     return NextResponse.json(
       {
