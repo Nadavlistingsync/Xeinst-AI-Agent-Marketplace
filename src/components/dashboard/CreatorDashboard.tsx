@@ -1,9 +1,3 @@
-"use client";
-
-import { useState, useEffect, useCallback } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
 import {
   Table,
   TableBody,
@@ -17,6 +11,7 @@ import { TrendingUp, Users, Download, DollarSign, User } from 'lucide-react';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { Card } from '@/components/ui/card';
 import { CreateAgentButton, ViewAgentButton } from './DashboardActions';
 
 interface AgentStats {
