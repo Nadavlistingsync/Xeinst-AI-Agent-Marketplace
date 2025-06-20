@@ -20,7 +20,6 @@ export default function Header() {
     { label: 'Dashboard', href: '/dashboard' },
     { label: 'Marketplace', href: '/marketplace' },
     { label: 'AI Agents', href: '/marketplace' },
-    { label: 'Replit IDE', href: '/replit-embed' },
     { label: 'Contact', href: '/contact' }
   ];
 
@@ -46,9 +45,6 @@ export default function Header() {
             </Link>
             <Link href="/marketplace" className="text-gray-300 hover:text-white transition-colors">
               AI Agents
-            </Link>
-            <Link href="/replit-embed" className="text-gray-300 hover:text-white transition-colors">
-              Replit IDE
             </Link>
             <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
               Contact
