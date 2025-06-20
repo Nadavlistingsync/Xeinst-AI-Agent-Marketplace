@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { CreatorDashboard } from '@/components/dashboard/CreatorDashboard';
+import { prisma } from '@/lib/prisma';
 
 export const metadata: Metadata = {
   title: 'Dashboard | AI Agency',
@@ -13,30 +14,34 @@ export const metadata: Metadata = {
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  if (!session?.user?.id) {
     redirect('/auth/signin');
   }
 
-  // Fetch user credits from API
-  let userData = { credits: 0 };
+  // Fetch user credits from DB
+  let user = null;
   let userError = null;
+
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || '';
-    const res = await fetch(baseUrl + '/api/user/me', {
-      headers: { Cookie: '' }, // Pass cookies if needed for auth
-      cache: 'no-store',
+    user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        credits: true,
+      },
     });
-    if (res.ok) {
-      userData = await res.json();
-    } else {
-      const err = await res.json();
-      userError = err.error || 'Failed to load user data.';
+
+    if (!user) {
+      userError = 'User not found.';
     }
   } catch (e) {
     userError = 'Failed to load user data.';
   }
 
-  if (userError) {
+  if (userError || !user) {
     return (
       <div className="min-h-screen w-full bg-black flex justify-center items-center">
         <div className="bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-12 border border-white/20 text-center">
@@ -53,10 +58,10 @@ export default async function DashboardPage() {
       <div className="container mx-auto px-4 py-12 max-w-5xl bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl mt-12 mb-12 border border-white/20">
         <h1 className="text-4xl font-bold mb-6 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] text-center">Dashboard</h1>
         <DashboardHeader user={{
-          name: session.user.name ?? null,
-          email: session.user.email ?? null,
-          image: session.user.image ?? null,
-          credits: userData.credits ?? 0,
+          name: user.name ?? null,
+          email: user.email ?? null,
+          image: user.image ?? null,
+          credits: user.credits ?? 0,
         }} />
         <div className="mt-8 space-y-8">
           <CreatorDashboard />
