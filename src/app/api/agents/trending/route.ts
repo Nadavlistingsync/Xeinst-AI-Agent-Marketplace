@@ -15,7 +15,6 @@ const DeploymentSchema = z.object({
   updatedAt: z.date(),
   createdBy: z.string(),
   deployedBy: z.string().nullable(),
-  requirements: z.array(z.string()),
 });
 
 export async function GET() {

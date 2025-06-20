@@ -56,6 +56,7 @@ export default async function MarketplaceDetailPage({ params }: PageProps) {
     isPublic: deployment.isPublic,
     version: deployment.version || '1.0.0',
     health: deployment.health || {},
+    price: deployment.price || 0,
   };
 
   return (
