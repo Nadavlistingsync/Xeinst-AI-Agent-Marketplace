@@ -4,8 +4,11 @@ import { useSession, signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Play, Pause, RefreshCw, Trash2 } from 'lucide-react';
+import { Play, Pause, RefreshCw, Trash2, Download, Coins } from 'lucide-react';
 import { DeploymentWithMetrics } from '@/types/deployment';
+import { useState } from 'react';
+import { toast } from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 interface AgentPageProps {
   deployment: DeploymentWithMetrics;
@@ -23,6 +26,8 @@ export default function AgentPage({
   onDelete
 }: AgentPageProps) {
   const { data: session } = useSession();
+  const router = useRouter();
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const isActive = deployment.status === 'active';
   const isPending = deployment.status === 'pending' || deployment.status === 'deploying';
@@ -36,15 +41,46 @@ export default function AgentPage({
     }
   };
 
-  // Download handler
   const handleDownload = async () => {
     if (!session) {
       signIn();
       return;
     }
-    // Download logic here (e.g., fetch(`/api/agents/${deployment.id}/download`))
-    // ...
-    alert('Download logic goes here!');
+
+    setIsDownloading(true);
+    try {
+      const response = await fetch(`/api/agents/${deployment.id}/download`);
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Download failed');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${deployment.name}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Download started!');
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      if (errorMessage.includes('Insufficient credits')) {
+        toast.error('Insufficient credits. Please buy more to download.', {
+          action: {
+            label: 'Buy Credits',
+            onClick: () => router.push('/pricing'),
+          },
+        });
+      } else {
+        toast.error(errorMessage);
+      }
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   // Run handler
@@ -55,7 +91,7 @@ export default function AgentPage({
     }
     // Run logic here (e.g., call run endpoint)
     // ...
-    alert('Run logic goes here!');
+    toast.info('Run functionality is not yet implemented.');
   };
 
   return (
@@ -162,8 +198,10 @@ export default function AgentPage({
         )}
 
         <div className="flex gap-4 mt-4">
-          <Button onClick={handleDownload} variant="outline">
-            Download
+          <Button onClick={handleDownload} variant="outline" disabled={isDownloading}>
+            <Download className="mr-2 h-4 w-4" />
+            {isDownloading ? 'Downloading...' : `Download for ${deployment.price ?? 0} credits`}
+            {deployment.price && deployment.price > 0 && <Coins className="ml-2 h-4 w-4" />}
           </Button>
           <Button onClick={handleRun} variant="default">
             Run Agent

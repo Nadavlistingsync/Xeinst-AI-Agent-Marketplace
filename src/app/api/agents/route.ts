@@ -15,16 +15,17 @@ const agentSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const url = new URL(req.url);
     const creator = url.searchParams.get('creator');
 
     let where: any = {};
+    // Only filter by creator if explicitly requested
     if (creator === 'true') {
+      // Optionally, you could require auth for this branch only
+      const session = await getServerSession(authOptions);
+      if (!session?.user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
       where = { createdBy: session.user.id };
     }
 

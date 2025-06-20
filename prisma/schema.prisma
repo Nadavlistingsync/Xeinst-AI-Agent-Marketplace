@@ -139,6 +139,7 @@ model Deployment {
   version         String    @default("1.0.0")
   health          Json?     @default("{}")
   pricePerRun     Int                @default(1)
+  price           Int?             @default(0)
 
   // Relations
   creator         User      @relation("DeploymentCreator", fields: [createdBy], references: [id])
@@ -147,6 +148,9 @@ model Deployment {
   reviews         Review[]
   metrics         AgentMetrics[]
   logs            AgentLog[]
+
+  @@index([createdBy])
+  @@index([status])
 }
 
 model AgentFeedback {

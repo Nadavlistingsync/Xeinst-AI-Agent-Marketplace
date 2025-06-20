@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import { signIn, useSession } from 'next-auth/react';
 
 interface Product {
   id: string;
@@ -26,11 +27,16 @@ interface ProductDetailsProps {
 }
 
 export default function ProductDetails({ product, isPurchased }: ProductDetailsProps) {
+  const { data: session } = useSession();
   const [purchased, setPurchased] = useState(isPurchased);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handlePurchase = async () => {
+    if (!session) {
+      signIn();
+      return;
+    }
     setError(null);
     try {
       const res = await fetch('/api/purchase-agent', {
@@ -50,6 +56,10 @@ export default function ProductDetails({ product, isPurchased }: ProductDetailsP
   };
 
   const handleDownload = async () => {
+    if (!session) {
+      signIn();
+      return;
+    }
     setDownloading(true);
     setError(null);
     try {
