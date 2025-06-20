@@ -39,7 +39,7 @@ async function canDownloadAgent(agentId: string, userId: string): Promise<{ auth
 
 
 export async function GET(
-  req: NextRequest,
+  _req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
