@@ -631,8 +631,8 @@ export class AIInterfaceGenerator {
   /**
    * Generate React/Next.js component code for the interface
    */
-  async generateReactComponent(interface: GeneratedInterface): Promise<string> {
-    const componentName = `AgentInterface_${interface.agentId.replace(/[^a-zA-Z0-9]/g, '_')}`;
+  async generateReactComponent(generatedInterface: GeneratedInterface): Promise<string> {
+    const componentName = `AgentInterface_${generatedInterface.agentId.replace(/[^a-zA-Z0-9]/g, '_')}`;
     
     return `
 import React, { useState } from 'react';
@@ -681,10 +681,10 @@ export default function ${componentName}({ agentId, onResult }: ${componentName}
 
   return (
     <div className="ai-generated-interface">
-      <style jsx>{${JSON.stringify(interface.styles)}}</style>
+      <style jsx>{${JSON.stringify(generatedInterface.styles)}}</style>
       
       <form onSubmit={handleSubmit}>
-        ${this.generateJSXFromComponents(interface.components)}
+        ${this.generateJSXFromComponents(generatedInterface.components)}
       </form>
     </div>
   );
