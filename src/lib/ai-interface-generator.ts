@@ -109,18 +109,84 @@ export class AIInterfaceGenerator {
   private generateInputComponents(agent: Agent): InterfaceComponent[] {
     const components: InterfaceComponent[] = [];
     
-    // Parse the input schema to create appropriate form components
-    if (agent.inputSchema && typeof agent.inputSchema === 'object') {
-      const schema = agent.inputSchema as any;
-      
-      if (schema.properties) {
-        Object.entries(schema.properties).forEach(([key, prop]: [string, any]) => {
-          const component = this.createInputComponent(key, prop, schema.required?.includes(key));
-          if (component) {
-            components.push(component);
-          }
-        });
+    // Try to parse input schema from documentation or create default components
+    let schema: any = null;
+    
+    // Check if there's any schema information in the documentation
+    if (agent.documentation) {
+      try {
+        // Look for JSON schema in documentation
+        const schemaMatch = agent.documentation.match(/\{[\s\S]*"properties"[\s\S]*\}/);
+        if (schemaMatch) {
+          schema = JSON.parse(schemaMatch[0]);
+        }
+      } catch (error) {
+        // If parsing fails, continue with default components
       }
+    }
+    
+    // If we have a valid schema, create components from it
+    if (schema && schema.properties) {
+      Object.entries(schema.properties).forEach(([key, prop]: [string, any]) => {
+        const component = this.createInputComponent(key, prop, schema.required?.includes(key));
+        if (component) {
+          components.push(component);
+        }
+      });
+    } else {
+      // Create default input components based on agent description
+      const defaultInputs = this.createDefaultInputComponents(agent);
+      components.push(...defaultInputs);
+    }
+
+    return components;
+  }
+
+  /**
+   * Create default input components when no schema is available
+   */
+  private createDefaultInputComponents(agent: Agent): InterfaceComponent[] {
+    const components: InterfaceComponent[] = [];
+    
+    // Create a default text input for the main input
+    components.push({
+      id: 'input',
+      type: 'input',
+      props: {
+        id: 'input',
+        name: 'input',
+        label: 'Input',
+        placeholder: `Enter your ${agent.name.toLowerCase()} input...`,
+        required: true
+      },
+      validation: [
+        {
+          type: 'required',
+          value: true,
+          message: 'Input is required'
+        }
+      ],
+      styling: {
+        className: 'form-input'
+      }
+    });
+
+    // Add additional context field if it's a complex agent
+    if (agent.description && agent.description.length > 100) {
+      components.push({
+        id: 'context',
+        type: 'text',
+        props: {
+          id: 'context',
+          name: 'context',
+          label: 'Additional Context',
+          placeholder: 'Provide any additional context or parameters...',
+          rows: 3
+        },
+        styling: {
+          className: 'form-textarea'
+        }
+      });
     }
 
     return components;
