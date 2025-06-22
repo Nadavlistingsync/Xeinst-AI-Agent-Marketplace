@@ -10,18 +10,26 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const deployment = await getDeploymentById(params.slug);
-  
-  if (!deployment) {
-    return {
-      title: "Agent Not Found",
-    };
-  }
+  try {
+    const deployment = await getDeploymentById(params.slug);
 
-  return {
-    title: `${deployment.name} | AI Agent`,
-    description: deployment.description,
-  };
+    if (!deployment) {
+      return {
+        title: "Agent Not Found",
+      };
+    }
+
+    return {
+      title: `${deployment.name} | AI Agent`,
+      description: deployment.description,
+    };
+  } catch (error) {
+    console.error("Error in generateMetadata:", error);
+    return {
+      title: "Error",
+      description: "Failed to load agent metadata."
+    }
+  }
 }
 
 export default async function MarketplaceDetailPage({ params }: PageProps) {
