@@ -84,7 +84,7 @@ export default function UploadPage() {
     }
   };
 
-  const handleInterfaceGenerated = (interfaceData: any) => {
+  const handleInterfaceGenerated = () => {
     toast.success('AI Interface generated! Your agent is now ready for the marketplace.');
     // Optionally redirect to marketplace or agent details
     setTimeout(() => {
