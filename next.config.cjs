@@ -17,6 +17,7 @@ const nextConfig = {
     config.ignoreWarnings = [
       /Critical dependency: the request of a dependency is an expression/,
       /Critical dependency: require function is used in a way in which dependencies cannot be statically extracted/,
+      /Serializing big strings/,
     ];
 
     // Optimize cache performance
@@ -25,9 +26,12 @@ const nextConfig = {
       compression: 'gzip',
       maxMemoryGenerations: 1,
       type: 'filesystem',
+      buildDependencies: {
+        config: [__filename],
+      },
     };
 
-    // Optimize for large strings
+    // Optimize for large strings and better performance
     config.optimization = {
       ...config.optimization,
       splitChunks: {
@@ -39,15 +43,32 @@ const nextConfig = {
             test: /[\\/]node_modules[\\/]/,
             name: 'vendors',
             chunks: 'all',
+            priority: 10,
+          },
+          common: {
+            name: 'common',
+            minChunks: 2,
+            chunks: 'all',
+            priority: 5,
           },
         },
       },
+      runtimeChunk: 'single',
     };
+
+    // Optimize module resolution
+    config.resolve.modules = ['node_modules', 'src'];
     
     return config;
   },
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client'],
+    optimizePackageImports: ['@prisma/client', '@upstash/redis'],
+  },
+  // Reduce bundle size warnings
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
   },
 };
 
