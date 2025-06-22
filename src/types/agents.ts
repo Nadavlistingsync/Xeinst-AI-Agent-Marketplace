@@ -6,15 +6,18 @@ export interface Agent {
   id: string;
   name: string;
   description: string;
+  category: string;
+  price: number;
+  documentation?: string | null;
+  fileUrl: string;
   version: string;
+  environment: string;
   framework: string;
   modelType: string;
-  status: DeploymentStatus;
   isPublic: boolean;
   createdBy: string;
   createdAt: Date;
   updatedAt: Date;
-  metadata: Record<string, any>;
 }
 
 export interface AgentMetrics {

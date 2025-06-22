@@ -1,4 +1,4 @@
-import { Agent } from '@/types/agents';
+import { Agent } from '@/types/agent';
 
 export interface GeneratedInterface {
   id: string;

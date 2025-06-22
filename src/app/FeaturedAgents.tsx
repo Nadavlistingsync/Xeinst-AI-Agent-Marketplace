@@ -4,7 +4,15 @@ interface Agent {
   id: string;
   name: string;
   description: string;
-  status: string;
+  category: string;
+  price: number;
+  fileUrl: string;
+  version: string;
+  environment: string;
+  framework: string;
+  modelType: string;
+  isPublic: boolean;
+  createdBy: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,7 +59,8 @@ export function FeaturedAgents() {
         <div key={agent.id}>
           <h3>{agent.name}</h3>
           <p>{agent.description}</p>
-          <p>Status: {agent.status}</p>
+          <p>Category: {agent.category}</p>
+          <p>Price: ${agent.price}</p>
         </div>
       ))}
     </div>
