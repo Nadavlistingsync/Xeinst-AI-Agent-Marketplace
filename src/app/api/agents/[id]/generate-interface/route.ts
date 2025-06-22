@@ -52,10 +52,10 @@ export async function POST(
       data: {
         id: generatedInterface.id,
         agentId: agent.id,
-        components: generatedInterface.components,
+        components: JSON.parse(JSON.stringify(generatedInterface.components)),
         styles: generatedInterface.styles,
         layout: generatedInterface.layout,
-        metadata: generatedInterface.metadata,
+        metadata: JSON.parse(JSON.stringify(generatedInterface.metadata)),
         reactCode: reactComponent,
         createdBy: session.user.id,
       }
