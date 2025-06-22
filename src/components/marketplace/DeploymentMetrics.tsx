@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Activity, Clock, Zap, Users } from "lucide-react";
-import { AgentMetrics } from "@prisma/client";
 
 interface DeploymentMetricsProps {
   deploymentId: string;
@@ -19,7 +18,7 @@ interface MetricsData {
 }
 
 export function DeploymentMetrics({ deploymentId }: DeploymentMetricsProps) {
-  const [metrics, setMetrics] = useState<AgentMetrics[]>([]);
+  const [metrics, setMetrics] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
