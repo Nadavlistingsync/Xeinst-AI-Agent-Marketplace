@@ -62,7 +62,7 @@ export function FeaturedAgents() {
     <div key={agent.id} className="bg-white/5 rounded-xl p-6 hover:bg-white/10 transition-all duration-300">
       <div className="aspect-video relative mb-4 rounded-lg overflow-hidden">
         <Image
-          src={agent.metadata?.image || '/agent-placeholder.png'}
+          src={agent.image || '/agent-placeholder.png'}
           alt={agent.name}
           fill
           className="object-cover"
@@ -75,10 +75,10 @@ export function FeaturedAgents() {
         <div className="flex items-center">
           <span className="text-yellow-500">★</span>
           <span className="ml-1 text-gray-300">
-            {agent.metadata?.rating || 0}
+            {agent.rating || 0}
           </span>
           <span className="text-gray-400 ml-1">
-            ({agent.metadata?.reviews || 0} reviews)
+            ({agent.reviews || 0} reviews)
           </span>
         </div>
         <Link
