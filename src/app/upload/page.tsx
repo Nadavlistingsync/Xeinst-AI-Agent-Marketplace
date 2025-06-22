@@ -2,11 +2,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
+import AIInterfaceGenerator from "@/components/AIInterfaceGenerator";
 
 export default function UploadPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [uploadedAgentId, setUploadedAgentId] = useState<string | null>(null);
+  const [showInterfaceGenerator, setShowInterfaceGenerator] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     category: "",
@@ -68,8 +71,10 @@ export default function UploadPage() {
         throw new Error(errorData.error || 'Failed to upload agent');
       }
 
-      toast.success('Agent uploaded successfully to marketplace!');
-      router.push('/marketplace');
+      const result = await response.json();
+      setUploadedAgentId(result.id);
+      setShowInterfaceGenerator(true);
+      toast.success('Agent uploaded successfully! Now generate your AI interface.');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during upload';
       setError(errorMessage);
@@ -79,10 +84,107 @@ export default function UploadPage() {
     }
   };
 
+  const handleInterfaceGenerated = (interfaceData: any) => {
+    toast.success('AI Interface generated! Your agent is now ready for the marketplace.');
+    // Optionally redirect to marketplace or agent details
+    setTimeout(() => {
+      router.push('/marketplace');
+    }, 2000);
+  };
+
+  if (showInterfaceGenerator && uploadedAgentId) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              🎉 Agent Uploaded Successfully!
+            </h1>
+            <p className="text-gray-600">
+              Now let's create a beautiful AI-powered interface for your agent.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* AI Interface Generator */}
+            <div className="lg:col-span-2">
+              <AIInterfaceGenerator 
+                agentId={uploadedAgentId} 
+                onInterfaceGenerated={handleInterfaceGenerated}
+              />
+            </div>
+
+            {/* Sidebar with next steps */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  🚀 Next Steps
+                </h3>
+                <div className="space-y-3 text-sm text-gray-600">
+                  <div className="flex items-start">
+                    <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                      ✓
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Agent Uploaded</p>
+                      <p>Your agent is now in the marketplace</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                      2
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Generate Interface</p>
+                      <p>Create a professional UI for your agent</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="w-6 h-6 bg-gray-300 text-gray-600 rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
+                      3
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">Deploy & Share</p>
+                      <p>Your agent will be live in the marketplace</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                  💡 Pro Tips
+                </h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Choose a theme that matches your brand</li>
+                  <li>• Test different layouts for best UX</li>
+                  <li>• Enable features your users will need</li>
+                  <li>• Download the React code for customization</li>
+                </ul>
+              </div>
+
+              <button
+                onClick={() => router.push('/marketplace')}
+                className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Skip & Go to Marketplace
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black text-white p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Upload New Agent to Marketplace</h1>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Upload New Agent to Marketplace</h1>
+          <p className="text-gray-400">
+            Upload your AI agent and get a professional interface automatically generated for you.
+          </p>
+        </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -242,7 +344,7 @@ export default function UploadPage() {
               placeholder="Define the JSON schema for your agent's input..."
             />
             <p className="text-xs text-gray-400 mt-1">
-              Define the structure and validation rules for the input your agent expects.
+              Define the structure and validation rules for the input your agent expects. This will be used to generate your AI interface.
             </p>
           </div>
 
@@ -265,7 +367,7 @@ export default function UploadPage() {
               disabled={loading}
               className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
             >
-              {loading ? 'Uploading...' : 'Upload to Marketplace'}
+              {loading ? 'Uploading...' : 'Upload Agent & Generate Interface'}
             </button>
           </div>
         </form>
