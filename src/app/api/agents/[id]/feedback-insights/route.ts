@@ -22,11 +22,6 @@ export async function GET(
       return createErrorResponse('Unauthorized');
     }
 
-    // Validate agent ID
-    if (!z.string().uuid().safeParse(params.id).success) {
-      return createErrorResponse('Invalid agent ID format');
-    }
-
     const agent = await prisma.deployment.findUnique({
       where: { id: params.id },
       include: {
