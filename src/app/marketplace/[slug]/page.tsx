@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDeploymentById } from "@/lib/db-helpers";
-// import AgentDetails from "@/components/marketplace/AgentDetails";
+import AgentDetails from "@/components/marketplace/AgentDetails";
 
 interface PageProps {
   params: {
@@ -33,8 +33,7 @@ export default async function MarketplaceDetailPage({ params }: PageProps) {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1>Agent Name: {deployment.name}</h1>
-      <p>If you can see this, the basic page is working.</p>
+      <AgentDetails deployment={deployment} />
     </div>
   );
 } 

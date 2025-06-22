@@ -3,10 +3,10 @@ import { Star, ArrowDownTray, Clock } from "@heroicons/react/24/outline";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader } from "../ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { DeploymentActions } from "./DeploymentActions";
-import { DeploymentMetrics } from "./DeploymentMetrics";
-import { DeploymentFeedback } from "./DeploymentFeedback";
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+// import { DeploymentActions } from "./DeploymentActions";
+// import { DeploymentMetrics } from "./DeploymentMetrics";
+// import { DeploymentFeedback } from "./DeploymentFeedback";
 
 interface AgentDetailsProps {
   deployment: Deployment;
@@ -63,25 +63,10 @@ export default function AgentDetails({ deployment }: AgentDetailsProps) {
             </div>
           </CardContent>
         </Card>
-
-        <Tabs defaultValue="metrics">
-          <TabsList>
-            <TabsTrigger value="metrics">Metrics</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="metrics" className="mt-6">
-            <DeploymentMetrics deploymentId={deployment.id} />
-          </TabsContent>
-
-          <TabsContent value="feedback" className="mt-6">
-            <DeploymentFeedback deploymentId={deployment.id} />
-          </TabsContent>
-        </Tabs>
       </div>
 
       <div className="lg:col-span-1">
-        <DeploymentActions deployment={deployment} />
+        {/* Actions will go here */}
       </div>
     </div>
   );
