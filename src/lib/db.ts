@@ -1,6 +1,5 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaClientKnownRequestError, PrismaClientInitializationError, PrismaClientValidationError } from '@prisma/client/runtime/library';
-import * as Sentry from '@sentry/nextjs';
 import { AppError } from './error-handling';
 
 const MAX_RETRIES = 3;
@@ -95,7 +94,7 @@ export async function withRetry<T>(
       await new Promise(resolve => setTimeout(resolve, delayMs));
       
       if (context) {
-        Sentry.setContext('retry_context', {
+        console.log('Retry context:', {
           ...context,
           retryCount: MAX_RETRIES - retries,
           delayMs
@@ -129,9 +128,9 @@ export async function withRetry<T>(
       throw new AppError('Validation error', 400, 'VALIDATION_ERROR', error);
     }
 
-    // Log unexpected errors to Sentry
+    // Log unexpected errors
     if (process.env.NODE_ENV === 'production') {
-      Sentry.captureException(error, {
+      console.error('Database error:', error, {
         tags: {
           type: 'database_error',
           ...context

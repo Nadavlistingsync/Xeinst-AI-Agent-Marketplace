@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/nextjs';
 import { setTag, setContext } from './sentry';
 
 interface PerformanceMetrics {
@@ -36,22 +35,15 @@ class PerformanceMonitor {
     let result: T;
     let success = true;
     let errorObj: Error | undefined = undefined;
-    await Sentry.startSpan({
-      name: key,
-      op: 'performance'
-    }, async (span) => {
-      try {
-        span.setAttribute('operation', key);
-        if (metadata) {
-          span.setAttribute('metadata', JSON.stringify(metadata));
-        }
-        result = await operation();
-      } catch (error) {
-        success = false;
-        errorObj = error as Error;
-        throw error;
-      }
-    });
+    
+    try {
+      result = await operation();
+    } catch (error) {
+      success = false;
+      errorObj = error as Error;
+      throw error;
+    }
+    
     const endTime = performance.now();
     const duration = endTime - startTime;
     this.recordMetric(key, {
@@ -62,6 +54,7 @@ class PerformanceMonitor {
       error: errorObj,
       metadata,
     });
+    
     if (!success && errorObj) {
       throw errorObj;
     }

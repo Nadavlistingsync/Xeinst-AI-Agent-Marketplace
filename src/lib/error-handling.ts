@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import * as Sentry from '@sentry/nextjs';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
 
@@ -52,9 +51,9 @@ export function handleApiError(error: unknown): ApiError {
   }
 
   if (error instanceof Error) {
-    // Log unexpected errors to Sentry
+    // Log unexpected errors
     if (!(error instanceof ZodError) && !(error instanceof Prisma.PrismaClientKnownRequestError)) {
-      Sentry.captureException(error);
+      console.error('API Error:', error);
     }
     return {
       message: error.message,
@@ -64,7 +63,7 @@ export function handleApiError(error: unknown): ApiError {
   }
 
   // Handle unknown error types
-  Sentry.captureException(error);
+  console.error('Unknown Error:', error);
   return {
     message: 'An unexpected error occurred',
     status: 500,
@@ -133,7 +132,7 @@ export async function withErrorHandling<T>(
   } catch (error) {
     const apiError = handleApiError(error);
     if (context) {
-      Sentry.setContext('operation_context', context);
+      console.log('Operation context:', context);
     }
     throw new AppError(
       apiError.message,

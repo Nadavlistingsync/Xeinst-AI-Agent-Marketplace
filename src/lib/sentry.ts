@@ -1,50 +1,24 @@
-import * as Sentry from '@sentry/nextjs';
-
+// Simple error logging without Sentry
 export function initSentry() {
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    Sentry.init({
-      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-      environment: process.env.NODE_ENV,
-      tracesSampleRate: 1.0,
-    });
-  }
+  // No-op for now
 }
 
 export function captureException(error: Error, context?: Record<string, any>) {
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    Sentry.withScope((scope) => {
-      if (context) {
-        Object.entries(context).forEach(([key, value]) => {
-          scope.setExtra(key, value);
-        });
-      }
-      Sentry.captureException(error);
-    });
-  }
-  console.error(error);
+  console.error('Error captured:', error, context);
 }
 
-export function captureMessage(message: string, level: Sentry.SeverityLevel = 'info') {
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    Sentry.captureMessage(message, level);
-  }
+export function captureMessage(message: string, level: string = 'info') {
   console.log(`[${level.toUpperCase()}] ${message}`);
 }
 
-export function setUser(user: { id: string; email?: string; username?: string } | null) {
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    Sentry.setUser(user);
-  }
+export function setUser(_user: { id: string; email?: string; username?: string } | null) {
+  // No-op for now
 }
 
-export function setTag(key: string, value: string) {
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    Sentry.setTag(key, value);
-  }
+export function setTag(_key: string, _value: string) {
+  // No-op for now
 }
 
-export function setContext(name: string, context: Record<string, any>) {
-  if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
-    Sentry.setContext(name, context);
-  }
+export function setContext(_name: string, _context: Record<string, any>) {
+  // No-op for now
 } 
