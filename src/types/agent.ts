@@ -2,8 +2,16 @@ export interface Agent {
   id: string;
   name: string;
   description: string;
-  status: string;
-  metadata: any;
+  category: string;
+  price: number;
+  documentation?: string | null;
+  fileUrl: string;
+  version: string;
+  environment: string;
+  framework: string;
+  modelType: string;
+  isPublic: boolean;
+  createdBy: string;
   createdAt: Date;
   updatedAt: Date;
   image?: string;
