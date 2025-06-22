@@ -16,7 +16,7 @@ export async function GET(
     }
 
     const agent = await prisma.deployment.findUnique({
-      where: { id: params.id },
+      where: { publicId: params.id },
       select: {
         id: true,
         createdBy: true,
