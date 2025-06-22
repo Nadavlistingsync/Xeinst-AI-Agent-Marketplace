@@ -15,7 +15,7 @@ export async function GET(
       return createErrorResponse(new Error('Unauthorized'));
     }
 
-    const agent = await prisma.deployment.findUnique({
+    const agent = await prisma.deployment.findFirst({
       where: { publicId: params.id },
       select: {
         id: true,

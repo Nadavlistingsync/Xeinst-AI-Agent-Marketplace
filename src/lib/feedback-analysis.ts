@@ -20,7 +20,7 @@ interface FeedbackAnalysis {
 }
 
 export async function analyzeFeedback(publicId: string): Promise<FeedbackAnalysis> {
-  const deployment = await prisma.deployment.findUnique({
+  const deployment = await prisma.deployment.findFirst({
     where: { publicId },
     select: { id: true }
   });
