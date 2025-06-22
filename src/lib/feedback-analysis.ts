@@ -19,18 +19,9 @@ interface FeedbackAnalysis {
   }>;
 }
 
-export async function analyzeFeedback(publicId: string): Promise<FeedbackAnalysis> {
-  const deployment = await prisma.deployment.findFirst({
-    where: { publicId },
-    select: { id: true }
-  });
-
-  if (!deployment) {
-    throw new ApiError('Deployment not found');
-  }
-
+export async function analyzeFeedback(deploymentId: string): Promise<FeedbackAnalysis> {
   const feedbacks = await prisma.agentFeedback.findMany({
-    where: { deploymentId: deployment.id },
+    where: { deploymentId },
     orderBy: { createdAt: 'desc' },
   });
 
