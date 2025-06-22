@@ -11,26 +11,28 @@ export default function UploadPage() {
     name: "",
     category: "",
     description: "",
-    price: "",
+    price: "0",
     documentation: "",
+    apiUrl: "",
+    version: "1.0.0",
+    environment: "production",
+    framework: "custom",
+    modelType: "custom",
   });
-  const [file, setFile] = useState<File | null>(null);
+  const [inputSchema, setInputSchema] = useState(`{
+  "type": "object",
+  "properties": {
+    "input": {
+      "type": "string",
+      "description": "Input for the agent"
+    }
+  },
+  "required": ["input"]
+}`);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const selectedFile = e.target.files[0];
-      if (!selectedFile.name.endsWith('.zip')) {
-        setError('Please upload a ZIP file');
-        return;
-      }
-      setFile(selectedFile);
-      setError('');
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -39,19 +41,26 @@ export default function UploadPage() {
     setError("");
 
     try {
-      if (!file) {
-        throw new Error('Please upload a ZIP file');
+      // Validate JSON schema
+      let parsedSchema;
+      try {
+        parsedSchema = JSON.parse(inputSchema);
+      } catch (err) {
+        throw new Error('Invalid JSON schema format');
       }
 
-      const form = new FormData();
-      form.append('file', file);
-      Object.entries(formData).forEach(([key, value]) => {
-        form.append(key, value);
-      });
+      const agentData = {
+        ...formData,
+        price: parseFloat(formData.price),
+        inputSchema: parsedSchema,
+      };
 
-      const response = await fetch('/api/upload-agent', {
+      const response = await fetch('/api/agents', {
         method: 'POST',
-        body: form,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(agentData),
       });
 
       if (!response.ok) {
@@ -59,8 +68,8 @@ export default function UploadPage() {
         throw new Error(errorData.error || 'Failed to upload agent');
       }
 
-      toast.success('Agent uploaded successfully!');
-      router.push('/dashboard');
+      toast.success('Agent uploaded successfully to marketplace!');
+      router.push('/marketplace');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during upload';
       setError(errorMessage);
@@ -72,43 +81,47 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen bg-black text-white p-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">Upload New Agent</h1>
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Upload New Agent to Marketplace</h1>
         
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-200">
-              Agent Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
-              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-200">
+                Agent Name *
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="e.g., Text Summarizer"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-200">
-              Category
-            </label>
-            <input
-              type="text"
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              required
-              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-200">
+                Category *
+              </label>
+              <input
+                type="text"
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="e.g., Text Processing"
+              />
+            </div>
           </div>
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-200">
-              Description
+              Description *
             </label>
             <textarea
               id="description"
@@ -116,26 +129,88 @@ export default function UploadPage() {
               value={formData.description}
               onChange={handleInputChange}
               required
-              rows={4}
+              rows={3}
               className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Describe what your agent does..."
             />
           </div>
 
-          <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-200">
-              Price
-            </label>
-            <input
-              type="number"
-              id="price"
-              name="price"
-              value={formData.price}
-              onChange={handleInputChange}
-              required
-              min="0"
-              step="0.01"
-              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-200">
+                Price (credits per run)
+              </label>
+              <input
+                type="number"
+                id="price"
+                name="price"
+                value={formData.price}
+                onChange={handleInputChange}
+                min="0"
+                step="0.01"
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="apiUrl" className="block text-sm font-medium text-gray-200">
+                API URL *
+              </label>
+              <input
+                type="url"
+                id="apiUrl"
+                name="apiUrl"
+                value={formData.apiUrl}
+                onChange={handleInputChange}
+                required
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="https://api.example.com/your-agent"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label htmlFor="version" className="block text-sm font-medium text-gray-200">
+                Version
+              </label>
+              <input
+                type="text"
+                id="version"
+                name="version"
+                value={formData.version}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="framework" className="block text-sm font-medium text-gray-200">
+                Framework
+              </label>
+              <input
+                type="text"
+                id="framework"
+                name="framework"
+                value={formData.framework}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="modelType" className="block text-sm font-medium text-gray-200">
+                Model Type
+              </label>
+              <input
+                type="text"
+                id="modelType"
+                name="modelType"
+                value={formData.modelType}
+                onChange={handleInputChange}
+                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           <div>
@@ -147,25 +222,28 @@ export default function UploadPage() {
               name="documentation"
               value={formData.documentation}
               onChange={handleInputChange}
-              required
               rows={4}
               className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              placeholder="Provide usage instructions, examples, and any important notes..."
             />
           </div>
 
           <div>
-            <label htmlFor="file" className="block text-sm font-medium text-gray-200">
-              Agent Files (ZIP)
+            <label htmlFor="inputSchema" className="block text-sm font-medium text-gray-200">
+              Input JSON Schema *
             </label>
-            <input
-              type="file"
-              id="file"
-              accept=".zip"
-              onChange={handleFileChange}
+            <textarea
+              id="inputSchema"
+              value={inputSchema}
+              onChange={(e) => setInputSchema(e.target.value)}
               required
-              className="mt-1 block w-full text-gray-200"
+              rows={8}
+              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 font-mono text-sm"
+              placeholder="Define the JSON schema for your agent's input..."
             />
-            <p className="text-xs text-gray-400 mt-1">Upload your agent files as a ZIP archive.</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Define the structure and validation rules for the input your agent expects.
+            </p>
           </div>
 
           {error && (
@@ -174,13 +252,20 @@ export default function UploadPage() {
             </div>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={() => router.push('/marketplace')}
+              className="px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={loading}
               className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
             >
-              {loading ? 'Uploading...' : 'Upload Agent'}
+              {loading ? 'Uploading...' : 'Upload to Marketplace'}
             </button>
           </div>
         </form>

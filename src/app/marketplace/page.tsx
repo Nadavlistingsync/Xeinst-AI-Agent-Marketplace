@@ -3,7 +3,7 @@ import { MarketplaceGrid } from "@/components/marketplace/MarketplaceGrid";
 import { MarketplaceFilters } from "@/components/marketplace/MarketplaceFilters";
 import { MarketplaceSearch } from "@/components/marketplace/MarketplaceSearch";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import Link from "next/link";
 import { Agent } from "@/app/api/agents/route";
 
@@ -35,12 +35,20 @@ export default async function MarketplacePage() {
             Discover and run powerful AI agents directly from your browser
           </p>
         </div>
-        <Button asChild>
-          <Link href="/deploy" className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Deploy New Agent
-          </Link>
-        </Button>
+        <div className="flex gap-3">
+          <Button asChild variant="outline">
+            <Link href="/upload" className="flex items-center gap-2">
+              <Upload className="w-4 h-4" />
+              Upload Agent
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/deploy" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Deploy Agent
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">

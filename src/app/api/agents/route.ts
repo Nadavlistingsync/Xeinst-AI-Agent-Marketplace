@@ -1,4 +1,7 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
 const agentSchema = z.object({
@@ -11,6 +14,21 @@ const agentSchema = z.object({
 
 export type Agent = z.infer<typeof agentSchema>;
 
+const uploadAgentSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().min(1, "Description is required"),
+  category: z.string().min(1, "Category is required"),
+  price: z.number().min(0, "Price must be non-negative"),
+  documentation: z.string().optional(),
+  apiUrl: z.string().url("Must be a valid URL"),
+  inputSchema: z.any(),
+  version: z.string().default("1.0.0"),
+  environment: z.string().default("production"),
+  framework: z.string().default("custom"),
+  modelType: z.string().default("custom"),
+});
+
+// Example agents for demonstration
 const exampleAgents: Agent[] = [
   {
     id: '1',
@@ -39,7 +57,7 @@ const exampleAgents: Agent[] = [
       required: ['imageUrl'],
     },
   },
-    {
+  {
     id: '3',
     name: 'Sentiment Analysis',
     description: 'Analyzes the sentiment of a piece of text (positive, negative, or neutral).',
@@ -55,9 +73,104 @@ const exampleAgents: Agent[] = [
 ];
 
 export async function GET() {
-  // In a real application, you would fetch this from a database.
-  // We'll add a short delay to simulate a network request.
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  return NextResponse.json(exampleAgents);
+  try {
+    // First try to get agents from the database
+    const dbAgents = await prisma.agent.findMany({
+      where: { isPublic: true },
+      orderBy: { createdAt: 'desc' },
+      take: 50, // Limit to prevent performance issues
+    });
+
+    // Convert database agents to the expected format
+    const marketplaceAgents: Agent[] = dbAgents.map(agent => ({
+      id: agent.id,
+      name: agent.name,
+      description: agent.description,
+      apiUrl: agent.fileUrl, // Using fileUrl as apiUrl for now
+      inputSchema: {
+        type: 'object',
+        properties: {
+          // Default schema - in a real app, this would be stored in the database
+          input: { type: 'string', description: 'Input for the agent.' },
+        },
+        required: ['input'],
+      },
+    }));
+
+    // Combine database agents with example agents
+    const allAgents = [...marketplaceAgents, ...exampleAgents];
+
+    // Add a short delay to simulate a network request
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    return NextResponse.json(allAgents);
+  } catch (error) {
+    console.error('Error fetching agents:', error);
+    // Fallback to example agents if database fails
+    return NextResponse.json(exampleAgents);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    const validatedData = uploadAgentSchema.parse(body);
+
+    // Create the agent in the database
+    const agent = await prisma.agent.create({
+      data: {
+        name: validatedData.name,
+        description: validatedData.description,
+        category: validatedData.category,
+        price: validatedData.price,
+        documentation: validatedData.documentation,
+        fileUrl: validatedData.apiUrl,
+        version: validatedData.version,
+        environment: validatedData.environment,
+        framework: validatedData.framework,
+        modelType: validatedData.modelType,
+        isPublic: true,
+        createdBy: session.user.id,
+      },
+    });
+
+    // Return the created agent in the marketplace format
+    const marketplaceAgent: Agent = {
+      id: agent.id,
+      name: agent.name,
+      description: agent.description,
+      apiUrl: agent.fileUrl,
+      inputSchema: validatedData.inputSchema || {
+        type: 'object',
+        properties: {
+          input: { type: 'string', description: 'Input for the agent.' },
+        },
+        required: ['input'],
+      },
+    };
+
+    return NextResponse.json(marketplaceAgent, { status: 201 });
+  } catch (error) {
+    console.error('Error creating agent:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to create agent' },
+      { status: 500 }
+    );
+  }
 } 
