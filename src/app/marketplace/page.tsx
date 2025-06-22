@@ -5,34 +5,34 @@ import { MarketplaceSearch } from "@/components/marketplace/MarketplaceSearch";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import { Agent } from "@/app/api/agents/route";
 
 export const metadata: Metadata = {
-  title: "AI Marketplace | Browse and Deploy AI Agents",
-  description: "Browse our collection of AI agents and products. Deploy, customize, and integrate AI solutions for your business needs.",
+  title: "Xeinst Agent Marketplace",
+  description: "Browse our collection of AI agents, and run them directly from the browser.",
 };
 
-export default function MarketplacePage({
-  searchParams,
-}: {
-  searchParams: {
-    query?: string;
-    framework?: string;
-    category?: string;
-    accessLevel?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    verified?: string;
-    popular?: string;
-    new?: string;
-  };
-}) {
+async function getAgents(): Promise<Agent[]> {
+  // In a real app, you might have this on the server if the API is internal,
+  // or you'd fetch from the absolute URL if it's external.
+  // For this example, we fetch from the API route.
+  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/agents`, { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error('Failed to fetch agents');
+  }
+  return res.json();
+}
+
+export default async function MarketplacePage() {
+  const agents = await getAgents();
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-4xl font-bold mb-2">AI Marketplace</h1>
+          <h1 className="text-4xl font-bold mb-2">Xeinst Agent Marketplace</h1>
           <p className="text-lg text-gray-600">
-            Discover and deploy powerful AI agents and solutions
+            Discover and run powerful AI agents directly from your browser
           </p>
         </div>
         <Button asChild>
@@ -53,7 +53,7 @@ export default function MarketplacePage({
             <MarketplaceSearch />
           </div>
           
-          <MarketplaceGrid searchParams={searchParams} />
+          <MarketplaceGrid agents={agents} />
         </div>
       </div>
     </div>

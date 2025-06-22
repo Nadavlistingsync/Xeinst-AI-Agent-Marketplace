@@ -1,57 +1,20 @@
 'use client';
-import { useEffect, useState } from 'react';
+
 import { Card, CardContent } from '@/components/ui/card';
-import { Deployment } from '@/types/deployment';
-import { AgentCard } from './AgentCard';
-import Link from 'next/link';
+import { InteractiveAgentCard } from './InteractiveAgentCard';
+import { Agent } from '@/app/api/agents/route';
 
 interface MarketplaceGridProps {
-  searchParams: {
-    query?: string;
-    framework?: string;
-    category?: string;
-    accessLevel?: string;
-    minPrice?: string;
-    maxPrice?: string;
-    verified?: string;
-    popular?: string;
-    new?: string;
-  };
+  agents: Agent[];
 }
 
-export function MarketplaceGrid({ searchParams }: MarketplaceGridProps) {
-  const [deployments, setDeployments] = useState<Deployment[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchDeployments = async () => {
-      try {
-        const queryParams = new URLSearchParams();
-        Object.entries(searchParams).forEach(([key, value]) => {
-          if (value) queryParams.append(key, value);
-        });
-
-        const response = await fetch(`/api/deployments?${queryParams.toString()}`);
-        if (!response.ok) throw new Error('Failed to fetch deployments');
-        
-        const data = await response.json();
-        setDeployments(data);
-      } catch (error) {
-        console.error('Error fetching deployments:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDeployments();
-  }, [searchParams]);
-
-  if (loading) {
+export function MarketplaceGrid({ agents }: MarketplaceGridProps) {
+  if (!agents || agents.length === 0) {
     return (
       <Card>
         <CardContent className="py-8">
           <div className="text-center text-gray-500">
-            Loading deployments...
+            No agents found.
           </div>
         </CardContent>
       </Card>
@@ -59,26 +22,10 @@ export function MarketplaceGrid({ searchParams }: MarketplaceGridProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {deployments.length === 0 ? (
-        <Card>
-          <CardContent className="py-8">
-            <div className="text-center text-gray-500">
-              No agents found matching your criteria
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {deployments.map((deployment) => (
-            <Link href={`/agents/${deployment.id}`} key={deployment.id}>
-              <AgentCard
-                deployment={deployment}
-              />
-            </Link>
-          ))}
-        </div>
-      )}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {agents.map((agent) => (
+        <InteractiveAgentCard key={agent.id} agent={agent} />
+      ))}
     </div>
   );
 } 
