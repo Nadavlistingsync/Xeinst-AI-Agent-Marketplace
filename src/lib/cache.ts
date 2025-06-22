@@ -1,7 +1,14 @@
 import { Redis } from '@upstash/redis';
 import { AppError } from './error-handling';
 
-const redis = Redis.fromEnv();
+// Create Redis instance with fallback for missing env vars
+let redis: Redis | null = null;
+try {
+  redis = Redis.fromEnv();
+} catch (error) {
+  console.warn('Redis not configured, using in-memory fallback cache');
+}
+
 const DEFAULT_TTL = 60 * 5; // 5 minutes
 
 interface CacheOptions {
@@ -9,12 +16,61 @@ interface CacheOptions {
   tags?: string[];
 }
 
+// In-memory fallback cache
+class MemoryCache {
+  private cache = new Map<string, { value: any; expiry: number }>();
+  private tagMap = new Map<string, Set<string>>();
+
+  async get<T>(key: string): Promise<T | null> {
+    const item = this.cache.get(key);
+    if (!item) return null;
+    
+    if (Date.now() > item.expiry) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return item.value as T;
+  }
+
+  async set<T>(key: string, value: T, ttl: number = DEFAULT_TTL): Promise<void> {
+    this.cache.set(key, {
+      value,
+      expiry: Date.now() + (ttl * 1000)
+    });
+  }
+
+  async del(key: string): Promise<void> {
+    this.cache.delete(key);
+  }
+
+  async sadd(key: string, value: string): Promise<void> {
+    if (!this.tagMap.has(key)) {
+      this.tagMap.set(key, new Set());
+    }
+    this.tagMap.get(key)!.add(value);
+  }
+
+  async smembers(key: string): Promise<string[]> {
+    return Array.from(this.tagMap.get(key) || []);
+  }
+
+  async srem(key: string, value: string): Promise<void> {
+    this.tagMap.get(key)?.delete(value);
+  }
+
+  async flushdb(): Promise<void> {
+    this.cache.clear();
+    this.tagMap.clear();
+  }
+}
+
 export class Cache {
   private static instance: Cache;
-  private redis: Redis;
+  private redis: Redis | MemoryCache;
 
   private constructor() {
-    this.redis = redis;
+    this.redis = redis || new MemoryCache();
   }
 
   public static getInstance(): Cache {
@@ -45,9 +101,7 @@ export class Cache {
       const { ttl = DEFAULT_TTL, tags = [] } = options;
       const cacheKey = this.generateKey(key, tags);
 
-      await this.redis.set(cacheKey, value, {
-        ex: ttl
-      });
+      await this.redis.set(cacheKey, value, ttl);
 
       // Store key in tag sets for invalidation
       for (const tag of tags) {
@@ -81,7 +135,9 @@ export class Cache {
       for (const tag of tags) {
         const keys = await this.redis.smembers(`tag:${tag}`);
         if (keys.length) {
-          await this.redis.del(...keys);
+          for (const key of keys) {
+            await this.redis.del(key);
+          }
           await this.redis.del(`tag:${tag}`);
         }
       }

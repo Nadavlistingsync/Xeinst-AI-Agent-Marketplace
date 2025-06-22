@@ -74,12 +74,17 @@ const exampleAgents: Agent[] = [
 
 export async function GET() {
   try {
+    console.log('GET /api/agents: Starting to fetch agents...');
+    
     // First try to get agents from the database
+    console.log('GET /api/agents: Attempting database query...');
     const dbAgents = await prisma.agent.findMany({
       where: { isPublic: true },
       orderBy: { createdAt: 'desc' },
       take: 50, // Limit to prevent performance issues
     });
+    
+    console.log(`GET /api/agents: Found ${dbAgents.length} agents in database`);
 
     // Convert database agents to the expected format
     const marketplaceAgents: Agent[] = dbAgents.map(agent => ({
@@ -99,14 +104,24 @@ export async function GET() {
 
     // Combine database agents with example agents
     const allAgents = [...marketplaceAgents, ...exampleAgents];
+    
+    console.log(`GET /api/agents: Returning ${allAgents.length} total agents`);
 
     // Add a short delay to simulate a network request
     await new Promise(resolve => setTimeout(resolve, 300));
     
     return NextResponse.json(allAgents);
   } catch (error) {
-    console.error('Error fetching agents:', error);
+    console.error('GET /api/agents: Error fetching agents:', error);
+    
+    // Log more details about the error
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    
     // Fallback to example agents if database fails
+    console.log('GET /api/agents: Falling back to example agents');
     return NextResponse.json(exampleAgents);
   }
 }

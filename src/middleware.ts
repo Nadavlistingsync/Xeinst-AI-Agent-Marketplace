@@ -5,13 +5,21 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { AppError } from './lib/error-handling';
 
+// Create Redis instance with fallback
+let redis: Redis | null = null;
+try {
+  redis = Redis.fromEnv();
+} catch (error) {
+  console.warn('Redis not configured for middleware rate limiting, using in-memory fallback');
+}
+
 // Create a new ratelimiter that allows 10 requests per 10 seconds
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
+const ratelimit = redis ? new Ratelimit({
+  redis,
   limiter: Ratelimit.slidingWindow(10, '10 s'),
   analytics: true,
   prefix: '@upstash/ratelimit',
-});
+}) : null;
 
 // Paths that should be rate limited
 const RATE_LIMITED_PATHS = [
@@ -34,10 +42,21 @@ export async function middleware(request: NextRequest) {
   // Ensure we have a valid base URL
   const baseUrl = request.url || process.env.NEXTAUTH_URL || 'http://localhost:3000';
 
+  // Allow public access to certain API routes
+  const publicApiRoutes = ['/api/agents'];
+  const isPublicApiRoute = publicApiRoutes.some(route => 
+    request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + '/')
+  );
+
   if (isAuthPage) {
     if (token) {
       return NextResponse.redirect(new URL('/dashboard', baseUrl));
     }
+    return NextResponse.next();
+  }
+
+  // Skip authentication for public API routes
+  if (isPublicApiRoute) {
     return NextResponse.next();
   }
 
@@ -64,7 +83,7 @@ export async function middleware(request: NextRequest) {
     response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
     // Check if the path should be rate limited
-    if (RATE_LIMITED_PATHS.some(path => request.nextUrl.pathname.startsWith(path))) {
+    if (ratelimit && RATE_LIMITED_PATHS.some(path => request.nextUrl.pathname.startsWith(path))) {
       const ip = request.ip ?? '127.0.0.1';
       const { success, limit, reset, remaining } = await ratelimit.limit(
         `${ip}:${request.nextUrl.pathname}`

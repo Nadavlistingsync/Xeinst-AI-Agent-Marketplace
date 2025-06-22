@@ -18,6 +18,31 @@ const nextConfig = {
       /Critical dependency: the request of a dependency is an expression/,
       /Critical dependency: require function is used in a way in which dependencies cannot be statically extracted/,
     ];
+
+    // Optimize cache performance
+    config.cache = {
+      ...config.cache,
+      compression: 'gzip',
+      maxMemoryGenerations: 1,
+      type: 'filesystem',
+    };
+
+    // Optimize for large strings
+    config.optimization = {
+      ...config.optimization,
+      splitChunks: {
+        ...config.optimization.splitChunks,
+        chunks: 'all',
+        cacheGroups: {
+          ...config.optimization.splitChunks?.cacheGroups,
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+          },
+        },
+      },
+    };
     
     return config;
   },
