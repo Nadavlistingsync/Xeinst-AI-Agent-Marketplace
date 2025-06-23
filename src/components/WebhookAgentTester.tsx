@@ -146,6 +146,7 @@ export function WebhookAgentTester() {
         body: JSON.stringify({
           agentId: agentConfig.id,
           inputs: parsedInputs,
+          ...(agentConfig.id === 'custom-agent' && { webhookUrl: agentConfig.webhookUrl }),
         }),
       });
 

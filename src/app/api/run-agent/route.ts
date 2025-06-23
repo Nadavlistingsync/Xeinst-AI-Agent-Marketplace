@@ -187,15 +187,61 @@ export async function POST(request: NextRequest) {
 
   try {
     // Parse and validate request body
-    const body = await request.json();
-    const validatedData = runAgentSchema.parse(body);
+    let body;
+    try {
+      body = await request.json();
+    } catch (err) {
+      console.error('Invalid JSON in request body:', err);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid JSON in request body.',
+        },
+        {
+          status: 400,
+          headers: corsHeaders,
+        }
+      );
+    }
+    let validatedData;
+    try {
+      validatedData = runAgentSchema.parse(body);
+    } catch (err) {
+      console.error('Input validation error:', err);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Input validation error. Please check your agentId, inputs, and webhookUrl.',
+          details: err instanceof Error ? err.message : err,
+        },
+        {
+          status: 400,
+          headers: corsHeaders,
+        }
+      );
+    }
     const { agentId, inputs, webhookUrl } = validatedData;
 
     console.log(`Running agent ${agentId} with inputs:`, inputs);
 
+    // If custom-agent and webhookUrl is missing, return a clear error
+    if (agentId === 'custom-agent' && !webhookUrl) {
+      console.error('Custom agent test missing webhookUrl:', { agentId, inputs, webhookUrl });
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Custom agent test requires webhookUrl in the request payload.',
+          agentId,
+        },
+        {
+          status: 400,
+          headers: corsHeaders,
+        }
+      );
+    }
+
     // Get agent configuration
     const agentConfig = await getAgentConfig(agentId, webhookUrl);
-    // If webhookUrl is provided, allow testing even if agentConfig is null
     if (!agentConfig && !webhookUrl) {
       return NextResponse.json(
         { 
@@ -209,14 +255,12 @@ export async function POST(request: NextRequest) {
         }
       );
     }
-    // If webhookUrl is provided but agentConfig is null, create a fallback config
     const effectiveAgentConfig = agentConfig || (webhookUrl ? {
       id: agentId,
       name: 'Custom Agent',
       webhook_url: webhookUrl,
       status: 'active',
     } : null);
-
     if (!effectiveAgentConfig) {
       return NextResponse.json(
         { 
@@ -245,13 +289,12 @@ export async function POST(request: NextRequest) {
         }
       );
     }
-
     // Validate webhook URL
     if (!effectiveAgentConfig.webhook_url) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Agent webhook URL not configured',
+          error: 'Agent webhook URL is missing or invalid',
           agentId 
         },
         { 
@@ -262,13 +305,32 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the webhook
-    const webhookResult = await callWebhook(effectiveAgentConfig.webhook_url, inputs);
+    let webhookResult;
+    try {
+      webhookResult = await callWebhook(effectiveAgentConfig.webhook_url, inputs);
+    } catch (err) {
+      console.error('Webhook call failed:', err);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Failed to call agent webhook. The endpoint may be down, unreachable, or returned an error.',
+          details: err instanceof Error ? err.message : err,
+        },
+        {
+          status: 502,
+          headers: corsHeaders,
+        }
+      );
+    }
     const executionTime = Date.now() - startTime;
 
-    // Log successful run
-    await logAgentRun(agentId, inputs, webhookResult.data);
+    // Log agent run for analytics and monitoring
+    try {
+      await logAgentRun(agentId, inputs, webhookResult, undefined);
+    } catch (logErr) {
+      console.error('Failed to log agent run:', logErr);
+    }
 
-    // Return the webhook response
     return NextResponse.json(
       {
         success: true,
@@ -278,58 +340,20 @@ export async function POST(request: NextRequest) {
         result: webhookResult.data,
         webhookStatus: webhookResult.status,
       },
-      { 
+      {
         status: 200,
         headers: corsHeaders,
       }
     );
-
   } catch (error) {
-    const executionTime = Date.now() - startTime;
     console.error('Error running agent:', error);
-
-    // Handle validation errors
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Invalid request data',
-          details: error.errors 
-        },
-        { 
-          status: 400,
-          headers: corsHeaders,
-        }
-      );
-    }
-
-    // Handle webhook errors
-    if (error instanceof Error && error.message.includes('Webhook call failed')) {
-      // Log failed run
-      const body = await request.json().catch(() => ({}));
-      await logAgentRun(body.agentId, body.inputs, null, error.message);
-
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: error.message,
-          executionTime 
-        },
-        { 
-          status: 502, // Bad Gateway
-          headers: corsHeaders,
-        }
-      );
-    }
-
-    // Handle other errors
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Internal server error',
-        executionTime 
+      {
+        success: false,
+        error: 'Unexpected server error. Please try again or contact support.',
+        details: error instanceof Error ? error.message : error,
       },
-      { 
+      {
         status: 500,
         headers: corsHeaders,
       }
