@@ -20,8 +20,9 @@ const uploadAgentSchema = z.object({
   category: z.string().min(1, "Category is required"),
   price: z.number().min(0, "Price must be non-negative"),
   documentation: z.string().optional(),
-  apiUrl: z.string().url("Must be a valid URL"),
+  webhookUrl: z.string().url("Must be a valid webhook URL"),
   inputSchema: z.any().optional(),
+  exampleInputs: z.any().optional(),
   version: z.string().default("1.0.0"),
   environment: z.string().default("production"),
   framework: z.string().default("custom"),
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
         category: validatedData.category,
         price: validatedData.price,
         documentation: validatedData.documentation,
-        fileUrl: validatedData.apiUrl,
+        fileUrl: validatedData.webhookUrl, // Store webhook URL in fileUrl field
         version: validatedData.version,
         environment: validatedData.environment,
         framework: validatedData.framework,
@@ -157,12 +158,38 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Also create a deployment for the agent
+    await prisma.deployment.create({
+      data: {
+        name: validatedData.name,
+        description: validatedData.description,
+        createdBy: session.user.id,
+        deployedBy: session.user.id,
+        isPublic: true,
+        version: validatedData.version,
+        environment: validatedData.environment,
+        framework: validatedData.framework,
+        modelType: validatedData.modelType,
+        status: 'active',
+        accessLevel: 'public',
+        licenseType: 'free',
+        startDate: new Date(),
+        rating: 0,
+        totalRatings: 0,
+        downloadCount: 0,
+        health: {},
+        source: validatedData.webhookUrl, // Store webhook URL in source field
+        pricePerRun: Math.round(validatedData.price * 100), // Convert to cents
+        price: Math.round(validatedData.price * 100), // Convert to cents
+      },
+    });
+
     // Return the created agent in the marketplace format
     const marketplaceAgent: Agent = {
       id: agent.id,
       name: agent.name,
       description: agent.description,
-      apiUrl: agent.fileUrl,
+      apiUrl: validatedData.webhookUrl, // Use webhook URL as apiUrl
       inputSchema: validatedData.inputSchema || {
         type: 'object',
         properties: {

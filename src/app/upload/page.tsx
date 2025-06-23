@@ -3,26 +3,66 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
 import AIInterfaceGenerator from "@/components/AIInterfaceGenerator";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { 
+  Loader2, 
+  Upload, 
+  Code, 
+  Settings, 
+  FileText, 
+  Zap, 
+  CheckCircle, 
+  XCircle, 
+  ArrowRight,
+  Webhook,
+  TestTube,
+  Palette
+} from "lucide-react";
+
+interface AgentData {
+  name: string;
+  description: string;
+  category: string;
+  price: string;
+  webhookUrl: string;
+  documentation: string;
+  version: string;
+  environment: string;
+  framework: string;
+  modelType: string;
+  inputSchema: string;
+  exampleInputs: string;
+}
 
 export default function UploadPage() {
   const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [uploadedAgentId, setUploadedAgentId] = useState<string | null>(null);
   const [showInterfaceGenerator, setShowInterfaceGenerator] = useState(false);
-  const [formData, setFormData] = useState({
+  const [webhookTestResult, setWebhookTestResult] = useState<any>(null);
+  const [isWebhookValid, setIsWebhookValid] = useState(false);
+  
+  const [formData, setFormData] = useState<AgentData>({
     name: "",
     category: "",
     description: "",
     price: "0",
+    webhookUrl: "",
     documentation: "",
-    apiUrl: "",
     version: "1.0.0",
     environment: "production",
     framework: "custom",
     modelType: "custom",
-  });
-  const [inputSchema, setInputSchema] = useState(`{
+    inputSchema: `{
   "type": "object",
   "properties": {
     "input": {
@@ -31,31 +71,139 @@ export default function UploadPage() {
     }
   },
   "required": ["input"]
-}`);
+}`,
+    exampleInputs: `{
+  "input": "Hello, this is a test input"
+}`
+  });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const predefinedCategories = [
+    "Data Processing",
+    "Text Analysis", 
+    "Image Processing",
+    "API Integration",
+    "Automation",
+    "Analytics",
+    "Communication",
+    "Custom"
+  ];
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleStep1Validation = () => {
+    if (!formData.name.trim() || !formData.description.trim() || !formData.category.trim()) {
+      setError("Please fill in all required fields");
+      return false;
+    }
+    setError("");
+    setCurrentStep(2);
+    return true;
+  };
+
+  const handleStep2Validation = () => {
+    if (!formData.webhookUrl.trim()) {
+      setError("Please provide a webhook URL");
+      return false;
+    }
+    
+    try {
+      new URL(formData.webhookUrl);
+    } catch {
+      setError("Please provide a valid webhook URL");
+      return false;
+    }
+    
+    setError("");
+    setCurrentStep(3);
+    return true;
+  };
+
+  const handleStep3Validation = () => {
+    try {
+      JSON.parse(formData.inputSchema);
+      JSON.parse(formData.exampleInputs);
+    } catch (err) {
+      setError("Please provide valid JSON for input schema and example inputs");
+      return false;
+    }
+    
+    setError("");
+    setCurrentStep(4);
+    return true;
+  };
+
+  const testWebhook = async () => {
+    if (!formData.webhookUrl.trim()) {
+      setError("Please provide a webhook URL first");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    setWebhookTestResult(null);
+
+    try {
+      let parsedInputs;
+      try {
+        parsedInputs = JSON.parse(formData.exampleInputs);
+      } catch (e) {
+        throw new Error('Invalid JSON in example inputs');
+      }
+
+      const response = await fetch('/api/run-agent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agentId: 'test-agent',
+          inputs: parsedInputs,
+          webhookUrl: formData.webhookUrl, // Pass webhook URL for testing
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to test webhook');
+      }
+
+      setWebhookTestResult(data);
+      setIsWebhookValid(true);
+      toast.success('Webhook test successful!');
+    } catch (e) {
+      const errorMsg = e instanceof Error ? e.message : 'An unknown error occurred';
+      setError(errorMsg);
+      setIsWebhookValid(false);
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
     setLoading(true);
     setError("");
 
     try {
-      // Validate JSON schema
-      let parsedSchema;
+      // Validate JSON schema and inputs
+      let parsedSchema, parsedInputs;
       try {
-        parsedSchema = JSON.parse(inputSchema);
+        parsedSchema = JSON.parse(formData.inputSchema);
+        parsedInputs = JSON.parse(formData.exampleInputs);
       } catch (err) {
-        throw new Error('Invalid JSON schema format');
+        throw new Error('Invalid JSON format in schema or inputs');
       }
 
       const agentData = {
         ...formData,
         price: parseFloat(formData.price),
         inputSchema: parsedSchema,
+        exampleInputs: parsedInputs,
+        webhookUrl: formData.webhookUrl,
       };
 
       const response = await fetch('/api/agents', {
@@ -86,27 +234,59 @@ export default function UploadPage() {
 
   const handleInterfaceGenerated = () => {
     toast.success('AI Interface generated! Your agent is now ready for the marketplace.');
-    // Optionally redirect to marketplace or agent details
     setTimeout(() => {
       router.push('/marketplace');
     }, 2000);
   };
 
+  const resetSetup = () => {
+    setCurrentStep(1);
+    setFormData({
+      name: "",
+      category: "",
+      description: "",
+      price: "0",
+      webhookUrl: "",
+      documentation: "",
+      version: "1.0.0",
+      environment: "production",
+      framework: "custom",
+      modelType: "custom",
+      inputSchema: `{
+  "type": "object",
+  "properties": {
+    "input": {
+      "type": "string",
+      "description": "Input for the agent"
+    }
+  },
+  "required": ["input"]
+}`,
+      exampleInputs: `{
+  "input": "Hello, this is a test input"
+}`
+    });
+    setError("");
+    setWebhookTestResult(null);
+    setIsWebhookValid(false);
+  };
+
+  const progress = (currentStep / 4) * 100;
+
   if (showInterfaceGenerator && uploadedAgentId) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-8">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               🎉 Agent Uploaded Successfully!
             </h1>
-            <p className="text-gray-600">
+            <p className="text-xl text-muted-foreground">
               Now let's create a beautiful AI-powered interface for your agent.
             </p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* AI Interface Generator */}
             <div className="lg:col-span-2">
               <AIInterfaceGenerator 
                 agentId={uploadedAgentId} 
@@ -114,20 +294,22 @@ export default function UploadPage() {
               />
             </div>
 
-            {/* Sidebar with next steps */}
             <div className="space-y-6">
-              <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  🚀 Next Steps
-                </h3>
-                <div className="space-y-3 text-sm text-gray-600">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Zap className="h-5 w-5" />
+                    Next Steps
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="flex items-start">
                     <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-bold mr-3 mt-0.5">
                       ✓
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Agent Uploaded</p>
-                      <p>Your agent is now in the marketplace</p>
+                      <p className="font-medium">Agent Uploaded</p>
+                      <p className="text-sm text-muted-foreground">Your agent is now in the marketplace</p>
                     </div>
                   </div>
                   <div className="flex items-start">
@@ -135,8 +317,8 @@ export default function UploadPage() {
                       2
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Generate Interface</p>
-                      <p>Create a professional UI for your agent</p>
+                      <p className="font-medium">Generate Interface</p>
+                      <p className="text-sm text-muted-foreground">Create a professional UI for your agent</p>
                     </div>
                   </div>
                   <div className="flex items-start">
@@ -144,31 +326,34 @@ export default function UploadPage() {
                       3
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Deploy & Share</p>
-                      <p>Your agent will be live in the marketplace</p>
+                      <p className="font-medium">Deploy & Share</p>
+                      <p className="text-sm text-muted-foreground">Your agent will be live in the marketplace</p>
                     </div>
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
 
-              <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-                <h4 className="text-sm font-semibold text-blue-900 mb-2">
-                  💡 Pro Tips
-                </h4>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Choose a theme that matches your brand</li>
-                  <li>• Test different layouts for best UX</li>
-                  <li>• Enable features your users will need</li>
-                  <li>• Download the React code for customization</li>
-                </ul>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">💡 Pro Tips</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Choose a theme that matches your brand</li>
+                    <li>• Test different layouts for best UX</li>
+                    <li>• Enable features your users will need</li>
+                    <li>• Download the React code for customization</li>
+                  </ul>
+                </CardContent>
+              </Card>
 
-              <button
+              <Button
                 onClick={() => router.push('/marketplace')}
-                className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                variant="outline"
+                className="w-full"
               >
                 Skip & Go to Marketplace
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -177,208 +362,429 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Upload New Agent to Marketplace</h1>
-          <p className="text-gray-400 mb-4">
-            Upload your AI agent and get a professional interface automatically generated for you.
-          </p>
-          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
-            <p className="text-blue-300 text-sm">
-              💡 Need help making your agent Xeinst compatible? 
-              <a href="/guide" className="text-blue-400 hover:text-blue-300 underline ml-1">
-                Check out our comprehensive guide
-              </a>
-            </p>
-          </div>
-        </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-200">
-                Agent Name *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                placeholder="e.g., Text Summarizer"
-              />
+        {/* Progress Header */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Upload className="h-5 w-5" />
+                  Upload Agent to Marketplace
+                </CardTitle>
+                <CardDescription>
+                  Create and deploy your webhook-based AI agent in 4 simple steps
+                </CardDescription>
+              </div>
+              <Badge variant="outline">Step {currentStep} of 4</Badge>
             </div>
+            <Progress value={progress} className="mt-4" />
+          </CardHeader>
+        </Card>
 
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-200">
-                Category *
-              </label>
-              <input
-                type="text"
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                required
-                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                placeholder="e.g., Text Processing"
-              />
+        {/* Step 1: Basic Information */}
+        {currentStep === 1 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Step 1: Agent Information
+              </CardTitle>
+              <CardDescription>
+                Provide basic information about your agent
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Agent Name *</label>
+                  <Input
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Text Summarizer"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Category *</label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-input bg-background rounded-md"
+                    required
+                  >
+                    <option value="">Select a category</option>
+                    {predefinedCategories.map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Description *</label>
+                <Textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  placeholder="Describe what your agent does..."
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Documentation</label>
+                <Textarea
+                  name="documentation"
+                  value={formData.documentation}
+                  onChange={handleInputChange}
+                  placeholder="Provide usage instructions, examples, and any important notes..."
+                  rows={4}
+                />
+              </div>
+
+              {error && (
+                <Alert variant="destructive">
+                  <XCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex justify-end">
+                <Button onClick={handleStep1Validation}>
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 2: Webhook Configuration */}
+        {currentStep === 2 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Webhook className="h-5 w-5" />
+                Step 2: Webhook Configuration
+              </CardTitle>
+              <CardDescription>
+                Configure your agent's webhook endpoint
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Webhook URL *</label>
+                <Input
+                  name="webhookUrl"
+                  value={formData.webhookUrl}
+                  onChange={handleInputChange}
+                  placeholder="https://api.example.com/your-agent"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  This is the endpoint where your agent will receive requests and return responses
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Version</label>
+                  <Input
+                    name="version"
+                    value={formData.version}
+                    onChange={handleInputChange}
+                    placeholder="1.0.0"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Environment</label>
+                  <Input
+                    name="environment"
+                    value={formData.environment}
+                    onChange={handleInputChange}
+                    placeholder="production"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Framework</label>
+                  <Input
+                    name="framework"
+                    value={formData.framework}
+                    onChange={handleInputChange}
+                    placeholder="custom"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Price (credits per run)</label>
+                <Input
+                  name="price"
+                  type="number"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="0.01"
+                  placeholder="0"
+                />
+              </div>
+
+              {error && (
+                <Alert variant="destructive">
+                  <XCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                  Back
+                </Button>
+                <Button onClick={handleStep2Validation}>
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 3: Input Configuration */}
+        {currentStep === 3 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Code className="h-5 w-5" />
+                Step 3: Input Configuration
+              </CardTitle>
+              <CardDescription>
+                Define the input schema and test your webhook
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Input JSON Schema *</label>
+                <Textarea
+                  name="inputSchema"
+                  value={formData.inputSchema}
+                  onChange={handleInputChange}
+                  placeholder="Define the JSON schema for your agent's input..."
+                  rows={6}
+                  className="font-mono text-sm"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Define the structure and validation rules for the input your agent expects
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Example Inputs *</label>
+                <Textarea
+                  name="exampleInputs"
+                  value={formData.exampleInputs}
+                  onChange={handleInputChange}
+                  placeholder="Example inputs for testing..."
+                  rows={4}
+                  className="font-mono text-sm"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Provide example inputs that will be used to test your webhook
+                </p>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium">Test Your Webhook</h4>
+                  <Button 
+                    onClick={testWebhook} 
+                    disabled={loading || !formData.webhookUrl}
+                    size="sm"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <TestTube className="mr-2 h-4 w-4" />
+                        Test Webhook
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {webhookTestResult && (
+                  <Alert variant={isWebhookValid ? "default" : "destructive"}>
+                    {isWebhookValid ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : (
+                      <XCircle className="h-4 w-4" />
+                    )}
+                    <AlertDescription>
+                      <div className="space-y-2">
+                        <div className="font-medium">
+                          {isWebhookValid ? '✅ Webhook Test Successful' : '❌ Webhook Test Failed'}
+                        </div>
+                        {webhookTestResult.webhookStatus && (
+                          <div className="text-sm">
+                            <strong>Status:</strong> {webhookTestResult.webhookStatus}
+                          </div>
+                        )}
+                        {webhookTestResult.result && (
+                          <div className="text-sm">
+                            <strong>Response:</strong>
+                            <pre className="mt-1 p-2 bg-muted rounded text-xs overflow-auto">
+                              {JSON.stringify(webhookTestResult.result, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+
+              {error && (
+                <Alert variant="destructive">
+                  <XCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setCurrentStep(2)}>
+                  Back
+                </Button>
+                <Button onClick={handleStep3Validation} disabled={!isWebhookValid}>
+                  Continue
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Step 4: Review & Upload */}
+        {currentStep === 4 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Step 4: Review & Upload
+              </CardTitle>
+              <CardDescription>
+                Review your agent configuration and upload to marketplace
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="bg-muted p-4 rounded-lg space-y-3">
+                <h4 className="font-semibold">Configuration Summary</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <strong>Name:</strong> {formData.name}
+                  </div>
+                  <div>
+                    <strong>Category:</strong> {formData.category}
+                  </div>
+                  <div>
+                    <strong>Webhook URL:</strong> {formData.webhookUrl}
+                  </div>
+                  <div>
+                    <strong>Price:</strong> {formData.price} credits
+                  </div>
+                  <div className="md:col-span-2">
+                    <strong>Description:</strong> {formData.description}
+                  </div>
+                  <div className="md:col-span-2">
+                    <strong>Input Schema:</strong>
+                    <pre className="mt-1 p-2 bg-background rounded text-xs overflow-auto">
+                      {formData.inputSchema}
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-green-900 mb-2">
+                  🎉 Ready to Upload!
+                </h4>
+                <ul className="text-sm text-green-800 space-y-1">
+                  <li>• Your webhook has been tested and is working</li>
+                  <li>• Input schema is properly configured</li>
+                  <li>• Agent will be available in the marketplace</li>
+                  <li>• AI interface will be generated automatically</li>
+                </ul>
+              </div>
+
+              {error && (
+                <Alert variant="destructive">
+                  <XCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="flex gap-3">
+                <Button variant="outline" onClick={() => setCurrentStep(3)}>
+                  Back to Configuration
+                </Button>
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading Agent...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Agent & Generate Interface
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quick Actions */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={resetSetup}>
+                <Palette className="mr-2 h-4 w-4" />
+                Start Over
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/marketplace')}>
+                Browse Marketplace
+              </Button>
+              <Button variant="outline" onClick={() => router.push('/test-webhook')}>
+                <TestTube className="mr-2 h-4 w-4" />
+                Test Webhooks
+              </Button>
             </div>
-          </div>
-
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-200">
-              Description *
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              required
-              rows={3}
-              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Describe what your agent does..."
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-200">
-                Price (credits per run)
-              </label>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                value={formData.price}
-                onChange={handleInputChange}
-                min="0"
-                step="0.01"
-                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="apiUrl" className="block text-sm font-medium text-gray-200">
-                API URL *
-              </label>
-              <input
-                type="url"
-                id="apiUrl"
-                name="apiUrl"
-                value={formData.apiUrl}
-                onChange={handleInputChange}
-                required
-                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                placeholder="https://api.example.com/your-agent"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <label htmlFor="version" className="block text-sm font-medium text-gray-200">
-                Version
-              </label>
-              <input
-                type="text"
-                id="version"
-                name="version"
-                value={formData.version}
-                onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="framework" className="block text-sm font-medium text-gray-200">
-                Framework
-              </label>
-              <input
-                type="text"
-                id="framework"
-                name="framework"
-                value={formData.framework}
-                onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="modelType" className="block text-sm font-medium text-gray-200">
-                Model Type
-              </label>
-              <input
-                type="text"
-                id="modelType"
-                name="modelType"
-                value={formData.modelType}
-                onChange={handleInputChange}
-                className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="documentation" className="block text-sm font-medium text-gray-200">
-              Documentation
-            </label>
-            <textarea
-              id="documentation"
-              name="documentation"
-              value={formData.documentation}
-              onChange={handleInputChange}
-              rows={4}
-              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="Provide usage instructions, examples, and any important notes..."
-            />
-          </div>
-
-          <div>
-            <label htmlFor="inputSchema" className="block text-sm font-medium text-gray-200">
-              Input JSON Schema *
-            </label>
-            <textarea
-              id="inputSchema"
-              value={inputSchema}
-              onChange={(e) => setInputSchema(e.target.value)}
-              required
-              rows={8}
-              className="mt-1 block w-full rounded-md bg-gray-800/50 border-gray-700 text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 font-mono text-sm"
-              placeholder="Define the JSON schema for your agent's input..."
-            />
-            <p className="text-xs text-gray-400 mt-1">
-              Define the structure and validation rules for the input your agent expects. This will be used to generate your AI interface.
-            </p>
-          </div>
-
-          {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-500 text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={() => router.push('/marketplace')}
-              className="px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-            >
-              {loading ? 'Uploading...' : 'Upload Agent & Generate Interface'}
-            </button>
-          </div>
-        </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

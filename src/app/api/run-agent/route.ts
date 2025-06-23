@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma';
 const runAgentSchema = z.object({
   agentId: z.string().min(1, 'Agent ID is required'),
   inputs: z.record(z.any()).optional().default({}),
+  webhookUrl: z.string().url().optional(), // Add optional webhook URL for testing
 });
 
 // Mock database for testing (remove when Supabase is connected)
@@ -41,8 +42,18 @@ const corsHeaders = {
  * Get agent configuration from database
  * This function can be easily switched between mock and real database
  */
-async function getAgentConfig(agentId: string) {
+async function getAgentConfig(agentId: string, webhookUrl?: string) {
   try {
+    // If webhookUrl is provided for testing, use it directly
+    if (webhookUrl) {
+      return {
+        id: agentId,
+        name: 'Test Agent',
+        webhook_url: webhookUrl,
+        status: 'active',
+      };
+    }
+
     // Try to get from real database first
     const agent = await prisma.deployment.findUnique({
       where: { id: agentId },
@@ -178,12 +189,12 @@ export async function POST(request: NextRequest) {
     // Parse and validate request body
     const body = await request.json();
     const validatedData = runAgentSchema.parse(body);
-    const { agentId, inputs } = validatedData;
+    const { agentId, inputs, webhookUrl } = validatedData;
 
     console.log(`Running agent ${agentId} with inputs:`, inputs);
 
     // Get agent configuration
-    const agentConfig = await getAgentConfig(agentId);
+    const agentConfig = await getAgentConfig(agentId, webhookUrl);
     if (!agentConfig) {
       return NextResponse.json(
         { 
