@@ -195,7 +195,8 @@ export async function POST(request: NextRequest) {
 
     // Get agent configuration
     const agentConfig = await getAgentConfig(agentId, webhookUrl);
-    if (!agentConfig) {
+    // If webhookUrl is provided, allow testing even if agentConfig is null
+    if (!agentConfig && !webhookUrl) {
       return NextResponse.json(
         { 
           success: false, 
@@ -208,15 +209,35 @@ export async function POST(request: NextRequest) {
         }
       );
     }
+    // If webhookUrl is provided but agentConfig is null, create a fallback config
+    const effectiveAgentConfig = agentConfig || (webhookUrl ? {
+      id: agentId,
+      name: 'Custom Agent',
+      webhook_url: webhookUrl,
+      status: 'active',
+    } : null);
 
+    if (!effectiveAgentConfig) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Agent not found',
+          agentId 
+        },
+        { 
+          status: 404,
+          headers: corsHeaders,
+        }
+      );
+    }
     // Check if agent is active
-    if (agentConfig.status !== 'active') {
+    if (effectiveAgentConfig.status !== 'active') {
       return NextResponse.json(
         { 
           success: false, 
           error: 'Agent is not active',
           agentId,
-          status: agentConfig.status 
+          status: effectiveAgentConfig.status 
         },
         { 
           status: 400,
@@ -226,7 +247,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate webhook URL
-    if (!agentConfig.webhook_url) {
+    if (!effectiveAgentConfig.webhook_url) {
       return NextResponse.json(
         { 
           success: false, 
@@ -241,7 +262,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call the webhook
-    const webhookResult = await callWebhook(agentConfig.webhook_url, inputs);
+    const webhookResult = await callWebhook(effectiveAgentConfig.webhook_url, inputs);
     const executionTime = Date.now() - startTime;
 
     // Log successful run
@@ -252,7 +273,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         agentId,
-        agentName: agentConfig.name,
+        agentName: effectiveAgentConfig.name,
         executionTime,
         result: webhookResult.data,
         webhookStatus: webhookResult.status,
