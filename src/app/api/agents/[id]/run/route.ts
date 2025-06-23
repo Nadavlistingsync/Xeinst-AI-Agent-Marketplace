@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { executeAgent } from '@/lib/agent-execution';
 
-export async function POST(_req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -50,8 +51,11 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
         { userId: 'platform', type: 'earn', amount: platformShare, agentId },
       ],
     });
-    // TODO: Run the agent logic and return the result
-    return NextResponse.json({ success: true, message: 'Agent run successful (placeholder output)' });
+    // Parse input
+    const body = await req.json();
+    // Run the agent logic and return the result
+    const result = await executeAgent(agentId, body);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Error running agent:', error);
     return NextResponse.json({ error: 'Failed to run agent' }, { status: 500 });

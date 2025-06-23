@@ -85,18 +85,17 @@ export function InteractiveAgentCard({ agent }: { agent: Agent }) {
     setResult(null);
 
     try {
-      // In a real app, you would POST to agent.apiUrl.
-      // Here, we simulate a successful response for demonstration.
-      console.log('Submitting to:', agent.apiUrl, 'with data:', data);
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network delay
-      
-      const mockResponse = {
-        success: true,
-        data: `This is a mock response for the "${agent.name}" agent with input: ${JSON.stringify(data)}`,
-      };
-      
-      setResult(mockResponse);
-
+      // Call the real agent run API endpoint
+      const response = await fetch(`/api/agents/${agent.id}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (!response.ok || result.error) {
+        throw new Error(result.error || 'Failed to run agent');
+      }
+      setResult(result);
     } catch (e) {
       const errorMsg = e instanceof Error ? e.message : 'An unknown error occurred.';
       setError(errorMsg);
