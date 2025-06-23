@@ -19,7 +19,7 @@ export interface GeneratedInterface {
 
 export interface InterfaceComponent {
   id: string;
-  type: 'input' | 'output' | 'button' | 'card' | 'form' | 'chart' | 'table' | 'text' | 'image' | 'custom';
+  type: 'input' | 'output' | 'button' | 'card' | 'form' | 'chart' | 'table' | 'text' | 'image' | 'custom' | 'div';
   props: Record<string, any>;
   children?: InterfaceComponent[];
   validation?: ValidationRule[];
