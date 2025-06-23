@@ -12,7 +12,15 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Card } from '@/components/ui/card';
-import { CreateAgentButton, ViewAgentButton } from './DashboardActions';
+import { CreateAgentButton, ViewAgentButton, EditAgentButton } from './DashboardActions';
+
+interface AgentStats {
+  id: string;
+  name: string;
+  status: string;
+  downloads: number;
+  revenue: number;
+}
 
 export async function CreatorDashboard() {
   const session = await getServerSession(authOptions);
@@ -48,7 +56,7 @@ export async function CreatorDashboard() {
     totalDownloads: 0, // Simplified
   };
 
-  const agentStats = agents.map(agent => ({
+  const agentStats: AgentStats[] = agents.map((agent: { id: string; name: string }) => ({
       ...agent,
       status: 'active', // Simplified
       downloads: 0, // Simplified
@@ -115,7 +123,7 @@ export async function CreatorDashboard() {
                   <TableCell colSpan={5} className="text-center py-8 text-gray-400">No agents found.</TableCell>
                 </TableRow>
               ) : (
-                agentStats.map((agent, idx) => (
+                agentStats.map((agent: AgentStats, idx: number) => (
                   <TableRow key={agent.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-blue-50 transition'}>
                     <TableCell className="font-medium text-gray-800 flex items-center gap-2">
                       <span className="inline-block w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
@@ -131,7 +139,10 @@ export async function CreatorDashboard() {
                     <TableCell>{agent.downloads}</TableCell>
                     <TableCell>${agent.revenue.toFixed(2)}</TableCell>
                     <TableCell>
-                      <ViewAgentButton agentId={agent.id} />
+                      <div className="flex gap-2">
+                        <ViewAgentButton agentId={agent.id} />
+                        <EditAgentButton agentId={agent.id} />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

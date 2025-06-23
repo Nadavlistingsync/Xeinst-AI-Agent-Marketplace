@@ -4,7 +4,7 @@ import { useSession, signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Play, Pause, RefreshCw, Trash2, Download, Coins } from 'lucide-react';
+import { Play, Pause, RefreshCw, Trash2, Download, Coins, Edit } from 'lucide-react';
 import { DeploymentWithMetrics } from '@/types/deployment';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
@@ -169,6 +169,12 @@ export default function AgentPage({
 
         {deployment.createdBy === session?.user.id && (
           <div className="flex items-center gap-2">
+            <Link href={`/agent/${deployment.id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Edit className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+            </Link>
             <Button
               variant="outline"
               size="sm"

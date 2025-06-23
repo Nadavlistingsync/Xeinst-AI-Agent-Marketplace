@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { Edit } from 'lucide-react';
 
 export function CreateAgentButton() {
   return (
@@ -23,6 +24,20 @@ export function ViewAgentButton({ agentId }: { agentId: string }) {
       onClick={() => window.location.href = `/agent/${agentId}`}
     >
       View
+    </Button>
+  );
+}
+
+export function EditAgentButton({ agentId }: { agentId: string }) {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      className="hover:bg-green-100 hover:text-green-700 transition"
+      onClick={() => window.location.href = `/agent/${agentId}/edit`}
+    >
+      <Edit className="w-4 h-4 mr-1" />
+      Edit
     </Button>
   );
 } 
