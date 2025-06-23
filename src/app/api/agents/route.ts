@@ -21,7 +21,7 @@ const uploadAgentSchema = z.object({
   price: z.number().min(0, "Price must be non-negative"),
   documentation: z.string().optional(),
   apiUrl: z.string().url("Must be a valid URL"),
-  inputSchema: z.any(),
+  inputSchema: z.any().optional(),
   version: z.string().default("1.0.0"),
   environment: z.string().default("production"),
   framework: z.string().default("custom"),

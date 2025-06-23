@@ -114,7 +114,18 @@ export function InteractiveAgentCard({ agent }: { agent: Agent }) {
       <CardContent>
         {showForm && (
           <div>
-            <DynamicForm schema={agent.inputSchema} onSubmit={handleSubmit} isLoading={isLoading} />
+            <DynamicForm 
+              schema={agent.inputSchema || {
+                properties: {
+                  input: {
+                    type: 'string',
+                    description: 'Enter your input'
+                  }
+                }
+              }} 
+              onSubmit={handleSubmit} 
+              isLoading={isLoading} 
+            />
             {error && (
               <Alert variant="destructive" className="mt-4">
                 <AlertTitle>Error</AlertTitle>
