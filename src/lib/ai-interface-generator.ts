@@ -161,7 +161,7 @@ export class AIInterfaceGenerator {
       },
       validation: [
         {
-          type: 'required',
+          type: 'required' as const,
           value: true,
           message: 'Input is required'
         }
@@ -211,7 +211,7 @@ export class AIInterfaceGenerator {
     const validation: ValidationRule[] = [];
     if (required) {
       validation.push({
-        type: 'required',
+        type: 'required' as const,
         value: true,
         message: `${this.formatLabel(key)} is required`
       });
@@ -228,7 +228,7 @@ export class AIInterfaceGenerator {
             validation: [
               ...validation,
               {
-                type: 'pattern',
+                type: 'pattern' as const,
                 value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                 message: 'Please enter a valid email address'
               }
@@ -245,7 +245,7 @@ export class AIInterfaceGenerator {
             validation: [
               ...validation,
               {
-                type: 'pattern',
+                type: 'pattern' as const,
                 value: /^https?:\/\/.+/,
                 message: 'Please enter a valid URL'
               }
@@ -291,12 +291,12 @@ export class AIInterfaceGenerator {
           validation: [
             ...validation,
             ...(prop.minimum ? [{
-              type: 'min',
+              type: 'min' as const,
               value: prop.minimum,
               message: `Value must be at least ${prop.minimum}`
             }] : []),
             ...(prop.maximum ? [{
-              type: 'max',
+              type: 'max' as const,
               value: prop.maximum,
               message: `Value must be at most ${prop.maximum}`
             }] : [])
