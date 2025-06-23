@@ -74,7 +74,7 @@ export class AIInterfaceGenerator {
 
     // Analyze the agent's input schema to determine appropriate components
     const inputComponents = this.generateInputComponents(agent);
-    const outputComponents = this.generateOutputComponents(agent);
+    const outputComponents = this.generateOutputComponents();
     const actionComponents = this.generateActionComponents(agent);
 
     // Generate the layout structure
@@ -348,7 +348,7 @@ export class AIInterfaceGenerator {
   /**
    * Generate output components for displaying results
    */
-  private generateOutputComponents(agent: Agent): InterfaceComponent[] {
+  private generateOutputComponents(): InterfaceComponent[] {
     return [
       {
         id: 'output-container',
