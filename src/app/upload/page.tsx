@@ -181,9 +181,17 @@ export default function UploadPage() {
       <div className="max-w-4xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Upload New Agent to Marketplace</h1>
-          <p className="text-gray-400">
+          <p className="text-gray-400 mb-4">
             Upload your AI agent and get a professional interface automatically generated for you.
           </p>
+          <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+            <p className="text-blue-300 text-sm">
+              💡 Need help making your agent Xeinst compatible? 
+              <a href="/guide" className="text-blue-400 hover:text-blue-300 underline ml-1">
+                Check out our comprehensive guide
+              </a>
+            </p>
+          </div>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">

@@ -20,6 +20,7 @@ export default function Header() {
     { label: 'Dashboard', href: '/dashboard' },
     { label: 'Marketplace', href: '/marketplace' },
     { label: 'AI Agents', href: '/marketplace' },
+    { label: 'Guide', href: '/guide' },
     { label: 'Contact', href: '/contact' }
   ];
 
@@ -45,6 +46,9 @@ export default function Header() {
             </Link>
             <Link href="/marketplace" className="text-gray-300 hover:text-white transition-colors">
               AI Agents
+            </Link>
+            <Link href="/guide" className="text-gray-300 hover:text-white transition-colors">
+              Guide
             </Link>
             <Link href="/contact" className="text-gray-300 hover:text-white transition-colors">
               Contact
