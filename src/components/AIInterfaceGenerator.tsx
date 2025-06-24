@@ -35,6 +35,7 @@ interface GeneratedInterface {
   documentation: string;
 }
 
+// AI Interface Generator Component - Updated for latest deployment
 export default function AIInterfaceGenerator() {
   const [agentConfig, setAgentConfig] = useState<AgentConfig>({
     name: '',
