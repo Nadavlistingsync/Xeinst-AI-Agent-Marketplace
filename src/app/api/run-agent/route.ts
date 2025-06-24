@@ -108,7 +108,10 @@ async function callWebhook(webhookUrl: string, inputs: any, agentId?: string, is
   try {
     let requestBody;
     if (isCustom) {
-      requestBody = inputs; // Send only the raw inputs for custom agents
+      // For custom agents, extract the input string from the inputs object
+      // The webhook expects the input to be sent directly as a string
+      const inputString = inputs.input || inputs.query || inputs.text || JSON.stringify(inputs);
+      requestBody = { input: inputString };
     } else {
       requestBody = {
         inputs,
