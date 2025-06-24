@@ -106,24 +106,41 @@ async function getAgentConfig(agentId: string, webhookUrl?: string) {
  */
 async function callWebhook(webhookUrl: string, inputs: any) {
   try {
+    const requestBody = {
+      inputs,
+      timestamp: new Date().toISOString(),
+      request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    };
+    const requestHeaders = {
+      'Content-Type': 'application/json',
+      'User-Agent': 'AI-Agent-Platform/1.0',
+    };
+    console.log('[Webhook Debug] Sending request:', {
+      url: webhookUrl,
+      method: 'POST',
+      headers: requestHeaders,
+      body: requestBody,
+    });
     const response = await fetch(webhookUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'AI-Agent-Platform/1.0',
-      },
-      body: JSON.stringify({
-        inputs,
-        timestamp: new Date().toISOString(),
-        request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      }),
+      headers: requestHeaders,
+      body: JSON.stringify(requestBody),
     });
-
+    const responseText = await response.text();
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      data = responseText;
+    }
+    console.log('[Webhook Debug] Response:', {
+      status: response.status,
+      headers: Object.fromEntries(response.headers.entries()),
+      body: data,
+    });
     if (!response.ok) {
       throw new Error(`Webhook responded with status: ${response.status}`);
     }
-
-    const data = await response.json();
     return {
       success: true,
       data,
