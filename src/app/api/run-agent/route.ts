@@ -104,13 +104,18 @@ async function getAgentConfig(agentId: string, webhookUrl?: string) {
 /**
  * Call external webhook with the given inputs
  */
-async function callWebhook(webhookUrl: string, inputs: any) {
+async function callWebhook(webhookUrl: string, inputs: any, agentId?: string, isCustom?: boolean) {
   try {
-    const requestBody = {
-      inputs,
-      timestamp: new Date().toISOString(),
-      request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    };
+    let requestBody;
+    if (isCustom) {
+      requestBody = inputs; // Send only the raw inputs for custom agents
+    } else {
+      requestBody = {
+        inputs,
+        timestamp: new Date().toISOString(),
+        request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      };
+    }
     const requestHeaders = {
       'Content-Type': 'application/json',
       'User-Agent': 'AI-Agent-Platform/1.0',
@@ -324,7 +329,12 @@ export async function POST(request: NextRequest) {
     // Call the webhook
     let webhookResult;
     try {
-      webhookResult = await callWebhook(effectiveAgentConfig.webhook_url, inputs);
+      webhookResult = await callWebhook(
+        effectiveAgentConfig.webhook_url,
+        inputs,
+        agentId,
+        agentId === 'custom-agent' || !!webhookUrl // isCustom
+      );
     } catch (err) {
       console.error('Webhook call failed:', err);
       return NextResponse.json(
