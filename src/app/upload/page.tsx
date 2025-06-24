@@ -232,13 +232,6 @@ export default function UploadPage() {
     }
   };
 
-  const handleInterfaceGenerated = () => {
-    toast.success('AI Interface generated! Your agent is now ready for the marketplace.');
-    setTimeout(() => {
-      router.push('/marketplace');
-    }, 2000);
-  };
-
   const resetSetup = () => {
     setCurrentStep(1);
     setFormData({
