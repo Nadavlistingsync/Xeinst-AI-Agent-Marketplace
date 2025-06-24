@@ -1,246 +1,558 @@
 "use client";
 
 import React, { useState } from 'react';
-import { toast } from 'react-hot-toast';
-import { AIGenerationOptions } from '@/lib/ai-interface-generator';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Upload, FileText, Settings, Play, Download } from 'lucide-react';
 
-interface AIInterfaceGeneratorProps {
-  agentId: string;
-  onInterfaceGenerated?: (interfaceData: any) => void;
+interface AgentConfig {
+  name: string;
+  description: string;
+  webhookUrl: string;
+  agentType: 'text-input' | 'file-upload' | 'streaming' | 'async-task' | 'multi-step' | 'structured-data';
+  inputSchema?: any;
+  outputSchema?: any;
+  settings?: {
+    timeout?: number;
+    retries?: number;
+    streaming?: boolean;
+    async?: boolean;
+  };
 }
 
-export default function AIInterfaceGenerator({ 
-  agentId, 
-  onInterfaceGenerated 
-}: AIInterfaceGeneratorProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedInterface, setGeneratedInterface] = useState<any>(null);
-  const [options, setOptions] = useState<AIGenerationOptions>({
-    theme: 'modern',
-    layout: 'single-column',
-    features: ['preview'],
-    complexity: 'standard'
+interface GeneratedInterface {
+  config: AgentConfig;
+  interfaceCode: string;
+  documentation: string;
+}
+
+export default function AIInterfaceGenerator() {
+  const [agentConfig, setAgentConfig] = useState<AgentConfig>({
+    name: '',
+    description: '',
+    webhookUrl: '',
+    agentType: 'text-input',
+    settings: {
+      timeout: 30000,
+      retries: 3,
+      streaming: false,
+      async: false,
+    },
   });
 
-  const handleGenerate = async () => {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedInterface, setGeneratedInterface] = useState<GeneratedInterface | null>(null);
+
+  const agentTypeOptions = [
+    { value: 'text-input', label: 'Text Input', description: 'Simple text-based agents' },
+    { value: 'file-upload', label: 'File Upload', description: 'Agents that process files' },
+    { value: 'streaming', label: 'Streaming', description: 'Real-time streaming responses' },
+    { value: 'async-task', label: 'Async Task', description: 'Long-running background tasks' },
+    { value: 'multi-step', label: 'Multi-Step', description: 'Complex workflow agents' },
+    { value: 'structured-data', label: 'Structured Data', description: 'Agents with complex data schemas' },
+  ];
+
+  const generateInterface = async () => {
     setIsGenerating(true);
-    
     try {
-      const response = await fetch(`/api/agents/${agentId}/generate-interface`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ options }),
+      // Simulate API call to generate interface
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const interfaceCode = generateInterfaceCode(agentConfig);
+      const documentation = generateDocumentation(agentConfig);
+
+      setGeneratedInterface({
+        config: agentConfig,
+        interfaceCode,
+        documentation,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate interface');
-      }
-
-      const data = await response.json();
-      setGeneratedInterface(data.interface);
-      onInterfaceGenerated?.(data.interface);
-      toast.success('AI Interface generated successfully!');
     } catch (error) {
-      console.error('Error generating interface:', error);
-      toast.error('Failed to generate interface');
+      console.error('Failed to generate interface:', error);
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const handleOptionChange = (key: keyof AIGenerationOptions, value: any) => {
-    setOptions(prev => ({ ...prev, [key]: value }));
+  const generateInterfaceCode = (config: AgentConfig): string => {
+    const { name, agentType, webhookUrl, settings } = config;
+    
+    switch (agentType) {
+      case 'text-input':
+        return `// ${name} - Text Input Agent
+export async function run${name.replace(/\s+/g, '')}Agent(input: string) {
+  const response = await fetch('${webhookUrl}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ input })
+  });
+  
+  if (!response.ok) {
+    throw new Error(\`Agent failed: \${response.status}\`);
+  }
+  
+  return await response.json();
+}`;
+
+      case 'file-upload':
+        return `// ${name} - File Upload Agent
+export async function run${name.replace(/\s+/g, '')}Agent(input: string, files: File[]) {
+  const formData = new FormData();
+  formData.append('input', input);
+  
+  files.forEach((file, index) => {
+    formData.append(\`file_\${index}\`, file);
+  });
+  
+  const response = await fetch('${webhookUrl}', {
+    method: 'POST',
+    body: formData
+  });
+  
+  if (!response.ok) {
+    throw new Error(\`Agent failed: \${response.status}\`);
+  }
+  
+  return await response.json();
+}`;
+
+      case 'streaming':
+        return `// ${name} - Streaming Agent
+export async function run${name.replace(/\s+/g, '')}Agent(input: string, onChunk: (chunk: string) => void) {
+  const response = await fetch('${webhookUrl}', {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'Accept': 'text/event-stream'
+    },
+    body: JSON.stringify({ input, stream: true })
+  });
+  
+  if (!response.ok) {
+    throw new Error(\`Agent failed: \${response.status}\`);
+  }
+  
+  const reader = response.body?.getReader();
+  const decoder = new TextDecoder();
+  
+  while (reader) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    
+    const chunk = decoder.decode(value);
+    const lines = chunk.split('\\n');
+    
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6);
+        if (data === '[DONE]') return;
+        onChunk(data);
+      }
+    }
+  }
+}`;
+
+      case 'async-task':
+        return `// ${name} - Async Task Agent
+export async function run${name.replace(/\s+/g, '')}Agent(input: string) {
+  const response = await fetch('${webhookUrl}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      input, 
+      async: true,
+      callback_url: 'https://your-domain.com/api/webhook/callback'
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(\`Agent failed: \${response.status}\`);
+  }
+  
+  const result = await response.json();
+  return { jobId: result.job_id, status: 'pending' };
+}
+
+export async function check${name.replace(/\s+/g, '')}Status(jobId: string) {
+  const response = await fetch(\`${webhookUrl}/status/\${jobId}\`);
+  return await response.json();
+}`;
+
+      case 'multi-step':
+        return `// ${name} - Multi-Step Workflow Agent
+export async function run${name.replace(/\s+/g, '')}Agent(workflow: any[], context: any = {}) {
+  const sessionId = \`session_\${Date.now()}\`;
+  
+  const response = await fetch('${webhookUrl}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      workflow,
+      context,
+      session_id: sessionId
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(\`Agent failed: \${response.status}\`);
+  }
+  
+  return await response.json();
+}`;
+
+      case 'structured-data':
+        return `// ${name} - Structured Data Agent
+export async function run${name.replace(/\s+/g, '')}Agent(data: any) {
+  const response = await fetch('${webhookUrl}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      data,
+      timestamp: new Date().toISOString(),
+      request_id: \`req_\${Date.now()}_\${Math.random().toString(36).substr(2, 9)}\`
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(\`Agent failed: \${response.status}\`);
+  }
+  
+  return await response.json();
+}`;
+
+      default:
+        return `// ${name} - Generic Agent
+export async function run${name.replace(/\s+/g, '')}Agent(inputs: any) {
+  const response = await fetch('${webhookUrl}', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(inputs)
+  });
+  
+  if (!response.ok) {
+    throw new Error(\`Agent failed: \${response.status}\`);
+  }
+  
+  return await response.json();
+}`;
+    }
   };
 
-  const handleFeatureToggle = (feature: string) => {
-    setOptions(prev => ({
-      ...prev,
-      features: prev.features?.includes(feature as any)
-        ? prev.features.filter(f => f !== feature)
-        : [...(prev.features || []), feature as any]
-    }));
+  const generateDocumentation = (config: AgentConfig): string => {
+    const { name, description, agentType, webhookUrl, settings } = config;
+    
+    return `# ${name}
+
+${description}
+
+## Agent Type
+${agentTypeOptions.find(opt => opt.value === agentType)?.description}
+
+## Webhook URL
+\`${webhookUrl}\`
+
+## Configuration
+- **Timeout**: ${settings?.timeout || 30000}ms
+- **Retries**: ${settings?.retries || 3}
+- **Streaming**: ${settings?.streaming ? 'Enabled' : 'Disabled'}
+- **Async**: ${settings?.async ? 'Enabled' : 'Disabled'}
+
+## Usage Examples
+
+${generateUsageExamples(agentType, name)}
+
+## Error Handling
+The agent will throw an error if the webhook responds with a non-200 status code.
+
+## Rate Limiting
+Consider implementing rate limiting for production use.
+
+## Security
+Ensure your webhook URL is secure and uses HTTPS in production.`;
+  };
+
+  const generateUsageExamples = (agentType: string, name: string): string => {
+    switch (agentType) {
+      case 'text-input':
+        return `\`\`\`javascript
+import { run${name.replace(/\s+/g, '')}Agent } from './agents/${name.toLowerCase().replace(/\s+/g, '-')}';
+
+const result = await run${name.replace(/\s+/g, '')}Agent('Your input text here');
+console.log(result);
+\`\`\``;
+
+      case 'file-upload':
+        return `\`\`\`javascript
+import { run${name.replace(/\s+/g, '')}Agent } from './agents/${name.toLowerCase().replace(/\s+/g, '-')}';
+
+const fileInput = document.getElementById('fileInput');
+const files = Array.from(fileInput.files);
+const result = await run${name.replace(/\s+/g, '')}Agent('Process these files', files);
+console.log(result);
+\`\`\``;
+
+      case 'streaming':
+        return `\`\`\`javascript
+import { run${name.replace(/\s+/g, '')}Agent } from './agents/${name.toLowerCase().replace(/\s+/g, '-')}';
+
+await run${name.replace(/\s+/g, '')}Agent('Your input', (chunk) => {
+  console.log('Received chunk:', chunk);
+});
+\`\`\``;
+
+      case 'async-task':
+        return `\`\`\`javascript
+import { run${name.replace(/\s+/g, '')}Agent, check${name.replace(/\s+/g, '')}Status } from './agents/${name.toLowerCase().replace(/\s+/g, '-')}';
+
+// Start the task
+const { jobId } = await run${name.replace(/\s+/g, '')}Agent('Your input');
+
+// Check status periodically
+const status = await check${name.replace(/\s+/g, '')}Status(jobId);
+console.log('Task status:', status);
+\`\`\``;
+
+      default:
+        return `\`\`\`javascript
+import { run${name.replace(/\s+/g, '')}Agent } from './agents/${name.toLowerCase().replace(/\s+/g, '-')}';
+
+const result = await run${name.replace(/\s+/g, '')}Agent({ your: 'data' });
+console.log(result);
+\`\`\``;
+    }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          🤖 AI Interface Generator
-        </h3>
-        <p className="text-gray-600">
-          Automatically generate a professional user interface for your agent based on its schema.
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold">AI Agent Interface Generator</h1>
+        <p className="text-muted-foreground mt-2">
+          Generate TypeScript interfaces for any AI agent type
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* Theme Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Theme
-          </label>
-          <select
-            value={options.theme}
-            onChange={(e) => handleOptionChange('theme', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="modern">Modern</option>
-            <option value="minimal">Minimal</option>
-            <option value="professional">Professional</option>
-            <option value="creative">Creative</option>
-          </select>
-        </div>
-
-        {/* Layout Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Layout
-          </label>
-          <select
-            value={options.layout}
-            onChange={(e) => handleOptionChange('layout', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="single-column">Single Column</option>
-            <option value="two-column">Two Column</option>
-            <option value="grid">Grid</option>
-            <option value="dashboard">Dashboard</option>
-          </select>
-        </div>
-
-        {/* Complexity Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Complexity
-          </label>
-          <select
-            value={options.complexity}
-            onChange={(e) => handleOptionChange('complexity', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="simple">Simple</option>
-            <option value="standard">Standard</option>
-            <option value="advanced">Advanced</option>
-          </select>
-        </div>
-
-        {/* Features Selection */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Features
-          </label>
-          <div className="space-y-2">
-            {['preview', 'charts', 'real-time', 'file-upload', 'history'].map((feature) => (
-              <label key={feature} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={options.features?.includes(feature as any)}
-                  onChange={() => handleFeatureToggle(feature)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <span className="ml-2 text-sm text-gray-700 capitalize">
-                  {feature.replace('-', ' ')}
-                </span>
-              </label>
-            ))}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Agent Configuration
+          </CardTitle>
+          <CardDescription>
+            Configure your AI agent to generate the appropriate interface
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Agent Name</Label>
+              <Input
+                id="name"
+                value={agentConfig.name}
+                onChange={(e) => setAgentConfig({ ...agentConfig, name: e.target.value })}
+                placeholder="e.g., Data Scraper, Image Generator"
+              />
+            </div>
+            <div>
+              <Label htmlFor="webhookUrl">Webhook URL</Label>
+              <Input
+                id="webhookUrl"
+                value={agentConfig.webhookUrl}
+                onChange={(e) => setAgentConfig({ ...agentConfig, webhookUrl: e.target.value })}
+                placeholder="https://your-agent.com/api/webhook"
+              />
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Generate Button */}
-      <div className="flex justify-center">
-        <button
-          onClick={handleGenerate}
-          disabled={isGenerating}
-          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-        >
-          {isGenerating ? (
-            <div className="flex items-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Generating Interface...
-            </div>
-          ) : (
-            <div className="flex items-center">
-              <span className="mr-2">🚀</span>
-              Generate AI Interface
-            </div>
-          )}
-        </button>
-      </div>
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={agentConfig.description}
+              onChange={(e) => setAgentConfig({ ...agentConfig, description: e.target.value })}
+              placeholder="Describe what this agent does..."
+              rows={3}
+            />
+          </div>
 
-      {/* Generated Interface Preview */}
+          <div>
+            <Label htmlFor="agentType">Agent Type</Label>
+            <Select
+              value={agentConfig.agentType}
+              onValueChange={(value: any) => setAgentConfig({ ...agentConfig, agentType: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {agentTypeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    <div>
+                      <div className="font-medium">{option.label}</div>
+                      <div className="text-sm text-muted-foreground">{option.description}</div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="timeout">Timeout (ms)</Label>
+              <Input
+                id="timeout"
+                type="number"
+                value={agentConfig.settings?.timeout || 30000}
+                onChange={(e) => setAgentConfig({
+                  ...agentConfig,
+                  settings: { ...agentConfig.settings, timeout: parseInt(e.target.value) }
+                })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="retries">Retries</Label>
+              <Input
+                id="retries"
+                type="number"
+                value={agentConfig.settings?.retries || 3}
+                onChange={(e) => setAgentConfig({
+                  ...agentConfig,
+                  settings: { ...agentConfig.settings, retries: parseInt(e.target.value) }
+                })}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="streaming"
+                checked={agentConfig.settings?.streaming || false}
+                onCheckedChange={(checked) => setAgentConfig({
+                  ...agentConfig,
+                  settings: { ...agentConfig.settings, streaming: checked }
+                })}
+              />
+              <Label htmlFor="streaming">Enable Streaming</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="async"
+                checked={agentConfig.settings?.async || false}
+                onCheckedChange={(checked) => setAgentConfig({
+                  ...agentConfig,
+                  settings: { ...agentConfig.settings, async: checked }
+                })}
+              />
+              <Label htmlFor="async">Enable Async Processing</Label>
+            </div>
+          </div>
+
+          <Button 
+            onClick={generateInterface} 
+            disabled={isGenerating || !agentConfig.name || !agentConfig.webhookUrl}
+            className="w-full"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating Interface...
+              </>
+            ) : (
+              <>
+                <Play className="mr-2 h-4 w-4" />
+                Generate Interface
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
       {generatedInterface && (
-        <div className="mt-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <h4 className="text-lg font-semibold text-gray-900 mb-4">
-            ✨ Generated Interface Preview
-          </h4>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <h5 className="font-medium text-gray-700 mb-2">Interface Details</h5>
-              <div className="text-sm text-gray-600 space-y-1">
-                <p><strong>Theme:</strong> {generatedInterface.metadata.theme}</p>
-                <p><strong>Layout:</strong> {generatedInterface.layout}</p>
-                <p><strong>Responsive:</strong> {generatedInterface.metadata.responsive ? 'Yes' : 'No'}</p>
-                <p><strong>Accessibility:</strong> {generatedInterface.metadata.accessibility ? 'Yes' : 'No'}</p>
-              </div>
-            </div>
-            
-            <div>
-              <h5 className="font-medium text-gray-700 mb-2">Components</h5>
-              <div className="text-sm text-gray-600">
-                <p><strong>Total Components:</strong> {generatedInterface.components.length}</p>
-                <p><strong>Input Fields:</strong> {generatedInterface.components.filter((c: any) => c.type === 'input').length}</p>
-                <p><strong>Action Buttons:</strong> {generatedInterface.components.filter((c: any) => c.type === 'button').length}</p>
-              </div>
-            </div>
-          </div>
+        <Tabs defaultValue="code" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="code">Interface Code</TabsTrigger>
+            <TabsTrigger value="docs">Documentation</TabsTrigger>
+            <TabsTrigger value="preview">Preview</TabsTrigger>
+          </TabsList>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(generatedInterface.reactCode);
-                toast.success('React code copied to clipboard!');
-              }}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            >
-              📋 Copy React Code
-            </button>
-            
-            <button
-              onClick={() => {
-                const blob = new Blob([generatedInterface.reactCode], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `${generatedInterface.metadata.title.replace(/\s+/g, '_')}.tsx`;
-                a.click();
-                URL.revokeObjectURL(url);
-                toast.success('React component downloaded!');
-              }}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
-            >
-              💾 Download Component
-            </button>
-          </div>
-        </div>
+          <TabsContent value="code" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Generated TypeScript Interface</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigator.clipboard.writeText(generatedInterface.interfaceCode)}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Copy Code
+                  </Button>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+                  <code>{generatedInterface.interfaceCode}</code>
+                </pre>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="docs" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Documentation</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm whitespace-pre-wrap">
+                  {generatedInterface.documentation}
+                </pre>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="preview" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Agent Preview</CardTitle>
+                <CardDescription>
+                  Test your generated agent interface
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{generatedInterface.config.agentType}</Badge>
+                    <Badge variant="secondary">{generatedInterface.config.name}</Badge>
+                  </div>
+                  
+                  <Alert>
+                    <FileText className="h-4 w-4" />
+                    <AlertDescription>
+                      This agent is configured for <strong>{agentTypeOptions.find(opt => opt.value === generatedInterface.config.agentType)?.label}</strong>.
+                      Use the generated interface code to integrate it into your application.
+                    </AlertDescription>
+                  </Alert>
+
+                  <div className="text-sm text-muted-foreground">
+                    <p><strong>Webhook URL:</strong> {generatedInterface.config.webhookUrl}</p>
+                    <p><strong>Timeout:</strong> {generatedInterface.config.settings?.timeout}ms</p>
+                    <p><strong>Retries:</strong> {generatedInterface.config.settings?.retries}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       )}
-
-      {/* Features Explanation */}
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-        <h4 className="text-sm font-semibold text-blue-900 mb-2">
-          🎯 What the AI Interface Generator Does:
-        </h4>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Analyzes your agent's JSON schema to create appropriate form fields</li>
-          <li>• Generates responsive, accessible UI components</li>
-          <li>• Creates professional styling with multiple theme options</li>
-          <li>• Produces ready-to-use React/Next.js component code</li>
-          <li>• Includes validation rules based on your schema</li>
-          <li>• Optimizes for different screen sizes and devices</li>
-        </ul>
-      </div>
     </div>
   );
 } 

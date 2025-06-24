@@ -102,63 +102,235 @@ async function getAgentConfig(agentId: string, webhookUrl?: string) {
 }
 
 /**
- * Call external webhook with the given inputs
+ * Enhanced webhook caller that supports all agent types
  */
 async function callWebhook(webhookUrl: string, inputs: any, isCustom?: boolean) {
   try {
     let requestBody;
-    if (isCustom) {
-      // For custom agents, extract the input string from the inputs object
-      // The webhook expects the input to be sent directly as a string
-      const inputString = inputs.input || inputs.query || inputs.text || JSON.stringify(inputs);
-      requestBody = { input: inputString };
-    } else {
-      requestBody = {
-        inputs,
-        timestamp: new Date().toISOString(),
-        request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      };
-    }
-    const requestHeaders = {
-      'Content-Type': 'application/json',
+    let requestHeaders: Record<string, string> = {
       'User-Agent': 'AI-Agent-Platform/1.0',
     };
+
+    // Determine the agent type and format payload accordingly
+    const agentType = detectAgentType(inputs);
+    
+    switch (agentType) {
+      case 'text-input':
+        // Simple text input agents (most common)
+        const inputString = inputs.input || inputs.query || inputs.text || inputs.prompt || JSON.stringify(inputs);
+        requestBody = { input: inputString };
+        requestHeaders['Content-Type'] = 'application/json';
+        break;
+
+      case 'structured-data':
+        // Agents that expect structured JSON data
+        requestBody = {
+          data: inputs,
+          timestamp: new Date().toISOString(),
+          request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        };
+        requestHeaders['Content-Type'] = 'application/json';
+        break;
+
+      case 'file-upload':
+        // Agents that handle file uploads
+        const formData = new FormData();
+        
+        // Add text inputs
+        if (inputs.input) formData.append('input', inputs.input);
+        if (inputs.prompt) formData.append('prompt', inputs.prompt);
+        
+        // Add files
+        if (inputs.files && Array.isArray(inputs.files)) {
+          inputs.files.forEach((file: any, index: number) => {
+            if (file.url) {
+              // Download file from URL and add to form
+              const response = await fetch(file.url);
+              const blob = await response.blob();
+              formData.append(`file_${index}`, blob, file.name || `file_${index}`);
+            } else if (file.base64) {
+              // Convert base64 to blob
+              const bytes = atob(file.base64.split(',')[1]);
+              const array = new Uint8Array(bytes.length);
+              for (let i = 0; i < bytes.length; i++) {
+                array[i] = bytes.charCodeAt(i);
+              }
+              const blob = new Blob([array], { type: file.type || 'application/octet-stream' });
+              formData.append(`file_${index}`, blob, file.name || `file_${index}`);
+            }
+          });
+        }
+        
+        requestBody = formData;
+        // Don't set Content-Type for FormData - browser will set it with boundary
+        break;
+
+      case 'streaming':
+        // Agents that support streaming responses
+        requestBody = {
+          input: inputs.input || inputs.query || inputs.text,
+          stream: true,
+          timestamp: new Date().toISOString(),
+        };
+        requestHeaders['Content-Type'] = 'application/json';
+        requestHeaders['Accept'] = 'text/event-stream';
+        break;
+
+      case 'async-task':
+        // Long-running tasks that return job IDs
+        requestBody = {
+          input: inputs.input || inputs.query || inputs.text,
+          async: true,
+          callback_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://your-domain.com'}/api/webhook/callback`,
+          timestamp: new Date().toISOString(),
+        };
+        requestHeaders['Content-Type'] = 'application/json';
+        break;
+
+      case 'multi-step':
+        // Complex workflows with multiple steps
+        requestBody = {
+          workflow: inputs.workflow || inputs.steps,
+          context: inputs.context || {},
+          session_id: inputs.session_id || `session_${Date.now()}`,
+          timestamp: new Date().toISOString(),
+        };
+        requestHeaders['Content-Type'] = 'application/json';
+        break;
+
+      default:
+        // Fallback to original format for backward compatibility
+        if (isCustom) {
+          const inputString = inputs.input || inputs.query || inputs.text || JSON.stringify(inputs);
+          requestBody = { input: inputString };
+        } else {
+          requestBody = {
+            inputs,
+            timestamp: new Date().toISOString(),
+            request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          };
+        }
+        requestHeaders['Content-Type'] = 'application/json';
+    }
+
     console.log('[Webhook Debug] Sending request:', {
       url: webhookUrl,
       method: 'POST',
       headers: requestHeaders,
-      body: requestBody,
+      body: requestBody instanceof FormData ? '[FormData]' : requestBody,
+      agentType,
     });
+
+    // Make the request
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: requestHeaders,
-      body: JSON.stringify(requestBody),
+      body: requestBody instanceof FormData ? requestBody : JSON.stringify(requestBody),
     });
-    const responseText = await response.text();
+
+    // Handle different response types
     let data;
-    try {
-      data = JSON.parse(responseText);
-    } catch {
-      data = responseText;
+    const contentType = response.headers.get('content-type') || '';
+
+    if (contentType.includes('text/event-stream')) {
+      // Handle streaming responses
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let streamData = '';
+      
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          streamData += chunk;
+          
+          // Process SSE format
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const eventData = line.slice(6);
+              if (eventData === '[DONE]') break;
+              try {
+                const parsed = JSON.parse(eventData);
+                console.log('[Stream]', parsed);
+              } catch (e) {
+                console.log('[Stream]', eventData);
+              }
+            }
+          }
+        }
+      }
+      data = { type: 'stream', data: streamData };
+    } else if (contentType.includes('application/json')) {
+      // Handle JSON responses
+      const responseText = await response.text();
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        data = responseText;
+      }
+    } else {
+      // Handle text/binary responses
+      data = await response.text();
     }
+
     console.log('[Webhook Debug] Response:', {
       status: response.status,
       headers: Object.fromEntries(response.headers.entries()),
       body: data,
+      agentType,
     });
+
     if (!response.ok) {
       throw new Error(`Webhook responded with status: ${response.status}`);
     }
+
     return {
       success: true,
       data,
       status: response.status,
       headers: Object.fromEntries(response.headers.entries()),
+      agentType,
     };
   } catch (error) {
     console.error('Webhook call failed:', error);
     throw new Error(`Webhook call failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
+}
+
+/**
+ * Detect the type of agent based on inputs
+ */
+function detectAgentType(inputs: any): string {
+  // Check for file uploads
+  if (inputs.files && Array.isArray(inputs.files) && inputs.files.length > 0) {
+    return 'file-upload';
+  }
+
+  // Check for streaming requests
+  if (inputs.stream === true || inputs.streaming === true) {
+    return 'streaming';
+  }
+
+  // Check for async tasks
+  if (inputs.async === true || inputs.async_task === true) {
+    return 'async-task';
+  }
+
+  // Check for multi-step workflows
+  if (inputs.workflow || inputs.steps || inputs.session_id) {
+    return 'multi-step';
+  }
+
+  // Check for structured data
+  if (inputs.data || inputs.context || inputs.metadata) {
+    return 'structured-data';
+  }
+
+  // Default to text input
+  return 'text-input';
 }
 
 /**
