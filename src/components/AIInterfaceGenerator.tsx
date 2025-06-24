@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, FileText, Settings, Play, Download } from 'lucide-react';
 
+// AI Interface Generator for all agent types
 interface AgentConfig {
   name: string;
   description: string;
