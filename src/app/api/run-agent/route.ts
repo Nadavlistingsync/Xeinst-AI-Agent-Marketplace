@@ -161,7 +161,8 @@ async function callWebhook(webhookUrl: string, inputs: any, isCustom?: boolean) 
         
         // Add files
         if (inputs.files && Array.isArray(inputs.files)) {
-          inputs.files.forEach((file: any, index: number) => {
+          for (let index = 0; index < inputs.files.length; index++) {
+            const file = inputs.files[index];
             if (file.url) {
               // Download file from URL and add to form
               const response = await fetch(file.url);
@@ -177,7 +178,7 @@ async function callWebhook(webhookUrl: string, inputs: any, isCustom?: boolean) 
               const blob = new Blob([array], { type: file.type || 'application/octet-stream' });
               formData.append(`file_${index}`, blob, file.name || `file_${index}`);
             }
-          });
+          }
         }
         
         requestBody = formData;
