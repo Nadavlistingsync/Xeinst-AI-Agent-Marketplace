@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Globe, Zap, Shield, Settings, Play, Download, ExternalLink } from 'lucide-react';
+import { Loader2, Globe, Zap, Shield, Settings, Download, ExternalLink } from 'lucide-react';
 
 interface APICall {
   url: string;
