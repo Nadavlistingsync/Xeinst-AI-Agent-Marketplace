@@ -458,14 +458,18 @@ interface APICall {
                   <Download className="mr-2 h-4 w-4" />
                   Copy Code
                 </Button>
-              </CardHeader>
-              <CardContent>
-                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-                  <code>{generateInterfaceCode()}</code>
-                </pre>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </CardTitle>
+              <CardDescription>
+                Copy the generated TypeScript interface for your agent
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+                <code>{generateInterfaceCode()}</code>
+              </pre>
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       <Card>
