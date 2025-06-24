@@ -84,7 +84,7 @@ export default function AIInterfaceGenerator() {
   };
 
   const generateInterfaceCode = (config: AgentConfig): string => {
-    const { name, agentType, webhookUrl, settings } = config;
+    const { name, agentType, webhookUrl } = config;
     
     switch (agentType) {
       case 'text-input':
