@@ -17,7 +17,7 @@ interface AgentConfig {
   name: string;
   description: string;
   webhookUrl: string;
-  agentType: 'text-input' | 'file-upload' | 'streaming' | 'async-task' | 'multi-step' | 'structured-data';
+  agentType: 'text-input' | 'file-upload' | 'streaming' | 'async-task' | 'multi-step' | 'structured-data' | 'internet-executor';
   inputSchema?: any;
   outputSchema?: any;
   settings?: {
@@ -58,6 +58,7 @@ export default function AIInterfaceGenerator() {
     { value: 'async-task', label: 'Async Task', description: 'Long-running background tasks' },
     { value: 'multi-step', label: 'Multi-Step', description: 'Complex workflow agents' },
     { value: 'structured-data', label: 'Structured Data', description: 'Agents with complex data schemas' },
+    { value: 'internet-executor', label: 'Internet Executor', description: 'Agents that execute tasks across the internet via API calls' },
   ];
 
   const generateInterface = async () => {
@@ -227,6 +228,52 @@ export async function run${name.replace(/\s+/g, '')}Agent(data: any) {
   return await response.json();
 }`;
 
+      case 'internet-executor':
+        return `// ${name} - Internet Executing Agent
+export async function run${name.replace(/\s+/g, '')}Agent(task: string, options?: {
+  apiCalls?: APICall[];
+  credentials?: Record<string, string>;
+  rateLimit?: { requestsPerMinute: number };
+  retryConfig?: { maxRetries: number; backoffMs: number };
+  timeout?: number;
+  parallelExecution?: boolean;
+}) {
+  const response = await fetch('${webhookUrl}', {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-Agent-Type': 'internet-executor'
+    },
+    body: JSON.stringify({
+      task,
+      api_calls: options?.apiCalls || [],
+      external_apis: options?.apiCalls?.map(call => call.url) || [],
+      web_requests: options?.apiCalls || [],
+      credentials: options?.credentials || {},
+      rate_limit: options?.rateLimit || { requests_per_minute: 60 },
+      retry_config: options?.retryConfig || { max_retries: 3, backoff_ms: 1000 },
+      timeout: options?.timeout || 30000,
+      parallel_execution: options?.parallelExecution || false,
+      timestamp: new Date().toISOString(),
+      request_id: \`req_\${Date.now()}_\${Math.random().toString(36).substr(2, 9)}\`
+    })
+  });
+  
+  if (!response.ok) {
+    throw new Error(\`Agent failed: \${response.status}\`);
+  }
+  
+  return await response.json();
+}
+
+interface APICall {
+  url: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+  headers?: Record<string, string>;
+  body?: any;
+  description: string;
+}`;
+
       default:
         return `// ${name} - Generic Agent
 export async function run${name.replace(/\s+/g, '')}Agent(inputs: any) {
@@ -317,6 +364,22 @@ const { jobId } = await run${name.replace(/\s+/g, '')}Agent('Your input');
 // Check status periodically
 const status = await check${name.replace(/\s+/g, '')}Status(jobId);
 console.log('Task status:', status);
+\`\`\``;
+
+      case 'internet-executor':
+        return `\`\`\`javascript
+import { run${name.replace(/\s+/g, '')}Agent } from './agents/${name.toLowerCase().replace(/\s+/g, '-')}';
+
+const result = await run${name.replace(/\s+/g, '')}Agent('Scrape data from multiple websites', {
+  apiCalls: [
+    { url: 'https://api.example.com/data', method: 'GET', description: 'Fetch user data' },
+    { url: 'https://api.another.com/process', method: 'POST', body: { data: 'processed' }, description: 'Process data' }
+  ],
+  credentials: { API_KEY: 'your-api-key' },
+  rateLimit: { requestsPerMinute: 30 },
+  parallelExecution: true
+});
+console.log(result);
 \`\`\``;
 
       default:

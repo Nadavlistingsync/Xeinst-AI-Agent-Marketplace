@@ -115,6 +115,25 @@ async function callWebhook(webhookUrl: string, inputs: any, isCustom?: boolean) 
     const agentType = detectAgentType(inputs);
     
     switch (agentType) {
+      case 'internet-executor':
+        // Agents that execute tasks across the internet via API calls
+        requestBody = {
+          task: inputs.task || inputs.query || inputs.input,
+          api_calls: inputs.api_calls || [],
+          external_apis: inputs.external_apis || [],
+          web_requests: inputs.web_requests || [],
+          credentials: inputs.credentials || {},
+          rate_limit: inputs.rate_limit || { requests_per_minute: 60 },
+          retry_config: inputs.retry_config || { max_retries: 3, backoff_ms: 1000 },
+          timeout: inputs.timeout || 30000,
+          parallel_execution: inputs.parallel_execution || false,
+          timestamp: new Date().toISOString(),
+          request_id: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        };
+        requestHeaders['Content-Type'] = 'application/json';
+        requestHeaders['X-Agent-Type'] = 'internet-executor';
+        break;
+
       case 'text-input':
         // Simple text input agents (most common)
         const inputString = inputs.input || inputs.query || inputs.text || inputs.prompt || JSON.stringify(inputs);
@@ -304,6 +323,11 @@ async function callWebhook(webhookUrl: string, inputs: any, isCustom?: boolean) 
  * Detect the type of agent based on inputs
  */
 function detectAgentType(inputs: any): string {
+  // Check for internet-executing agents (API calls across the web)
+  if (inputs.api_calls || inputs.external_apis || inputs.web_requests || inputs.cross_platform) {
+    return 'internet-executor';
+  }
+
   // Check for file uploads
   if (inputs.files && Array.isArray(inputs.files) && inputs.files.length > 0) {
     return 'file-upload';
