@@ -104,7 +104,7 @@ async function getAgentConfig(agentId: string, webhookUrl?: string) {
 /**
  * Call external webhook with the given inputs
  */
-async function callWebhook(webhookUrl: string, inputs: any, agentId?: string, isCustom?: boolean) {
+async function callWebhook(webhookUrl: string, inputs: any, isCustom?: boolean) {
   try {
     let requestBody;
     if (isCustom) {
@@ -335,7 +335,6 @@ export async function POST(request: NextRequest) {
       webhookResult = await callWebhook(
         effectiveAgentConfig.webhook_url,
         inputs,
-        agentId,
         agentId === 'custom-agent' || !!webhookUrl // isCustom
       );
     } catch (err) {
