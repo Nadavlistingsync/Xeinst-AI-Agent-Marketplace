@@ -11,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Upload, FileText, Settings, Play, Download } from 'lucide-react';
+import { Loader2, FileText, Settings, Play, Download } from 'lucide-react';
 
 interface AgentConfig {
   name: string;
