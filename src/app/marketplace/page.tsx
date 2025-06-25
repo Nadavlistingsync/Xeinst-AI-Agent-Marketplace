@@ -3,9 +3,11 @@ import { MarketplaceGrid } from "@/components/marketplace/MarketplaceGrid";
 import { MarketplaceFilters } from "@/components/marketplace/MarketplaceFilters";
 import { MarketplaceSearch } from "@/components/marketplace/MarketplaceSearch";
 import { Button } from "@/components/ui/button";
-import { Plus, Upload } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Upload, Sparkles, Filter, Grid, List } from "lucide-react";
 import Link from "next/link";
 import { Agent } from "@/app/api/agents/route";
+import { motion } from "framer-motion";
 
 export const metadata: Metadata = {
   title: "Xeinst Agent Marketplace",
@@ -27,43 +29,135 @@ export default async function MarketplacePage() {
   const agents = await getAgents();
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Xeinst Agent Marketplace</h1>
-          <p className="text-lg text-gray-600">
-            Discover and run powerful AI agents directly from your browser
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button asChild variant="outline">
-            <Link href="/upload" className="flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              Upload Agent
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href="/deploy" className="flex items-center gap-2">
-              <Plus className="w-4 h-4" />
-              Deploy Agent
-            </Link>
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background pt-20">
+      {/* Hero Section */}
+      <section className="relative py-16 bg-gradient-dark">
+        <div className="absolute inset-0 grid-bg opacity-10"></div>
+        <div className="container relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center max-w-4xl mx-auto"
+          >
+            <div className="inline-flex items-center space-x-2 mb-6">
+              <Badge className="bg-ai-primary/20 text-ai-primary border-ai-primary/30 px-4 py-2 text-sm">
+                <Sparkles className="w-4 h-4 mr-2" />
+                AI Agent Marketplace
+              </Badge>
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+              <span className="text-gradient-animate">Discover</span> & Deploy
+              <br />
+              <span className="text-white">AI Agents</span>
+            </h1>
+            
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Browse our curated collection of powerful AI agents. Test them instantly and deploy to your workflow.
+            </p>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-1">
-          <MarketplaceFilters />
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button asChild size="lg" className="btn-primary text-lg px-8 py-4">
+                <Link href="/upload" className="flex items-center gap-2">
+                  <Upload className="w-5 h-5" />
+                  Upload Agent
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="btn-secondary text-lg px-8 py-4">
+                <Link href="/deploy" className="flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  Deploy Agent
+                </Link>
+              </Button>
+            </div>
+          </motion.div>
         </div>
-        
-        <div className="lg:col-span-3">
-          <div className="mb-6">
-            <MarketplaceSearch />
+      </section>
+
+      {/* Main Content */}
+      <section className="py-12">
+        <div className="container">
+          {/* Search and Filters Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex flex-col lg:flex-row gap-6 mb-8"
+          >
+            {/* Search */}
+            <div className="flex-1">
+              <MarketplaceSearch />
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                Filters
+              </Button>
+              <div className="flex items-center bg-muted/50 rounded-lg p-1">
+                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                  <Grid className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                  <List className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+          >
+            <div className="glass-card p-4 text-center">
+              <div className="text-2xl font-bold text-ai-primary">{agents.length}</div>
+              <div className="text-sm text-muted-foreground">Total Agents</div>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <div className="text-2xl font-bold text-ai-secondary">24</div>
+              <div className="text-sm text-muted-foreground">Categories</div>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <div className="text-2xl font-bold text-ai-accent">1.2K</div>
+              <div className="text-sm text-muted-foreground">Downloads</div>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <div className="text-2xl font-bold text-green-500">4.9★</div>
+              <div className="text-sm text-muted-foreground">Avg Rating</div>
+            </div>
+          </motion.div>
+
+          {/* Main Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Filters Sidebar */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="lg:col-span-1"
+            >
+              <div className="sticky top-24">
+                <MarketplaceFilters />
+              </div>
+            </motion.div>
+            
+            {/* Agents Grid */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+              className="lg:col-span-3"
+            >
+              <MarketplaceGrid agents={agents} />
+            </motion.div>
           </div>
-          
-          <MarketplaceGrid agents={agents} />
         </div>
-      </div>
+      </section>
     </div>
   );
 } 
