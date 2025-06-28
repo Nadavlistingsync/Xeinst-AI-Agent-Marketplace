@@ -66,6 +66,28 @@ UPSTASH_REDIS_REST_TOKEN="..."
 
 The application is automatically deployed to Vercel on push to the main branch.
 
+## Production Deployment
+
+1. Set environment variables in Vercel (see `.env.production.example`):
+   - `DATABASE_URL`
+   - `NEXTAUTH_URL` (your Vercel deployment URL)
+   - `NEXTAUTH_SECRET` (generate with `openssl rand -base64 32`)
+   - Any other required keys (Stripe, Redis, etc.)
+2. Push to `main` branch to trigger deployment.
+3. (Optional) Seed an initial user for credentials login:
+   ```bash
+   SEED_USER_EMAIL=admin@example.com SEED_USER_PASSWORD=changeme123 pnpm exec node scripts/seed-user.js
+   ```
+   - Change the email and password as needed.
+   - You can run this locally or in a production shell with access to your production database.
+
+## Troubleshooting Auth
+- If you see a 500 error on `/api/auth/error`, check:
+  - All required environment variables are set in Vercel.
+  - Your database is accessible from Vercel.
+  - You have at least one user in the database for credentials login.
+- Check Vercel logs for detailed error messages.
+
 ## Contributing
 
 1. Fork the repository
