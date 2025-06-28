@@ -553,12 +553,13 @@ function isValidLogLevel(level: string): level is 'info' | 'warning' | 'error' {
 }
 
 function mapPrismaLogToAgentLog(log: PrismaLog): AgentLogType | null {
-  if (!isValidLogLevel(log.level)) {
+  if (!isValidLogLevel(log.level) || !log.deploymentId) {
     return null;
   }
 
   return {
     ...log,
+    deploymentId: log.deploymentId as string,
     level: log.level
   };
 }
