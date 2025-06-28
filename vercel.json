@@ -111,16 +111,12 @@
   },
   "crons": [
     {
-      "path": "/api/cron/cleanup",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/backup",
-      "schedule": "0 3 * * 0"
+      "path": "/api/cron/maintenance",
+      "schedule": "0 1 * * *"
     },
     {
       "path": "/api/cron/analytics",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 2 * * *"
     }
   ]
 } 
