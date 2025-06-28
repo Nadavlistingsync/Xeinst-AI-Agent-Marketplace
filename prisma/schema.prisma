@@ -419,6 +419,7 @@ model Agent {
   updatedAt       DateTime  @updatedAt
   downloadCount   Int       @default(0)
   webhookUrl      String?
+  config          Json?
 
   // Relations
   creator         User      @relation(fields: [createdBy], references: [id])
