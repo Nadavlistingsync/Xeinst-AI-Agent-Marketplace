@@ -447,6 +447,72 @@ export default function GuidePage() {
           </Card>
         </div>
 
+        {/* How to Upload Agents Section */}
+        <Card className="mb-12 border-2 border-green-200 bg-green-50" id="upload-agents">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-800">
+              <Upload className="w-6 h-6" />
+              How to Upload Agents
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-semibold text-lg mb-2">1. Upload via Web Interface</h3>
+                <ol className="list-decimal list-inside space-y-1 text-gray-700">
+                  <li>Go to the <Link href="/upload" className="text-blue-700 underline">Upload Agent</Link> page.</li>
+                  <li>Fill in the required agent details (name, description, version, etc.).</li>
+                  <li>Upload your agent file (JSON, ZIP, or supported format).</li>
+                  <li>Click <span className="font-semibold">Upload</span> to submit your agent for review and publishing.</li>
+                  <li>Once approved, your agent will appear in the <Link href="/marketplace" className="text-blue-700 underline">Marketplace</Link>.</li>
+                </ol>
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg mb-2">2. Upload via API (Programmatically)</h3>
+                <p className="text-gray-700 mb-2">You can also upload agents using our API endpoint. This is useful for automation, CI/CD, or bulk uploads.</p>
+                <div className="bg-gray-900 text-green-200 p-4 rounded-lg text-sm mb-2 overflow-x-auto">
+{`POST /api/upload-agent
+Headers:
+  Authorization: Bearer <your_token>
+Content-Type: multipart/form-data
+
+Body:
+  name: My Agent
+  description: Does cool stuff
+  file: (attach your agent file)
+`}
+                </div>
+                <div className="bg-gray-100 p-4 rounded-lg text-sm mb-2 overflow-x-auto">
+{`curl -X POST https://yourdomain.com/api/upload-agent \
+  -H "Authorization: Bearer <your_token>" \
+  -F "name=My Agent" \
+  -F "description=Does cool stuff" \
+  -F "file=@/path/to/agent.zip"`}
+                </div>
+                <p className="text-gray-700">See the API docs for all available fields and authentication requirements.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg mb-2">3. Agent File Requirements</h3>
+                <ul className="list-disc list-inside space-y-1 text-gray-700">
+                  <li>Accepted formats: <span className="font-mono">.json</span>, <span className="font-mono">.zip</span></li>
+                  <li>Must include required metadata fields: <span className="font-mono">name</span>, <span className="font-mono">description</span>, <span className="font-mono">version</span>, <span className="font-mono">inputSchema</span>, <span className="font-mono">execute</span></li>
+                  <li>Optional: <span className="font-mono">documentation</span>, <span className="font-mono">examples</span>, <span className="font-mono">tags</span></li>
+                  <li>See the <b>Agent File Structure</b> section above for a full example.</li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg mb-2">4. Security & Best Practices</h3>
+                <ul className="list-disc list-inside space-y-1 text-gray-700">
+                  <li>Only authenticated users can upload agents via the API or web UI.</li>
+                  <li>All uploads are scanned and reviewed before publishing.</li>
+                  <li>Do not include sensitive information or credentials in your agent files.</li>
+                  <li>Follow the <b>input schema</b> and <b>metadata</b> guidelines for best compatibility.</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Call to Action */}
         <Card className="mt-12 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
           <CardContent className="p-8 text-center">
