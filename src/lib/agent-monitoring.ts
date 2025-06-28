@@ -429,6 +429,7 @@ export async function getAgentHealth(deploymentId: string, options: { detailed?:
       .filter(log => isValidLogLevel(log.level) && !!log.deploymentId)
       .map(log => ({
         ...log,
+        deploymentId: log.deploymentId as string,
         level: log.level as 'info' | 'warning' | 'error',
       }));
 
