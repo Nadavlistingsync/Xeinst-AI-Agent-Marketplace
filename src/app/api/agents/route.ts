@@ -27,6 +27,7 @@ const uploadAgentSchema = z.object({
   environment: z.string().default("production"),
   framework: z.string().default("custom"),
   modelType: z.string().default("custom"),
+  config: z.any().optional(),
 });
 
 // Example agents for demonstration
@@ -155,6 +156,7 @@ export async function POST(request: NextRequest) {
         modelType: validatedData.modelType,
         isPublic: true,
         createdBy: session.user.id,
+        config: validatedData.config,
       },
     });
 

@@ -39,6 +39,9 @@ interface AgentData {
   modelType: string;
   inputSchema: string;
   exampleInputs: string;
+  inputTypes: string[];
+  supportsStreaming: boolean;
+  supportsEmailCallback: boolean;
 }
 
 export default function UploadPage() {
@@ -74,7 +77,10 @@ export default function UploadPage() {
 }`,
     exampleInputs: `{
   "input": "Hello, this is a test input"
-}`
+}`,
+    inputTypes: [],
+    supportsStreaming: false,
+    supportsEmailCallback: false,
   });
 
   const predefinedCategories = [
@@ -91,6 +97,22 @@ export default function UploadPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleInputTypeChange = (type: string) => {
+    setFormData((prev) => {
+      const inputTypes = prev.inputTypes.includes(type)
+        ? prev.inputTypes.filter((t) => t !== type)
+        : [...prev.inputTypes, type];
+      return { ...prev, inputTypes };
+    });
+  };
+
+  const handleAdvancedOptionChange = (option: 'supportsStreaming' | 'supportsEmailCallback') => {
+    setFormData((prev) => ({
+      ...prev,
+      [option]: !prev[option],
+    }));
   };
 
   const handleStep1Validation = () => {
@@ -198,12 +220,20 @@ export default function UploadPage() {
         throw new Error('Invalid JSON format in schema or inputs');
       }
 
+      const config = {
+        inputTypes: formData.inputTypes,
+        formSchema: parsedSchema,
+        supportsStreaming: formData.supportsStreaming,
+        supportsEmailCallback: formData.supportsEmailCallback,
+      };
+
       const agentData = {
         ...formData,
         price: parseFloat(formData.price),
         inputSchema: parsedSchema,
         exampleInputs: parsedInputs,
         webhookUrl: formData.webhookUrl,
+        config,
       };
 
       const response = await fetch('/api/agents', {
@@ -257,7 +287,10 @@ export default function UploadPage() {
 }`,
       exampleInputs: `{
   "input": "Hello, this is a test input"
-}`
+}`,
+      inputTypes: [],
+      supportsStreaming: false,
+      supportsEmailCallback: false,
     });
     setError("");
     setWebhookTestResult(null);
@@ -558,7 +591,7 @@ export default function UploadPage() {
                 Step 3: Input Configuration
               </CardTitle>
               <CardDescription>
-                Define the input schema and test your webhook
+                Define the input schema, select input types, and test your webhook
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -591,6 +624,53 @@ export default function UploadPage() {
                 />
                 <p className="text-xs text-muted-foreground">
                   Provide example inputs that will be used to test your webhook
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Supported Input Types *</label>
+                <div className="flex flex-wrap gap-4">
+                  {['text', 'form', 'webhook', 'file', 'button'].map((type) => (
+                    <label key={type} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.inputTypes.includes(type)}
+                        onChange={() => handleInputTypeChange(type)}
+                        className="accent-primary"
+                      />
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Select all input types your agent supports. Most agents should support at least one.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Advanced Options</label>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.supportsStreaming}
+                      onChange={() => handleAdvancedOptionChange('supportsStreaming')}
+                      className="accent-primary"
+                    />
+                    Streaming Output
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.supportsEmailCallback}
+                      onChange={() => handleAdvancedOptionChange('supportsEmailCallback')}
+                      className="accent-primary"
+                    />
+                    Email Callback
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Enable if your agent supports streaming output or email callbacks for long tasks.
                 </p>
               </div>
 
@@ -705,6 +785,15 @@ export default function UploadPage() {
                     <pre className="mt-1 p-2 bg-background rounded text-xs overflow-auto">
                       {formData.inputSchema}
                     </pre>
+                  </div>
+                  <div className="md:col-span-2">
+                    <strong>Supported Input Types:</strong> {formData.inputTypes.join(', ') || 'None selected'}
+                  </div>
+                  <div className="md:col-span-2">
+                    <strong>Advanced Options:</strong> {[
+                      formData.supportsStreaming ? 'Streaming Output' : null,
+                      formData.supportsEmailCallback ? 'Email Callback' : null
+                    ].filter(Boolean).join(', ') || 'None'}
                   </div>
                 </div>
               </div>
