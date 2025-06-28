@@ -3,22 +3,22 @@
 @tailwind utilities;
 
 :root {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 40% 98%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 40% 98%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 40% 98%;
+  --background: 0 0% 0%; /* Pure black */
+  --foreground: 0 0% 100%; /* Pure white */
+  --card: 0 0% 0%;
+  --card-foreground: 0 0% 100%;
+  --popover: 0 0% 0%;
+  --popover-foreground: 0 0% 100%;
   --primary: 217.2 91.2% 59.8%;
-  --primary-foreground: 222.2 84% 4.9%;
+  --primary-foreground: 0 0% 0%;
   --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 40% 98%;
+  --secondary-foreground: 0 0% 100%;
   --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 20.2% 65.1%;
+  --muted-foreground: 0 0% 80%;
   --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 40% 98%;
+  --accent-foreground: 0 0% 100%;
   --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 210 40% 98%;
+  --destructive-foreground: 0 0% 100%;
   --border: 217.2 32.6% 17.5%;
   --input: 217.2 32.6% 17.5%;
   --ring: 224.3 76.3% 94.1%;
@@ -55,7 +55,8 @@ body {
   color: hsl(var(--foreground));
   background: hsl(var(--background));
   min-height: 100vh;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', 'Montserrat', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 600;
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
@@ -65,7 +66,7 @@ html {
 
 @layer base {
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Inter', 'Montserrat', 'Segoe UI', system-ui, sans-serif;
     scroll-behavior: smooth;
   }
   
@@ -74,7 +75,7 @@ html {
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight;
+    @apply font-bold tracking-tight xeinst-glow;
     letter-spacing: -0.02em;
   }
 
@@ -225,6 +226,11 @@ html {
     .section-padding {
       @apply py-16;
     }
+  }
+
+  .xeinst-glow {
+    text-shadow: 0 0 8px #fff, 0 0 16px #fff, 0 0 32px #00b4ff;
+    color: #fff;
   }
 }
 
