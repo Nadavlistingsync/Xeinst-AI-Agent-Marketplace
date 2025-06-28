@@ -364,19 +364,22 @@ function detectAgentType(inputs: any): string {
  */
 async function logAgentRun(agentId: string, inputs: any, result: any, error?: string) {
   try {
-    // Log to database when user auth is implemented
-    await prisma.agentLog.create({
-      data: {
-        deploymentId: agentId,
-        level: error ? 'error' : 'info',
-        message: error || 'Agent run successful',
-        metadata: {
-          inputs,
-          result: error ? null : result,
-          error: error || null,
-          timestamp: new Date().toISOString(),
-        },
+    // Only set deploymentId if it is a valid, non-empty string
+    const logData: any = {
+      level: error ? 'error' : 'info',
+      message: error || 'Agent run successful',
+      metadata: {
+        inputs,
+        result: error ? null : result,
+        error: error || null,
+        timestamp: new Date().toISOString(),
       },
+    };
+    if (agentId && typeof agentId === 'string' && agentId.length > 0) {
+      logData.deploymentId = agentId;
+    }
+    await prisma.agentLog.create({
+      data: logData,
     });
 
     // TODO: Add user tracking when auth is implemented
