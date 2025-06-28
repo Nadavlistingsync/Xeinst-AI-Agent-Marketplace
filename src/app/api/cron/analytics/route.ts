@@ -3,15 +3,22 @@ import { prisma } from '@/lib/prisma';
 import { withApiPerformanceTracking } from '@/lib/performance';
 import { getPerformanceReport } from '@/lib/performance';
 
-export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
+export const GET = withApiPerformanceTracking(async (_req: NextRequest) => {
   try {
     const startTime = Date.now();
-    const analyticsResults = {
-      userStats: {},
-      agentStats: {},
-      deploymentStats: {},
+    const analyticsResults: {
+      userStats: { total: number; active: number; newToday: number; activeRate: string };
+      agentStats: { total: number; public: number; deployed: number; totalDownloads: number; deploymentRate: string };
+      deploymentStats: { total: number; active: number; totalRevenue: number; activeRate: string };
+      performanceStats: any;
+      revenueStats: { monthlyRevenue: number; monthlyOrders: number; averageOrderValue: number };
+      duration: number;
+    } = {
+      userStats: { total: 0, active: 0, newToday: 0, activeRate: '0' },
+      agentStats: { total: 0, public: 0, deployed: 0, totalDownloads: 0, deploymentRate: '0' },
+      deploymentStats: { total: 0, active: 0, totalRevenue: 0, activeRate: '0' },
       performanceStats: {},
-      revenueStats: {},
+      revenueStats: { monthlyRevenue: 0, monthlyOrders: 0, averageOrderValue: 0 },
       duration: 0
     };
 
@@ -20,7 +27,7 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
       prisma.user.count(),
       prisma.user.count({
         where: {
-          lastLoginAt: {
+          createdAt: {
             gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
           }
         }
@@ -38,14 +45,14 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
       total: totalUsers,
       active: activeUsers,
       newToday: newUsers,
-      activeRate: totalUsers > 0 ? (activeUsers / totalUsers * 100).toFixed(2) : 0
+      activeRate: totalUsers > 0 ? (activeUsers / totalUsers * 100).toFixed(2) : '0'
     };
 
     // Get agent statistics
     const [totalAgents, publicAgents, deployedAgents, agentDownloads] = await Promise.all([
       prisma.agent.count(),
       prisma.agent.count({ where: { isPublic: true } }),
-      prisma.agent.count({ where: { status: 'deployed' } }),
+      prisma.agent.count({ where: { isPublic: true } }),
       prisma.agent.aggregate({
         _sum: { downloadCount: true }
       })
@@ -55,8 +62,8 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
       total: totalAgents,
       public: publicAgents,
       deployed: deployedAgents,
-      totalDownloads: agentDownloads._sum.downloadCount || 0,
-      deploymentRate: totalAgents > 0 ? (deployedAgents / totalAgents * 100).toFixed(2) : 0
+      totalDownloads: (agentDownloads._sum?.downloadCount as number) || 0,
+      deploymentRate: totalAgents > 0 ? (deployedAgents / totalAgents * 100).toFixed(2) : '0'
     };
 
     // Get deployment statistics
@@ -71,8 +78,8 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
     analyticsResults.deploymentStats = {
       total: totalDeployments,
       active: activeDeployments,
-      totalRevenue: deploymentRevenue._sum.price || 0,
-      activeRate: totalDeployments > 0 ? (activeDeployments / totalDeployments * 100).toFixed(2) : 0
+      totalRevenue: deploymentRevenue._sum?.price || 0,
+      activeRate: totalDeployments > 0 ? (activeDeployments / totalDeployments * 100).toFixed(2) : '0'
     };
 
     // Get performance statistics
@@ -88,14 +95,14 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
     // Get revenue statistics (last 30 days)
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const [monthlyRevenue, monthlyOrders] = await Promise.all([
-      prisma.order.aggregate({
+      prisma.purchase.aggregate({
         where: {
           createdAt: { gte: thirtyDaysAgo },
           status: 'completed'
         },
         _sum: { amount: true }
       }),
-      prisma.order.count({
+      prisma.purchase.count({
         where: {
           createdAt: { gte: thirtyDaysAgo },
           status: 'completed'
@@ -104,9 +111,9 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
     ]);
 
     analyticsResults.revenueStats = {
-      monthlyRevenue: monthlyRevenue._sum.amount || 0,
+      monthlyRevenue: monthlyRevenue._sum?.amount || 0,
       monthlyOrders: monthlyOrders,
-      averageOrderValue: monthlyOrders > 0 ? (monthlyRevenue._sum.amount || 0) / monthlyOrders : 0
+      averageOrderValue: monthlyOrders > 0 ? (monthlyRevenue._sum?.amount || 0) / monthlyOrders : 0
     };
 
     analyticsResults.duration = Date.now() - startTime;
@@ -137,7 +144,6 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
 
   } catch (error) {
     console.error('Analytics job failed:', error);
-    
     return NextResponse.json({
       success: false,
       error: 'Analytics processing failed',

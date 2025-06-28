@@ -417,6 +417,7 @@ model Agent {
   createdBy       String
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  downloadCount   Int       @default(0)
 
   // Relations
   creator         User      @relation(fields: [createdBy], references: [id])
@@ -449,4 +450,65 @@ model CreditTransaction {
   createdAt   DateTime @default(now())
 
   user        User     @relation(fields: [userId], references: [id])
+}
+
+model Job {
+  id          String   @id @default(cuid())
+  type        String
+  status      String
+  data        Json?
+  priority    String
+  createdAt   DateTime @default(now())
+  startedAt   DateTime?
+  completedAt DateTime?
+  error       String?
+  retries     Int      @default(0)
+  maxRetries  Int      @default(1)
+  metadata    Json?
+}
+
+model AnalyticsSnapshot {
+  id        String   @id @default(cuid())
+  timestamp DateTime @default(now())
+  data      Json
+  type      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expires   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RateLimitLog {
+  id        String   @id @default(cuid())
+  timestamp DateTime @default(now())
+  allowed   Boolean
+  key       String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Backup {
+  id        String   @id @default(cuid())
+  type      String
+  status    String
+  size      Int
+  location  String
+  metadata  Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  deploymentId String
+  comment   String?
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

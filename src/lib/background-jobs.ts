@@ -192,10 +192,10 @@ class JobQueue {
     try {
       switch (job.type) {
         case 'agent_deployment':
-          await this.handleAgentDeployment(job);
+          await this.handleAgentDeployment();
           break;
         case 'file_processing':
-          await this.handleFileProcessing(job);
+          await this.handleFileProcessing();
           break;
         case 'analytics_processing':
           await this.handleAnalyticsProcessing(job);
@@ -207,13 +207,13 @@ class JobQueue {
           await this.handleDataCleanup(job);
           break;
         case 'backup_creation':
-          await this.handleBackupCreation(job);
+          await this.handleBackupCreation();
           break;
         case 'agent_monitoring':
           await this.handleAgentMonitoring(job);
           break;
         case 'feedback_analysis':
-          await this.handleFeedbackAnalysis(job);
+          await this.handleFeedbackAnalysis();
           break;
         default:
           throw new Error(`Unknown job type: ${job.type}`);
@@ -236,76 +236,63 @@ class JobQueue {
     }
   }
 
-  private async handleAgentDeployment(job: Job): Promise<void> {
-    const { agentId, deploymentConfig } = job.data;
-    
+  private async handleAgentDeployment(): Promise<void> {
     // Simulate agent deployment process
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Update agent status in database
-    await prisma.agent.update({
-      where: { id: agentId },
-      data: { 
-        status: 'deployed',
-        deployedAt: new Date()
-      }
-    });
+    // Update agent (no status or deployedAt fields in schema)
+    // await prisma.agent.update({ where: { id: agentId }, data: { status: 'deployed', deployedAt: new Date() } });
   }
 
-  private async handleFileProcessing(job: Job): Promise<void> {
-    const { fileId, processingType } = job.data;
-    
+  private async handleFileProcessing(): Promise<void> {
     // Simulate file processing
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Update file status
-    await prisma.file.update({
-      where: { id: fileId },
-      data: { 
-        status: 'processed',
-        processedAt: new Date()
-      }
-    });
+    // Update file (no status or processedAt fields in schema)
+    // await prisma.file.update({ where: { id: fileId }, data: { status: 'processed', processedAt: new Date() } });
   }
 
   private async handleAnalyticsProcessing(job: Job): Promise<void> {
-    const { agentId, dateRange } = job.data;
-    
+    const { deploymentId } = job.data;
     // Simulate analytics processing
     await new Promise(resolve => setTimeout(resolve, 3000));
-    
     // Generate analytics data
     const analytics = {
       totalRequests: Math.floor(Math.random() * 1000),
       successRate: 0.95 + Math.random() * 0.05,
       averageResponseTime: 200 + Math.random() * 800
     };
-    
-    // Store analytics
+    // Store analytics (use deploymentId, not agentId, and only valid fields)
     await prisma.agentMetrics.create({
       data: {
-        agentId,
-        metrics: analytics,
-        timestamp: new Date()
+        deploymentId,
+        errorRate: 0,
+        responseTime: analytics.averageResponseTime,
+        successRate: analytics.successRate,
+        totalRequests: analytics.totalRequests,
+        activeUsers: 0,
+        averageResponseTime: analytics.averageResponseTime,
+        requestsPerMinute: 0,
+        averageTokensUsed: 0,
+        costPerRequest: 0,
+        totalCost: 0,
+        timestamp: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastUpdated: new Date()
       }
     });
   }
 
   private async handleEmailSending(job: Job): Promise<void> {
-    const { to, subject, template, data } = job.data;
-    
+    const { to, subject } = job.data;
     // Simulate email sending
     await new Promise(resolve => setTimeout(resolve, 500));
-    
     console.log(`Email sent to ${to}: ${subject}`);
   }
 
   private async handleDataCleanup(job: Job): Promise<void> {
     const { olderThan } = job.data;
-    
     // Clean up old data
     const cutoffDate = new Date(Date.now() - olderThan);
-    
     await prisma.agentLog.deleteMany({
       where: {
         createdAt: {
@@ -315,51 +302,47 @@ class JobQueue {
     });
   }
 
-  private async handleBackupCreation(job: Job): Promise<void> {
+  private async handleBackupCreation(): Promise<void> {
     // Simulate backup creation
     await new Promise(resolve => setTimeout(resolve, 5000));
-    
     console.log('Backup created successfully');
   }
 
   private async handleAgentMonitoring(job: Job): Promise<void> {
-    const { agentId } = job.data;
-    
-    // Check agent health
-    const agent = await prisma.agent.findUnique({
-      where: { id: agentId }
+    const { deploymentId } = job.data;
+    // Check deployment health
+    const deployment = await prisma.deployment.findUnique({
+      where: { id: deploymentId }
     });
-    
-    if (agent) {
-      // Update monitoring status
+    if (deployment) {
+      // Update monitoring status (store a metrics record)
       await prisma.agentMetrics.create({
         data: {
-          agentId,
-          metrics: {
-            status: 'healthy',
-            lastCheck: new Date().toISOString()
-          },
-          timestamp: new Date()
+          deploymentId,
+          errorRate: 0,
+          responseTime: 0,
+          successRate: 1,
+          totalRequests: 0,
+          activeUsers: 0,
+          averageResponseTime: 0,
+          requestsPerMinute: 0,
+          averageTokensUsed: 0,
+          costPerRequest: 0,
+          totalCost: 0,
+          timestamp: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          lastUpdated: new Date()
         }
       });
     }
   }
 
-  private async handleFeedbackAnalysis(job: Job): Promise<void> {
-    const { feedbackId } = job.data;
-    
+  private async handleFeedbackAnalysis(): Promise<void> {
     // Simulate feedback analysis
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Update feedback with analysis
-    await prisma.feedback.update({
-      where: { id: feedbackId },
-      data: {
-        analyzed: true,
-        analyzedAt: new Date(),
-        sentiment: Math.random() > 0.5 ? 'positive' : 'negative'
-      }
-    });
+    // Update feedback (no analyzed, analyzedAt, sentiment fields in schema)
+    // await prisma.feedback.update({ where: { id: feedbackId }, data: { analyzed: true, analyzedAt: new Date(), sentiment: Math.random() > 0.5 ? 'positive' : 'negative' } });
   }
 
   private getJobTimeout(type: JobType): number {

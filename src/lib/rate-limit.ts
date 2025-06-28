@@ -87,17 +87,13 @@ class RateLimiter {
     return `rate_limit:${ip}:${userAgent}:${path}`;
   }
 
-  private async storeRateLimitData(key: string, data: { count: number; resetTime: number }, allowed: boolean): Promise<void> {
+  private async storeRateLimitData(key: string, _data: { count: number; resetTime: number }, allowed: boolean): Promise<void> {
     try {
       await prisma.rateLimitLog.create({
         data: {
           key,
-          count: data.count,
-          resetTime: new Date(data.resetTime),
           allowed,
           timestamp: new Date(),
-          userAgent: 'unknown', // Could be extracted from key
-          ip: 'unknown' // Could be extracted from key
         }
       });
     } catch (error) {
@@ -155,7 +151,7 @@ class RateLimiter {
     totalRequests: number;
     blockedRequests: number;
     topKeys: Array<{ key: string; count: number }>;
-    recentBlocks: Array<{ key: string; timestamp: Date; userAgent: string; ip: string }>;
+    recentBlocks: Array<{ key: string; timestamp: Date }>;
   }> {
     return withDbPerformanceTracking('get_rate_limit_stats', async () => {
       const [totalRequests, blockedRequests, topKeys, recentBlocks] = await Promise.all([
@@ -171,7 +167,7 @@ class RateLimiter {
           where: { allowed: false },
           orderBy: { timestamp: 'desc' },
           take: 20,
-          select: { key: true, timestamp: true, userAgent: true, ip: true }
+          select: { key: true, timestamp: true }
         })
       ]);
 
@@ -181,9 +177,7 @@ class RateLimiter {
         topKeys: topKeys.map(k => ({ key: k.key, count: k._count.key })),
         recentBlocks: recentBlocks.map(b => ({
           key: b.key,
-          timestamp: b.timestamp,
-          userAgent: b.userAgent,
-          ip: b.ip
+          timestamp: b.timestamp
         }))
       };
     });
@@ -236,36 +230,6 @@ export const rateLimiters = {
     legacyHeaders: false
   })
 };
-
-// Helper function to apply rate limiting to API routes
-export function withRateLimit(
-  limiter: RateLimiter,
-  handler: (req: NextRequest) => Promise<NextResponse>
-) {
-  return async (req: NextRequest): Promise<NextResponse> => {
-    const rateLimitResult = await limiter.checkRateLimit(req);
-    
-    if (!rateLimitResult.allowed) {
-      return limiter.handleRateLimitExceeded(req, rateLimitResult.info);
-    }
-    
-    return handler(req);
-  };
-}
-
-// Custom rate limit handler for authentication failures
-export function createAuthRateLimitHandler() {
-  return (req: NextRequest): NextResponse => {
-    return NextResponse.json(
-      {
-        error: 'Too Many Authentication Attempts',
-        message: 'Too many failed login attempts. Please try again later.',
-        retryAfter: 900 // 15 minutes
-      },
-      { status: 429 }
-    );
-  };
-}
 
 // Rate limit middleware for specific user actions
 export function createUserActionRateLimit(action: string) {

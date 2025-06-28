@@ -30,8 +30,7 @@ describe('Agent API', () => {
     // Mock empty response
     (prisma.agent.findMany as any).mockResolvedValue([]);
 
-    const request = new Request('http://localhost:3000/api/agents');
-    const response = await GET(request);
+    const response = await GET();
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -60,8 +59,7 @@ describe('Agent API', () => {
     // Mock agent response
     (prisma.agent.findMany as any).mockResolvedValue(mockAgents);
 
-    const request = new Request('http://localhost:3000/api/agents');
-    const response = await GET(request);
+    const response = await GET();
     const data = await response.json();
 
     expect(response.status).toBe(200);
@@ -117,9 +115,12 @@ describe('Agent API', () => {
     (prisma.agentMetrics.findFirst as any).mockResolvedValue(mockMetrics);
 
     const metrics = await getAgentMetrics('1');
-    expect(metrics).toHaveProperty('id', '1');
-    expect(metrics).toHaveProperty('deploymentId', '1');
-    expect(typeof metrics.lastUpdated === 'string' || metrics.lastUpdated instanceof Date).toBe(true);
-    expect(typeof metrics.timestamp === 'string' || metrics.timestamp instanceof Date).toBe(true);
+    expect(metrics).not.toBeNull();
+    if (metrics) {
+      expect(metrics).toHaveProperty('id', '1');
+      expect(metrics).toHaveProperty('deploymentId', '1');
+      expect(typeof metrics.lastUpdated === 'string' || metrics.lastUpdated instanceof Date).toBe(true);
+      expect(typeof metrics.timestamp === 'string' || metrics.timestamp instanceof Date).toBe(true);
+    }
   });
 }); 

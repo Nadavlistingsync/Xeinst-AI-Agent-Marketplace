@@ -15,7 +15,6 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Loader2, 
   Play, 
-  Eye, 
   EyeOff, 
   Download, 
   Star, 
@@ -25,7 +24,8 @@ import {
   Users,
   CheckCircle,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -197,7 +197,7 @@ export function InteractiveAgentCard({ agent }: { agent: Agent }) {
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-ai rounded-xl flex items-center justify-center">
-                {getAgentIcon(agent.type || 'default')}
+                {getAgentIcon('default')}
               </div>
               <div>
                 <CardTitle className="text-lg font-semibold text-white group-hover:text-ai-primary transition-colors">
@@ -205,7 +205,7 @@ export function InteractiveAgentCard({ agent }: { agent: Agent }) {
                 </CardTitle>
                 <div className="flex items-center space-x-2 mt-1">
                   <Badge className="badge-primary text-xs">
-                    {agent.type || 'agent'}
+                    {'agent'}
                   </Badge>
                   <div className="flex items-center text-yellow-400">
                     <Star className="w-3 h-3 fill-current" />

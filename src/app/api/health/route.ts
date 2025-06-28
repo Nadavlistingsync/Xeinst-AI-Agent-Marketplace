@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getPerformanceReport } from '@/lib/performance';
 import { withApiPerformanceTracking } from '@/lib/performance';
@@ -100,7 +100,14 @@ function checkEnvironment(): { status: 'healthy' | 'unhealthy'; nodeEnv: string;
 
 function checkPerformance(): { status: 'healthy' | 'degraded' | 'unhealthy'; averageResponseTime: number; successRate: number; recentErrors: number } {
   const report = getPerformanceReport();
-  const { averageResponseTime, successRate, recentErrors } = report;
+  const { averageResponseTime, successRate } = report;
+  // If recentErrors is an array, use its length; otherwise, use as is
+  let recentErrors: number = 0;
+  if (Array.isArray(report.recentErrors)) {
+    recentErrors = report.recentErrors.length;
+  } else {
+    recentErrors = typeof report.recentErrors === 'number' ? report.recentErrors : 0;
+  }
   
   let status: 'healthy' | 'degraded' | 'unhealthy';
   
@@ -137,10 +144,8 @@ function determineOverallStatus(checks: HealthCheckResult['checks']): 'healthy' 
   return 'healthy';
 }
 
-export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
+export const GET = withApiPerformanceTracking(async () => {
   try {
-    const startTime = Date.now();
-    
     // Run all health checks in parallel
     const [databaseCheck, memoryCheck, environmentCheck, performanceCheck] = await Promise.all([
       checkDatabase(),

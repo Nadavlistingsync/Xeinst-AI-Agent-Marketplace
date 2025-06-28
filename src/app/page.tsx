@@ -5,11 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { 
   ArrowRight, 
   Sparkles, 
-  Zap, 
-  Globe, 
   Shield, 
   Users, 
-  TrendingUp,
   Star,
   CheckCircle,
   Play,
@@ -163,7 +160,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.8 }}
               className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto"
             >
-              {stats.map((stat, index) => (
+              {stats.map((stat) => (
                 <div key={stat.label} className="text-center">
                   <div className="flex items-center justify-center w-12 h-12 bg-gradient-ai rounded-xl mx-auto mb-3">
                     <stat.icon className="w-6 h-6 text-white" />

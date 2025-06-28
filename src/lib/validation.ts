@@ -71,8 +71,7 @@ export const agentDeploySchema = z.object({
       minReplicas: z.number().min(1).max(10).default(1),
       maxReplicas: z.number().min(1).max(20).default(3),
       targetCPUUtilization: z.number().min(50).max(90).default(70)
-    }).optional(),
-    environment: z.record(z.string()).optional()
+    }).optional()
   }).optional()
 });
 
@@ -200,14 +199,25 @@ export function withValidation<T extends z.ZodSchema>(
 }
 
 // Partial validation for updates
-export function withPartialValidation<T extends z.ZodSchema>(
+export function withPartialValidation<T extends z.ZodObject<any>>(
   schema: T,
   handler: (req: NextRequest, data: Partial<z.infer<T>>) => Promise<NextResponse>
 ) {
   return withApiPerformanceTracking(async (req: NextRequest) => {
     try {
-      const body = await req.json().catch(() => ({}));
-      const data = schema.partial().parse(body);
+      let data: Partial<z.infer<T>>;
+
+      if (req.method === 'GET') {
+        // Parse query parameters
+        const url = new URL(req.url);
+        const queryData = Object.fromEntries(url.searchParams.entries());
+        data = schema.partial().parse(queryData);
+      } else {
+        // Parse JSON body
+        const body = await req.json().catch(() => ({}));
+        data = schema.partial().parse(body);
+      }
+
       return await handler(req, data);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -219,7 +229,7 @@ export function withPartialValidation<T extends z.ZodSchema>(
 }
 
 // Array validation
-export function withArrayValidation<T extends z.ZodSchema>(
+export function withArrayValidation<T extends z.ZodObject<any>>(
   schema: T,
   handler: (req: NextRequest, data: z.infer<T>[]) => Promise<NextResponse>
 ) {

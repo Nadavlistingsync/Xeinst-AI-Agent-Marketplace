@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { io as Client } from 'socket.io-client';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 
 describe('WebSocket', () => {
-  let io;
-  let clientSocket;
-  let httpServer;
+  let io: any;
+  let clientSocket: any;
+  let httpServer: any;
   let httpServerAddr;
 
   beforeEach(async () => {
@@ -19,8 +19,8 @@ describe('WebSocket', () => {
         const port = httpServerAddr.port;
         clientSocket = Client(`http://localhost:${port}`);
         
-        io.on('connection', (socket) => {
-          socket.on('join-deployment', (deploymentId) => {
+        io.on('connection', (socket: any) => {
+          socket.on('join-deployment', (deploymentId: any) => {
             socket.join(deploymentId);
             socket.emit('deployment-status', { status: 'active', deploymentId });
           });
@@ -50,7 +50,7 @@ describe('WebSocket', () => {
   it('should emit deployment status', async () => {
     return new Promise<void>((resolve) => {
       clientSocket.emit('join-deployment', 'test-deployment');
-      clientSocket.on('deployment-status', (data) => {
+      clientSocket.on('deployment-status', (data: any) => {
         expect(data.status).toBe('active');
         expect(data.deploymentId).toBe('test-deployment');
         resolve();

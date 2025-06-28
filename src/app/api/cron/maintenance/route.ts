@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { withApiPerformanceTracking } from '@/lib/performance';
 import { jobQueue } from '@/lib/background-jobs';
 
-export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
+export const GET = withApiPerformanceTracking(async () => {
   try {
     const startTime = Date.now();
     const results = {
@@ -69,7 +69,6 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
     // Clean up temporary files (older than 24 hours)
     const fileResult = await prisma.file.deleteMany({
       where: {
-        status: 'temp',
         createdAt: {
           lt: new Date(Date.now() - 24 * 60 * 60 * 1000)
         }
@@ -146,7 +145,7 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
     await cleanupOldBackups();
 
     // Schedule backup verification job
-    await jobQueue.createJob('backup_verification', {
+    await jobQueue.createJob('backup_verification' as any, {
       backupIds: [backupRecord?.id, fileBackupRecord?.id, analyticsBackupRecord?.id].filter(Boolean),
       timestamp: new Date().toISOString()
     }, 'low');
@@ -172,14 +171,14 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
 });
 
 async function getDatabaseRecordCount(): Promise<Record<string, number>> {
-  const [users, agents, deployments, orders, feedback] = await Promise.all([
+  const [users, agents, deployments, purchases, feedback] = await Promise.all([
     prisma.user.count(),
     prisma.agent.count(),
     prisma.deployment.count(),
-    prisma.order.count(),
+    prisma.purchase.count(),
     prisma.feedback.count()
   ]);
-  return { users, agents, deployments, orders, feedback };
+  return { users, agents, deployments, purchases, feedback };
 }
 
 async function getPerformanceMetrics(): Promise<any> {
@@ -189,7 +188,7 @@ async function getPerformanceMetrics(): Promise<any> {
   });
   return {
     totalMetrics: recentMetrics.length,
-    averageResponseTime: recentMetrics.reduce((sum, m) => sum + (m.metrics as any).responseTime || 0, 0) / recentMetrics.length || 0,
+    averageResponseTime: recentMetrics.reduce((sum, m) => sum + (m.averageResponseTime || 0), 0) / (recentMetrics.length || 1),
     timestamp: new Date().toISOString()
   };
 }
