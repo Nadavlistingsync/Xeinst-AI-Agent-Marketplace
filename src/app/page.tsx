@@ -1,4 +1,5 @@
-import { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +17,6 @@ import {
   Cloud
 } from "lucide-react";
 import { motion } from "framer-motion";
-
-export const metadata: Metadata = {
-  title: "Xeinst - AI Solutions for Your Business",
-  description: "We build custom AI tools for free. You only pay if you love the product.",
-};
 
 const features = [
   {

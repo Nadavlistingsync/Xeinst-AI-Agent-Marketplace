@@ -1,4 +1,5 @@
-import { Metadata } from "next";
+"use client";
+
 import { MarketplaceGrid } from "@/components/marketplace/MarketplaceGrid";
 import { MarketplaceFilters } from "@/components/marketplace/MarketplaceFilters";
 import { MarketplaceSearch } from "@/components/marketplace/MarketplaceSearch";
@@ -8,25 +9,48 @@ import { Plus, Upload, Sparkles, Filter, Grid, List } from "lucide-react";
 import Link from "next/link";
 import { Agent } from "@/app/api/agents/route";
 import { motion } from "framer-motion";
-
-export const metadata: Metadata = {
-  title: "Xeinst Agent Marketplace",
-  description: "Browse our collection of AI agents, and run them directly from the browser.",
-};
+import { useEffect, useState } from "react";
 
 async function getAgents(): Promise<Agent[]> {
   // In a real app, you might have this on the server if the API is internal,
   // or you'd fetch from the absolute URL if it's external.
   // For this example, we fetch from the API route.
-  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/agents`, { cache: 'no-store' });
+  const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/agents`, { cache: 'no-store' });
   if (!res.ok) {
     throw new Error('Failed to fetch agents');
   }
   return res.json();
 }
 
-export default async function MarketplacePage() {
-  const agents = await getAgents();
+export default function MarketplacePage() {
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      try {
+        const agentsData = await getAgents();
+        setAgents(agentsData);
+      } catch (error) {
+        console.error('Failed to fetch agents:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAgents();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-ai-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading agents...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pt-20">
