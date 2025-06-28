@@ -49,11 +49,15 @@
 
 * {
   border-color: hsl(var(--border));
+  color: #fff !important;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fff, 0 0 32px #00b4ff !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
-body {
-  color: hsl(var(--foreground));
-  background: hsl(var(--background));
+body, html, #__next, #root {
+  background: #000 !important;
+  color: #fff !important;
   min-height: 100vh;
   font-family: 'Inter', 'Montserrat', 'Segoe UI', system-ui, sans-serif;
   font-weight: 600;
@@ -308,6 +312,9 @@ html {
 /* Enhanced form styles */
 input, textarea, select {
   @apply bg-muted/50 border border-border rounded-lg px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-ai-primary focus:ring-2 focus:ring-ai-primary/20 transition-all duration-300;
+  background: #111 !important;
+  color: #fff !important;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fff, 0 0 32px #00b4ff !important;
 }
 
 input:focus, textarea:focus, select:focus {
@@ -321,6 +328,9 @@ table {
 
 th, td {
   @apply border-b border-border px-4 py-3 text-left;
+  background: transparent !important;
+  color: #fff !important;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fff, 0 0 32px #00b4ff !important;
 }
 
 th {
@@ -350,4 +360,11 @@ th {
 
 .badge-error {
   @apply bg-ai-error/20 text-ai-error border border-ai-error/30;
+}
+
+.grid-bg, .bg-gradient-ai, .bg-gradient-dark, .animate-gradient, .animate-gradient-x {
+  background: #000 !important;
+  background-image: none !important;
+  background-size: initial !important;
+  animation: none !important;
 }
