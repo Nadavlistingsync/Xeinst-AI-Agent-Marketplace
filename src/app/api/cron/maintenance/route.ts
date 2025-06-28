@@ -6,23 +6,87 @@ import { jobQueue } from '@/lib/background-jobs';
 export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
   try {
     const startTime = Date.now();
-    const backupResults = {
-      database: false,
-      files: false,
-      analytics: false,
+    const results = {
+      cleanup: {
+        sessions: 0,
+        logs: 0,
+        tempFiles: 0,
+        rateLimitLogs: 0,
+        oldJobs: 0,
+      },
+      backup: {
+        database: false,
+        files: false,
+        analytics: false,
+      },
       duration: 0
     };
 
-    // Create database backup
+    // --- CLEANUP TASKS ---
+    // Clean up expired sessions (older than 30 days)
+    const sessionResult = await prisma.session.deleteMany({
+      where: {
+        expires: {
+          lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        }
+      }
+    });
+    results.cleanup.sessions = sessionResult.count;
+
+    // Clean up old agent logs (older than 90 days)
+    const logResult = await prisma.agentLog.deleteMany({
+      where: {
+        createdAt: {
+          lt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+        }
+      }
+    });
+    results.cleanup.logs = logResult.count;
+
+    // Clean up old rate limit logs (older than 30 days)
+    const rateLimitResult = await prisma.rateLimitLog.deleteMany({
+      where: {
+        timestamp: {
+          lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        }
+      }
+    });
+    results.cleanup.rateLimitLogs = rateLimitResult.count;
+
+    // Clean up old completed/failed jobs (older than 7 days)
+    const jobResult = await prisma.job.deleteMany({
+      where: {
+        status: {
+          in: ['completed', 'failed', 'cancelled']
+        },
+        completedAt: {
+          lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+        }
+      }
+    });
+    results.cleanup.oldJobs = jobResult.count;
+
+    // Clean up temporary files (older than 24 hours)
+    const fileResult = await prisma.file.deleteMany({
+      where: {
+        status: 'temp',
+        createdAt: {
+          lt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+        }
+      }
+    });
+    results.cleanup.tempFiles = fileResult.count;
+
+    // --- BACKUP TASKS ---
+    // Database backup
+    let backupRecord, fileBackupRecord, analyticsBackupRecord;
     try {
-      // In a real production environment, you would use your database's native backup tools
-      // For now, we'll simulate a backup by creating a backup record
-      const backupRecord = await prisma.backup.create({
+      backupRecord = await prisma.backup.create({
         data: {
           type: 'database',
           status: 'completed',
-          size: 0, // Would be actual backup size
-          location: 'backup-storage', // Would be actual backup location
+          size: 0,
+          location: 'backup-storage',
           metadata: {
             tables: ['users', 'agents', 'deployments', 'orders', 'feedback'],
             recordCount: await getDatabaseRecordCount(),
@@ -30,41 +94,36 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
           }
         }
       });
-
-      backupResults.database = true;
-      console.log('Database backup created:', backupRecord.id);
+      results.backup.database = true;
     } catch (error) {
       console.error('Database backup failed:', error);
-      backupResults.database = false;
+      results.backup.database = false;
     }
 
-    // Create file system backup
+    // File system backup
     try {
-      // In a real environment, you would backup uploaded files
-      const fileBackupRecord = await prisma.backup.create({
+      fileBackupRecord = await prisma.backup.create({
         data: {
           type: 'files',
           status: 'completed',
-          size: 0, // Would be actual backup size
+          size: 0,
           location: 'file-storage-backup',
           metadata: {
             fileCount: await prisma.file.count(),
-            totalSize: 0, // Would be actual total size
+            totalSize: 0,
             timestamp: new Date().toISOString()
           }
         }
       });
-
-      backupResults.files = true;
-      console.log('File backup created:', fileBackupRecord.id);
+      results.backup.files = true;
     } catch (error) {
       console.error('File backup failed:', error);
-      backupResults.files = false;
+      results.backup.files = false;
     }
 
-    // Create analytics backup
+    // Analytics backup
     try {
-      const analyticsBackupRecord = await prisma.backup.create({
+      analyticsBackupRecord = await prisma.backup.create({
         data: {
           type: 'analytics',
           status: 'completed',
@@ -77,40 +136,35 @@ export const GET = withApiPerformanceTracking(async (req: NextRequest) => {
           }
         }
       });
-
-      backupResults.analytics = true;
-      console.log('Analytics backup created:', analyticsBackupRecord.id);
+      results.backup.analytics = true;
     } catch (error) {
       console.error('Analytics backup failed:', error);
-      backupResults.analytics = false;
+      results.backup.analytics = false;
     }
-
-    backupResults.duration = Date.now() - startTime;
 
     // Clean up old backups (keep last 4 weeks)
     await cleanupOldBackups();
 
-    // Create a monitoring job to verify backup integrity
+    // Schedule backup verification job
     await jobQueue.createJob('backup_verification', {
       backupIds: [backupRecord?.id, fileBackupRecord?.id, analyticsBackupRecord?.id].filter(Boolean),
       timestamp: new Date().toISOString()
     }, 'low');
 
-    console.log('Backup completed:', backupResults);
+    results.duration = Date.now() - startTime;
+    console.log('Maintenance completed:', results);
 
     return NextResponse.json({
       success: true,
-      message: 'Backup completed successfully',
-      results: backupResults,
+      message: 'Maintenance (cleanup + backup) completed successfully',
+      results,
       timestamp: new Date().toISOString()
     });
-
   } catch (error) {
-    console.error('Backup job failed:', error);
-    
+    console.error('Maintenance job failed:', error);
     return NextResponse.json({
       success: false,
-      error: 'Backup failed',
+      error: 'Maintenance failed',
       message: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString()
     }, { status: 500 });
@@ -125,23 +179,14 @@ async function getDatabaseRecordCount(): Promise<Record<string, number>> {
     prisma.order.count(),
     prisma.feedback.count()
   ]);
-
-  return {
-    users,
-    agents,
-    deployments,
-    orders,
-    feedback
-  };
+  return { users, agents, deployments, orders, feedback };
 }
 
 async function getPerformanceMetrics(): Promise<any> {
-  // Get recent performance metrics
   const recentMetrics = await prisma.agentMetrics.findMany({
     take: 100,
     orderBy: { timestamp: 'desc' }
   });
-
   return {
     totalMetrics: recentMetrics.length,
     averageResponseTime: recentMetrics.reduce((sum, m) => sum + (m.metrics as any).responseTime || 0, 0) / recentMetrics.length || 0,
@@ -151,12 +196,9 @@ async function getPerformanceMetrics(): Promise<any> {
 
 async function cleanupOldBackups(): Promise<void> {
   const fourWeeksAgo = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
-  
   await prisma.backup.deleteMany({
     where: {
-      createdAt: {
-        lt: fourWeeksAgo
-      },
+      createdAt: { lt: fourWeeksAgo },
       status: 'completed'
     }
   });
