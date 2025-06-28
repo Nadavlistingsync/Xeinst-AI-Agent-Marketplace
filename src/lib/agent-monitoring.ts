@@ -427,10 +427,12 @@ export async function getAgentHealth(deploymentId: string, options: { detailed?:
 
     const validLogs = rawLogs
       .filter(log => isValidLogLevel(log.level))
-      .map(log => ({
-        ...log,
-        level: log.level as 'info' | 'warning' | 'error'
-      }));
+      .map(log => {
+        const { deploymentId, ...rest } = log;
+        return deploymentId
+          ? { ...rest, deploymentId, level: log.level as 'info' | 'warning' | 'error' }
+          : { ...rest, level: log.level as 'info' | 'warning' | 'error' };
+      });
 
     logs = validLogs;
   }
