@@ -2,6 +2,8 @@ import { prisma } from './db';
 import { updateAgentBasedOnFeedback } from './feedback-monitoring';
 import { Prisma, AgentLog } from '@prisma/client';
 import { AppError } from './error-handling';
+import { performanceMonitor } from './performance';
+import { withDbPerformanceTracking } from './performance';
 
 interface JobResult {
   success: boolean;
@@ -14,6 +16,477 @@ interface AgentLogInput {
   level: 'info' | 'error' | 'warning';
   message: string;
   metadata?: Prisma.JsonValue;
+}
+
+export interface Job {
+  id: string;
+  type: JobType;
+  status: JobStatus;
+  data: any;
+  priority: JobPriority;
+  createdAt: Date;
+  startedAt?: Date;
+  completedAt?: Date;
+  error?: string;
+  retries: number;
+  maxRetries: number;
+  metadata?: Record<string, any>;
+}
+
+export type JobType = 
+  | 'agent_deployment'
+  | 'file_processing'
+  | 'analytics_processing'
+  | 'email_sending'
+  | 'data_cleanup'
+  | 'backup_creation'
+  | 'agent_monitoring'
+  | 'feedback_analysis';
+
+export type JobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+
+export type JobPriority = 'low' | 'normal' | 'high' | 'critical';
+
+class JobQueue {
+  private isProcessing = false;
+  private readonly maxConcurrentJobs = 3;
+  private readonly jobTimeouts = new Map<string, NodeJS.Timeout>();
+
+  async createJob(
+    type: JobType,
+    data: any,
+    priority: JobPriority = 'normal',
+    metadata?: Record<string, any>
+  ): Promise<string> {
+    return withDbPerformanceTracking('create_job', async () => {
+      const job = await prisma.job.create({
+        data: {
+          id: this.generateJobId(),
+          type,
+          status: 'pending',
+          data,
+          priority,
+          retries: 0,
+          maxRetries: this.getMaxRetries(type),
+          metadata
+        }
+      });
+
+      // Start processing if not already running
+      if (!this.isProcessing) {
+        this.startProcessing();
+      }
+
+      return job.id;
+    });
+  }
+
+  private generateJobId(): string {
+    return `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private getMaxRetries(type: JobType): number {
+    const retryConfig: Record<JobType, number> = {
+      agent_deployment: 3,
+      file_processing: 2,
+      analytics_processing: 1,
+      email_sending: 3,
+      data_cleanup: 1,
+      backup_creation: 2,
+      agent_monitoring: 2,
+      feedback_analysis: 1
+    };
+    return retryConfig[type] || 1;
+  }
+
+  async startProcessing(): Promise<void> {
+    if (this.isProcessing) return;
+    
+    this.isProcessing = true;
+    console.log('Starting job queue processing...');
+
+    while (this.isProcessing) {
+      try {
+        const pendingJobs = await this.getPendingJobs();
+        
+        if (pendingJobs.length === 0) {
+          // No jobs to process, wait a bit before checking again
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          continue;
+        }
+
+        // Process jobs concurrently up to maxConcurrentJobs
+        const jobsToProcess = pendingJobs.slice(0, this.maxConcurrentJobs);
+        await Promise.all(jobsToProcess.map(job => this.processJob(job)));
+
+      } catch (error) {
+        console.error('Error in job processing loop:', error);
+        await new Promise(resolve => setTimeout(resolve, 10000)); // Wait 10s before retrying
+      }
+    }
+  }
+
+  async stopProcessing(): Promise<void> {
+    this.isProcessing = false;
+    
+    // Clear any pending timeouts
+    for (const timeout of this.jobTimeouts.values()) {
+      clearTimeout(timeout);
+    }
+    this.jobTimeouts.clear();
+    
+    console.log('Job queue processing stopped');
+  }
+
+  private async getPendingJobs(): Promise<Job[]> {
+    return withDbPerformanceTracking('get_pending_jobs', async () => {
+      const jobs = await prisma.job.findMany({
+        where: {
+          status: 'pending',
+          retries: {
+            lt: prisma.job.fields.maxRetries
+          }
+        },
+        orderBy: [
+          { priority: 'desc' },
+          { createdAt: 'asc' }
+        ],
+        take: 10
+      });
+
+      return jobs as Job[];
+    });
+  }
+
+  private async processJob(job: Job): Promise<void> {
+    const jobId = job.id;
+    
+    try {
+      // Mark job as running
+      await this.updateJobStatus(jobId, 'running');
+      
+      // Set timeout for job processing
+      const timeout = setTimeout(() => {
+        this.handleJobTimeout(jobId);
+      }, this.getJobTimeout(job.type));
+      
+      this.jobTimeouts.set(jobId, timeout);
+
+      // Process the job based on type
+      await this.executeJob(job);
+      
+      // Clear timeout and mark as completed
+      clearTimeout(timeout);
+      this.jobTimeouts.delete(jobId);
+      await this.updateJobStatus(jobId, 'completed');
+
+    } catch (error) {
+      console.error(`Job ${jobId} failed:`, error);
+      await this.handleJobFailure(jobId, error);
+    }
+  }
+
+  private async executeJob(job: Job): Promise<void> {
+    const startTime = Date.now();
+    
+    try {
+      switch (job.type) {
+        case 'agent_deployment':
+          await this.handleAgentDeployment(job);
+          break;
+        case 'file_processing':
+          await this.handleFileProcessing(job);
+          break;
+        case 'analytics_processing':
+          await this.handleAnalyticsProcessing(job);
+          break;
+        case 'email_sending':
+          await this.handleEmailSending(job);
+          break;
+        case 'data_cleanup':
+          await this.handleDataCleanup(job);
+          break;
+        case 'backup_creation':
+          await this.handleBackupCreation(job);
+          break;
+        case 'agent_monitoring':
+          await this.handleAgentMonitoring(job);
+          break;
+        case 'feedback_analysis':
+          await this.handleFeedbackAnalysis(job);
+          break;
+        default:
+          throw new Error(`Unknown job type: ${job.type}`);
+      }
+      
+      // Track performance
+      performanceMonitor.trackSyncOperation(
+        `job_${job.type}`,
+        () => Date.now() - startTime,
+        { jobId: job.id, status: 'success' }
+      );
+      
+    } catch (error) {
+      performanceMonitor.trackSyncOperation(
+        `job_${job.type}`,
+        () => Date.now() - startTime,
+        { jobId: job.id, status: 'error', error: error instanceof Error ? error.message : String(error) }
+      );
+      throw error;
+    }
+  }
+
+  private async handleAgentDeployment(job: Job): Promise<void> {
+    const { agentId, deploymentConfig } = job.data;
+    
+    // Simulate agent deployment process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Update agent status in database
+    await prisma.agent.update({
+      where: { id: agentId },
+      data: { 
+        status: 'deployed',
+        deployedAt: new Date()
+      }
+    });
+  }
+
+  private async handleFileProcessing(job: Job): Promise<void> {
+    const { fileId, processingType } = job.data;
+    
+    // Simulate file processing
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Update file status
+    await prisma.file.update({
+      where: { id: fileId },
+      data: { 
+        status: 'processed',
+        processedAt: new Date()
+      }
+    });
+  }
+
+  private async handleAnalyticsProcessing(job: Job): Promise<void> {
+    const { agentId, dateRange } = job.data;
+    
+    // Simulate analytics processing
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    // Generate analytics data
+    const analytics = {
+      totalRequests: Math.floor(Math.random() * 1000),
+      successRate: 0.95 + Math.random() * 0.05,
+      averageResponseTime: 200 + Math.random() * 800
+    };
+    
+    // Store analytics
+    await prisma.agentMetrics.create({
+      data: {
+        agentId,
+        metrics: analytics,
+        timestamp: new Date()
+      }
+    });
+  }
+
+  private async handleEmailSending(job: Job): Promise<void> {
+    const { to, subject, template, data } = job.data;
+    
+    // Simulate email sending
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    console.log(`Email sent to ${to}: ${subject}`);
+  }
+
+  private async handleDataCleanup(job: Job): Promise<void> {
+    const { olderThan } = job.data;
+    
+    // Clean up old data
+    const cutoffDate = new Date(Date.now() - olderThan);
+    
+    await prisma.agentLog.deleteMany({
+      where: {
+        createdAt: {
+          lt: cutoffDate
+        }
+      }
+    });
+  }
+
+  private async handleBackupCreation(job: Job): Promise<void> {
+    // Simulate backup creation
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    console.log('Backup created successfully');
+  }
+
+  private async handleAgentMonitoring(job: Job): Promise<void> {
+    const { agentId } = job.data;
+    
+    // Check agent health
+    const agent = await prisma.agent.findUnique({
+      where: { id: agentId }
+    });
+    
+    if (agent) {
+      // Update monitoring status
+      await prisma.agentMetrics.create({
+        data: {
+          agentId,
+          metrics: {
+            status: 'healthy',
+            lastCheck: new Date().toISOString()
+          },
+          timestamp: new Date()
+        }
+      });
+    }
+  }
+
+  private async handleFeedbackAnalysis(job: Job): Promise<void> {
+    const { feedbackId } = job.data;
+    
+    // Simulate feedback analysis
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Update feedback with analysis
+    await prisma.feedback.update({
+      where: { id: feedbackId },
+      data: {
+        analyzed: true,
+        analyzedAt: new Date(),
+        sentiment: Math.random() > 0.5 ? 'positive' : 'negative'
+      }
+    });
+  }
+
+  private getJobTimeout(type: JobType): number {
+    const timeoutConfig: Record<JobType, number> = {
+      agent_deployment: 300000, // 5 minutes
+      file_processing: 60000,   // 1 minute
+      analytics_processing: 180000, // 3 minutes
+      email_sending: 30000,     // 30 seconds
+      data_cleanup: 120000,     // 2 minutes
+      backup_creation: 600000,  // 10 minutes
+      agent_monitoring: 60000,  // 1 minute
+      feedback_analysis: 120000 // 2 minutes
+    };
+    return timeoutConfig[type] || 60000;
+  }
+
+  private async handleJobTimeout(jobId: string): Promise<void> {
+    console.warn(`Job ${jobId} timed out`);
+    await this.updateJobStatus(jobId, 'failed', 'Job timed out');
+  }
+
+  private async handleJobFailure(jobId: string, error: any): Promise<void> {
+    const job = await prisma.job.findUnique({ where: { id: jobId } });
+    
+    if (!job) return;
+    
+    const newRetries = job.retries + 1;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    if (newRetries >= job.maxRetries) {
+      await this.updateJobStatus(jobId, 'failed', errorMessage);
+    } else {
+      // Retry the job
+      await prisma.job.update({
+        where: { id: jobId },
+        data: {
+          status: 'pending',
+          retries: newRetries,
+          error: errorMessage
+        }
+      });
+    }
+  }
+
+  private async updateJobStatus(
+    jobId: string, 
+    status: JobStatus, 
+    error?: string
+  ): Promise<void> {
+    const updateData: any = { status };
+    
+    if (status === 'running') {
+      updateData.startedAt = new Date();
+    } else if (status === 'completed' || status === 'failed') {
+      updateData.completedAt = new Date();
+    }
+    
+    if (error) {
+      updateData.error = error;
+    }
+    
+    await prisma.job.update({
+      where: { id: jobId },
+      data: updateData
+    });
+  }
+
+  async getJobStatus(jobId: string): Promise<Job | null> {
+    return withDbPerformanceTracking('get_job_status', async () => {
+      const job = await prisma.job.findUnique({
+        where: { id: jobId }
+      });
+      return job as Job | null;
+    });
+  }
+
+  async cancelJob(jobId: string): Promise<void> {
+    await this.updateJobStatus(jobId, 'cancelled');
+    
+    // Clear timeout if exists
+    const timeout = this.jobTimeouts.get(jobId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.jobTimeouts.delete(jobId);
+    }
+  }
+
+  async getJobStats(): Promise<{
+    total: number;
+    pending: number;
+    running: number;
+    completed: number;
+    failed: number;
+    cancelled: number;
+  }> {
+    const stats = await prisma.job.groupBy({
+      by: ['status'],
+      _count: {
+        status: true
+      }
+    });
+
+    const result = {
+      total: 0,
+      pending: 0,
+      running: 0,
+      completed: 0,
+      failed: 0,
+      cancelled: 0
+    };
+
+    stats.forEach(stat => {
+      const count = stat._count.status;
+      result.total += count;
+      result[stat.status as keyof typeof result] = count;
+    });
+
+    return result;
+  }
+}
+
+// Global job queue instance
+export const jobQueue = new JobQueue();
+
+// Start job processing when the module is loaded
+if (process.env.NODE_ENV === 'production') {
+  jobQueue.startProcessing().catch(console.error);
 }
 
 export async function processFeedbackJob() {

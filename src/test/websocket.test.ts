@@ -1,20 +1,31 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Server } from 'socket.io';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { io as Client } from 'socket.io-client';
 import { createServer } from 'http';
+import { Server } from 'socket.io';
 
 describe('WebSocket', () => {
-  let httpServer: ReturnType<typeof createServer>;
-  let io: Server;
-  let clientSocket: ReturnType<typeof Client>;
+  let io;
+  let clientSocket;
+  let httpServer;
+  let httpServerAddr;
 
-  beforeAll(() => {
+  beforeEach(async () => {
+    httpServer = createServer();
+    io = new Server(httpServer);
+    
     return new Promise<void>((resolve) => {
-      httpServer = createServer();
-      io = new Server(httpServer);
       httpServer.listen(() => {
-        const port = (httpServer.address() as any).port;
+        httpServerAddr = httpServer.address();
+        const port = httpServerAddr.port;
         clientSocket = Client(`http://localhost:${port}`);
+        
+        io.on('connection', (socket) => {
+          socket.on('join-deployment', (deploymentId) => {
+            socket.join(deploymentId);
+            socket.emit('deployment-status', { status: 'active', deploymentId });
+          });
+        });
+        
         clientSocket.on('connect', () => {
           resolve();
         });
@@ -22,48 +33,42 @@ describe('WebSocket', () => {
     });
   });
 
-  afterAll(() => {
-    io.close();
-    clientSocket.close();
-    httpServer.close();
-  });
-
-  it('should emit deployment status', () => {
-    return new Promise<void>((resolve) => {
-      clientSocket.on('connect', () => {
-        const mockStatus = {
-          status: 'deploying',
-          progress: 50,
-          message: 'Deploying...',
-          timestamp: new Date().toISOString(),
-        };
-
-        clientSocket.on('deployment-status', (data: typeof mockStatus) => {
-          expect(data).toEqual(mockStatus);
-          resolve();
-        });
-
-        io.emit('deployment-status', mockStatus);
+  afterEach(async () => {
+    if (clientSocket && clientSocket.connected) {
+      clientSocket.disconnect();
+    }
+    if (io) {
+      io.close();
+    }
+    if (httpServer) {
+      return new Promise<void>((resolve) => {
+        httpServer.close(() => resolve());
       });
-    });
+    }
   });
 
-  it('should handle connection', () => {
+  it('should emit deployment status', async () => {
     return new Promise<void>((resolve) => {
-      clientSocket.on('connect', () => {
-        expect(clientSocket.connected).toBe(true);
+      clientSocket.emit('join-deployment', 'test-deployment');
+      clientSocket.on('deployment-status', (data) => {
+        expect(data.status).toBe('active');
+        expect(data.deploymentId).toBe('test-deployment');
         resolve();
       });
     });
   });
 
-  it('should handle disconnection', () => {
+  it('should handle connection', async () => {
+    expect(clientSocket.connected).toBe(true);
+  });
+
+  it('should handle disconnection', async () => {
     return new Promise<void>((resolve) => {
-      clientSocket.on('connect', () => {
-        clientSocket.disconnect();
+      clientSocket.on('disconnect', () => {
         expect(clientSocket.connected).toBe(false);
         resolve();
       });
+      clientSocket.disconnect();
     });
   });
 }); 

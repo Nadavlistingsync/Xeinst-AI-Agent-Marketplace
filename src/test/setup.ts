@@ -15,6 +15,20 @@ console.error = (...args) => {
   }
 };
 
+// Mock IntersectionObserver for framer-motion
+global.IntersectionObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}));
+
+// Mock ResizeObserver
+global.ResizeObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}));
+
 // Mock Prisma Client
 const mockPrisma = {
   deployment: {
@@ -34,6 +48,7 @@ const mockPrisma = {
   },
   agentMetrics: {
     findUnique: vi.fn(),
+    findFirst: vi.fn(),
     upsert: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
@@ -65,6 +80,11 @@ const mockPrisma = {
   },
   agentFeedback: {
     findMany: vi.fn(),
+    create: vi.fn(),
+  },
+  agent: {
+    findMany: vi.fn(),
+    findUnique: vi.fn(),
     create: vi.fn(),
   },
   $disconnect: vi.fn().mockResolvedValue(undefined),
@@ -202,15 +222,6 @@ afterEach(async () => {
     console.error('Failed to clean up after test:', error);
   }
 });
-
-// Mock next-auth
-vi.mock('next-auth', () => ({
-  getServerSession: vi.fn(() => Promise.resolve(null)),
-  useSession: vi.fn(() => ({
-    data: null,
-    status: 'unauthenticated',
-  })),
-}));
 
 // Mock fetch
 global.fetch = vi.fn();

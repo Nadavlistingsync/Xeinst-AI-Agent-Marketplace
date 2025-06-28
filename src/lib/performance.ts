@@ -1,129 +1,217 @@
-import { setTag, setContext } from './sentry';
+import { NextRequest, NextResponse } from 'next/server';
 
-interface PerformanceMetrics {
+export interface PerformanceMetrics {
+  timestamp: number;
+  operation: string;
   duration: number;
-  startTime: number;
-  endTime: number;
   success: boolean;
-  error?: Error;
+  error?: string;
   metadata?: Record<string, any>;
 }
 
 class PerformanceMonitor {
-  private static instance: PerformanceMonitor;
-  private metrics: Map<string, PerformanceMetrics[]>;
-  private readonly maxMetricsPerKey: number;
+  private metrics: PerformanceMetrics[] = [];
+  private readonly maxMetrics = 1000; // Keep last 1000 metrics
 
-  private constructor(maxMetricsPerKey = 100) {
-    this.metrics = new Map();
-    this.maxMetricsPerKey = maxMetricsPerKey;
-  }
-
-  static getInstance(): PerformanceMonitor {
-    if (!PerformanceMonitor.instance) {
-      PerformanceMonitor.instance = new PerformanceMonitor();
-    }
-    return PerformanceMonitor.instance;
-  }
-
-  async measure<T>(
-    key: string,
-    operation: () => Promise<T>,
+  trackOperation<T>(
+    operation: string,
+    fn: () => Promise<T>,
     metadata?: Record<string, any>
   ): Promise<T> {
-    const startTime = performance.now();
-    let result: T;
-    let success = true;
-    let errorObj: Error | undefined = undefined;
+    const startTime = Date.now();
+    
+    return fn()
+      .then((result) => {
+        this.recordMetric({
+          timestamp: startTime,
+          operation,
+          duration: Date.now() - startTime,
+          success: true,
+          metadata
+        });
+        return result;
+      })
+      .catch((error) => {
+        this.recordMetric({
+          timestamp: startTime,
+          operation,
+          duration: Date.now() - startTime,
+          success: false,
+          error: error.message,
+          metadata
+        });
+        throw error;
+      });
+  }
+
+  trackSyncOperation<T>(
+    operation: string,
+    fn: () => T,
+    metadata?: Record<string, any>
+  ): T {
+    const startTime = Date.now();
     
     try {
-      result = await operation();
+      const result = fn();
+      this.recordMetric({
+        timestamp: startTime,
+        operation,
+        duration: Date.now() - startTime,
+        success: true,
+        metadata
+      });
+      return result;
     } catch (error) {
-      success = false;
-      errorObj = error as Error;
+      this.recordMetric({
+        timestamp: startTime,
+        operation,
+        duration: Date.now() - startTime,
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        metadata
+      });
       throw error;
     }
+  }
+
+  private recordMetric(metric: PerformanceMetrics) {
+    this.metrics.push(metric);
     
-    const endTime = performance.now();
-    const duration = endTime - startTime;
-    this.recordMetric(key, {
-      duration,
-      startTime,
-      endTime,
-      success,
-      error: errorObj,
-      metadata,
-    });
+    // Keep only the last maxMetrics
+    if (this.metrics.length > this.maxMetrics) {
+      this.metrics = this.metrics.slice(-this.maxMetrics);
+    }
+  }
+
+  getMetrics(): PerformanceMetrics[] {
+    return [...this.metrics];
+  }
+
+  getMetricsByOperation(operation: string): PerformanceMetrics[] {
+    return this.metrics.filter(m => m.operation === operation);
+  }
+
+  getAverageResponseTime(operation?: string): number {
+    const metrics = operation 
+      ? this.getMetricsByOperation(operation)
+      : this.metrics;
     
-    if (!success && errorObj) {
-      throw errorObj;
-    }
-    return result!;
-  }
-
-  private recordMetric(key: string, metric: PerformanceMetrics) {
-    if (!this.metrics.has(key)) {
-      this.metrics.set(key, []);
-    }
-
-    const metrics = this.metrics.get(key)!;
-    metrics.push(metric);
-
-    // Keep only the most recent metrics
-    if (metrics.length > this.maxMetricsPerKey) {
-      metrics.shift();
-    }
-
-    // Report to monitoring system
-    this.reportMetric(key, metric);
-  }
-
-  private reportMetric(key: string, metric: PerformanceMetrics) {
-    setTag('operation', key);
-    setTag('success', String(metric.success));
-    setContext('performance', {
-      duration: metric.duration,
-      startTime: new Date(metric.startTime).toISOString(),
-      endTime: new Date(metric.endTime).toISOString(),
-      ...metric.metadata,
-    });
-  }
-
-  getMetrics(key: string): PerformanceMetrics[] {
-    return this.metrics.get(key) || [];
-  }
-
-  getAverageDuration(key: string): number {
-    const metrics = this.getMetrics(key);
     if (metrics.length === 0) return 0;
-
-    const totalDuration = metrics.reduce((sum, metric) => sum + metric.duration, 0);
-    return totalDuration / metrics.length;
+    
+    const total = metrics.reduce((sum, m) => sum + m.duration, 0);
+    return total / metrics.length;
   }
 
-  getSuccessRate(key: string): number {
-    const metrics = this.getMetrics(key);
+  getSuccessRate(operation?: string): number {
+    const metrics = operation 
+      ? this.getMetricsByOperation(operation)
+      : this.metrics;
+    
     if (metrics.length === 0) return 0;
-
-    const successfulOperations = metrics.filter((metric) => metric.success).length;
-    return successfulOperations / metrics.length;
+    
+    const successful = metrics.filter(m => m.success).length;
+    return successful / metrics.length;
   }
 
-  clearMetrics(key?: string) {
-    if (key) {
-      this.metrics.delete(key);
-    } else {
-      this.metrics.clear();
-    }
+  clearMetrics(): void {
+    this.metrics = [];
   }
 }
 
-export const performanceMonitor = PerformanceMonitor.getInstance();
+// Global performance monitor instance
+export const performanceMonitor = new PerformanceMonitor();
 
-export async function measurePerformance<T>(
-  key: string,
-  operation: () => Promise<T>,
-  metadata?: Record<string, any>
+// Middleware to track API performance
+export function withPerformanceTracking<T extends any[], R>(
+  operation: string,
+  fn: (...args: T) => Promise<R>
+): (...args: T) => Promise<R> {
+  return async (...args: T): Promise<R> => {
+    return performanceMonitor.trackOperation(operation, () => fn(...args));
+  };
+}
+
+// API route wrapper for performance tracking
+export function withApiPerformanceTracking(
+  handler: (req: NextRequest) => Promise<NextResponse>
+) {
+  return async (req: NextRequest): Promise<NextResponse> => {
+    const url = req.nextUrl.pathname;
+    const method = req.method;
+    const operation = `${method} ${url}`;
+    
+    return performanceMonitor.trackOperation(
+      operation,
+      () => handler(req),
+      {
+        url,
+        method,
+        userAgent: req.headers.get('user-agent'),
+        ip: req.headers.get('x-forwarded-for') || req.ip
+      }
+    );
+  };
+}
+
+// Database query performance tracking
+export function withDbPerformanceTracking<T>(
+  operation: string,
+  fn: () => Promise<T>
 ): Promise<T> {
-  return performanceMonitor.measure(key, operation, metadata);
+  return performanceMonitor.trackOperation(
+    `DB_${operation}`,
+    fn,
+    { type: 'database' }
+  );
+}
+
+// Export performance data for monitoring
+export function getPerformanceReport() {
+  const metrics = performanceMonitor.getMetrics();
+  const recentMetrics = metrics.filter(
+    m => m.timestamp > Date.now() - 24 * 60 * 60 * 1000 // Last 24 hours
+  );
+
+  return {
+    totalOperations: metrics.length,
+    recentOperations: recentMetrics.length,
+    averageResponseTime: performanceMonitor.getAverageResponseTime(),
+    successRate: performanceMonitor.getSuccessRate(),
+    topOperations: getTopOperations(metrics),
+    recentErrors: getRecentErrors(metrics),
+    timestamp: Date.now()
+  };
+}
+
+function getTopOperations(metrics: PerformanceMetrics[]) {
+  const operationCounts = metrics.reduce((acc, m) => {
+    acc[m.operation] = (acc[m.operation] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.entries(operationCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 10)
+    .map(([operation, count]) => ({
+      operation,
+      count,
+      avgResponseTime: performanceMonitor.getAverageResponseTime(operation),
+      successRate: performanceMonitor.getSuccessRate(operation)
+    }));
+}
+
+function getRecentErrors(metrics: PerformanceMetrics[]) {
+  const recentMetrics = metrics.filter(
+    m => m.timestamp > Date.now() - 60 * 60 * 1000 // Last hour
+  );
+
+  return recentMetrics
+    .filter(m => !m.success)
+    .map(m => ({
+      operation: m.operation,
+      error: m.error,
+      timestamp: m.timestamp,
+      metadata: m.metadata
+    }))
+    .slice(0, 20); // Last 20 errors
 } 

@@ -1,33 +1,126 @@
 {
   "version": 2,
-  "buildCommand": "corepack enable && corepack prepare pnpm@10.12.1 --activate && pnpm install && pnpm run vercel-build",
-  "devCommand": "pnpm run dev",
-  "installCommand": "corepack enable && corepack prepare pnpm@10.12.1 --activate && pnpm install",
+  "buildCommand": "pnpm build",
+  "installCommand": "pnpm install",
   "framework": "nextjs",
-  "regions": ["iad1"],
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ],
-  "git": {
-    "deploymentEnabled": {
-      "main": true
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
     }
   },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Pragma",
+          "value": "no-cache"
+        },
+        {
+          "key": "Expires",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "source": "/_next/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/home",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/login",
+      "destination": "/auth/signin",
+      "permanent": true
+    },
+    {
+      "source": "/register",
+      "destination": "/auth/signup",
+      "permanent": true
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/health",
+      "destination": "/api/health"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ],
   "env": {
     "NODE_ENV": "production"
   },
   "build": {
     "env": {
-      "NODE_VERSION": "18.x"
+      "NODE_ENV": "production"
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/cleanup",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/backup",
+      "schedule": "0 3 * * 0"
+    },
+    {
+      "path": "/api/cron/analytics",
+      "schedule": "*/15 * * * *"
+    }
+  ]
 } 
