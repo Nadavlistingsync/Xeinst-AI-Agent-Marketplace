@@ -362,9 +362,4 @@ th {
   @apply bg-ai-error/20 text-ai-error border border-ai-error/30;
 }
 
-.grid-bg, .bg-gradient-ai, .bg-gradient-dark, .animate-gradient, .animate-gradient-x {
-  background: #000 !important;
-  background-image: none !important;
-  background-size: initial !important;
-  animation: none !important;
-}
+/* Remove the override that was breaking gradients */
