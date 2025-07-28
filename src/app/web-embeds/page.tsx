@@ -205,8 +205,8 @@ export default function WebEmbedsPage() {
             Web Embeds
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Embed any website or application and add AI functionality to it. 
-            Perfect for integrating AI features into existing sites without code changes.
+            Embed existing websites and add AI functionality without creating full agents. 
+            Perfect for integrating AI features into any website without code changes.
           </p>
         </div>
 
@@ -214,9 +214,9 @@ export default function WebEmbedsPage() {
         <Alert className="mb-8 border-ai-primary/20 bg-ai-primary/5">
           <Info className="h-4 w-4 text-ai-primary" />
           <AlertDescription className="text-muted-foreground">
-            <strong>How it works:</strong> Upload a website URL, configure the embed settings, 
-            and optionally connect an AI agent. The embedded site will be displayed in an iframe 
-            with your chosen AI functionality.
+            <strong>Alternative to Agent Upload:</strong> Instead of creating and uploading full AI agents, 
+            you can embed any existing website and add AI functionality to it. This is faster and easier 
+            when you want to enhance existing sites with AI features.
           </AlertDescription>
         </Alert>
 
@@ -244,7 +244,8 @@ export default function WebEmbedsPage() {
             <CardHeader>
               <CardTitle className="text-white">Create New Web Embed</CardTitle>
               <CardDescription className="text-muted-foreground">
-                Embed a website and optionally connect an AI agent to add functionality
+                Embed an existing website and optionally connect an AI agent to add functionality. 
+                This is an alternative to uploading full agents.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -280,7 +281,7 @@ export default function WebEmbedsPage() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  placeholder="Describe what this embed does..."
+                  placeholder="Describe what this embed does and what AI functionality you want to add..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
@@ -295,7 +296,7 @@ export default function WebEmbedsPage() {
                     value={formData.url}
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                   />
-                  <p className="text-xs text-muted-foreground">The original website URL</p>
+                  <p className="text-xs text-muted-foreground">The original website URL you want to embed</p>
                 </div>
                 
                 <div className="space-y-2">
@@ -306,7 +307,7 @@ export default function WebEmbedsPage() {
                     value={formData.embedUrl}
                     onChange={(e) => setFormData({ ...formData, embedUrl: e.target.value })}
                   />
-                  <p className="text-xs text-muted-foreground">The URL to embed (iframe src)</p>
+                  <p className="text-xs text-muted-foreground">The URL to embed (iframe src) - can be the same as original URL</p>
                 </div>
               </div>
 
@@ -394,7 +395,8 @@ export default function WebEmbedsPage() {
               <Globe className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">No Web Embeds Yet</h3>
               <p className="text-muted-foreground mb-6">
-                Create your first web embed to start integrating AI functionality into websites
+                Create your first web embed to start integrating AI functionality into existing websites. 
+                This is faster than creating full agents when you want to enhance existing sites.
               </p>
               <Button 
                 onClick={() => setShowCreateForm(true)}

@@ -50,7 +50,7 @@ const quickActions = [
   {
     icon: Globe,
     title: "Web Embeds",
-    description: "Embed websites and add AI functionality",
+    description: "Embed existing websites and add AI functionality without creating full agents",
     href: "/web-embeds",
     color: "from-purple-500 to-pink-500",
     buttonText: "Create Embed"
@@ -94,7 +94,7 @@ const features = [
   {
     icon: Globe,
     title: "Web Embed System",
-    description: "Embed any website and add AI functionality to it",
+    description: "Embed existing websites and add AI functionality without creating full agents",
     href: "/web-embeds"
   },
   {
