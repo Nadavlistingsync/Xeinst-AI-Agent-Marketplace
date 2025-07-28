@@ -10,7 +10,6 @@ import {
   Shield, 
   Users, 
   CheckCircle,
-  Play,
   Bot,
   Cpu,
   Database,
