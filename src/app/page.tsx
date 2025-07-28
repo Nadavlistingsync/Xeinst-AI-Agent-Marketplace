@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   ArrowRight, 
   Sparkles, 
@@ -14,64 +15,111 @@ import {
   Bot,
   Cpu,
   Database,
-  Cloud
+  Cloud,
+  Globe,
+  Zap,
+  Settings,
+  Search,
+  Upload,
+  Rocket,
+  Lightbulb,
+  Target,
+  TrendingUp
 } from "lucide-react";
 import { motion } from "framer-motion";
+
+const quickActions = [
+  {
+    icon: Search,
+    title: "Browse AI Agents",
+    description: "Find ready-to-use AI agents in our marketplace",
+    href: "/marketplace",
+    color: "from-blue-500 to-purple-500",
+    buttonText: "Explore Marketplace"
+  },
+  {
+    icon: Upload,
+    title: "Upload Your Agent",
+    description: "Share your AI agent with the community",
+    href: "/upload",
+    color: "from-green-500 to-teal-500",
+    buttonText: "Upload Agent"
+  },
+  {
+    icon: Rocket,
+    title: "Deploy Agent",
+    description: "Deploy your AI agent to the cloud",
+    href: "/deploy",
+    color: "from-orange-500 to-red-500",
+    buttonText: "Deploy Now"
+  },
+  {
+    icon: Globe,
+    title: "Web Embeds",
+    description: "Embed websites and add AI functionality",
+    href: "/web-embeds",
+    color: "from-purple-500 to-pink-500",
+    buttonText: "Create Embed"
+  }
+];
+
+const howItWorks = [
+  {
+    step: "1",
+    icon: Search,
+    title: "Discover",
+    description: "Browse our marketplace of AI agents and find the perfect solution for your needs"
+  },
+  {
+    step: "2", 
+    icon: Upload,
+    title: "Upload or Create",
+    description: "Upload your own AI agent or create one using our tools"
+  },
+  {
+    step: "3",
+    icon: Rocket,
+    title: "Deploy",
+    description: "Deploy your agent to the cloud with one click"
+  },
+  {
+    step: "4",
+    icon: TrendingUp,
+    title: "Monitor & Scale",
+    description: "Track performance and scale your AI solution as needed"
+  }
+];
 
 const features = [
   {
     icon: Bot,
-    title: "AI Agents",
-    description: "Deploy intelligent agents that can handle complex tasks and workflows",
-    color: "from-ai-primary to-ai-secondary"
+    title: "AI Agent Marketplace",
+    description: "Browse and deploy hundreds of pre-built AI agents for various tasks",
+    href: "/marketplace"
+  },
+  {
+    icon: Globe,
+    title: "Web Embed System",
+    description: "Embed any website and add AI functionality to it",
+    href: "/web-embeds"
   },
   {
     icon: Cpu,
     title: "Smart Automation",
-    description: "Automate repetitive tasks with AI-powered workflows",
-    color: "from-ai-secondary to-ai-accent"
-  },
-  {
-    icon: Database,
-    title: "Data Processing",
-    description: "Process and analyze large datasets with advanced AI algorithms",
-    color: "from-ai-accent to-purple-500"
+    description: "Automate complex workflows with AI-powered tools",
+    href: "/dashboard"
   },
   {
     icon: Cloud,
     title: "Cloud Deployment",
-    description: "Deploy your AI solutions to the cloud with one click",
-    color: "from-purple-500 to-pink-500"
-  }
-];
-
-const testimonials = [
-  {
-    name: "Sarah Johnson",
-    role: "CTO at TechCorp",
-    content: "Xeinst transformed our workflow. The AI agents are incredibly powerful and easy to use.",
-    rating: 5,
-    avatar: "SJ"
-  },
-  {
-    name: "Michael Chen",
-    role: "Product Manager",
-    content: "The marketplace is amazing. We found exactly what we needed in minutes.",
-    rating: 5,
-    avatar: "MC"
-  },
-  {
-    name: "Emily Rodriguez",
-    role: "Startup Founder",
-    content: "Best AI platform we've used. The deployment process is seamless.",
-    rating: 5,
-    avatar: "ER"
+    description: "Deploy your AI solutions instantly to the cloud",
+    href: "/deploy"
   }
 ];
 
 const stats = [
+  { label: "AI Agents Available", value: "500+", icon: Bot },
   { label: "Active Users", value: "10K+", icon: Users },
-  { label: "AI Agents", value: "500+", icon: Bot },
   { label: "Success Rate", value: "99.9%", icon: CheckCircle },
   { label: "Uptime", value: "99.99%", icon: Shield }
 ];
@@ -99,70 +147,71 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="inline-flex items-center space-x-2 mb-8"
             >
-              <Badge className="bg-ai-primary/20 text-ai-primary border-ai-primary/30 px-4 py-2 text-sm">
+              <Badge variant="secondary" className="bg-ai-primary/10 text-ai-primary border-ai-primary/20">
                 <Sparkles className="w-4 h-4 mr-2" />
-                AI-Powered Solutions
+                AI-Powered Platform
               </Badge>
             </motion.div>
 
             {/* Main Heading */}
             <motion.h1
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-5xl md:text-7xl font-bold mb-6"
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-5xl md:text-7xl font-bold text-gradient mb-6"
             >
-              <span className="text-gradient-animate">Transform</span> Your Business
+              Your AI Journey
               <br />
-              <span className="text-white">with AI</span>
+              <span className="text-white">Starts Here</span>
             </motion.h1>
 
             {/* Subtitle */}
             <motion.p
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4 }}
-              className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto"
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
             >
-              We build custom AI tools for free. You only pay if you love the product.
-              Deploy intelligent agents that work for you 24/7.
+              Discover, create, and deploy AI agents. Embed websites with AI functionality. 
+              Everything you need to build intelligent solutions in one place.
             </motion.p>
 
             {/* CTA Buttons */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
             >
-              <Button asChild size="lg" className="btn-primary text-lg px-8 py-4">
-                <Link href="/marketplace">
-                  Explore Marketplace
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="btn-secondary text-lg px-8 py-4">
-                <Link href="/guide">
-                  <Play className="mr-2 w-5 h-5" />
-                  Watch Demo
-                </Link>
-              </Button>
+              <Link href="/marketplace">
+                <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
+                  <Search className="w-5 h-5 mr-2" />
+                  Browse AI Agents
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+              <Link href="/guide">
+                <Button size="lg" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
+                  <Lightbulb className="w-5 h-5 mr-2" />
+                  Learn How It Works
+                </Button>
+              </Link>
             </motion.div>
 
             {/* Stats */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.8 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto"
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="grid grid-cols-2 md:grid-cols-4 gap-6"
             >
-              {stats.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <div className="flex items-center justify-center w-12 h-12 bg-gradient-ai rounded-xl mx-auto mb-3">
-                    <stat.icon className="w-6 h-6 text-white" />
+              {stats.map((stat, index) => (
+                <div key={index} className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <stat.icon className="w-6 h-6 text-ai-primary mr-2" />
+                    <span className="text-2xl font-bold text-white">{stat.value}</span>
                   </div>
-                  <div className="text-2xl font-bold text-white mb-1">{stat.value}</div>
-                  <div className="text-sm text-muted-foreground">{stat.label}</div>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
                 </div>
               ))}
             </motion.div>
@@ -170,100 +219,157 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-muted/20">
+      {/* Quick Actions Section */}
+      <section className="py-20 bg-gradient-to-b from-background to-background/50">
         <div className="container">
           <div className="text-center mb-16">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="text-4xl md:text-5xl font-bold mb-4"
+              className="text-4xl font-bold text-white mb-4"
             >
-              Powerful Features
+              What Would You Like to Do?
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
               className="text-xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Everything you need to build, deploy, and manage AI solutions
+              Choose from our most popular actions to get started quickly
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.map((feature, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {quickActions.map((action, index) => (
               <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 30 }}
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="glass-card p-6 text-center group hover:scale-105 transition-transform duration-300"
               >
-                <div className={`w-16 h-16 bg-gradient-to-r ${feature.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                  <feature.icon className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold mb-3 text-white">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+                <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                  <CardHeader>
+                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${action.color} flex items-center justify-center mb-4`}>
+                      <action.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <CardTitle className="text-xl text-white">{action.title}</CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      {action.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Link href={action.href}>
+                      <Button className="w-full bg-gradient-to-r from-ai-primary to-ai-secondary hover:from-ai-primary/90 hover:to-ai-secondary/90">
+                        {action.buttonText}
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20">
+      {/* How It Works Section */}
+      <section className="py-20 bg-gradient-to-b from-background/50 to-background">
         <div className="container">
           <div className="text-center mb-16">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="text-4xl md:text-5xl font-bold mb-4"
+              className="text-4xl font-bold text-white mb-4"
             >
-              What Our Users Say
+              How It Works
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="text-xl text-muted-foreground"
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Join thousands of satisfied customers
+              Get started with AI in just 4 simple steps
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {howItWorks.map((step, index) => (
               <motion.div
-                key={testimonial.name}
-                initial={{ opacity: 0, y: 30 }}
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                viewport={{ once: true }}
-                className="glass-card p-6"
+                className="text-center"
               >
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 bg-gradient-ai rounded-full flex items-center justify-center mr-4">
-                    <span className="text-white font-semibold">{testimonial.avatar}</span>
+                <div className="relative mb-6">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-ai-primary to-ai-secondary flex items-center justify-center mx-auto">
+                    <step.icon className="w-8 h-8 text-white" />
                   </div>
-                  <div>
-                    <div className="font-semibold text-white">{testimonial.name}</div>
-                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                  <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-ai-accent flex items-center justify-center">
+                    <span className="text-sm font-bold text-white">{step.step}</span>
                   </div>
                 </div>
-                <p className="text-muted-foreground mb-4">{testimonial.content}</p>
-                <div className="flex items-center">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
-                  ))}
-                </div>
+                <h3 className="text-xl font-semibold text-white mb-3">{step.title}</h3>
+                <p className="text-muted-foreground">{step.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 bg-gradient-to-b from-background to-background/50">
+        <div className="container">
+          <div className="text-center mb-16">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-4xl font-bold text-white mb-4"
+            >
+              Powerful Features
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-xl text-muted-foreground max-w-2xl mx-auto"
+            >
+              Everything you need to build and deploy AI solutions
+            </motion.p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
+                <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-ai-primary to-ai-secondary flex items-center justify-center mb-4">
+                      <feature.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <CardTitle className="text-xl text-white">{feature.title}</CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      {feature.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Link href={feature.href}>
+                      <Button variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
+                        Learn More
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>
@@ -271,45 +377,44 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-ai">
+      <section className="py-20 bg-gradient-to-b from-background/50 to-background">
         <div className="container">
-          <div className="text-center max-w-3xl mx-auto">
+          <div className="text-center">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="text-4xl md:text-5xl font-bold mb-6 text-white"
+              className="text-4xl font-bold text-white mb-4"
             >
               Ready to Get Started?
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              viewport={{ once: true }}
-              className="text-xl text-white/90 mb-8"
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
             >
-              Join thousands of businesses already using Xeinst to transform their operations
+              Join thousands of users who are already building amazing AI solutions
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Button asChild size="lg" className="bg-white text-ai-primary hover:bg-white/90 text-lg px-8 py-4">
-                <Link href="/marketplace">
-                  Start Building
-                  <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg" className="border-white text-white hover:bg-white/10 text-lg px-8 py-4">
-                <Link href="/contact">
-                  Contact Sales
-                </Link>
-              </Button>
+              <Link href="/marketplace">
+                <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
+                  <Search className="w-5 h-5 mr-2" />
+                  Explore Marketplace
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </Button>
+              </Link>
+              <Link href="/signup">
+                <Button size="lg" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
+                  <Users className="w-5 h-5 mr-2" />
+                  Create Account
+                </Button>
+              </Link>
             </motion.div>
           </div>
         </div>

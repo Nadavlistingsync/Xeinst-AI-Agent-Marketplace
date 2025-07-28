@@ -1,583 +1,430 @@
-import { Metadata } from 'next';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  Code, 
-  FileText, 
-  Settings, 
-  Zap, 
-  CheckCircle, 
-  AlertTriangle,
-  ArrowRight,
-  Download,
-  Upload,
-  Lightbulb,
-  BookOpen,
-  Play
-} from 'lucide-react';
-import Link from 'next/link';
+"use client";
 
-export const metadata: Metadata = {
-  title: 'Xeinst Agent Compatibility Guide | AI Agency',
-  description: 'Learn how to create Xeinst-compatible AI agents with our comprehensive guide. Follow best practices for seamless integration.',
-};
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
+import { 
+  Search, 
+  Upload, 
+  Rocket, 
+  Globe, 
+  Bot, 
+  Settings, 
+  Play,
+  ArrowRight,
+  CheckCircle,
+  Lightbulb,
+  Zap,
+  Users,
+  Shield,
+  TrendingUp,
+  BookOpen,
+  Code,
+  Cloud,
+  Database
+} from "lucide-react";
+
+const gettingStartedSteps = [
+  {
+    step: "1",
+    icon: Search,
+    title: "Browse the Marketplace",
+    description: "Explore our collection of pre-built AI agents. Find agents for data analysis, content creation, customer service, and more.",
+    action: "Browse Marketplace",
+    href: "/marketplace",
+    color: "from-blue-500 to-purple-500"
+  },
+  {
+    step: "2",
+    icon: Upload,
+    title: "Upload Your Agent",
+    description: "Have your own AI agent? Upload it to share with the community or deploy it for your own use.",
+    action: "Upload Agent",
+    href: "/upload",
+    color: "from-green-500 to-teal-500"
+  },
+  {
+    step: "3",
+    icon: Rocket,
+    title: "Deploy to Cloud",
+    description: "Deploy your AI agent to the cloud with one click. Get a live URL to access your agent.",
+    action: "Deploy Now",
+    href: "/deploy",
+    color: "from-orange-500 to-red-500"
+  },
+  {
+    step: "4",
+    icon: Globe,
+    title: "Create Web Embeds",
+    description: "Embed any website and add AI functionality without modifying the original site",
+    action: "Create Embed",
+    href: "/web-embeds",
+    color: "from-purple-500 to-pink-500"
+  }
+];
+
+const features = [
+  {
+    icon: Bot,
+    title: "AI Agent Marketplace",
+    description: "Browse hundreds of pre-built AI agents for various tasks and industries",
+    benefits: ["Ready to use", "No coding required", "Multiple categories"]
+  },
+  {
+    icon: Cloud,
+    title: "Cloud Deployment",
+    description: "Deploy your AI agents to the cloud with automatic scaling and monitoring",
+    benefits: ["One-click deployment", "Auto-scaling", "99.9% uptime"]
+  },
+  {
+    icon: Globe,
+    title: "Web Embed System",
+    description: "Embed any website and add AI functionality without modifying the original site",
+    benefits: ["Easy integration", "No code changes", "Secure iframes"]
+  },
+  {
+    icon: Database,
+    title: "Data Processing",
+    description: "Process and analyze large datasets with advanced AI algorithms",
+    benefits: ["Fast processing", "Multiple formats", "Real-time insights"]
+  }
+];
+
+const useCases = [
+  {
+    title: "Customer Service",
+    description: "Deploy AI agents to handle customer inquiries 24/7",
+    icon: Users,
+    examples: ["FAQ bots", "Order tracking", "Support tickets"]
+  },
+  {
+    title: "Content Creation",
+    description: "Generate articles, social media posts, and marketing copy",
+    icon: BookOpen,
+    examples: ["Blog posts", "Social media", "Email campaigns"]
+  },
+  {
+    title: "Data Analysis",
+    description: "Analyze large datasets and generate insights automatically",
+    icon: TrendingUp,
+    examples: ["Sales reports", "User analytics", "Market research"]
+  },
+  {
+    title: "Process Automation",
+    description: "Automate repetitive tasks and workflows",
+    icon: Zap,
+    examples: ["Data entry", "File processing", "Report generation"]
+  }
+];
+
+const tips = [
+  {
+    icon: Lightbulb,
+    title: "Start Small",
+    description: "Begin with simple agents and gradually build more complex solutions"
+  },
+  {
+    icon: Shield,
+    title: "Test Thoroughly",
+    description: "Always test your agents in a safe environment before deployment"
+  },
+  {
+    icon: Settings,
+    title: "Monitor Performance",
+    description: "Use our dashboard to track agent performance and usage metrics"
+  },
+  {
+    icon: Users,
+    title: "Share & Collaborate",
+    description: "Share your agents with the community and get feedback from other users"
+  }
+];
 
 export default function GuidePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="container mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Xeinst Agent Compatibility Guide
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Learn how to create AI agents that seamlessly integrate with the Xeinst platform. 
-            Follow our comprehensive guide to ensure your agents work perfectly in our marketplace.
-          </p>
+    <div className="min-h-screen bg-background pt-32">
+      <div className="container">
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center space-x-2 mb-8"
+          >
+            <Badge variant="secondary" className="bg-ai-primary/10 text-ai-primary border-ai-primary/20">
+              <BookOpen className="w-4 h-4 mr-2" />
+              Complete Guide
+            </Badge>
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-4xl md:text-6xl font-bold text-white mb-6"
+          >
+            How to Use
+            <br />
+            <span className="text-gradient">AI Agency</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-xl text-muted-foreground max-w-3xl mx-auto"
+          >
+            Learn how to discover, create, deploy, and manage AI agents. Everything you need to know to get started with AI automation.
+          </motion.p>
         </div>
 
-        {/* Quick Start Section */}
-        <Card className="mb-8 border-2 border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-800">
-              <Zap className="w-6 h-6" />
-              Quick Start
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-white rounded-lg">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Upload className="w-6 h-6 text-blue-600" />
-                </div>
-                <h3 className="font-semibold mb-2">1. Upload Agent</h3>
-                <p className="text-sm text-gray-600">Upload your agent file in JSON format</p>
-              </div>
-              <div className="text-center p-4 bg-white rounded-lg">
-                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Settings className="w-6 h-6 text-green-600" />
-                </div>
-                <h3 className="font-semibold mb-2">2. Configure</h3>
-                <p className="text-sm text-gray-600">Add metadata and configuration</p>
-              </div>
-              <div className="text-center p-4 bg-white rounded-lg">
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Play className="w-6 h-6 text-purple-600" />
-                </div>
-                <h3 className="font-semibold mb-2">3. Deploy</h3>
-                <p className="text-sm text-gray-600">Publish to marketplace</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Getting Started Section */}
+        <section className="mb-20">
+          <div className="text-center mb-12">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl font-bold text-white mb-4"
+            >
+              Getting Started
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-lg text-muted-foreground"
+            >
+              Follow these 4 simple steps to start using AI agents
+            </motion.p>
+          </div>
 
-        {/* Agent Structure Section */}
-        <div className="grid lg:grid-cols-2 gap-8 mb-12">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Agent File Structure
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-semibold mb-2">Required Fields</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm">name</code>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm">description</code>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm">version</code>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm">inputSchema</code>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm">execute</code>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold mb-2">Optional Fields</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm">documentation</code>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm">examples</code>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-yellow-500" />
-                      <code className="bg-gray-100 px-2 py-1 rounded text-sm">tags</code>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Code className="w-5 h-5" />
-                Example Agent File
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <pre className="bg-gray-900 text-green-400 p-4 rounded-lg text-sm overflow-x-auto">
-{`{
-  "name": "Text Summarizer",
-  "description": "Summarizes long text into concise versions",
-  "version": "1.0.0",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "text": {
-        "type": "string",
-        "description": "Text to summarize"
-      },
-      "maxLength": {
-        "type": "number",
-        "description": "Maximum summary length"
-      }
-    },
-    "required": ["text"]
-  },
-  "execute": "async (input) => { ... }",
-  "documentation": "Detailed usage instructions...",
-  "tags": ["nlp", "summarization"]
-}`}
-              </pre>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Detailed Sections */}
-        <div className="space-y-8">
-          {/* Input Schema Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="w-5 h-5" />
-                Input Schema Requirements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-semibold mb-3">JSON Schema Format</h4>
-                  <p className="text-gray-600 mb-4">
-                    Your agent must define an input schema using JSON Schema format. This tells Xeinst what inputs your agent expects and automatically generates the user interface.
-                  </p>
-                  
-                  <div className="bg-blue-50 p-4 rounded-lg mb-4">
-                    <h5 className="font-semibold text-blue-800 mb-2">Best Practices:</h5>
-                    <ul className="space-y-1 text-sm text-blue-700">
-                      <li>• Use descriptive property names and descriptions</li>
-                      <li>• Mark required fields with the "required" array</li>
-                      <li>• Use appropriate data types (string, number, boolean, object, array)</li>
-                      <li>• Add validation rules like min/max values, patterns, etc.</li>
-                      <li>• Include examples in property descriptions</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <h5 className="font-semibold mb-2">Simple Input Example</h5>
-                    <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
-{`{
-  "type": "object",
-  "properties": {
-    "message": {
-      "type": "string",
-      "description": "Your message"
-    }
-  },
-  "required": ["message"]
-}`}
-                    </pre>
-                  </div>
-                  
-                  <div>
-                    <h5 className="font-semibold mb-2">Complex Input Example</h5>
-                    <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
-{`{
-  "type": "object",
-  "properties": {
-    "text": {
-      "type": "string",
-      "description": "Text to process"
-    },
-    "options": {
-      "type": "object",
-      "properties": {
-        "language": {
-          "type": "string",
-          "enum": ["en", "es", "fr"]
-        },
-        "format": {
-          "type": "string",
-          "enum": ["markdown", "html", "plain"]
-        }
-      }
-    }
-  },
-  "required": ["text"]
-}`}
-                    </pre>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Execute Function Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="w-5 h-5" />
-                Execute Function Requirements
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <h4 className="font-semibold mb-3">Function Signature</h4>
-                  <p className="text-gray-600 mb-4">
-                    Your agent must provide an execute function that processes the input and returns a result. This function will be called when users interact with your agent.
-                  </p>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div>
-                    <h5 className="font-semibold mb-2">Basic Execute Function</h5>
-                    <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
-{`async function execute(input) {
-  const { message } = input;
-  
-  // Your agent logic here
-  const response = await processMessage(message);
-  
-  return {
-    success: true,
-    result: response,
-    metadata: {
-      processingTime: Date.now()
-    }
-  };
-}`}
-                    </pre>
-                  </div>
-                  
-                  <div>
-                    <h5 className="font-semibold mb-2">Advanced Execute Function</h5>
-                    <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
-{`async function execute(input) {
-  try {
-    const { text, options = {} } = input;
-    
-    // Validate input
-    if (!text) {
-      throw new Error("Text is required");
-    }
-    
-    // Process with options
-    const result = await processWithOptions(text, options);
-    
-    return {
-      success: true,
-      result: result,
-      metadata: {
-        inputLength: text.length,
-        options: options,
-        timestamp: new Date().toISOString()
-      }
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message
-    };
-  }
-}`}
-                    </pre>
-                  </div>
-                </div>
-
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                  <h5 className="font-semibold text-yellow-800 mb-2">Important Notes:</h5>
-                  <ul className="space-y-1 text-sm text-yellow-700">
-                    <li>• Always return an object with a "success" boolean field</li>
-                    <li>• Include the result in a "result" field when successful</li>
-                    <li>• Include error details in an "error" field when failed</li>
-                    <li>• Use async/await for asynchronous operations</li>
-                    <li>• Add proper error handling</li>
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Testing Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Play className="w-5 h-5" />
-                Testing Your Agent
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-gray-600">
-                  Before uploading to Xeinst, test your agent thoroughly to ensure it works correctly.
-                </p>
-                
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <h5 className="font-semibold text-green-800 mb-2">1. Local Testing</h5>
-                    <ul className="text-sm text-green-700 space-y-1">
-                      <li>• Test with various input types</li>
-                      <li>• Verify error handling</li>
-                      <li>• Check response format</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h5 className="font-semibold text-blue-800 mb-2">2. Schema Validation</h5>
-                    <ul className="text-sm text-blue-700 space-y-1">
-                      <li>• Validate JSON schema syntax</li>
-                      <li>• Test with sample inputs</li>
-                      <li>• Check required fields</li>
-                    </ul>
-                  </div>
-                  
-                  <div className="bg-purple-50 p-4 rounded-lg">
-                    <h5 className="font-semibold text-purple-800 mb-2">3. Performance</h5>
-                    <ul className="text-sm text-purple-700 space-y-1">
-                      <li>• Test response times</li>
-                      <li>• Check memory usage</li>
-                      <li>• Verify scalability</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Upload Process Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="w-5 h-5" />
-                Upload Process
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h4 className="font-semibold mb-4">Step-by-Step Upload</h4>
-                    <ol className="space-y-3">
-                      <li className="flex items-start gap-3">
-                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">1</span>
-                        <div>
-                          <p className="font-medium">Prepare your agent file</p>
-                          <p className="text-sm text-gray-600">Ensure it follows the Xeinst format</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">2</span>
-                        <div>
-                          <p className="font-medium">Go to Upload page</p>
-                          <p className="text-sm text-gray-600">Navigate to the agent upload section</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">3</span>
-                        <div>
-                          <p className="font-medium">Fill in metadata</p>
-                          <p className="text-sm text-gray-600">Add name, description, category, etc.</p>
-                        </div>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <span className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">4</span>
-                        <div>
-                          <p className="font-medium">Upload and test</p>
-                          <p className="text-sm text-gray-600">Test your agent in the platform</p>
-                        </div>
-                      </li>
-                    </ol>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold mb-4">Common Issues</h4>
-                    <div className="space-y-3">
-                      <div className="bg-red-50 p-3 rounded-lg">
-                        <h5 className="font-semibold text-red-800 text-sm">Invalid JSON Schema</h5>
-                        <p className="text-sm text-red-700">Ensure your inputSchema follows JSON Schema specification</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {gettingStartedSteps.map((step, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
+                <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                  <CardHeader>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${step.color} flex items-center justify-center`}>
+                        <step.icon className="w-6 h-6 text-white" />
                       </div>
-                      <div className="bg-red-50 p-3 rounded-lg">
-                        <h5 className="font-semibold text-red-800 text-sm">Missing Required Fields</h5>
-                        <p className="text-sm text-red-700">Check that all required fields are present</p>
-                      </div>
-                      <div className="bg-red-50 p-3 rounded-lg">
-                        <h5 className="font-semibold text-red-800 text-sm">Execute Function Errors</h5>
-                        <p className="text-sm text-red-700">Test your execute function thoroughly</p>
+                      <div className="w-8 h-8 rounded-full bg-ai-accent flex items-center justify-center">
+                        <span className="text-sm font-bold text-white">{step.step}</span>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                    <CardTitle className="text-xl text-white">{step.title}</CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      {step.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Link href={step.href}>
+                      <Button className="w-full bg-gradient-to-r from-ai-primary to-ai-secondary hover:from-ai-primary/90 hover:to-ai-secondary/90">
+                        {step.action}
+                        <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </section>
 
-        {/* How to Upload Agents Section */}
-        <Card className="mb-12 border-2 border-green-200 bg-green-50" id="upload-agents">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-800">
-              <Upload className="w-6 h-6" />
-              How to Upload Agents
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div>
-                <h3 className="font-semibold text-lg mb-2">1. Upload via Web Interface</h3>
-                <ol className="list-decimal list-inside space-y-1 text-gray-700">
-                  <li>Go to the <Link href="/upload" className="text-blue-700 underline">Upload Agent</Link> page.</li>
-                  <li>Fill in the required agent details (name, description, version, etc.).</li>
-                  <li>Upload your agent file (JSON, ZIP, or supported format).</li>
-                  <li>Click <span className="font-semibold">Upload</span> to submit your agent for review and publishing.</li>
-                  <li>Once approved, your agent will appear in the <Link href="/marketplace" className="text-blue-700 underline">Marketplace</Link>.</li>
-                </ol>
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg mb-2">2. Upload via API (Programmatically)</h3>
-                <p className="text-gray-700 mb-2">You can also upload agents using our API endpoint. This is useful for automation, CI/CD, or bulk uploads.</p>
-                <div className="bg-gray-900 text-green-200 p-4 rounded-lg text-sm mb-2 overflow-x-auto">
-{`POST /api/upload-agent
-Headers:
-  Authorization: Bearer <your_token>
-Content-Type: multipart/form-data
+        {/* Features Section */}
+        <section className="mb-20">
+          <div className="text-center mb-12">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl font-bold text-white mb-4"
+            >
+              Key Features
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-lg text-muted-foreground"
+            >
+              Everything you need to build and deploy AI solutions
+            </motion.p>
+          </div>
 
-Body:
-  name: My Agent
-  description: Does cool stuff
-  file: (attach your agent file)
-`}
-                </div>
-                <div className="bg-gray-100 p-4 rounded-lg text-sm mb-2 overflow-x-auto">
-{`curl -X POST https://yourdomain.com/api/upload-agent \
-  -H "Authorization: Bearer <your_token>" \
-  -F "name=My Agent" \
-  -F "description=Does cool stuff" \
-  -F "file=@/path/to/agent.zip"`}
-                </div>
-                <p className="text-gray-700">See the API docs for all available fields and authentication requirements.</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg mb-2">3. Agent File Requirements</h3>
-                <ul className="list-disc list-inside space-y-1 text-gray-700">
-                  <li>Accepted formats: <span className="font-mono">.json</span>, <span className="font-mono">.zip</span></li>
-                  <li>Must include required metadata fields: <span className="font-mono">name</span>, <span className="font-mono">description</span>, <span className="font-mono">version</span>, <span className="font-mono">inputSchema</span>, <span className="font-mono">execute</span></li>
-                  <li>Optional: <span className="font-mono">documentation</span>, <span className="font-mono">examples</span>, <span className="font-mono">tags</span></li>
-                  <li>See the <b>Agent File Structure</b> section above for a full example.</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg mb-2">4. Security & Best Practices</h3>
-                <ul className="list-disc list-inside space-y-1 text-gray-700">
-                  <li>Only authenticated users can upload agents via the API or web UI.</li>
-                  <li>All uploads are scanned and reviewed before publishing.</li>
-                  <li>Do not include sensitive information or credentials in your agent files.</li>
-                  <li>Follow the <b>input schema</b> and <b>metadata</b> guidelines for best compatibility.</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
+                <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-ai-primary to-ai-secondary flex items-center justify-center mb-4">
+                      <feature.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <CardTitle className="text-xl text-white">{feature.title}</CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      {feature.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {feature.benefits.map((benefit, idx) => (
+                        <div key={idx} className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-500" />
+                          <span className="text-sm text-muted-foreground">{benefit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </section>
 
-        {/* Call to Action */}
-        <Card className="mt-12 bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-          <CardContent className="p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Ready to Upload Your Agent?</h2>
-            <p className="text-blue-100 mb-6">
-              Follow this guide to create Xeinst-compatible agents and start earning from your AI creations.
+        {/* Use Cases Section */}
+        <section className="mb-20">
+          <div className="text-center mb-12">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl font-bold text-white mb-4"
+            >
+              Popular Use Cases
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-lg text-muted-foreground"
+            >
+              See how others are using AI agents to solve real problems
+            </motion.p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {useCases.map((useCase, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
+                <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-ai-primary to-ai-secondary flex items-center justify-center mb-4">
+                      <useCase.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <CardTitle className="text-xl text-white">{useCase.title}</CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      {useCase.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {useCase.examples.map((example, idx) => (
+                        <div key={idx} className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-ai-primary rounded-full"></div>
+                          <span className="text-sm text-muted-foreground">{example}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* Tips Section */}
+        <section className="mb-20">
+          <div className="text-center mb-12">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl font-bold text-white mb-4"
+            >
+              Pro Tips
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-lg text-muted-foreground"
+            >
+              Best practices for getting the most out of AI Agency
+            </motion.p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {tips.map((tip, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+              >
+                <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                  <CardHeader>
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-ai-primary to-ai-secondary flex items-center justify-center mb-4">
+                      <tip.icon className="w-6 h-6 text-white" />
+                    </div>
+                    <CardTitle className="text-xl text-white">{tip.title}</CardTitle>
+                    <CardDescription className="text-muted-foreground">
+                      {tip.description}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="max-w-2xl mx-auto"
+          >
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Ready to Get Started?
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              Start exploring AI agents and building your first AI solution today
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/upload">
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Agent
+              <Link href="/marketplace">
+                <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
+                  <Search className="w-5 h-5 mr-2" />
+                  Browse Marketplace
+                  <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
-              <Link href="/marketplace">
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Browse Marketplace
+              <Link href="/upload">
+                <Button size="lg" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
+                  <Upload className="w-5 h-5 mr-2" />
+                  Upload Your Agent
                 </Button>
               </Link>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Resources */}
-        <div className="mt-12">
-          <h3 className="text-2xl font-bold text-center mb-8">Additional Resources</h3>
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Lightbulb className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
-                <h4 className="font-semibold mb-2">Best Practices</h4>
-                <p className="text-gray-600 text-sm mb-4">Learn industry best practices for creating effective AI agents</p>
-                <Button variant="outline" size="sm">
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Learn More
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Code className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-                <h4 className="font-semibold mb-2">Code Examples</h4>
-                <p className="text-gray-600 text-sm mb-4">Browse through working examples of Xeinst-compatible agents</p>
-                <Button variant="outline" size="sm">
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  View Examples
-                </Button>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6 text-center">
-                <Download className="w-12 h-12 text-green-500 mx-auto mb-4" />
-                <h4 className="font-semibold mb-2">Templates</h4>
-                <p className="text-gray-600 text-sm mb-4">Download ready-to-use templates for common agent types</p>
-                <Button variant="outline" size="sm">
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+          </motion.div>
+        </section>
       </div>
     </div>
   );
