@@ -4,18 +4,15 @@ import { motion, useScroll, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
   Menu, 
   X, 
   Search, 
-  Bell, 
   User, 
   Settings, 
   LogOut,
   ChevronDown,
   Sparkles,
-  Zap,
   Globe,
   Bot,
   Upload,

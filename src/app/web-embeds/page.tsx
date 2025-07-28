@@ -18,15 +18,12 @@ import {
   Eye, 
   Edit, 
   Trash2, 
-  ExternalLink,
   Code,
   Bot,
   Loader2,
   Info,
   Play,
-  Shield,
-  Monitor,
-  Zap
+  Monitor
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 

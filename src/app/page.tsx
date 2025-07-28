@@ -12,16 +12,12 @@ import {
   CheckCircle,
   Bot,
   Cpu,
-  Database,
   Cloud,
   Globe,
-  Zap,
-  Settings,
   Search,
   Upload,
   Rocket,
   Lightbulb,
-  Target,
   TrendingUp
 } from "lucide-react";
 import { motion } from "framer-motion";
