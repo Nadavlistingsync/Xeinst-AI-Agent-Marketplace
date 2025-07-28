@@ -13,7 +13,6 @@ import {
   Bot,
   Cpu,
   Cloud,
-  Globe,
   Search,
   Upload,
   Rocket,
