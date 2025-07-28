@@ -9,7 +9,6 @@ import {
   Sparkles, 
   Shield, 
   Users, 
-  Star,
   CheckCircle,
   Play,
   Bot,
