@@ -17,8 +17,7 @@ import {
   Search,
   Upload,
   Rocket,
-  Lightbulb,
-  TrendingUp
+  Lightbulb
 } from "lucide-react";
 import { motion } from "framer-motion";
 
