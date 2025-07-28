@@ -57,32 +57,7 @@ const quickActions = [
   }
 ];
 
-const howItWorks = [
-  {
-    step: "1",
-    icon: Search,
-    title: "Browse & Use",
-    description: "Browse our marketplace of AI agents and find the perfect solution for your needs"
-  },
-  {
-    step: "2", 
-    icon: Upload,
-    title: "Create & Deploy",
-    description: "Upload your own AI agent or build one using our tools"
-  },
-  {
-    step: "3",
-    icon: Rocket,
-    title: "Deploy Agent",
-    description: "Deploy your agent to the cloud with one click"
-  },
-  {
-    step: "4",
-    icon: TrendingUp,
-    title: "Monitor & Scale",
-    description: "Track performance and scale your AI solution as needed"
-  }
-];
+
 
 const features = [
   {
