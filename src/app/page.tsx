@@ -33,7 +33,7 @@ const quickActions = [
   {
     icon: Upload,
     title: "Create & Deploy",
-    description: "Upload your AI agent or build one and deploy to the cloud",
+    description: "Upload your AI agent or create web embeds - choose your path",
     href: "/upload",
     color: "from-green-500 to-teal-500",
     buttonText: "Upload Agent"
@@ -45,14 +45,6 @@ const quickActions = [
     href: "/deploy",
     color: "from-orange-500 to-red-500",
     buttonText: "Deploy Now"
-  },
-  {
-    icon: Globe,
-    title: "Web Embeds",
-    description: "Embed existing tools/agents without full setup - paste link and deploy",
-    href: "/web-embeds",
-    color: "from-purple-500 to-pink-500",
-    buttonText: "Create Embed"
   }
 ];
 
@@ -66,10 +58,10 @@ const features = [
     href: "/marketplace"
   },
   {
-    icon: Globe,
-    title: "Web Embed System",
-    description: "Embed existing tools/agents without full setup - paste link and deploy",
-    href: "/web-embeds"
+    icon: Upload,
+    title: "Upload & Embed System",
+    description: "Upload full agents or create web embeds - choose your path",
+    href: "/upload"
   },
   {
     icon: Cpu,
@@ -319,22 +311,22 @@ export default function Home() {
                   </div>
                   <CardTitle className="text-xl text-white">Path 2: Create & Deploy</CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    Build and deploy your own AI agents
+                    Build and deploy your own AI agents or create web embeds
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">1. Upload Agent - Build or upload</span>
+                      <span className="text-sm text-muted-foreground">1. Upload - Choose agent or web embed</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">2. Deploy Agent - Configure and launch</span>
+                      <span className="text-sm text-muted-foreground">2. Configure - Set up your solution</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">3. Dashboard - Monitor and manage</span>
+                      <span className="text-sm text-muted-foreground">3. Deploy - Launch to marketplace</span>
                     </div>
                   </div>
                   <Link href="/upload">
@@ -347,7 +339,7 @@ export default function Home() {
               </Card>
             </motion.div>
 
-            {/* Path 3: Web Embeds */}
+            {/* Path 3: Deploy & Manage */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -355,32 +347,32 @@ export default function Home() {
             >
               <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
                 <CardHeader>
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mb-4">
-                    <Globe className="w-6 h-6 text-white" />
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mb-4">
+                    <Rocket className="w-6 h-6 text-white" />
                   </div>
-                  <CardTitle className="text-xl text-white">Path 3: Web Embeds</CardTitle>
+                  <CardTitle className="text-xl text-white">Path 3: Deploy & Manage</CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    Embed existing tools without full agent setup
+                    Deploy your solutions and manage them in the cloud
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">1. Embed Flow - Paste link to tool</span>
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">1. Deploy - Launch to cloud</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">2. Configure AI settings</span>
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">2. Monitor - Track performance</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">3. Deploy instantly</span>
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">3. Scale - Optimize and grow</span>
                     </div>
                   </div>
-                  <Link href="/web-embeds">
-                    <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
-                      Start Embedding
+                  <Link href="/deploy">
+                    <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
+                      Start Deploying
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </Link>

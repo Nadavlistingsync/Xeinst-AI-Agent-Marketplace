@@ -1,146 +1,93 @@
-'use client';
+"use client";
 
-import { motion, useScroll, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { 
   Menu, 
   X, 
   Search, 
-  User, 
-  Settings, 
-  LogOut,
-  ChevronDown,
-  Sparkles,
-  Globe,
+  Upload, 
+  Rocket, 
+  BookOpen, 
+  Home,
   Bot,
-  Upload,
-  Rocket,
-  BookOpen,
-  Home
-} from 'lucide-react';
+  Globe,
+  Settings,
+  User,
+  LogOut
+} from "lucide-react";
+
+const menuItems = [
+  {
+    label: "Browse Agents",
+    href: "/marketplace",
+    icon: Search,
+    description: "Find AI agents in our marketplace"
+  },
+  {
+    label: "Upload Agent",
+    href: "/upload",
+    icon: Upload,
+    description: "Upload your agent or create web embed"
+  },
+  {
+    label: "Deploy Agent",
+    href: "/deploy",
+    icon: Rocket,
+    description: "Deploy your AI agent to the cloud"
+  },
+  {
+    label: "My Dashboard",
+    href: "/dashboard",
+    icon: Settings,
+    description: "Manage your agents and deployments"
+  },
+  {
+    label: "How It Works",
+    href: "/guide",
+    icon: BookOpen,
+    description: "Learn how to use the platform"
+  }
+];
 
 export default function Header() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { scrollY } = useScroll();
-
-  useEffect(() => {
-    return scrollY.on("change", (latest) => {
-      setScrolled(latest > 50);
-    });
-  }, [scrollY]);
-
-  const menuItems = [
-    { 
-      label: 'Home', 
-      href: '/',
-      icon: Home,
-      description: 'Back to homepage'
-    },
-    { 
-      label: 'Browse Agents', 
-      href: '/marketplace',
-      icon: Search,
-      description: 'Find AI agents'
-    },
-    { 
-      label: 'Upload Agent', 
-      href: '/upload',
-      icon: Upload,
-      description: 'Share your agent'
-    },
-    { 
-      label: 'Deploy Agent', 
-      href: '/deploy',
-      icon: Rocket,
-      description: 'Deploy to cloud'
-    },
-    { 
-      label: 'Web Embeds', 
-      href: '/web-embeds',
-      icon: Globe,
-      description: 'Embed websites'
-    },
-    { 
-      label: 'My Dashboard', 
-      href: '/dashboard',
-      icon: Bot,
-      description: 'Manage your agents'
-    },
-    { 
-      label: 'How It Works', 
-      href: '/guide',
-      icon: BookOpen,
-      description: 'Learn the basics'
-    }
-  ];
-
-  const userMenuItems = [
-    { label: 'Profile', href: '/profile', icon: User },
-    { label: 'Settings', href: '/settings', icon: Settings },
-    { label: 'Logout', href: '/logout', icon: LogOut },
-  ];
+  const { data: session } = useSession();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-      scrolled 
-        ? 'bg-background/80 backdrop-blur-xl border-b border-border shadow-2xl' 
-        : 'bg-transparent'
-    }`}>
-      <div className="container">
-        <div className="flex justify-between items-center h-20">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Link href="/" className="flex items-center space-x-3 group">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-ai rounded-xl flex items-center justify-center shadow-glow">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <div className="absolute inset-0 bg-gradient-ai rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm"></div>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-bold text-gradient">AI Agency</span>
-                <span className="text-xs text-muted-foreground">Build & Deploy AI</span>
-              </div>
-            </Link>
-          </motion.div>
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-r from-ai-primary to-ai-secondary rounded-lg flex items-center justify-center">
+              <Bot className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-xl font-bold text-white">AI Agency</span>
+          </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1">
-            {menuItems.slice(1, 6).map((item, index) => (
-              <motion.div
-                key={item.label}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+          <nav className="hidden md:flex items-center space-x-6">
+            {menuItems.slice(0, 3).map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-muted-foreground hover:text-white transition-colors"
               >
-                <Link href={item.href}>
-                  <Button
-                    variant="ghost"
-                    className="relative group px-4 py-2 text-muted-foreground hover:text-white hover:bg-ai-primary/10 transition-all duration-300"
-                  >
-                    <item.icon className="w-4 h-4 mr-2" />
-                    {item.label}
-                    <div className="absolute inset-0 bg-gradient-ai opacity-0 group-hover:opacity-10 rounded-lg transition-opacity duration-300"></div>
-                  </Button>
-                </Link>
-              </motion.div>
+                {item.label}
+              </Link>
             ))}
           </nav>
 
-          {/* Right Side */}
-          <div className="flex items-center space-x-4">
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center space-x-4">
             {/* Quick Actions */}
-            <div className="hidden md:flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
               <Link href="/marketplace">
-                <Button size="sm" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
+                <Button variant="outline" size="sm" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
                   <Search className="w-4 h-4 mr-2" />
                   Browse
                 </Button>
@@ -154,86 +101,119 @@ export default function Header() {
             </div>
 
             {/* User Menu */}
-            <div className="relative">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="relative group"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              >
-                <User className="w-5 h-5 mr-2" />
-                Account
-                <ChevronDown className="w-4 h-4 ml-1 transition-transform duration-200 group-hover:rotate-180" />
-              </Button>
-
-              <AnimatePresence>
-                {isDropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-2 w-48 bg-background/90 backdrop-blur-xl border border-border rounded-lg shadow-2xl py-2 z-50"
-                  >
-                    {userMenuItems.map((item) => (
-                      <Link key={item.label} href={item.href}>
-                        <Button
-                          variant="ghost"
-                          className="w-full justify-start px-4 py-2 text-muted-foreground hover:text-white hover:bg-ai-primary/10"
-                          onClick={() => setIsDropdownOpen(false)}
-                        >
-                          <item.icon className="w-4 h-4 mr-3" />
-                          {item.label}
-                        </Button>
-                      </Link>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Mobile Menu Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="lg:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </Button>
+            {session ? (
+              <div className="relative group">
+                <Button variant="ghost" className="flex items-center space-x-2">
+                  <div className="w-8 h-8 bg-gradient-to-r from-ai-primary to-ai-secondary rounded-full flex items-center justify-center">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                  <span className="text-sm text-white">{session.user?.name || session.user?.email}</span>
+                </Button>
+                
+                {/* Dropdown Menu */}
+                <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <div className="py-2">
+                    <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-muted-foreground hover:text-white hover:bg-muted">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </Link>
+                    <button
+                      onClick={() => signOut()}
+                      className="flex items-center w-full px-4 py-2 text-sm text-muted-foreground hover:text-white hover:bg-muted"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Sign Out
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link href="/login">
+                  <Button variant="outline" size="sm" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/signup">
+                  <Button size="sm" className="bg-gradient-ai hover:bg-gradient-ai/90">
+                    Sign Up
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="md:hidden p-2 text-muted-foreground hover:text-white"
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
 
         {/* Mobile Menu */}
-        <AnimatePresence>
-          {isMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="lg:hidden border-t border-border bg-background/90 backdrop-blur-xl"
-            >
-              <div className="py-4 space-y-2">
-                {menuItems.map((item) => (
-                  <Link key={item.label} href={item.href}>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-start px-4 py-3 text-muted-foreground hover:text-white hover:bg-ai-primary/10"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <item.icon className="w-5 h-5 mr-3" />
-                      <div className="flex flex-col items-start">
-                        <span className="font-medium">{item.label}</span>
-                        <span className="text-xs text-muted-foreground">{item.description}</span>
-                      </div>
+        {isMobileMenuOpen && (
+          <div className="md:hidden py-4 border-t border-border">
+            <nav className="space-y-2">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex items-center space-x-3 px-4 py-2 text-muted-foreground hover:text-white hover:bg-muted rounded-lg"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <div>
+                    <div className="font-medium">{item.label}</div>
+                    <div className="text-xs text-muted-foreground">{item.description}</div>
+                  </div>
+                </Link>
+              ))}
+            </nav>
+            
+            <div className="mt-4 pt-4 border-t border-border">
+              {session ? (
+                <div className="space-y-2">
+                  <div className="px-4 py-2 text-sm text-muted-foreground">
+                    Signed in as {session.user?.name || session.user?.email}
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center space-x-3 px-4 py-2 text-muted-foreground hover:text-white hover:bg-muted rounded-lg"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <Settings className="w-5 h-5" />
+                    <span>Dashboard</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="flex items-center space-x-3 w-full px-4 py-2 text-muted-foreground hover:text-white hover:bg-muted rounded-lg"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex space-x-2 px-4">
+                  <Link href="/login" className="flex-1">
+                    <Button variant="outline" size="sm" className="w-full border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
+                      Sign In
                     </Button>
                   </Link>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                  <Link href="/signup" className="flex-1">
+                    <Button size="sm" className="w-full bg-gradient-ai hover:bg-gradient-ai/90">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
