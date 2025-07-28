@@ -12,7 +12,6 @@ import {
   Globe, 
   Bot, 
   Settings, 
-  Play,
   ArrowRight,
   CheckCircle,
   Lightbulb,
