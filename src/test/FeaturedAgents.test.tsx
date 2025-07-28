@@ -77,7 +77,7 @@ describe('FeaturedAgents', () => {
   it('renders "No featured agents found" when no featured agents', async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ agents: [] }),
+      json: () => Promise.resolve([]),
     });
 
     render(<FeaturedAgents />);

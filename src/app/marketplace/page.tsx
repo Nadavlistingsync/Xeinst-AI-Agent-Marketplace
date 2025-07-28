@@ -19,7 +19,8 @@ async function getAgents(): Promise<Agent[]> {
   if (!res.ok) {
     throw new Error('Failed to fetch agents');
   }
-  return res.json();
+  const data = await res.json();
+  return data.agents || data; // Handle both new and old response formats
 }
 
 export default function MarketplacePage() {

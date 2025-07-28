@@ -61,8 +61,28 @@ export async function POST(request: NextRequest) {
       // Don't fail the callback if logging fails
     }
 
-    // TODO: Notify the user about the completed task
-    // This could be via WebSocket, email, or push notification
+    // Notify the user about the completed task
+    try {
+      // Create notification for the user
+      await prisma.notification.create({
+        data: {
+          userId: metadata?.userId || 'unknown',
+          type: 'system_alert',
+          message: status === 'completed' 
+            ? `Your task has been completed successfully.`
+            : `Your task failed: ${error}`,
+          metadata: {
+            job_id,
+            status,
+            result: status === 'completed' ? result : null,
+            error: status === 'failed' ? error : null,
+          },
+        },
+      });
+    } catch (notifyError) {
+      console.error('Failed to create notification:', notifyError);
+      // Don't fail the callback if notification fails
+    }
 
     return NextResponse.json(
       { success: true, message: 'Callback processed successfully' },

@@ -55,6 +55,21 @@ enum ProductLicenseType {
   enterprise
 }
 
+enum WebEmbedStatus {
+  active
+  inactive
+  pending
+  error
+}
+
+enum WebEmbedType {
+  website
+  application
+  dashboard
+  tool
+  custom
+}
+
 model User {
   id              String    @id @default(cuid())
   name            String?
@@ -68,6 +83,11 @@ model User {
   updatedAt       DateTime  @updatedAt
   credits         Int                @default(0)
   creditTxs       CreditTransaction[]
+  
+  // Stripe fields
+  stripeCustomerId String?
+  subscriptionId   String?
+  subscriptionStatus String?
 
   // Relations
   products        Product[]
@@ -81,6 +101,7 @@ model User {
   files           File[]
   agents          Agent[]
   generatedInterfaces GeneratedInterface[]
+  webEmbeds        WebEmbed[]
 }
 
 model Product {
@@ -424,6 +445,7 @@ model Agent {
   // Relations
   creator         User      @relation(fields: [createdBy], references: [id])
   interfaces      GeneratedInterface[]
+  webEmbeds        WebEmbed[]
 }
 
 model GeneratedInterface {
@@ -513,4 +535,53 @@ model Feedback {
   rating    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model WebEmbed {
+  id              String          @id @default(cuid())
+  name            String
+  description     String?
+  url             String
+  embedUrl        String          // The URL to embed (iframe src)
+  type            WebEmbedType    @default(website)
+  status          WebEmbedStatus  @default(active)
+  createdBy       String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  // Embed configuration
+  width           String          @default("100%")
+  height          String          @default("600px")
+  allowFullscreen Boolean         @default(true)
+  allowScripts    Boolean         @default(false)
+  sandbox         String          @default("allow-same-origin allow-scripts allow-forms allow-popups")
+  
+  // Agent integration
+  agentId         String?         // Optional: linked agent for later integration
+  agentConfig     Json?           // Configuration for agent integration
+  
+  // Security and permissions
+  allowedDomains  String[]        @default([])
+  blockedDomains  String[]        @default([])
+  requireAuth     Boolean         @default(false)
+  
+  // Analytics
+  viewCount       Int             @default(0)
+  lastViewed      DateTime?
+  
+  // Relations
+  creator         User            @relation(fields: [createdBy], references: [id])
+  agent           Agent?          @relation(fields: [agentId], references: [id])
+  embedLogs       WebEmbedLog[]
+}
+
+model WebEmbedLog {
+  id          String      @id @default(cuid())
+  embedId     String
+  action      String      // 'view', 'interact', 'error'
+  metadata    Json?
+  timestamp   DateTime    @default(now())
+  
+  // Relations
+  embed       WebEmbed    @relation(fields: [embedId], references: [id])
 }

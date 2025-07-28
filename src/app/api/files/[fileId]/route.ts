@@ -69,11 +69,26 @@ export async function GET(
     fileQuerySchema.parse(queryParams);
 
     // Get file content from storage
-    // TODO: Implement file content retrieval from storage (e.g., file system, S3, etc.)
-    return NextResponse.json(
-      { error: 'File content retrieval not implemented' },
-      { status: 501 }
-    );
+    try {
+      // For now, return file metadata and a download URL
+      // In production, you would implement actual file storage (S3, etc.)
+      const fileContent = {
+        id: file.id,
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        downloadUrl: `/api/files/${file.id}/download`,
+        previewUrl: file.type.startsWith('image/') ? `/api/files/${file.id}/preview` : null,
+      };
+      
+      return NextResponse.json(fileContent);
+    } catch (error) {
+      console.error('Error retrieving file content:', error);
+      return NextResponse.json(
+        { error: 'Failed to retrieve file content' },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error('Error downloading file:', error);
     

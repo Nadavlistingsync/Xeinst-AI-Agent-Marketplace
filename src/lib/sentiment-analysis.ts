@@ -6,14 +6,43 @@ export interface SentimentAnalysisResult {
   label: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
 }
 
-export async function analyzeSentiment(_text: string): Promise<SentimentAnalysisResult> {
-  // TODO: Implement actual sentiment analysis
-  const score = Math.random() * 2 - 1; // Random score between -1 and 1
-  let label: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
+export async function analyzeSentiment(text: string): Promise<SentimentAnalysisResult> {
+  // Simple sentiment analysis based on keyword matching
+  const positiveWords = [
+    'good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic', 'awesome',
+    'love', 'like', 'enjoy', 'happy', 'satisfied', 'pleased', 'perfect', 'best',
+    'outstanding', 'brilliant', 'superb', 'terrific', 'fabulous', 'incredible'
+  ];
+  
+  const negativeWords = [
+    'bad', 'terrible', 'awful', 'horrible', 'disgusting', 'hate', 'dislike',
+    'worst', 'poor', 'disappointing', 'frustrated', 'angry', 'upset', 'sad',
+    'awful', 'dreadful', 'atrocious', 'abysmal', 'lousy', 'miserable'
+  ];
 
-  if (score > 0.3) {
+  const words = text.toLowerCase().split(/\s+/);
+  let positiveCount = 0;
+  let negativeCount = 0;
+
+  words.forEach(word => {
+    if (positiveWords.includes(word)) {
+      positiveCount++;
+    } else if (negativeWords.includes(word)) {
+      negativeCount++;
+    }
+  });
+
+  const totalWords = words.length;
+  const positiveRatio = positiveCount / totalWords;
+  const negativeRatio = negativeCount / totalWords;
+  
+  const score = positiveRatio - negativeRatio;
+  
+  let label: 'POSITIVE' | 'NEGATIVE' | 'NEUTRAL';
+  
+  if (score > 0.1) {
     label = 'POSITIVE';
-  } else if (score < -0.3) {
+  } else if (score < -0.1) {
     label = 'NEGATIVE';
   } else {
     label = 'NEUTRAL';

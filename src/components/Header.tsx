@@ -39,6 +39,12 @@ export default function Header() {
       description: 'Browse AI agents'
     },
     { 
+      label: 'Web Embeds', 
+      href: '/web-embeds',
+      icon: Globe,
+      description: 'Embed websites'
+    },
+    { 
       label: 'Dashboard', 
       href: '/dashboard',
       icon: Settings,

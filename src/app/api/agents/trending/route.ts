@@ -19,6 +19,16 @@ const DeploymentSchema = z.object({
 
 export async function GET() {
   try {
+    // Check if we're in build mode and return mock data
+    if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+      return NextResponse.json({
+        agents: [],
+        count: 0,
+        timestamp: new Date().toISOString(),
+        message: 'Database not available during build'
+      }, { status: 200 });
+    }
+
     const agents = await prisma.deployment.findMany({
       where: {
         status: 'active',

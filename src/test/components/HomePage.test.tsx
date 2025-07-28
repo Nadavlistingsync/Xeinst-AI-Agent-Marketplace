@@ -14,13 +14,78 @@ vi.mock('next/navigation', () => ({
 }));
 
 // Mock framer-motion
-vi.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
-    h1: ({ children, ...props }: any) => <h1 {...props}>{children}</h1>,
-    p: ({ children, ...props }: any) => <p {...props}>{children}</p>,
-  },
-}));
+vi.mock('framer-motion', () => {
+  const React = require('react');
+  
+  const createMockComponent = (tag: string) => {
+    return React.forwardRef(({ children, ...props }: any, ref: any) => {
+      return React.createElement(tag, { ...props, ref }, children);
+    });
+  };
+
+  const motionComponents: any = {};
+  const htmlElements = [
+    'div', 'button', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'ul', 'li', 'nav', 'section', 'article', 'aside', 'header', 'footer',
+    'main', 'form', 'input', 'textarea', 'select', 'option', 'label',
+    'a', 'img', 'svg', 'path', 'circle', 'rect', 'line', 'polyline',
+    'polygon', 'ellipse', 'g', 'defs', 'clipPath', 'linearGradient',
+    'radialGradient', 'stop', 'pattern', 'mask', 'filter', 'feGaussianBlur',
+    'feOffset', 'feComposite', 'feMerge', 'feMergeNode', 'feFlood',
+    'feColorMatrix', 'feBlend', 'feMorphology', 'feDisplacementMap',
+    'feTurbulence', 'feDiffuseLighting', 'feSpecularLighting', 'feDistantLight',
+    'fePointLight', 'feSpotLight', 'feConvolveMatrix', 'feImage', 'feTile',
+    'feComponentTransfer', 'feFuncR', 'feFuncG', 'feFuncB', 'feFuncA', 'feDropShadow'
+  ];
+
+  htmlElements.forEach(tag => {
+    motionComponents[tag] = createMockComponent(tag);
+  });
+
+  return {
+    motion: motionComponents,
+    AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
+    useAnimation: () => ({
+      start: vi.fn(),
+      stop: vi.fn(),
+      set: vi.fn(),
+    }),
+    useMotionValue: (initial: any) => ({
+      get: () => initial,
+      set: vi.fn(),
+      on: vi.fn(),
+    }),
+    useTransform: (value: any, input: any, output: any) => ({
+      get: () => output,
+      set: vi.fn(),
+      on: vi.fn(),
+    }),
+    useSpring: (value: any, config: any) => ({
+      get: () => value,
+      set: vi.fn(),
+      on: vi.fn(),
+    }),
+    useMotionValueEvent: vi.fn(),
+    useInView: () => ({ ref: vi.fn(), inView: false }),
+    useScroll: () => ({
+      scrollX: { get: () => 0, on: vi.fn() },
+      scrollY: { get: () => 0, on: vi.fn() },
+      scrollXProgress: { get: () => 0, on: vi.fn() },
+      scrollYProgress: { get: () => 0, on: vi.fn() },
+    }),
+    useScrollControls: () => ({
+      scrollTo: vi.fn(),
+      scrollToTop: vi.fn(),
+      scrollToBottom: vi.fn(),
+    }),
+    useCycle: (...args: any[]) => [args[0], vi.fn()],
+    useReducedMotion: () => false,
+    usePresence: () => ({ isPresent: true, safeToRemove: vi.fn() }),
+    useIsPresent: () => true,
+    useAnimate: () => [vi.fn(), vi.fn()],
+    useMotionTemplate: (template: any) => template,
+  };
+});
 
 const mockSession = {
   data: null,
@@ -40,9 +105,10 @@ describe('HomePage', () => {
       </SessionProvider>
     );
 
-    // Check for main heading
-    expect(screen.getByText(/Transform Your Business/i)).toBeInTheDocument();
-    expect(screen.getByText(/with AI/i)).toBeInTheDocument();
+    // Check for main heading - the text is split across spans
+    expect(screen.getAllByText(/Transform/i)).toHaveLength(3); // One in heading, two in testimonials
+    expect(screen.getByText(/Your Business/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/with AI/i)).toHaveLength(2); // One in heading, one in features
 
     // Check for subtitle
     expect(screen.getByText(/We build custom AI tools for free/i)).toBeInTheDocument();
@@ -68,9 +134,9 @@ describe('HomePage', () => {
     expect(screen.getByText('99.9%')).toBeInTheDocument();
     expect(screen.getByText('99.99%')).toBeInTheDocument();
 
-    // Check for stat labels
-    expect(screen.getByText('Active Users')).toBeInTheDocument();
-    expect(screen.getByText('AI Agents')).toBeInTheDocument();
+    // Check for stat labels - use getAllByText since there are multiple instances
+    expect(screen.getAllByText('Active Users')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('AI Agents')[0]).toBeInTheDocument();
     expect(screen.getByText('Success Rate')).toBeInTheDocument();
     expect(screen.getByText('Uptime')).toBeInTheDocument();
   });
@@ -85,8 +151,8 @@ describe('HomePage', () => {
     // Check for features section heading
     expect(screen.getByText(/Powerful Features/i)).toBeInTheDocument();
 
-    // Check for feature titles
-    expect(screen.getByText('AI Agents')).toBeInTheDocument();
+    // Check for feature titles - use getAllByText since there are multiple instances
+    expect(screen.getAllByText('AI Agents')[1]).toBeInTheDocument(); // Second instance is in features
     expect(screen.getByText('Smart Automation')).toBeInTheDocument();
     expect(screen.getByText('Data Processing')).toBeInTheDocument();
     expect(screen.getByText('Cloud Deployment')).toBeInTheDocument();
@@ -132,8 +198,8 @@ describe('HomePage', () => {
     const mainHeading = screen.getByRole('heading', { level: 1 });
     expect(mainHeading).toBeInTheDocument();
 
-    // Check for proper button roles
-    const buttons = screen.getAllByRole('button');
-    expect(buttons.length).toBeGreaterThan(0);
+    // Check for proper link roles (the component uses links, not buttons)
+    const links = screen.getAllByRole('link');
+    expect(links.length).toBeGreaterThan(0);
   });
 }); 

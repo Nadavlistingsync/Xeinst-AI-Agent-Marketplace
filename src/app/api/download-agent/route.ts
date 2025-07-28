@@ -29,10 +29,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // TODO: Implement file download logic based on your storage solution
-    // For now, return a placeholder response
+    // Generate download URL or file content
+    const downloadUrl = `/api/agents/${agent.id}/download`;
+    
     return NextResponse.json({ 
-      message: 'File download not implemented yet',
+      success: true,
+      downloadUrl,
       agent: {
         id: agent.id,
         name: agent.name,

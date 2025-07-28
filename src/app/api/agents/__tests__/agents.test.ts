@@ -35,11 +35,12 @@ describe('Agent API', () => {
 
     expect(response.status).toBe(200);
     // The API returns 3 demo agents if the DB is empty
-    expect(Array.isArray(data)).toBe(true);
-    expect(data.length).toBeGreaterThanOrEqual(3);
-    expect(data[0]).toHaveProperty('id');
-    expect(data[0]).toHaveProperty('name');
-    expect(data[0]).toHaveProperty('description');
+    expect(data.success).toBe(true);
+    expect(Array.isArray(data.agents)).toBe(true);
+    expect(data.agents.length).toBeGreaterThanOrEqual(3);
+    expect(data.agents[0]).toHaveProperty('id');
+    expect(data.agents[0]).toHaveProperty('name');
+    expect(data.agents[0]).toHaveProperty('description');
   });
 
   it('should return agents when they exist', async () => {
@@ -63,10 +64,11 @@ describe('Agent API', () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(Array.isArray(data)).toBe(true);
-    expect(data[0].id).toBe('1');
-    expect(data[0].name).toBe('Test Agent');
-    expect(data[0].description).toBe('Test Description');
+    expect(data.success).toBe(true);
+    expect(Array.isArray(data.agents)).toBe(true);
+    expect(data.agents[0].id).toBe('1');
+    expect(data.agents[0].name).toBe('Test Agent');
+    expect(data.agents[0].description).toBe('Test Description');
   });
 
   it('should get agent logs', async () => {

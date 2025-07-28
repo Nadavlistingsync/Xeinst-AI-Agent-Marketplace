@@ -2,6 +2,9 @@ import { getDeployments } from '@/lib/deployments';
 import { formatDate } from '@/lib/utils';
 import Link from "next/link";
 
+// Force dynamic rendering to prevent build-time database calls
+export const dynamic = 'force-dynamic';
+
 export default async function DeploymentsPage() {
   const deployments = await getDeployments();
 

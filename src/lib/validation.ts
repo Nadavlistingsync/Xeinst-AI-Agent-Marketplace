@@ -29,6 +29,44 @@ export const userLoginSchema = z.object({
   password: z.string().min(1, 'Password is required')
 });
 
+// Test schemas for compatibility
+export const userSchema = z.object({
+  email: emailSchema,
+  name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
+  role: z.enum(['user', 'admin']).default('user'),
+  credits: z.number().min(0).default(0)
+});
+
+export const agentSchema = z.object({
+  name: z.string().min(1, 'Agent name is required').max(100, 'Agent name too long'),
+  description: z.string().min(10, 'Description must be at least 10 characters').max(1000, 'Description too long'),
+  model_type: z.enum(['gpt-4', 'gpt-3.5-turbo', 'claude-3', 'custom']),
+  framework: z.enum(['langchain', 'autogen', 'crewai', 'custom']),
+  price: z.number().min(0, 'Price cannot be negative').max(10000, 'Price too high'),
+  category: z.enum(['productivity', 'automation', 'analysis', 'communication', 'custom']),
+  tags: z.array(z.string().max(30)).max(10, 'Too many tags').optional(),
+  file_path: z.string().min(1, 'File path is required')
+});
+
+export const feedbackSchema = z.object({
+  agent_id: z.string().min(1, 'Agent ID is required'),
+  user_id: z.string().min(1, 'User ID is required'),
+  rating: z.number().min(1).max(5, 'Rating must be between 1 and 5'),
+  comment: z.string().min(1, 'Comment is required').max(1000, 'Comment too long'),
+  category: z.enum(['bug', 'feature', 'general', 'performance']).default('general'),
+  sentiment: z.enum(['positive', 'negative', 'neutral']).default('neutral')
+});
+
+export const deploymentSchema = z.object({
+  agent_id: z.string().min(1, 'Agent ID is required'),
+  user_id: z.string().min(1, 'User ID is required'),
+  name: z.string().min(1, 'Deployment name is required').max(100, 'Deployment name too long'),
+  description: z.string().max(500, 'Description too long').optional(),
+  status: z.enum(['pending', 'deploying', 'active', 'failed', 'stopped']).default('pending'),
+  environment: z.enum(['development', 'staging', 'production']).default('production'),
+  config: z.record(z.any()).optional()
+});
+
 // Agent-related schemas
 export const agentCreateSchema = z.object({
   name: z.string().min(1, 'Agent name is required').max(100, 'Agent name too long'),

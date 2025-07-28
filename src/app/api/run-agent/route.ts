@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 
@@ -360,9 +362,8 @@ function detectAgentType(inputs: any): string {
 
 /**
  * Log agent run for analytics and monitoring
- * TODO: Implement proper logging when user auth is added
  */
-async function logAgentRun(agentId: string, inputs: any, result: any, error?: string) {
+async function logAgentRun(agentId: string, inputs: any, result: any, error?: string, userId?: string) {
   try {
     // Only set deploymentId if it is a valid, non-empty string
     const logData: any = {
@@ -373,6 +374,7 @@ async function logAgentRun(agentId: string, inputs: any, result: any, error?: st
         result: error ? null : result,
         error: error || null,
         timestamp: new Date().toISOString(),
+        userId: userId || null,
       },
     };
     if (agentId && typeof agentId === 'string' && agentId.length > 0) {
@@ -382,18 +384,13 @@ async function logAgentRun(agentId: string, inputs: any, result: any, error?: st
       data: logData,
     });
 
-    // TODO: Add user tracking when auth is implemented
-    // await prisma.agentRun.create({
-    //   data: {
-    //     agentId,
-    //     userId: session.user.id, // Add when auth is implemented
-    //     inputs,
-    //     result: error ? null : result,
-    //     error: error || null,
-    //     executionTime: executionTime,
-    //     status: error ? 'failed' : 'success',
-    //   },
-    // });
+    // Create agent metrics for analytics
+    if (userId) {
+      // Note: AgentMetrics uses deploymentId, not agentId
+      // For now, we'll just log the run without creating metrics
+      // In a full implementation, you'd need to link to a deployment
+      console.log(`Agent run logged for user ${userId}, agent ${agentId}`);
+    }
   } catch (logError) {
     console.error('Failed to log agent run:', logError);
     // Don't fail the request if logging fails
@@ -555,7 +552,8 @@ export async function POST(request: NextRequest) {
 
     // Log agent run for analytics and monitoring
     try {
-      await logAgentRun(agentId, inputs, webhookResult, undefined);
+      const session = await getServerSession(authOptions);
+    await logAgentRun(agentId, inputs, webhookResult, undefined, session?.user?.id);
     } catch (logErr) {
       console.error('Failed to log agent run:', logErr);
     }

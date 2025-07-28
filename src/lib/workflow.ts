@@ -96,25 +96,106 @@ export async function getActiveWorkflows(): Promise<Workflow[]> {
 }
 
 export async function executeApiStep(
-  _step: WorkflowStep,
+  step: WorkflowStep,
   _input: Record<string, any>
 ): Promise<Record<string, any>> {
-  // TODO: Implement API step execution
-  return {};
+  const { url, method = 'GET', headers = {}, body } = step.config as any;
+  
+  try {
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (!response.ok) {
+      throw new Error(`API call failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return { result: data };
+  } catch (error) {
+    console.error('API step execution failed:', error);
+    throw error;
+  }
 }
 
 export async function executeConditionStep(
-  _step: WorkflowStep,
-  _input: Record<string, any>
+  step: WorkflowStep,
+  input: Record<string, any>
 ): Promise<boolean> {
-  // TODO: Implement condition step execution
-  return true;
+  const { condition, operator = 'equals', value } = step.config as any;
+  
+  const inputValue = input[condition];
+  
+  switch (operator) {
+    case 'equals':
+      return inputValue === value;
+    case 'not_equals':
+      return inputValue !== value;
+    case 'greater_than':
+      return Number(inputValue) > Number(value);
+    case 'less_than':
+      return Number(inputValue) < Number(value);
+    case 'contains':
+      return String(inputValue).includes(String(value));
+    case 'not_contains':
+      return !String(inputValue).includes(String(value));
+    default:
+      return false;
+  }
 }
 
 export async function executeTransformStep(
-  _step: WorkflowStep,
-  _input: Record<string, any>
+  step: WorkflowStep,
+  input: Record<string, any>
 ): Promise<Record<string, any>> {
-  // TODO: Implement transform step execution
-  return _input;
+  const { transformations } = step.config as any;
+  
+  if (!transformations || !Array.isArray(transformations)) {
+    return input;
+  }
+
+  const result = { ...input };
+  
+  transformations.forEach((transformation: any) => {
+    const { type, source, target, value } = transformation;
+    
+    switch (type) {
+      case 'copy':
+        result[target] = input[source];
+        break;
+      case 'set':
+        result[target] = value;
+        break;
+      case 'concat':
+        result[target] = `${input[source] || ''}${value || ''}`;
+        break;
+      case 'math':
+        const numValue = Number(input[source] || 0);
+        const operation = transformation.operation;
+        const operand = Number(transformation.operand || 0);
+        
+        switch (operation) {
+          case 'add':
+            result[target] = numValue + operand;
+            break;
+          case 'subtract':
+            result[target] = numValue - operand;
+            break;
+          case 'multiply':
+            result[target] = numValue * operand;
+            break;
+          case 'divide':
+            result[target] = numValue / operand;
+            break;
+        }
+        break;
+    }
+  });
+  
+  return result;
 } 

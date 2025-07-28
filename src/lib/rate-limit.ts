@@ -244,4 +244,15 @@ export function createUserActionRateLimit(action: string) {
     },
     standardHeaders: true
   });
+}
+
+// Default rate limit function
+export async function rateLimit(req: NextRequest): Promise<{ success: boolean; message?: string }> {
+  try {
+    const result = await rateLimiters.api.checkRateLimit(req);
+    return { success: result.allowed };
+  } catch (error) {
+    console.error('Rate limit check failed:', error);
+    return { success: true }; // Allow request if rate limiting fails
+  }
 } 

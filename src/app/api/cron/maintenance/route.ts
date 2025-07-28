@@ -5,6 +5,26 @@ import { jobQueue } from '@/lib/background-jobs';
 
 export const GET = withApiPerformanceTracking(async () => {
   try {
+    // Check if we're in build mode and return mock data
+    if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL) {
+      return NextResponse.json({
+        cleanup: {
+          sessions: 0,
+          logs: 0,
+          tempFiles: 0,
+          rateLimitLogs: 0,
+          oldJobs: 0,
+        },
+        backup: {
+          database: false,
+          files: false,
+          analytics: false,
+        },
+        duration: 0,
+        message: 'Database not available during build'
+      });
+    }
+
     const startTime = Date.now();
     const results = {
       cleanup: {

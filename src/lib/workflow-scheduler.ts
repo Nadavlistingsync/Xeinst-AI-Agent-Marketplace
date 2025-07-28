@@ -81,8 +81,38 @@ export async function getNextExecutionTime(scheduleId: string): Promise<Date | n
   if (!schedule?.cronExpression) {
     return null;
   }
-  // TODO: Implement cron expression parsing and next execution time calculation
-  return new Date(Date.now() + 3600000); // Placeholder: 1 hour from now
+  
+  // Simple cron expression parser
+  const parseCronExpression = (expression: string): Date => {
+    const parts = expression.split(' ');
+    const [minute, hour, day, month] = parts;
+    
+    const now = new Date();
+    const next = new Date(now);
+    
+    // Set to next occurrence based on cron expression
+    if (minute !== '*') {
+      next.setMinutes(parseInt(minute));
+    }
+    if (hour !== '*') {
+      next.setHours(parseInt(hour));
+    }
+    if (day !== '*') {
+      next.setDate(parseInt(day));
+    }
+    if (month !== '*') {
+      next.setMonth(parseInt(month) - 1); // Month is 0-indexed
+    }
+    
+    // If the calculated time is in the past, move to next occurrence
+    if (next <= now) {
+      next.setMinutes(next.getMinutes() + 1);
+    }
+    
+    return next;
+  };
+  
+  return parseCronExpression(schedule.cronExpression);
 }
 
 export async function executeScheduledWorkflows(): Promise<void> {

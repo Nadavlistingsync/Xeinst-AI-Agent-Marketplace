@@ -8,6 +8,17 @@ vi.mock('@/lib/auth', () => ({
   getServerSession: vi.fn(() => Promise.resolve({
     user: { id: 'test-user-id', email: 'test@example.com' }
   })),
+  authOptions: {
+    providers: [],
+    session: { strategy: 'jwt' },
+  },
+}));
+
+// Mock next-auth
+vi.mock('next-auth', () => ({
+  getServerSession: vi.fn(() => Promise.resolve({
+    user: { id: 'test-user-id', email: 'test@example.com' }
+  })),
 }));
 
 describe('Agents API', () => {

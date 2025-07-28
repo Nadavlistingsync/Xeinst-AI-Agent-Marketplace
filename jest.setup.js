@@ -1,28 +1,112 @@
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom'
 
+// Mock framer-motion
+const React = require('react');
+
+vi.mock('framer-motion', () => {
+  const createMockComponent = (tag) => {
+    return React.forwardRef(({ children, ...props }, ref) => {
+      return React.createElement(tag, { ...props, ref }, children);
+    });
+  };
+
+  const motionComponents = {};
+  const htmlElements = [
+    'div', 'button', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'ul', 'li', 'nav', 'section', 'article', 'aside', 'header', 'footer',
+    'main', 'form', 'input', 'textarea', 'select', 'option', 'label',
+    'a', 'img', 'svg', 'path', 'circle', 'rect', 'line', 'polyline',
+    'polygon', 'ellipse', 'g', 'defs', 'clipPath', 'linearGradient',
+    'radialGradient', 'stop', 'pattern', 'mask', 'filter', 'feGaussianBlur',
+    'feOffset', 'feComposite', 'feMerge', 'feMergeNode', 'feFlood',
+    'feColorMatrix', 'feBlend', 'feMorphology', 'feDisplacementMap',
+    'feTurbulence', 'feDiffuseLighting', 'feSpecularLighting', 'feDistantLight',
+    'fePointLight', 'feSpotLight', 'feConvolveMatrix', 'feImage', 'feTile',
+    'feComponentTransfer', 'feFuncR', 'feFuncG', 'feFuncB', 'feFuncA', 'feDropShadow'
+  ];
+
+  htmlElements.forEach(tag => {
+    motionComponents[tag] = createMockComponent(tag);
+  });
+
+  const AnimatePresence = ({ children, ...props }) => React.createElement('div', props, children);
+
+  return {
+    motion: motionComponents,
+    AnimatePresence,
+    useAnimation: () => ({
+      start: vi.fn(),
+      stop: vi.fn(),
+      set: vi.fn(),
+    }),
+    useAnimationControls: () => ({
+      start: vi.fn(),
+      stop: vi.fn(),
+      set: vi.fn(),
+    }),
+    useMotionValue: (initial) => ({
+      get: () => initial,
+      set: vi.fn(),
+      on: vi.fn(),
+    }),
+    useTransform: (value, input, output) => ({
+      get: () => output,
+      set: vi.fn(),
+      on: vi.fn(),
+    }),
+    useSpring: (value, config) => ({
+      get: () => value,
+      set: vi.fn(),
+      on: vi.fn(),
+    }),
+    useMotionValueEvent: vi.fn(),
+    useInView: () => ({ ref: vi.fn(), inView: false }),
+    useScroll: () => ({
+      scrollX: { get: () => 0, on: vi.fn() },
+      scrollY: { get: () => 0, on: vi.fn() },
+      scrollXProgress: { get: () => 0, on: vi.fn() },
+      scrollYProgress: { get: () => 0, on: vi.fn() },
+    }),
+    useScrollControls: () => ({
+      scrollTo: vi.fn(),
+      scrollToTop: vi.fn(),
+      scrollToBottom: vi.fn(),
+    }),
+    useCycle: (...args) => [args[0], vi.fn()],
+    useReducedMotion: () => false,
+    usePresence: () => ({ isPresent: true, safeToRemove: vi.fn() }),
+    useIsPresent: () => true,
+    useAnimate: () => [vi.fn(), vi.fn()],
+    useMotionTemplate: (template) => template,
+    LazyMotion: ({ children }) => children,
+    domAnimation: {},
+    domTransition: {},
+  };
+});
+
 // Mock next/router
-jest.mock('next/router', () => ({
+vi.mock('next/router', () => ({
   useRouter() {
     return {
       route: '/',
       pathname: '',
       query: {},
       asPath: '',
-      push: jest.fn(),
-      replace: jest.fn(),
+      push: vi.fn(),
+      replace: vi.fn(),
     }
   },
 }))
 
 // Mock next/navigation
-jest.mock('next/navigation', () => ({
+vi.mock('next/navigation', () => ({
   useRouter() {
     return {
-      push: jest.fn(),
-      replace: jest.fn(),
-      prefetch: jest.fn(),
-      back: jest.fn(),
+      push: vi.fn(),
+      replace: vi.fn(),
+      prefetch: vi.fn(),
+      back: vi.fn(),
     }
   },
   usePathname() {
@@ -34,7 +118,7 @@ jest.mock('next/navigation', () => ({
 }))
 
 // Mock next/image
-jest.mock('next/image', () => ({
+vi.mock('next/image', () => ({
   __esModule: true,
   default: (props) => {
     // eslint-disable-next-line jsx-a11y/alt-text
@@ -43,7 +127,7 @@ jest.mock('next/image', () => ({
 }))
 
 // Mock fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
@@ -64,24 +148,24 @@ global.ResizeObserver = class ResizeObserver {
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation(query => ({
     matches: false,
     media: query,
     onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
   })),
 });
 
 global.Response = require('node-fetch').Response;
 
 global.Headers = global.Headers || function(headers) { return headers || {}; };
-jest.mock('next/server', () => ({
+vi.mock('next/server', () => ({
   NextResponse: {
-    json: jest.fn((data, init) => {
+    json: vi.fn((data, init) => {
       const response = {
         json: () => Promise.resolve(data),
         status: init?.status || 200,

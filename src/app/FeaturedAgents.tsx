@@ -30,7 +30,7 @@ export function FeaturedAgents() {
           throw new Error('Failed to fetch agents');
         }
         const data = await response.json();
-        setAgents(data);
+        setAgents(data.agents || data); // Handle both new and old response formats
       } catch (err) {
         setError('Error loading agents');
       } finally {

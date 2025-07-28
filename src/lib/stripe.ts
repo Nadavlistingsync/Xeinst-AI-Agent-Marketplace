@@ -83,16 +83,28 @@ export async function createPortalSession(data: CreatePortalSessionData): Promis
     throw new Error('User not found');
   }
 
-  // TODO: Add stripeCustomerId to User model or handle Stripe customer association differently
-  // if (!user.stripeCustomerId) {
-  //   throw new Error('User has no Stripe customer ID');
-  // }
+  // Create Stripe customer if doesn't exist
+  if (!user.stripeCustomerId) {
+    const customer = await stripe.customers.create({
+      email: user.email,
+      name: user.name || undefined,
+    });
 
-  // return stripe.billingPortal.sessions.create({
-  //   customer: user.stripeCustomerId,
-  //   return_url: data.returnUrl
-  // });
-  throw new Error('Stripe customer portal is not implemented: missing stripeCustomerId on User');
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { stripeCustomerId: customer.id }
+    });
+
+    return stripe.billingPortal.sessions.create({
+      customer: customer.id,
+      return_url: data.returnUrl
+    });
+  }
+
+  return stripe.billingPortal.sessions.create({
+    customer: user.stripeCustomerId,
+    return_url: data.returnUrl
+  });
 }
 
 export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
@@ -126,7 +138,7 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
       const customerId = subscription.customer as string;
 
       const user = await prisma.user.findFirst({
-        where: { id: customerId }
+        where: { stripeCustomerId: customerId }
       });
 
       if (!user) {
@@ -136,8 +148,8 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          // subscriptionStatus: subscription.status, // TODO: Add subscriptionStatus to User model or handle differently
-          // subscriptionId: subscription.id // TODO: Add subscriptionId to User model or handle differently
+          subscriptionStatus: subscription.status,
+          subscriptionId: subscription.id
         }
       });
       break;
