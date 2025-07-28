@@ -20,7 +20,6 @@ import {
   Shield,
   TrendingUp,
   BookOpen,
-  Code,
   Cloud,
   Database
 } from "lucide-react";
