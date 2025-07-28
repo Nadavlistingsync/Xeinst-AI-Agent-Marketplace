@@ -25,16 +25,16 @@ import { motion } from "framer-motion";
 const quickActions = [
   {
     icon: Search,
-    title: "Browse AI Agents",
-    description: "Find ready-to-use AI agents in our marketplace",
+    title: "Browse & Use",
+    description: "Browse our marketplace of AI agents and find the perfect solution",
     href: "/marketplace",
     color: "from-blue-500 to-purple-500",
-    buttonText: "Explore Marketplace"
+    buttonText: "Browse Marketplace"
   },
   {
     icon: Upload,
-    title: "Upload Your Agent",
-    description: "Share your AI agent with the community",
+    title: "Create & Deploy",
+    description: "Upload your AI agent or build one and deploy to the cloud",
     href: "/upload",
     color: "from-green-500 to-teal-500",
     buttonText: "Upload Agent"
@@ -42,7 +42,7 @@ const quickActions = [
   {
     icon: Rocket,
     title: "Deploy Agent",
-    description: "Deploy your AI agent to the cloud",
+    description: "Deploy your AI agent to the cloud with one click",
     href: "/deploy",
     color: "from-orange-500 to-red-500",
     buttonText: "Deploy Now"
@@ -50,7 +50,7 @@ const quickActions = [
   {
     icon: Globe,
     title: "Web Embeds",
-    description: "Embed existing websites and add AI functionality without creating full agents",
+    description: "Embed existing tools/agents without full setup - paste link and deploy",
     href: "/web-embeds",
     color: "from-purple-500 to-pink-500",
     buttonText: "Create Embed"
@@ -61,19 +61,19 @@ const howItWorks = [
   {
     step: "1",
     icon: Search,
-    title: "Discover",
+    title: "Browse & Use",
     description: "Browse our marketplace of AI agents and find the perfect solution for your needs"
   },
   {
     step: "2", 
     icon: Upload,
-    title: "Upload or Create",
-    description: "Upload your own AI agent or create one using our tools"
+    title: "Create & Deploy",
+    description: "Upload your own AI agent or build one using our tools"
   },
   {
     step: "3",
     icon: Rocket,
-    title: "Deploy",
+    title: "Deploy Agent",
     description: "Deploy your agent to the cloud with one click"
   },
   {
@@ -94,7 +94,7 @@ const features = [
   {
     icon: Globe,
     title: "Web Embed System",
-    description: "Embed existing websites and add AI functionality without creating full agents",
+    description: "Embed existing tools/agents without full setup - paste link and deploy",
     href: "/web-embeds"
   },
   {
@@ -143,7 +143,7 @@ export default function Home() {
             >
               <Badge variant="secondary" className="bg-ai-primary/10 text-ai-primary border-ai-primary/20">
                 <Sparkles className="w-4 h-4 mr-2" />
-                AI-Powered Platform
+                XEINST Platform
               </Badge>
             </motion.div>
 
@@ -154,9 +154,9 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-5xl md:text-7xl font-bold text-gradient mb-6"
             >
-              Your AI Journey
+              XEINST Platform
               <br />
-              <span className="text-white">Starts Here</span>
+              <span className="text-white">AI Solutions</span>
             </motion.h1>
 
             {/* Subtitle */}
@@ -166,7 +166,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
             >
-              Discover, create, and deploy AI agents. Embed websites with AI functionality. 
+              Browse, create, and deploy AI agents. Embed existing tools without full setup. 
               Everything you need to build intelligent solutions in one place.
             </motion.p>
 
@@ -180,14 +180,14 @@ export default function Home() {
               <Link href="/marketplace">
                 <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
                   <Search className="w-5 h-5 mr-2" />
-                  Browse AI Agents
+                  Browse & Use
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
               <Link href="/guide">
                 <Button size="lg" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
                   <Lightbulb className="w-5 h-5 mr-2" />
-                  Learn How It Works
+                  Get Started
                 </Button>
               </Link>
             </motion.div>
@@ -213,7 +213,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Quick Actions Section */}
+      {/* Get Started Section */}
       <section className="py-20 bg-gradient-to-b from-background to-background/50">
         <div className="container">
           <div className="text-center mb-16">
@@ -223,7 +223,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="text-4xl font-bold text-white mb-4"
             >
-              What Would You Like to Do?
+              Get Started
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -231,7 +231,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Choose from our most popular actions to get started quickly
+              Choose from our main user journeys to get started quickly
             </motion.p>
           </div>
 
@@ -268,7 +268,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How It Works Section */}
+      {/* Main User Journeys Section */}
       <section className="py-20 bg-gradient-to-b from-background/50 to-background">
         <div className="container">
           <div className="text-center mb-16">
@@ -278,7 +278,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="text-4xl font-bold text-white mb-4"
             >
-              How It Works
+              Main User Journeys
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -286,31 +286,133 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Get started with AI in just 4 simple steps
+              Three distinct paths to get started with AI solutions
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {howItWorks.map((step, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="text-center"
-              >
-                <div className="relative mb-6">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-r from-ai-primary to-ai-secondary flex items-center justify-center mx-auto">
-                    <step.icon className="w-8 h-8 text-white" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Path 1: Browse & Use */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                <CardHeader>
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center mb-4">
+                    <Search className="w-6 h-6 text-white" />
                   </div>
-                  <div className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-ai-accent flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">{step.step}</span>
+                  <CardTitle className="text-xl text-white">Path 1: Browse & Use</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Find and use existing AI agents from our marketplace
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">1. Marketplace - Browse agents</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">2. Agent Details - View and run</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">3. Dashboard - Monitor usage</span>
+                    </div>
                   </div>
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-3">{step.title}</h3>
-                <p className="text-muted-foreground">{step.description}</p>
-              </motion.div>
-            ))}
+                  <Link href="/marketplace">
+                    <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
+                      Start Browsing
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Path 2: Create & Deploy */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                <CardHeader>
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-green-500 to-teal-500 flex items-center justify-center mb-4">
+                    <Upload className="w-6 h-6 text-white" />
+                  </div>
+                  <CardTitle className="text-xl text-white">Path 2: Create & Deploy</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Build and deploy your own AI agents
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">1. Upload Agent - Build or upload</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">2. Deploy Agent - Configure and launch</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">3. Dashboard - Monitor and manage</span>
+                    </div>
+                  </div>
+                  <Link href="/upload">
+                    <Button className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600">
+                      Start Creating
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Path 3: Web Embeds */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                <CardHeader>
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mb-4">
+                    <Globe className="w-6 h-6 text-white" />
+                  </div>
+                  <CardTitle className="text-xl text-white">Path 3: Web Embeds</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Embed existing tools without full agent setup
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">1. Embed Flow - Paste link to tool</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">2. Configure AI settings</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-sm text-muted-foreground">3. Deploy instantly</span>
+                    </div>
+                  </div>
+                  <Link href="/web-embeds">
+                    <Button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+                      Start Embedding
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -325,7 +427,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="text-4xl font-bold text-white mb-4"
             >
-              Powerful Features
+              Platform Features
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -388,7 +490,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
             >
-              Join thousands of users who are already building amazing AI solutions
+              Choose your path and start building AI solutions today
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -399,7 +501,7 @@ export default function Home() {
               <Link href="/marketplace">
                 <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
                   <Search className="w-5 h-5 mr-2" />
-                  Explore Marketplace
+                  Browse Marketplace
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>

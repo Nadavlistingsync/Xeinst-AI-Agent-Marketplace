@@ -23,7 +23,8 @@ import {
   Loader2,
   Info,
   Play,
-  Monitor
+  Monitor,
+  Link as LinkIcon
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -68,7 +69,7 @@ export default function WebEmbedsPage() {
     description: '',
     url: '',
     embedUrl: '',
-    type: 'website' as const,
+    type: 'tool' as const,
     width: '100%',
     height: '600px',
     allowFullscreen: true,
@@ -126,7 +127,7 @@ export default function WebEmbedsPage() {
         description: '',
         url: '',
         embedUrl: '',
-        type: 'website',
+        type: 'tool',
         width: '100%',
         height: '600px',
         allowFullscreen: true,
@@ -205,8 +206,7 @@ export default function WebEmbedsPage() {
             Web Embeds
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Embed existing websites and add AI functionality without creating full agents. 
-            Perfect for integrating AI features into any website without code changes.
+            Embed existing tools/agents without full setup - paste link and deploy instantly
           </p>
         </div>
 
@@ -214,9 +214,9 @@ export default function WebEmbedsPage() {
         <Alert className="mb-8 border-ai-primary/20 bg-ai-primary/5">
           <Info className="h-4 w-4 text-ai-primary" />
           <AlertDescription className="text-muted-foreground">
-            <strong>Alternative to Agent Upload:</strong> Instead of creating and uploading full AI agents, 
-            you can embed any existing website and add AI functionality to it. This is faster and easier 
-            when you want to enhance existing sites with AI features.
+            <strong>Path 3: Web Embeds (No Full Agent Setup)</strong> - Paste link to tool/agent, 
+            configure AI settings, and deploy instantly via iframe or script. Perfect for quick integration 
+            without creating full agents.
           </AlertDescription>
         </Alert>
 
@@ -244,8 +244,7 @@ export default function WebEmbedsPage() {
             <CardHeader>
               <CardTitle className="text-white">Create New Web Embed</CardTitle>
               <CardDescription className="text-muted-foreground">
-                Embed an existing website and optionally connect an AI agent to add functionality. 
-                This is an alternative to uploading full agents.
+                Embed an existing tool/agent by pasting its link and configuring AI settings
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -254,7 +253,7 @@ export default function WebEmbedsPage() {
                   <Label htmlFor="name">Name *</Label>
                   <Input
                     id="name"
-                    placeholder="My Website Embed"
+                    placeholder="My Tool Embed"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
@@ -267,10 +266,10 @@ export default function WebEmbedsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="website">Website</SelectItem>
+                      <SelectItem value="tool">Tool</SelectItem>
                       <SelectItem value="application">Application</SelectItem>
                       <SelectItem value="dashboard">Dashboard</SelectItem>
-                      <SelectItem value="tool">Tool</SelectItem>
+                      <SelectItem value="website">Website</SelectItem>
                       <SelectItem value="custom">Custom</SelectItem>
                     </SelectContent>
                   </Select>
@@ -281,7 +280,7 @@ export default function WebEmbedsPage() {
                 <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
-                  placeholder="Describe what this embed does and what AI functionality you want to add..."
+                  placeholder="Describe what this tool/agent does and what AI functionality you want to add..."
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
@@ -289,21 +288,21 @@ export default function WebEmbedsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="url">Original URL *</Label>
+                  <Label htmlFor="url">Original Tool URL *</Label>
                   <Input
                     id="url"
-                    placeholder="https://example.com"
+                    placeholder="https://example-tool.com"
                     value={formData.url}
                     onChange={(e) => setFormData({ ...formData, url: e.target.value })}
                   />
-                  <p className="text-xs text-muted-foreground">The original website URL you want to embed</p>
+                  <p className="text-xs text-muted-foreground">The original tool/agent URL you want to embed</p>
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="embedUrl">Embed URL *</Label>
                   <Input
                     id="embedUrl"
-                    placeholder="https://example.com"
+                    placeholder="https://example-tool.com/embed"
                     value={formData.embedUrl}
                     onChange={(e) => setFormData({ ...formData, embedUrl: e.target.value })}
                   />
@@ -370,7 +369,7 @@ export default function WebEmbedsPage() {
                     </>
                   ) : (
                     <>
-                      <Globe className="w-4 h-4 mr-2" />
+                      <LinkIcon className="w-4 h-4 mr-2" />
                       Create Embed
                     </>
                   )}
@@ -395,8 +394,8 @@ export default function WebEmbedsPage() {
               <Globe className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-white mb-2">No Web Embeds Yet</h3>
               <p className="text-muted-foreground mb-6">
-                Create your first web embed to start integrating AI functionality into existing websites. 
-                This is faster than creating full agents when you want to enhance existing sites.
+                Create your first web embed to start integrating existing tools/agents without full setup. 
+                Perfect for quick deployment when you don't need to create complete agents.
               </p>
               <Button 
                 onClick={() => setShowCreateForm(true)}
@@ -430,7 +429,7 @@ export default function WebEmbedsPage() {
                   <CardContent>
                     <div className="space-y-4">
                       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <Globe className="w-4 h-4" />
+                        <LinkIcon className="w-4 h-4" />
                         <span className="truncate">{embed.url}</span>
                       </div>
                       
