@@ -5,7 +5,7 @@ import { MarketplaceFilters } from "@/components/marketplace/MarketplaceFilters"
 import { MarketplaceSearch } from "@/components/marketplace/MarketplaceSearch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Upload, Sparkles, Filter, Grid, List } from "lucide-react";
+import { Upload, Sparkles, Filter, Grid, List } from "lucide-react";
 import Link from "next/link";
 import { Agent } from "@/app/api/agents/route";
 import { motion } from "framer-motion";
