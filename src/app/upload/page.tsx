@@ -23,7 +23,6 @@ import {
   ArrowRight,
   Webhook,
   TestTube,
-  Palette,
   Globe,
   Link as LinkIcon
 } from "lucide-react";
