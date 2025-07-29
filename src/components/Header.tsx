@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { 
   Menu, 
   X, 
@@ -12,9 +11,7 @@ import {
   Upload, 
   Rocket, 
   BookOpen, 
-  Home,
   Bot,
-  Globe,
   Settings,
   User,
   LogOut
