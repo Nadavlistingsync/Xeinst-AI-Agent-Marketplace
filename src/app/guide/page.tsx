@@ -43,15 +43,7 @@ const gettingStartedSteps = [
     href: "/upload",
     color: "from-green-500 to-teal-500"
   },
-  {
-    step: "3",
-    icon: Rocket,
-    title: "Deploy to Cloud",
-    description: "Deploy your AI agent to the cloud with one click. Get a live URL to access your agent.",
-    action: "Deploy Now",
-    href: "/deploy",
-    color: "from-orange-500 to-red-500"
-  },
+
   {
     step: "4",
     icon: Globe,
@@ -70,12 +62,7 @@ const features = [
     description: "Browse hundreds of pre-built AI agents for various tasks and industries",
     benefits: ["Ready to use", "No coding required", "Multiple categories"]
   },
-  {
-    icon: Cloud,
-    title: "Cloud Deployment",
-    description: "Deploy your AI agents to the cloud with automatic scaling and monitoring",
-    benefits: ["One-click deployment", "Auto-scaling", "99.9% uptime"]
-  },
+
   {
     icon: Globe,
     title: "Web Embed System",
@@ -93,7 +80,7 @@ const features = [
 const useCases = [
   {
     title: "Customer Service",
-    description: "Deploy AI agents to handle customer inquiries 24/7",
+    description: "Upload AI agents to handle customer inquiries 24/7",
     icon: Users,
     examples: ["FAQ bots", "Order tracking", "Support tickets"]
   },
@@ -175,7 +162,7 @@ export default function GuidePage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-xl text-muted-foreground max-w-3xl mx-auto"
           >
-            Learn how to discover, create, deploy, and manage AI agents. Everything you need to know to get started with AI automation.
+                          Learn how to discover, create, upload, and manage AI agents. Everything you need to know to get started with AI automation.
           </motion.p>
         </div>
 

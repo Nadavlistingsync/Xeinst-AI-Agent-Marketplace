@@ -179,8 +179,7 @@ describe('MarketplacePage', () => {
       const uploadLink = screen.getByText(/Upload Agent/i).closest('a');
       expect(uploadLink).toHaveAttribute('href', '/upload');
 
-      const deployLink = screen.getByText(/Deploy Agent/i).closest('a');
-      expect(deployLink).toHaveAttribute('href', '/deploy');
+
     });
   });
 

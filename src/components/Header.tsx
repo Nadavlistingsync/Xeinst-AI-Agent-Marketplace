@@ -30,12 +30,7 @@ const menuItems = [
     icon: Upload,
     description: "Upload your agent or create web embed"
   },
-  {
-    label: "Deploy Agent",
-    href: "/deploy",
-    icon: Rocket,
-    description: "Deploy your AI agent to the cloud"
-  },
+
   {
     label: "My Dashboard",
     href: "/dashboard",

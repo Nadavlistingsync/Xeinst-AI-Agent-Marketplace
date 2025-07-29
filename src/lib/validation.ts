@@ -348,7 +348,7 @@ export const schemas = {
   agent: {
     create: agentCreateSchema,
     update: agentUpdateSchema,
-    deploy: agentDeploySchema
+
   },
   deployment: {
     create: deploymentCreateSchema,

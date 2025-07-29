@@ -169,7 +169,7 @@ export const config = {
     '/signup',
     '/pricing',
     '/upload/:path*',
-    '/deploy/:path*',
+
     '/checkout/:path*',
     '/api/:path*'
   ]

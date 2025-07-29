@@ -37,14 +37,7 @@ const quickActions = [
     color: "from-green-500 to-teal-500",
     buttonText: "Upload Agent"
   },
-  {
-    icon: Rocket,
-    title: "Deploy Agent",
-    description: "Deploy your AI agent to the cloud with one click",
-    href: "/deploy",
-    color: "from-orange-500 to-red-500",
-    buttonText: "Deploy Now"
-  }
+
 ];
 
 
@@ -53,7 +46,7 @@ const features = [
   {
     icon: Bot,
     title: "AI Agent Marketplace",
-    description: "Browse and deploy hundreds of pre-built AI agents for various tasks",
+    description: "Browse and use hundreds of pre-built AI agents for various tasks",
     href: "/marketplace"
   },
   {
@@ -68,12 +61,7 @@ const features = [
     description: "Automate complex workflows with AI-powered tools",
     href: "/dashboard"
   },
-  {
-    icon: Cloud,
-    title: "Cloud Deployment",
-    description: "Deploy your AI solutions instantly to the cloud",
-    href: "/deploy"
-  }
+
 ];
 
 const stats = [
@@ -131,7 +119,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
             >
-              Browse, create, and deploy AI agents. Embed existing tools without full setup. 
+              Browse, create, and upload AI agents. Embed existing tools without full setup. 
               Everything you need to build intelligent solutions in one place.
             </motion.p>
 
@@ -310,7 +298,7 @@ export default function Home() {
                   </div>
                   <CardTitle className="text-xl text-white">Path 2: Create & Deploy</CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    Build and deploy your own AI agents or create web embeds
+                    Build and upload your own AI agents or create web embeds
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -369,9 +357,9 @@ export default function Home() {
                       <span className="text-sm text-muted-foreground">3. Scale - Optimize and grow</span>
                     </div>
                   </div>
-                  <Link href="/deploy">
+                  <Link href="/upload">
                     <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
-                      Start Deploying
+                      Start Uploading
                       <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </Link>

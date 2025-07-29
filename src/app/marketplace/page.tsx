@@ -89,12 +89,7 @@ export default function MarketplacePage() {
                   Upload Agent
                 </Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="btn-secondary text-lg px-8 py-4">
-                <Link href="/deploy" className="flex items-center gap-2">
-                  <Plus className="w-5 h-5" />
-                  Deploy Agent
-                </Link>
-              </Button>
+
             </div>
           </motion.div>
         </div>

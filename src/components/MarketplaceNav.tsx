@@ -20,14 +20,7 @@ export default function MarketplaceNav() {
               >
                 Marketplace
               </Link>
-              {session && (
-                <Link
-                  href="/deploy"
-                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Deploy Agent
-                </Link>
-              )}
+
             </div>
           </div>
           <div className="flex items-center">
