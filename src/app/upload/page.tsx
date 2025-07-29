@@ -23,8 +23,7 @@ import {
   ArrowRight,
   Webhook,
   TestTube,
-  Globe,
-  Link as LinkIcon
+  Globe
 } from "lucide-react";
 
 interface AgentData {
