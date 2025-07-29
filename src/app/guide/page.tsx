@@ -8,7 +8,6 @@ import Link from "next/link";
 import { 
   Search, 
   Upload, 
-  Rocket, 
   Globe, 
   Bot, 
   Settings, 
@@ -20,7 +19,6 @@ import {
   Shield,
   TrendingUp,
   BookOpen,
-  Cloud,
   Database
 } from "lucide-react";
 
