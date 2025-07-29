@@ -12,10 +12,8 @@ import {
   CheckCircle,
   Bot,
   Cpu,
-  Cloud,
   Search,
   Upload,
-  Rocket,
   Lightbulb
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -335,11 +333,11 @@ export default function Home() {
               <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
                 <CardHeader>
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mb-4">
-                    <Rocket className="w-6 h-6 text-white" />
+                    <Upload className="w-6 h-6 text-white" />
                   </div>
-                  <CardTitle className="text-xl text-white">Path 3: Deploy & Manage</CardTitle>
+                  <CardTitle className="text-xl text-white">Path 3: Upload & Manage</CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    Deploy your solutions and manage them in the cloud
+                    Upload your solutions and manage them in the cloud
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">

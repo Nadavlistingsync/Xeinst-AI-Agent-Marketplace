@@ -9,7 +9,6 @@ import {
   X, 
   Search, 
   Upload, 
-  Rocket, 
   BookOpen, 
   Bot,
   Settings,
