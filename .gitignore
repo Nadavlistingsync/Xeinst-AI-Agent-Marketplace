@@ -126,3 +126,9 @@ public
 **/public/sw.js.map
 **/public/workbox-*.js.map
 **/public/worker-*.js.map
+
+# Prevent large lock and build files from being indexed by Cursor
+pnpm-lock.yaml
+package-lock.json
+tsconfig.tsbuildinfo
+coverage/
