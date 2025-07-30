@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { withEnhancedErrorHandling, ErrorCategory, EnhancedAppError } from '@/lib/enhanced-error-handling';
+import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
 
 const agentSchema = z.object({
   id: z.string(),
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
         'Authentication required',
         401,
         ErrorCategory.AUTHENTICATION,
-        'medium',
+        ErrorSeverity.MEDIUM,
         'AUTH_REQUIRED',
         null,
         false,

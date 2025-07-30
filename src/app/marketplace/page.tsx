@@ -9,7 +9,7 @@ import { Upload, Sparkles, Filter, Grid, List } from "lucide-react";
 import Link from "next/link";
 import { Agent } from "@/app/api/agents/route";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useEnhancedApiError } from "@/hooks/useEnhancedApiError";
 import { EnhancedErrorDisplay } from "@/components/EnhancedErrorDisplay";
 
@@ -31,7 +31,7 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(true);
   const { error, isRetrying, handleError, retryOperation, clearError } = useEnhancedApiError();
 
-  const fetchAgents = async () => {
+  const fetchAgents = useCallback(async () => {
     try {
       setLoading(true);
       clearError();
@@ -42,7 +42,7 @@ export default function MarketplacePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [handleError, clearError]);
 
   useEffect(() => {
     fetchAgents();
