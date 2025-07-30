@@ -46,7 +46,7 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     fetchAgents();
-  }, []);
+  }, [fetchAgents]);
 
   const handleRetry = () => {
     retryOperation(fetchAgents, { context: 'marketplace_retry_fetch_agents' });

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { captureException } from '@/lib/sentry';
 import { ErrorCategory, ErrorSeverity } from '@/lib/enhanced-error-handling';
@@ -31,13 +31,13 @@ export function useEnhancedApiError(config?: Partial<RetryConfig>) {
   const retryCountRef = useRef(0);
   const { toast } = useToast();
 
-  const defaultConfig: RetryConfig = {
+  const defaultConfig = useMemo((): RetryConfig => ({
     maxRetries: 3,
     baseDelay: 1000,
     maxDelay: 10000,
     backoffMultiplier: 2,
     ...config
-  };
+  }), [config]);
 
   const calculateDelay = useCallback((attempt: number): number => {
     const delay = defaultConfig.baseDelay * Math.pow(defaultConfig.backoffMultiplier, attempt);
