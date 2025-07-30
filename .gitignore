@@ -132,3 +132,31 @@ pnpm-lock.yaml
 package-lock.json
 tsconfig.tsbuildinfo
 coverage/
+
+# Additional files to reduce context usage
+*.tsbuildinfo
+.env.*
+!.env.example
+env.prototype
+env mock
+LOCAL_SETUP.md
+TESTING.md
+PRODUCTION_READINESS.md
+PROTOTYPE_READY.md
+docs/
+scripts/
+ai-agency-website/
+generated/
+prisma/
+.vercel/
+.github/
+.husky/
+.swc/
+.vscode/
+coverage/
+*.log
+*.cache
+.cache/
+.npm/
+.eslintcache
+.stylelintcache
