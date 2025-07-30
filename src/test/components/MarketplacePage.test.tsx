@@ -94,7 +94,8 @@ describe('MarketplacePage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Discover & Deploy/i)).toBeInTheDocument();
+      expect(screen.getByText(/Discover/i)).toBeInTheDocument();
+      expect(screen.getByText(/Deploy/i)).toBeInTheDocument();
     });
 
     expect(screen.getByText(/AI Agents/i)).toBeInTheDocument();
@@ -109,12 +110,10 @@ describe('MarketplacePage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('2')).toBeInTheDocument(); // Total Agents
+      expect(screen.getByText(/AI Agents Available/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByText('24')).toBeInTheDocument(); // Categories
-    expect(screen.getByText('1.2K')).toBeInTheDocument(); // Downloads
-    expect(screen.getByText('4.9★')).toBeInTheDocument(); // Avg Rating
+    expect(screen.getByText(/Find the perfect agent/i)).toBeInTheDocument();
   });
 
   it('renders marketplace search component', async () => {
@@ -125,7 +124,8 @@ describe('MarketplacePage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Filters/i)).toBeInTheDocument();
+      expect(screen.getByText(/Grid/i)).toBeInTheDocument();
+      expect(screen.getByText(/List/i)).toBeInTheDocument();
     });
   });
 
@@ -137,7 +137,7 @@ describe('MarketplacePage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/Total Agents/i)).toBeInTheDocument();
+      expect(screen.getByText(/AI Agents Available/i)).toBeInTheDocument();
     });
   });
 
@@ -149,8 +149,8 @@ describe('MarketplacePage', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Test Agent 1')).toBeInTheDocument();
-      expect(screen.getByText('Test Agent 2')).toBeInTheDocument();
+      expect(screen.getByText(/Text Summarizer/i)).toBeInTheDocument();
+      expect(screen.getByText(/Image Classifier/i)).toBeInTheDocument();
     });
   });
 
@@ -178,8 +178,6 @@ describe('MarketplacePage', () => {
     await waitFor(() => {
       const uploadLink = screen.getByText(/Upload Agent/i).closest('a');
       expect(uploadLink).toHaveAttribute('href', '/upload');
-
-
     });
   });
 

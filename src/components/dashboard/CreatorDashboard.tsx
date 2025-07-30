@@ -7,7 +7,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, Users, Download, DollarSign, User, Plus, Eye, Edit, Activity, Zap } from 'lucide-react';
+import { TrendingUp, Users, Download, DollarSign, User, Plus, Eye, Activity, Zap } from 'lucide-react';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
@@ -181,7 +181,7 @@ export async function CreatorDashboard() {
                   </TableCell>
                 </TableRow>
               ) : (
-                agentStats.map((agent: AgentStats, idx: number) => (
+                agentStats.map((agent: AgentStats) => (
                   <TableRow key={agent.id} className="border-white/10 hover:bg-white/5 transition-colors duration-200">
                     <TableCell className="font-medium text-white flex items-center gap-3">
                       <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center text-white font-bold">

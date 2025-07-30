@@ -4,10 +4,13 @@ import '@testing-library/jest-dom'
 // Mock framer-motion
 const React = require('react');
 
-vi.mock('framer-motion', () => {
+vi.mock('framer-motion', async (importOriginal) => {
+  const actual = await importOriginal();
   const createMockComponent = (tag) => {
     return React.forwardRef(({ children, ...props }, ref) => {
-      return React.createElement(tag, { ...props, ref }, children);
+      // Remove framer-motion specific props
+      const { whileInView, initial, animate, transition, ...restProps } = props;
+      return React.createElement(tag, { ...restProps, ref }, children);
     });
   };
 
@@ -30,9 +33,14 @@ vi.mock('framer-motion', () => {
     motionComponents[tag] = createMockComponent(tag);
   });
 
-  const AnimatePresence = ({ children, ...props }) => React.createElement('div', props, children);
+  const AnimatePresence = ({ children, mode, ...props }) => {
+    // Remove framer-motion specific props
+    const { whileInView, initial, animate, transition, ...restProps } = props;
+    return React.createElement('div', restProps, children);
+  };
 
   return {
+    ...actual,
     motion: motionComponents,
     AnimatePresence,
     useAnimation: () => ({
@@ -163,6 +171,22 @@ Object.defineProperty(window, 'matchMedia', {
 global.Response = require('node-fetch').Response;
 
 global.Headers = global.Headers || function(headers) { return headers || {}; };
+
+// Mock react-hot-toast
+vi.mock('react-hot-toast', () => ({
+  toast: vi.fn((message, options) => {
+    return {
+      id: 'mock-toast-id',
+      message,
+      options
+    };
+  }),
+  Toaster: vi.fn(() => null),
+}));
+
+// Mock toast function
+global.toast = vi.fn();
+global.hotToast = vi.fn();
 vi.mock('next/server', () => ({
   NextResponse: {
     json: vi.fn((data, init) => {

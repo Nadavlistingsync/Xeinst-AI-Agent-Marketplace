@@ -4,9 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
-import { agentUploadSchema } from '@/lib/agent-execution';
 import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
-import { z } from 'zod';
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -17,25 +15,10 @@ const s3 = new S3Client({
 });
 const BUCKET_NAME = process.env.S3_BUCKET_NAME!;
 
-// Enhanced file validation schema
-const fileValidationSchema = z.object({
-  name: z.string().min(1).max(100),
-  description: z.string().min(1).max(1000),
-  file: z.any().refine((file) => {
-    if (!file) return false;
-    // Check file type
-    if (!file.name.endsWith('.zip')) return false;
-    // Check file size (max 50MB)
-    return file.size <= 50 * 1024 * 1024;
-  }, 'File must be a ZIP file under 50MB'),
-  isPublic: z.boolean().optional(),
-  tags: z.array(z.string()).optional(),
-  pricePerRun: z.number().min(0).max(1000).optional(),
-});
-
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  
   return withEnhancedErrorHandling(async () => {
-    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       throw new EnhancedAppError(
         'Authentication required',
@@ -305,17 +288,16 @@ export async function POST(req: NextRequest) {
           rating: 0,
           totalRatings: 0,
           downloadCount: 0,
-          health: {},
-          source: s3Key,
-          pricePerRun: pricePerRun,
-          tags: tags,
-          metadata: {
+          health: {
             originalFileName: file.name,
             fileSize: file.size,
             uploadTimestamp: new Date().toISOString(),
             uploadMethod: 'web_upload',
             validationPassed: true,
+            tags: tags,
           },
+          source: s3Key,
+          pricePerRun: pricePerRun,
         }
       });
     } catch (error) {
@@ -369,7 +351,7 @@ export async function POST(req: NextRequest) {
         description: agent.description,
         isPublic: agent.isPublic,
         pricePerRun: agent.pricePerRun,
-        tags: agent.tags,
+        tags: tags,
         fileUrl: `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`,
         uploadTimestamp: new Date().toISOString(),
       } 

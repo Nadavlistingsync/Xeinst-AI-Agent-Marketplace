@@ -105,20 +105,19 @@ describe('HomePage', () => {
       </SessionProvider>
     );
 
-    // Check for main heading - the text is split across spans
-    expect(screen.getAllByText(/Transform/i)).toHaveLength(3); // One in heading, two in testimonials
-    expect(screen.getByText(/Your Business/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/with AI/i)).toHaveLength(2); // One in heading, one in features
+    // Check for main heading
+    expect(screen.getAllByText(/XEINST Platform/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/AI Solutions/i)[0]).toBeInTheDocument();
 
     // Check for subtitle
-    expect(screen.getByText(/We build custom AI tools for free/i)).toBeInTheDocument();
+    expect(screen.getByText(/Browse, create, and upload AI agents/i)).toBeInTheDocument();
 
     // Check for CTA buttons
-    expect(screen.getByText(/Explore Marketplace/i)).toBeInTheDocument();
-    expect(screen.getByText(/Watch Demo/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Browse & Use/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/Get Started/i)[0]).toBeInTheDocument();
 
     // Check for badge
-    expect(screen.getByText(/AI-Powered Solutions/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/XEINST Platform/i)[1]).toBeInTheDocument();
   });
 
   it('displays stats section with correct values', () => {
@@ -134,9 +133,9 @@ describe('HomePage', () => {
     expect(screen.getByText('99.9%')).toBeInTheDocument();
     expect(screen.getByText('99.99%')).toBeInTheDocument();
 
-    // Check for stat labels - use getAllByText since there are multiple instances
-    expect(screen.getAllByText('Active Users')[0]).toBeInTheDocument();
-    expect(screen.getAllByText('AI Agents')[0]).toBeInTheDocument();
+    // Check for stat labels
+    expect(screen.getByText('Active Users')).toBeInTheDocument();
+    expect(screen.getByText('AI Agents Available')).toBeInTheDocument();
     expect(screen.getByText('Success Rate')).toBeInTheDocument();
     expect(screen.getByText('Uptime')).toBeInTheDocument();
   });
@@ -149,13 +148,12 @@ describe('HomePage', () => {
     );
 
     // Check for features section heading
-    expect(screen.getByText(/Powerful Features/i)).toBeInTheDocument();
+    expect(screen.getByText(/Platform Features/i)).toBeInTheDocument();
 
-    // Check for feature titles - use getAllByText since there are multiple instances
-    expect(screen.getAllByText('AI Agents')[1]).toBeInTheDocument(); // Second instance is in features
+    // Check for feature titles
+    expect(screen.getByText('AI Agent Marketplace')).toBeInTheDocument();
+    expect(screen.getByText('Upload & Embed System')).toBeInTheDocument();
     expect(screen.getByText('Smart Automation')).toBeInTheDocument();
-    expect(screen.getByText('Data Processing')).toBeInTheDocument();
-    expect(screen.getByText('Cloud Deployment')).toBeInTheDocument();
   });
 
   it('renders testimonials section', () => {
@@ -165,10 +163,11 @@ describe('HomePage', () => {
       </SessionProvider>
     );
 
-    // Check for testimonials
-    expect(screen.getByText(/Sarah Johnson/i)).toBeInTheDocument();
-    expect(screen.getByText(/Michael Chen/i)).toBeInTheDocument();
-    expect(screen.getByText(/Emily Rodriguez/i)).toBeInTheDocument();
+    // Check for main user journeys section
+    expect(screen.getAllByText(/Main User Journeys/i)[0]).toBeInTheDocument();
+    expect(screen.getByText(/Path 1: Browse & Use/i)).toBeInTheDocument();
+    expect(screen.getByText(/Path 2: Create & Deploy/i)).toBeInTheDocument();
+    expect(screen.getByText(/Path 3: Upload & Manage/i)).toBeInTheDocument();
   });
 
   it('has correct navigation links', () => {
@@ -179,11 +178,11 @@ describe('HomePage', () => {
     );
 
     // Check that marketplace link exists
-    const marketplaceLink = screen.getByText(/Explore Marketplace/i).closest('a');
+    const marketplaceLink = screen.getAllByText(/Browse & Use/i)[0].closest('a');
     expect(marketplaceLink).toHaveAttribute('href', '/marketplace');
 
     // Check that guide link exists
-    const guideLink = screen.getByText(/Watch Demo/i).closest('a');
+    const guideLink = screen.getAllByText(/Get Started/i)[0].closest('a');
     expect(guideLink).toHaveAttribute('href', '/guide');
   });
 

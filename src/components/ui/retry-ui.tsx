@@ -58,6 +58,7 @@ export function RetryUI({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [isRetrying, retryCount]);
 
   if (!error) return null;
@@ -243,7 +244,7 @@ export function RetryButton({
   return (
     <Button
       variant={variant}
-      size={size}
+      size={size as any}
       onClick={onRetry}
       disabled={isRetrying}
       className={className}

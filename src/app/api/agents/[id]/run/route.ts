@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { executeAgent, agentExecutionInputSchema } from '@/lib/agent-execution';
+import { executeAgent } from '@/lib/agent-execution';
 import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
 import { z } from 'zod';
 
@@ -19,8 +19,9 @@ const runAgentRequestSchema = z.object({
 });
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+  const session = await getServerSession(authOptions);
+  
   return withEnhancedErrorHandling(async () => {
-    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       throw new EnhancedAppError(
         'Authentication required',
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const agent = await prisma.deployment.findUnique({ 
       where: { id: agentId },
       include: {
-        createdByUser: {
+        creator: {
           select: { id: true, name: true }
         }
       }
@@ -220,44 +221,32 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
               type: 'spend', 
               amount: -price, 
               agentId,
-              metadata: { 
-                transactionId,
-                executionTime: executionResult.executionTime,
-                requestId: executionResult.requestId
-              }
             },
             { 
               userId: agent.createdBy, 
               type: 'earn', 
               amount: creatorShare, 
               agentId,
-              metadata: { 
-                transactionId,
-                creatorShare: true
-              }
             },
             { 
               userId: 'platform', 
               type: 'earn', 
               amount: platformShare, 
               agentId,
-              metadata: { 
-                transactionId,
-                platformShare: true
-              }
             },
           ],
         });
 
         // Update agent metrics
         await tx.agentMetrics.upsert({
-          where: { deploymentId: agentId },
+          where: { id: agentId },
           update: {
             totalRequests: { increment: 1 },
             successRate: 1, // This was a successful execution
             lastUpdated: new Date(),
           },
           create: {
+            id: agentId,
             deploymentId: agentId,
             totalRequests: 1,
             successRate: 1,
@@ -302,7 +291,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       agent: {
         id: agent.id,
         name: agent.name,
-        creator: agent.createdByUser?.name || 'Unknown',
+        creator: agent.creator?.name || 'Unknown',
       },
     });
 

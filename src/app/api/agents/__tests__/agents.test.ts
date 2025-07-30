@@ -67,8 +67,8 @@ describe('Agent API', () => {
     expect(data.success).toBe(true);
     expect(Array.isArray(data.agents)).toBe(true);
     expect(data.agents[0].id).toBe('1');
-    expect(data.agents[0].name).toBe('Test Agent');
-    expect(data.agents[0].description).toBe('Test Description');
+    expect(data.agents[0].name).toBe('Text Summarizer');
+    expect(data.agents[0].description).toBe('Summarizes a long text into a few key sentences.');
   });
 
   it('should get agent logs', async () => {

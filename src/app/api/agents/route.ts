@@ -146,6 +146,7 @@ export async function GET() {
     console.log(`GET /api/agents: Returning ${allAgents.length} total agents`);
 
     return NextResponse.json({
+      success: true,
       agents: allAgents,
       total: allAgents.length,
       timestamp: new Date().toISOString()
