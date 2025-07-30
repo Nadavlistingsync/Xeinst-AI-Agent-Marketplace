@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
+import { agentUploadSchema } from '@/lib/agent-execution';
+import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
+import { z } from 'zod';
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -14,67 +17,348 @@ const s3 = new S3Client({
 });
 const BUCKET_NAME = process.env.S3_BUCKET_NAME!;
 
+// Enhanced file validation schema
+const fileValidationSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().min(1).max(1000),
+  file: z.any().refine((file) => {
+    if (!file) return false;
+    // Check file type
+    if (!file.name.endsWith('.zip')) return false;
+    // Check file size (max 50MB)
+    return file.size <= 50 * 1024 * 1024;
+  }, 'File must be a ZIP file under 50MB'),
+  isPublic: z.boolean().optional(),
+  tags: z.array(z.string()).optional(),
+  pricePerRun: z.number().min(0).max(1000).optional(),
+});
+
 export async function POST(req: NextRequest) {
-  try {
+  return withEnhancedErrorHandling(async () => {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      throw new EnhancedAppError(
+        'Authentication required',
+        401,
+        ErrorCategory.AUTHENTICATION,
+        ErrorSeverity.MEDIUM,
+        'AUTH_REQUIRED',
+        null,
+        false,
+        undefined,
+        'Please sign in to upload agents',
+        ['Sign in to your account', 'Check your credentials']
+      );
     }
 
-    const formData = await req.formData();
+    // Check user upload limits
+    const userUploadCount = await prisma.deployment.count({
+      where: { createdBy: session.user.id }
+    });
+
+    const maxUploads = 50; // Limit users to 50 agents
+    if (userUploadCount >= maxUploads) {
+      throw new EnhancedAppError(
+        'Upload limit exceeded',
+        429,
+        ErrorCategory.RATE_LIMIT,
+        ErrorSeverity.MEDIUM,
+        'UPLOAD_LIMIT_EXCEEDED',
+        { current: userUploadCount, limit: maxUploads },
+        false,
+        undefined,
+        `You have reached the maximum of ${maxUploads} agent uploads`,
+        ['Delete some existing agents', 'Contact support for limit increase']
+      );
+    }
+
+    // Parse form data
+    let formData;
+    try {
+      formData = await req.formData();
+    } catch (error) {
+      throw new EnhancedAppError(
+        'Invalid form data',
+        400,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.MEDIUM,
+        'INVALID_FORM_DATA',
+        null,
+        false,
+        undefined,
+        'Failed to parse upload form data',
+        ['Check your upload format', 'Try uploading again']
+      );
+    }
+
+    // Extract and validate form fields
     const file = formData.get('file') as File;
     const name = formData.get('name') as string;
     const description = formData.get('description') as string;
+    const isPublic = formData.get('isPublic') === 'true';
+    const tags = formData.get('tags') ? JSON.parse(formData.get('tags') as string) : [];
+    const pricePerRun = formData.get('pricePerRun') ? parseFloat(formData.get('pricePerRun') as string) : 1;
 
+    // Validate required fields
     if (!file || !name || !description) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
+      throw new EnhancedAppError(
+        'Missing required fields',
+        400,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.MEDIUM,
+        'MISSING_REQUIRED_FIELDS',
+        { provided: { hasFile: !!file, hasName: !!name, hasDescription: !!description } },
+        false,
+        undefined,
+        'Please provide all required fields: file, name, and description',
+        ['Check all required fields are filled', 'Ensure file is selected']
       );
     }
 
+    // Validate file type and size
     if (!file.name.endsWith('.zip')) {
-      return NextResponse.json(
-        { error: 'Only ZIP files are allowed' },
-        { status: 400 }
+      throw new EnhancedAppError(
+        'Invalid file type',
+        400,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.MEDIUM,
+        'INVALID_FILE_TYPE',
+        { fileName: file.name, fileType: file.type },
+        false,
+        undefined,
+        'Only ZIP files are allowed for agent uploads',
+        ['Convert your file to ZIP format', 'Check file extension']
       );
     }
 
-    // Upload file to S3
-    const fileExt = file.name.split('.').pop();
-    const s3Key = `uploads/${uuidv4()}.${fileExt}`;
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    if (file.size > 50 * 1024 * 1024) { // 50MB limit
+      throw new EnhancedAppError(
+        'File too large',
+        400,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.MEDIUM,
+        'FILE_TOO_LARGE',
+        { fileSize: file.size, maxSize: 50 * 1024 * 1024 },
+        false,
+        undefined,
+        'File size exceeds 50MB limit',
+        ['Compress your file', 'Reduce file size', 'Split into smaller files']
+      );
+    }
 
-    await s3.send(new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: s3Key,
-      Body: buffer,
-      ContentType: file.type,
-    }));
+    // Validate name and description
+    if (name.length < 1 || name.length > 100) {
+      throw new EnhancedAppError(
+        'Invalid agent name',
+        400,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.MEDIUM,
+        'INVALID_AGENT_NAME',
+        { nameLength: name.length, minLength: 1, maxLength: 100 },
+        false,
+        undefined,
+        'Agent name must be between 1 and 100 characters',
+        ['Shorten or lengthen the name', 'Use descriptive but concise names']
+      );
+    }
 
-    // Create agent in database
-    const agent = await prisma.deployment.create({
-      data: {
-        name,
-        description,
+    if (description.length < 1 || description.length > 1000) {
+      throw new EnhancedAppError(
+        'Invalid description',
+        400,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.MEDIUM,
+        'INVALID_DESCRIPTION',
+        { descriptionLength: description.length, minLength: 1, maxLength: 1000 },
+        false,
+        undefined,
+        'Description must be between 1 and 1000 characters',
+        ['Shorten or lengthen the description', 'Provide clear but concise description']
+      );
+    }
+
+    // Validate price
+    if (pricePerRun < 0 || pricePerRun > 1000) {
+      throw new EnhancedAppError(
+        'Invalid price',
+        400,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.MEDIUM,
+        'INVALID_PRICE',
+        { price: pricePerRun, minPrice: 0, maxPrice: 1000 },
+        false,
+        undefined,
+        'Price must be between 0 and 1000 credits',
+        ['Set a price between 0 and 1000', 'Consider market rates']
+      );
+    }
+
+    // Validate tags
+    if (tags.length > 10) {
+      throw new EnhancedAppError(
+        'Too many tags',
+        400,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.MEDIUM,
+        'TOO_MANY_TAGS',
+        { tagCount: tags.length, maxTags: 10 },
+        false,
+        undefined,
+        'Maximum 10 tags allowed',
+        ['Reduce number of tags', 'Combine similar tags']
+      );
+    }
+
+    // Check for duplicate agent names for this user
+    const existingAgent = await prisma.deployment.findFirst({
+      where: {
         createdBy: session.user.id,
-        isPublic: true,
-        version: '1.0.0',
-        environment: 'production',
-        framework: 'custom',
-        modelType: 'custom',
-        status: 'active',
-        accessLevel: 'public',
-        licenseType: 'free',
-        deployedBy: session.user.id,
-        startDate: new Date(),
-        rating: 0,
-        totalRatings: 0,
-        downloadCount: 0,
-        health: {},
-        source: s3Key,
+        name: name
       }
+    });
+
+    if (existingAgent) {
+      throw new EnhancedAppError(
+        'Agent name already exists',
+        409,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.MEDIUM,
+        'DUPLICATE_AGENT_NAME',
+        { existingAgentId: existingAgent.id },
+        false,
+        undefined,
+        'You already have an agent with this name',
+        ['Choose a different name', 'Update existing agent', 'Delete old agent first']
+      );
+    }
+
+    // Upload file to S3 with enhanced error handling
+    const fileExt = file.name.split('.').pop();
+    const s3Key = `uploads/${session.user.id}/${uuidv4()}.${fileExt}`;
+    
+    let buffer;
+    try {
+      const bytes = await file.arrayBuffer();
+      buffer = Buffer.from(bytes);
+    } catch (error) {
+      throw new EnhancedAppError(
+        'File processing failed',
+        500,
+        ErrorCategory.FILE_UPLOAD,
+        ErrorSeverity.HIGH,
+        'FILE_PROCESSING_ERROR',
+        { error: error instanceof Error ? error.message : 'Unknown error' },
+        true, // Retryable
+        5000, // Retry after 5 seconds
+        'Failed to process uploaded file',
+        ['Try uploading again', 'Check file integrity', 'Use a different file']
+      );
+    }
+
+    try {
+      await s3.send(new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: s3Key,
+        Body: buffer,
+        ContentType: file.type,
+        Metadata: {
+          uploadedBy: session.user.id,
+          originalName: file.name,
+          fileSize: file.size.toString(),
+          uploadTimestamp: new Date().toISOString(),
+        },
+      }));
+    } catch (error) {
+      console.error('S3 upload error:', error);
+      throw new EnhancedAppError(
+        'File upload failed',
+        500,
+        ErrorCategory.FILE_UPLOAD,
+        ErrorSeverity.HIGH,
+        'S3_UPLOAD_FAILED',
+        { error: error instanceof Error ? error.message : 'Unknown S3 error' },
+        true, // Retryable
+        10000, // Retry after 10 seconds
+        'Failed to upload file to storage',
+        ['Try uploading again', 'Check your connection', 'Contact support']
+      );
+    }
+
+    // Create agent in database with enhanced metadata
+    let agent;
+    try {
+      agent = await prisma.deployment.create({
+        data: {
+          name,
+          description,
+          createdBy: session.user.id,
+          isPublic,
+          version: '1.0.0',
+          environment: 'production',
+          framework: 'custom',
+          modelType: 'custom',
+          status: 'active',
+          accessLevel: isPublic ? 'public' : 'private',
+          licenseType: 'free',
+          deployedBy: session.user.id,
+          startDate: new Date(),
+          rating: 0,
+          totalRatings: 0,
+          downloadCount: 0,
+          health: {},
+          source: s3Key,
+          pricePerRun: pricePerRun,
+          tags: tags,
+          metadata: {
+            originalFileName: file.name,
+            fileSize: file.size,
+            uploadTimestamp: new Date().toISOString(),
+            uploadMethod: 'web_upload',
+            validationPassed: true,
+          },
+        }
+      });
+    } catch (error) {
+      console.error('Database creation error:', error);
+      
+      // Try to clean up S3 file if database creation fails
+      try {
+        await s3.send(new PutObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: s3Key,
+        }));
+      } catch (cleanupError) {
+        console.error('Failed to cleanup S3 file:', cleanupError);
+      }
+
+      throw new EnhancedAppError(
+        'Agent creation failed',
+        500,
+        ErrorCategory.DATABASE,
+        ErrorSeverity.HIGH,
+        'AGENT_CREATION_FAILED',
+        { error: error instanceof Error ? error.message : 'Unknown database error' },
+        true, // Retryable
+        5000, // Retry after 5 seconds
+        'Failed to create agent in database',
+        ['Try uploading again', 'Check your data', 'Contact support']
+      );
+    }
+
+    // Log successful upload
+    await prisma.agentLog.create({
+      data: {
+        deploymentId: agent.id,
+        level: 'info',
+        message: 'Agent uploaded successfully',
+        metadata: {
+          uploadedBy: session.user.id,
+          fileSize: file.size,
+          isPublic,
+          pricePerRun,
+          tags,
+        },
+      },
     });
 
     return NextResponse.json({ 
@@ -82,15 +366,18 @@ export async function POST(req: NextRequest) {
       data: { 
         id: agent.id,
         name: agent.name,
-        fileUrl: `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`
+        description: agent.description,
+        isPublic: agent.isPublic,
+        pricePerRun: agent.pricePerRun,
+        tags: agent.tags,
+        fileUrl: `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`,
+        uploadTimestamp: new Date().toISOString(),
       } 
     });
 
-  } catch (error) {
-    console.error('Error uploading agent:', error);
-    return NextResponse.json(
-      { error: 'Failed to upload agent' },
-      { status: 500 }
-    );
-  }
+  }, { 
+    endpoint: '/api/upload-agent', 
+    method: 'POST',
+    context: { userId: session?.user?.id }
+  });
 } 
