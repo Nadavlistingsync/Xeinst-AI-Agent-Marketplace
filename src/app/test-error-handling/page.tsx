@@ -4,11 +4,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { EnhancedErrorDisplay } from '@/components/EnhancedErrorDisplay';
-import { useEnhancedApiError } from '@/hooks/useEnhancedApiError';
+
 import { ErrorCategory, ErrorSeverity } from '@/lib/enhanced-error-handling';
 
 export default function TestErrorHandlingPage() {
-  const { error, isRetrying, handleError, retryOperation, clearError } = useEnhancedApiError();
   const [testError, setTestError] = useState<any>(null);
 
   const simulateNetworkError = () => {

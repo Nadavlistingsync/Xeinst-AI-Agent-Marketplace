@@ -111,7 +111,7 @@ export function useEnhancedApiError(config?: Partial<RetryConfig>) {
     // Report to Sentry for medium and higher severity errors
     if (apiError.severity !== ErrorSeverity.LOW) {
       captureException(error instanceof Error ? error : new Error(apiError.message), {
-        ...apiError.details,
+        ...(apiError.details as Record<string, any>),
         ...context,
       });
     }

@@ -198,11 +198,11 @@ export function EnhancedErrorDisplay({
                         </div>
                       </div>
                       
-                      {error.details && (
+                      {error.details !== undefined && error.details !== null && (
                         <div>
                           <h4 className="font-semibold mb-2">Additional Details</h4>
                           <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto max-h-32">
-                            {JSON.stringify(error.details, null, 2)}
+                            {String(typeof error.details === 'string' ? error.details : JSON.stringify(error.details, null, 2))}
                           </pre>
                         </div>
                       )}

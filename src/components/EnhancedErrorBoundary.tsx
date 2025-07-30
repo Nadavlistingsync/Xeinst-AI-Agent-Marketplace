@@ -2,7 +2,7 @@
 
 import React, { Component, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { RefreshCw, AlertTriangle, Info, XCircle, CheckCircle } from 'lucide-react';
 import { ErrorCategory, ErrorSeverity } from '@/lib/enhanced-error-handling';

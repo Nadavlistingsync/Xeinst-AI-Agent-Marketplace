@@ -218,7 +218,7 @@ function getPrismaErrorSeverity(code: string): ErrorSeverity {
   }
 }
 
-function isPrismaErrorRetryable(code: string): boolean {
+function isPrismaErrorRetryable(_code: string): boolean {
   // Most Prisma errors are not retryable
   return false;
 }

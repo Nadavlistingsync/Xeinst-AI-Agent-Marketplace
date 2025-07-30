@@ -168,6 +168,7 @@ export class Logger {
     if (config.DEBUG_ENABLED) {
       return this.formatMessage('debug', message, context);
     }
+    return null;
   }
 }
 

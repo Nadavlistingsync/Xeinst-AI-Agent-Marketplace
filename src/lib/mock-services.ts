@@ -1,7 +1,8 @@
 // Mock Services for Prototype Development
 // These simulate external APIs so you can test the full functionality
 
-import { NextResponse } from 'next/server';
+// Mock Services for Prototype Development
+// These simulate external APIs so you can test the full functionality
 
 // Mock S3 Service
 export class MockS3Service {
@@ -307,7 +308,29 @@ export class MockAgentExecutionService {
     // Simulate processing time
     await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 500));
     
-    const execution = {
+    const execution: {
+      id: string;
+      agentId: string;
+      input: any;
+      options: any;
+      startTime: Date;
+      endTime: Date;
+      duration: number;
+      success: boolean;
+      result: {
+        output: string;
+        metadata: {
+          tokensUsed: number;
+          model: string;
+          processingTime: number;
+        };
+      } | null;
+      error: {
+        message: string;
+        code: string;
+        details: string;
+      } | null;
+    } = {
       id: executionId,
       agentId,
       input,
