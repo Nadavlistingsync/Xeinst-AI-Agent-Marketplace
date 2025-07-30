@@ -4,8 +4,7 @@ import '@testing-library/jest-dom'
 // Mock framer-motion
 const React = require('react');
 
-vi.mock('framer-motion', async (importOriginal) => {
-  const actual = await importOriginal();
+vi.mock('framer-motion', () => {
   const createMockComponent = (tag) => {
     return React.forwardRef(({ children, ...props }, ref) => {
       // Remove framer-motion specific props
@@ -40,7 +39,6 @@ vi.mock('framer-motion', async (importOriginal) => {
   };
 
   return {
-    ...actual,
     motion: motionComponents,
     AnimatePresence,
     useAnimation: () => ({
