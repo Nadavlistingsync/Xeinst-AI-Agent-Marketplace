@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { withEnhancedErrorHandling, createEnhancedErrorResponse, ErrorCategory, EnhancedAppError } from '@/lib/enhanced-error-handling';
 
 const agentSchema = z.object({
   id: z.string(),
@@ -91,89 +92,82 @@ const exampleAgents: Agent[] = [
 ];
 
 export async function GET() {
-  try {
+  return withEnhancedErrorHandling(async () => {
     console.log('GET /api/agents: Starting to fetch agents...');
     
     // First try to get agents from the database
     console.log('GET /api/agents: Attempting database query...');
     const dbAgents = await prisma.agent.findMany({
       where: { isPublic: true },
-      orderBy: { createdAt: 'desc' },
-      take: 50, // Limit to prevent performance issues
+      include: {
+        creator: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
     });
-    
+
     console.log(`GET /api/agents: Found ${dbAgents.length} agents in database`);
 
-    // Convert database agents to the expected format
+    // Transform to marketplace format
     const marketplaceAgents: Agent[] = dbAgents.map(agent => ({
       id: agent.id,
       name: agent.name,
       description: agent.description,
-      apiUrl: agent.fileUrl, // Using fileUrl as apiUrl for now
-      category: agent.category || 'general',
-      price: agent.price || 0,
-      rating: 0, // Default rating since Agent model doesn't have rating field
+      apiUrl: agent.fileUrl, // Use fileUrl as apiUrl
+      category: agent.category,
+      price: agent.price,
+      rating: 0, // Default rating
       download_count: agent.downloadCount || 0,
-      review_count: 0, // Default review count since Agent model doesn't have totalRatings field
-      model_type: agent.modelType || 'custom',
-      framework: agent.framework || 'custom',
-      version: agent.version || '1.0.0',
-      status: 'active', // Default status since Agent model doesn't have status field
-      tags: [], // Default empty tags since Agent model doesn't have tags field
+      review_count: 0, // Default review count
+      model_type: agent.modelType,
+      framework: agent.framework,
+      version: agent.version,
+      status: 'active', // Default status
+      tags: [], // Default empty tags
       created_at: agent.createdAt,
       user_id: agent.createdBy,
       file_path: agent.fileUrl || '',
       inputSchema: {
         type: 'object',
         properties: {
-          // Default schema - in a real app, this would be stored in the database
           input: { type: 'string', description: 'Input for the agent.' },
         },
         required: ['input'],
       },
     }));
 
-    // If no agents in database, return demo agents for backward compatibility
-    let allAgents = marketplaceAgents;
-    if (allAgents.length === 0) {
-      allAgents = exampleAgents;
-    }
-    
+    // Combine with example agents
+    const allAgents = [...exampleAgents, ...marketplaceAgents];
+
     console.log(`GET /api/agents: Returning ${allAgents.length} total agents`);
 
-    // Add a short delay to simulate a network request
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    // Return the structure that tests expect
     return NextResponse.json({
-      success: true,
-      agents: allAgents
+      agents: allAgents,
+      total: allAgents.length,
+      timestamp: new Date().toISOString()
     });
-  } catch (error) {
-    console.error('GET /api/agents: Error fetching agents:', error);
-    
-    // Log more details about the error
-    if (error instanceof Error) {
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
-    
-    // Return error response with the expected structure
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to fetch agents',
-      agents: []
-    }, { status: 500 });
-  }
+  }, { endpoint: '/api/agents', method: 'GET' });
 }
 
 export async function POST(request: NextRequest) {
-  try {
+  return withEnhancedErrorHandling(async () => {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
+      throw new EnhancedAppError(
+        'Authentication required',
+        401,
+        ErrorCategory.AUTHENTICATION,
+        'medium',
+        'AUTH_REQUIRED',
+        null,
+        false,
+        undefined,
+        'Please sign in to upload an agent',
+        ['Sign in to your account', 'Check your credentials', 'Reset your password if needed']
       );
     }
 
@@ -260,21 +254,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       agent: marketplaceAgent
-    }, { status: 201 });
-  } catch (error) {
-    console.error('Error creating agent:', error);
-    
-    if (error instanceof z.ZodError) {
-      const errorMessage = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
-      return NextResponse.json(
-        { success: false, error: errorMessage },
-        { status: 400 }
-      );
-    }
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to create agent' },
-      { status: 500 }
-    );
-  }
+    });
+  }, { endpoint: '/api/agents', method: 'POST' });
 } 

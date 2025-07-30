@@ -10,6 +10,8 @@ import Link from "next/link";
 import { Agent } from "@/app/api/agents/route";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useEnhancedApiError } from "@/hooks/useEnhancedApiError";
+import { EnhancedErrorDisplay } from "@/components/EnhancedErrorDisplay";
 
 async function getAgents(): Promise<Agent[]> {
   // In a real app, you might have this on the server if the API is internal,
@@ -17,7 +19,8 @@ async function getAgents(): Promise<Agent[]> {
   // For this example, we fetch from the API route.
   const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/agents`, { cache: 'no-store' });
   if (!res.ok) {
-    throw new Error('Failed to fetch agents');
+    const errorData = await res.json();
+    throw new Error(errorData.error || 'Failed to fetch agents');
   }
   const data = await res.json();
   return data.agents || data; // Handle both new and old response formats
@@ -26,28 +29,51 @@ async function getAgents(): Promise<Agent[]> {
 export default function MarketplacePage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
+  const { error, isRetrying, handleError, retryOperation, clearError } = useEnhancedApiError();
+
+  const fetchAgents = async () => {
+    try {
+      setLoading(true);
+      clearError();
+      const agentsData = await getAgents();
+      setAgents(agentsData);
+    } catch (error) {
+      handleError(error, { context: 'marketplace_fetch_agents' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        const agentsData = await getAgents();
-        setAgents(agentsData);
-      } catch (error) {
-        console.error('Failed to fetch agents:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAgents();
   }, []);
 
-  if (loading) {
+  const handleRetry = () => {
+    retryOperation(fetchAgents, { context: 'marketplace_retry_fetch_agents' });
+  };
+
+  if (loading && !error) {
     return (
       <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-ai-primary mx-auto"></div>
           <p className="mt-4 text-muted-foreground">Loading agents...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background pt-20">
+        <div className="container mx-auto px-4 py-8">
+          <EnhancedErrorDisplay
+            error={error}
+            onRetry={handleRetry}
+            onDismiss={clearError}
+            showDetails={true}
+            className="max-w-2xl mx-auto"
+          />
         </div>
       </div>
     );
@@ -89,7 +115,6 @@ export default function MarketplacePage() {
                   Upload Agent
                 </Link>
               </Button>
-
             </div>
           </motion.div>
         </div>
@@ -98,83 +123,47 @@ export default function MarketplacePage() {
       {/* Main Content */}
       <section className="py-12">
         <div className="container">
-          {/* Search and Filters Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="flex flex-col lg:flex-row gap-6 mb-8"
-          >
-            {/* Search */}
-            <div className="flex-1">
-              <MarketplaceSearch />
-            </div>
-
-            {/* View Toggle */}
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                Filters
-              </Button>
-              <div className="flex items-center bg-muted/50 rounded-lg p-1">
-                <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                  <Grid className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                  <List className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
-          >
-            <div className="glass-card p-4 text-center">
-              <div className="text-2xl font-bold text-ai-primary">{agents.length}</div>
-              <div className="text-sm text-muted-foreground">Total Agents</div>
-            </div>
-            <div className="glass-card p-4 text-center">
-              <div className="text-2xl font-bold text-ai-secondary">24</div>
-              <div className="text-sm text-muted-foreground">Categories</div>
-            </div>
-            <div className="glass-card p-4 text-center">
-              <div className="text-2xl font-bold text-ai-accent">1.2K</div>
-              <div className="text-sm text-muted-foreground">Downloads</div>
-            </div>
-            <div className="glass-card p-4 text-center">
-              <div className="text-2xl font-bold text-green-500">4.9★</div>
-              <div className="text-sm text-muted-foreground">Avg Rating</div>
-            </div>
-          </motion.div>
-
-          {/* Main Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="flex flex-col lg:flex-row gap-8">
             {/* Filters Sidebar */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="lg:col-span-1"
-            >
-              <div className="sticky top-24">
-                <MarketplaceFilters />
+            <div className="lg:w-1/4">
+              <MarketplaceFilters />
+            </div>
+
+            {/* Main Grid */}
+            <div className="lg:w-3/4">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">
+                    {agents.length} AI Agents Available
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Find the perfect agent for your needs
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" size="sm">
+                    <Grid className="w-4 h-4 mr-2" />
+                    Grid
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <List className="w-4 h-4 mr-2" />
+                    List
+                  </Button>
+                </div>
               </div>
-            </motion.div>
-            
-            {/* Agents Grid */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="lg:col-span-3"
-            >
+
+              <MarketplaceSearch />
+
+              {isRetrying && (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ai-primary mx-auto"></div>
+                  <p className="mt-2 text-sm text-muted-foreground">Retrying...</p>
+                </div>
+              )}
+
               <MarketplaceGrid agents={agents} />
-            </motion.div>
+            </div>
           </div>
         </div>
       </section>
