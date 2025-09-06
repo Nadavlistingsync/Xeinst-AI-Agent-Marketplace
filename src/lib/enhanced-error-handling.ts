@@ -125,8 +125,12 @@ export function handleEnhancedApiError(error: unknown, context?: Record<string, 
   }
 
   if (error instanceof ZodError) {
+    // Extract the first validation error message for better user feedback
+    const firstError = error.errors[0];
+    const specificMessage = firstError ? `${firstError.path.join('.')}: ${firstError.message}` : 'Validation error';
+    
     return {
-      message: 'Validation error',
+      message: specificMessage,
       status: 400,
       code: 'VALIDATION_ERROR',
       category: ErrorCategory.VALIDATION,

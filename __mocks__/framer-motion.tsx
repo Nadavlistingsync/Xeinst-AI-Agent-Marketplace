@@ -5,7 +5,8 @@ const createMockComponent = (tag: string) => {
   return React.forwardRef(({ children, ...props }: any, ref: any) => {
     // Remove framer-motion specific props
     const { 
-      whileInView, initial, animate, transition, 
+      whileInView, whileHover, whileTap, whileFocus, whileDrag,
+      initial, animate, transition, 
       layout, layoutId, layoutDependency, layoutScroll,
       drag, dragConstraints, dragElastic, dragMomentum,
       dragPropagation, dragSnapToOrigin, dragTransition,
@@ -39,7 +40,8 @@ htmlElements.forEach(tag => {
 const AnimatePresence = React.forwardRef(({ children, mode, ...props }: any, ref: any) => {
   // Remove framer-motion specific props
   const { 
-    whileInView, initial, animate, transition,
+    whileInView, whileHover, whileTap, whileFocus, whileDrag,
+    initial, animate, transition,
     layout, layoutId, layoutDependency, layoutScroll,
     drag, dragConstraints, dragElastic, dragMomentum,
     dragPropagation, dragSnapToOrigin, dragTransition,

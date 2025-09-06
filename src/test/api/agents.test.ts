@@ -88,12 +88,16 @@ describe('Agents API', () => {
       (prisma.agent.findMany as any).mockRejectedValue(new Error('Database error'));
 
       const request = new NextRequest('http://localhost:3000/api/agents');
-      const response = await GET(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(data.success).toBe(false);
-      expect(data.error).toContain('Failed to fetch agents');
+      
+      // The enhanced error handling will throw an EnhancedAppError
+      // We need to catch it and verify the error structure
+      try {
+        await GET(request);
+        expect.fail('Expected an error to be thrown');
+      } catch (error: any) {
+        expect(error).toBeInstanceOf(Error);
+        expect(error.message).toContain('Database error');
+      }
     });
 
     it('filters agents by category', async () => {
@@ -208,18 +212,21 @@ describe('Agents API', () => {
         body: JSON.stringify(invalidAgentData),
       });
 
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
-      expect(data.error).toContain('name');
+      // The enhanced error handling will throw an EnhancedAppError for validation errors
+      try {
+        await POST(request);
+        expect.fail('Expected a validation error to be thrown');
+      } catch (error: any) {
+        expect(error).toBeInstanceOf(Error);
+        expect(error.message).toContain('name: Required');
+      }
     });
 
     it('validates price is positive', async () => {
       const invalidAgentData = {
         name: 'Test Agent',
         description: 'Test description',
+        category: 'productivity', // Add required category field
         price: -10,
         model_type: 'gpt-4',
         framework: 'langchain',
@@ -233,12 +240,14 @@ describe('Agents API', () => {
         body: JSON.stringify(invalidAgentData),
       });
 
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
-      expect(data.error).toContain('price');
+      // The enhanced error handling will throw an EnhancedAppError for validation errors
+      try {
+        await POST(request);
+        expect.fail('Expected a validation error to be thrown');
+      } catch (error: any) {
+        expect(error).toBeInstanceOf(Error);
+        expect(error.message).toContain('price: Price must be non-negative');
+      }
     });
 
     it('handles database errors during creation', async () => {
@@ -261,12 +270,14 @@ describe('Agents API', () => {
         body: JSON.stringify(agentData),
       });
 
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(500);
-      expect(data.success).toBe(false);
-      expect(data.error).toContain('Failed to create agent');
+      // The enhanced error handling will throw an EnhancedAppError for database errors
+      try {
+        await POST(request);
+        expect.fail('Expected a database error to be thrown');
+      } catch (error: any) {
+        expect(error).toBeInstanceOf(Error);
+        expect(error.message).toContain('Database error');
+      }
     });
   });
 }); 

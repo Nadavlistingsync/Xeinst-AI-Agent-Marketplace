@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AuditLogger } from '@/lib/security';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // GET /api/security/metrics - Get security metrics
 export async function GET(request: NextRequest) {
   try {
