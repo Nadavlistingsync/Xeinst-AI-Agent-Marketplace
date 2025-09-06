@@ -18,6 +18,7 @@ vi.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
+  AnimatePresence: ({ children, ...props }: any) => <div {...props}>{children}</div>,
 }));
 
 // Mock fetch
@@ -26,8 +27,8 @@ global.fetch = vi.fn();
 const mockAgents = [
   {
     id: '1',
-    name: 'Test Agent 1',
-    description: 'Test description 1',
+    name: 'Text Summarizer',
+    description: 'AI agent that summarizes long texts into concise summaries',
     model_type: 'gpt-4',
     framework: 'langchain',
     price: 10.99,
@@ -44,8 +45,8 @@ const mockAgents = [
   },
   {
     id: '2',
-    name: 'Test Agent 2',
-    description: 'Test description 2',
+    name: 'Image Classifier',
+    description: 'AI agent that classifies and categorizes images',
     model_type: 'gpt-3.5',
     framework: 'openai',
     price: 5.99,
@@ -95,10 +96,10 @@ describe('MarketplacePage', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/Discover/i)).toBeInTheDocument();
-      expect(screen.getByText(/Deploy/i)).toBeInTheDocument();
+      expect(screen.getByText(/& Deploy/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/AI Agents/i)).toBeInTheDocument();
+    expect(screen.getByText(/AI Agents Available/i)).toBeInTheDocument();
     expect(screen.getByText(/Browse our curated collection/i)).toBeInTheDocument();
   });
 

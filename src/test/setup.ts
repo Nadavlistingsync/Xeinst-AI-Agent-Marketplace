@@ -344,7 +344,8 @@ vi.mock('next/image', () => ({
 
 // Mock react-hot-toast
 vi.mock('react-hot-toast', () => ({
-  toast: {
+  toast: vi.fn(),
+  default: {
     success: vi.fn(),
     error: vi.fn(),
     loading: vi.fn(),

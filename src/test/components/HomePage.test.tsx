@@ -106,18 +106,18 @@ describe('HomePage', () => {
     );
 
     // Check for main heading
-    expect(screen.getAllByText(/XEINST Platform/i)[0]).toBeInTheDocument();
-    expect(screen.getAllByText(/AI Solutions/i)[0]).toBeInTheDocument();
+    expect(screen.getByText(/Build dependable AI agents/i)).toBeInTheDocument();
+    expect(screen.getByText(/Deploy in hours, govern for scale/i)).toBeInTheDocument();
 
     // Check for subtitle
-    expect(screen.getByText(/Browse, create, and upload AI agents/i)).toBeInTheDocument();
+    expect(screen.getByText(/Visual orchestration \+ versioned agents/i)).toBeInTheDocument();
 
     // Check for CTA buttons
-    expect(screen.getAllByText(/Browse & Use/i)[0]).toBeInTheDocument();
-    expect(screen.getAllByText(/Get Started/i)[0]).toBeInTheDocument();
+    expect(screen.getAllByText(/Start Free/i)[0]).toBeInTheDocument();
+    expect(screen.getByText(/Book a Demo/i)).toBeInTheDocument();
 
     // Check for badge
-    expect(screen.getAllByText(/XEINST Platform/i)[1]).toBeInTheDocument();
+    expect(screen.getByText(/Coming Soon - Join the Waitlist/i)).toBeInTheDocument();
   });
 
   it('displays stats section with correct values', () => {
@@ -128,16 +128,16 @@ describe('HomePage', () => {
     );
 
     // Check for stats
-    expect(screen.getByText('10K+')).toBeInTheDocument();
-    expect(screen.getByText('500+')).toBeInTheDocument();
     expect(screen.getByText('99.9%')).toBeInTheDocument();
-    expect(screen.getByText('99.99%')).toBeInTheDocument();
+    expect(screen.getByText('<2s')).toBeInTheDocument();
+    expect(screen.getByText('10K+')).toBeInTheDocument();
+    expect(screen.getByText('Built-in')).toBeInTheDocument();
 
     // Check for stat labels
-    expect(screen.getByText('Active Users')).toBeInTheDocument();
-    expect(screen.getByText('AI Agents Available')).toBeInTheDocument();
-    expect(screen.getByText('Success Rate')).toBeInTheDocument();
     expect(screen.getByText('Uptime')).toBeInTheDocument();
+    expect(screen.getByText('Avg Exec Time')).toBeInTheDocument();
+    expect(screen.getByText('Active Agents')).toBeInTheDocument();
+    expect(screen.getByText('Cost Control')).toBeInTheDocument();
   });
 
   it('renders features section', () => {
@@ -151,23 +151,27 @@ describe('HomePage', () => {
     expect(screen.getByText(/Platform Features/i)).toBeInTheDocument();
 
     // Check for feature titles
-    expect(screen.getByText('AI Agent Marketplace')).toBeInTheDocument();
-    expect(screen.getByText('Upload & Embed System')).toBeInTheDocument();
-    expect(screen.getByText('Smart Automation')).toBeInTheDocument();
+    expect(screen.getByText('Agent Builder')).toBeInTheDocument();
+    expect(screen.getByText('Orchestration Canvas')).toBeInTheDocument();
+    expect(screen.getByText('Integrations')).toBeInTheDocument();
+    expect(screen.getByText('Governance')).toBeInTheDocument();
+    expect(screen.getByText('Deploy')).toBeInTheDocument();
+    expect(screen.getByText('Observability')).toBeInTheDocument();
   });
 
-  it('renders testimonials section', () => {
+  it('renders how it works section', () => {
     render(
       <SessionProvider session={mockSession}>
         <HomePage />
       </SessionProvider>
     );
 
-    // Check for main user journeys section
-    expect(screen.getAllByText(/Main User Journeys/i)[0]).toBeInTheDocument();
-    expect(screen.getByText(/Path 1: Browse & Use/i)).toBeInTheDocument();
-    expect(screen.getByText(/Path 2: Create & Deploy/i)).toBeInTheDocument();
-    expect(screen.getByText(/Path 3: Upload & Manage/i)).toBeInTheDocument();
+    // Check for how it works section
+    expect(screen.getByText(/How It Works/i)).toBeInTheDocument();
+    expect(screen.getByText(/Three steps to production-ready AI agents/i)).toBeInTheDocument();
+    expect(screen.getByText(/Design on the Canvas/i)).toBeInTheDocument();
+    expect(screen.getByText(/Guardrail with Policies/i)).toBeInTheDocument();
+    expect(screen.getByText(/Observe & Improve/i)).toBeInTheDocument();
   });
 
   it('has correct navigation links', () => {
@@ -177,13 +181,10 @@ describe('HomePage', () => {
       </SessionProvider>
     );
 
-    // Check that marketplace link exists
-    const marketplaceLink = screen.getAllByText(/Browse & Use/i)[0].closest('a');
-    expect(marketplaceLink).toHaveAttribute('href', '/marketplace');
-
-    // Check that guide link exists
-    const guideLink = screen.getAllByText(/Get Started/i)[0].closest('a');
-    expect(guideLink).toHaveAttribute('href', '/guide');
+    // Check that buttons exist (the homepage has buttons, not navigation links)
+    expect(screen.getAllByText(/Start Free/i)[0]).toBeInTheDocument();
+    expect(screen.getByText(/Book a Demo/i)).toBeInTheDocument();
+    expect(screen.getByText(/See Templates/i)).toBeInTheDocument();
   });
 
   it('renders with proper accessibility attributes', () => {
@@ -197,8 +198,8 @@ describe('HomePage', () => {
     const mainHeading = screen.getByRole('heading', { level: 1 });
     expect(mainHeading).toBeInTheDocument();
 
-    // Check for proper link roles (the component uses links, not buttons)
-    const links = screen.getAllByRole('link');
-    expect(links.length).toBeGreaterThan(0);
+    // Check for proper button roles (the component uses buttons, not links)
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.length).toBeGreaterThan(0);
   });
 }); 

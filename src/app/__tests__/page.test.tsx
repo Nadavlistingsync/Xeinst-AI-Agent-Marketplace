@@ -28,15 +28,15 @@ describe('Home Page', () => {
 
   it('renders the main description', () => {
     render(<Home />)
-    const description = screen.getByText(/custom AI tools/i)
+    const description = screen.getByText(/Visual orchestration \+ versioned agents/i)
     expect(description).toBeInTheDocument()
   })
 
   it('renders the hero section', () => {
     render(<Home />)
-    const transforms = screen.getAllByText(/transform/i)
-    expect(transforms.length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/with AI/i).length).toBeGreaterThan(0)
+    const heading = screen.getByText(/Build dependable AI agents/i)
+    expect(heading).toBeInTheDocument()
+    expect(screen.getByText(/Deploy in hours, govern for scale/i)).toBeInTheDocument()
   })
 
   it('renders the features section', () => {
@@ -47,10 +47,10 @@ describe('Home Page', () => {
 
   it('renders the stats section', () => {
     render(<Home />)
-    expect(screen.getAllByText(/AI agents/i).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/active users/i).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/success rate/i).length).toBeGreaterThan(0)
-    expect(screen.getAllByText(/uptime/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/Uptime/i)).toBeInTheDocument()
+    expect(screen.getByText(/Avg Exec Time/i)).toBeInTheDocument()
+    expect(screen.getByText(/Active Agents/i)).toBeInTheDocument()
+    expect(screen.getByText(/Cost Control/i)).toBeInTheDocument()
   })
 
   it('handles database errors correctly', async () => {
