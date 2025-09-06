@@ -5,6 +5,25 @@ import { getPerformanceReport } from '@/lib/performance';
 
 export const GET = withApiPerformanceTracking(async (_req: NextRequest) => {
   try {
+    // Check if we're in build mode or database is not available and return mock data
+    if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL || 
+        process.env.NEXT_PHASE === 'phase-production-build' ||
+        !process.env.DATABASE_URL) {
+      return NextResponse.json({
+        success: true,
+        message: 'Analytics skipped during build - database not available',
+        results: {
+          userStats: { total: 0, active: 0, newToday: 0, activeRate: '0' },
+          agentStats: { total: 0, public: 0, deployed: 0, totalDownloads: 0, deploymentRate: '0' },
+          deploymentStats: { total: 0, active: 0, totalRevenue: 0, activeRate: '0' },
+          performanceStats: {},
+          revenueStats: { monthlyRevenue: 0, monthlyOrders: 0, averageOrderValue: 0 },
+          duration: 0
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+
     const startTime = Date.now();
     const analyticsResults: {
       userStats: { total: number; active: number; newToday: number; activeRate: string };

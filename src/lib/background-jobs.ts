@@ -139,6 +139,11 @@ class JobQueue {
   }
 
   private async getPendingJobs(): Promise<Job[]> {
+    // Skip database calls during build
+    if (process.env.NEXT_PHASE === 'phase-production-build' || !process.env.DATABASE_URL) {
+      return [];
+    }
+
     return withDbPerformanceTracking('get_pending_jobs', async () => {
       const jobs = await prisma.job.findMany({
         where: {
@@ -465,8 +470,10 @@ class JobQueue {
 // Global job queue instance
 export const jobQueue = new JobQueue();
 
-// Start job processing when the module is loaded
-if (process.env.NODE_ENV === 'production') {
+// Start job processing when the module is loaded (but not during build)
+if (process.env.NODE_ENV === 'production' && 
+    process.env.NEXT_PHASE !== 'phase-production-build' &&
+    process.env.DATABASE_URL) {
   jobQueue.startProcessing().catch(console.error);
 }
 
