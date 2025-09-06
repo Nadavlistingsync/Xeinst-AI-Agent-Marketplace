@@ -106,18 +106,16 @@ describe('HomePage', () => {
     );
 
     // Check for main heading
-    expect(screen.getByText(/Build dependable AI agents/i)).toBeInTheDocument();
-    expect(screen.getByText(/Deploy in hours, govern for scale/i)).toBeInTheDocument();
+    expect(screen.getByText(/AI Agent Marketplace/i)).toBeInTheDocument();
+    expect(screen.getByText(/Webhook Agents • Buy Credits • Use AI/i)).toBeInTheDocument();
 
     // Check for subtitle
-    expect(screen.getByText(/Visual orchestration \+ versioned agents/i)).toBeInTheDocument();
+    expect(screen.getByText(/Connect your AI agents via webhooks/i)).toBeInTheDocument();
 
     // Check for CTA buttons
-    expect(screen.getAllByText(/Start Free/i)[0]).toBeInTheDocument();
-    expect(screen.getByText(/Book a Demo/i)).toBeInTheDocument();
-
-    // Check for badge
-    expect(screen.getByText(/Coming Soon - Join the Waitlist/i)).toBeInTheDocument();
+    expect(screen.getByText(/Connect Agent/i)).toBeInTheDocument();
+    expect(screen.getByText(/Buy Credits/i)).toBeInTheDocument();
+    expect(screen.getByText(/Browse Agents/i)).toBeInTheDocument();
   });
 
   it('displays stats section with correct values', () => {
@@ -128,16 +126,16 @@ describe('HomePage', () => {
     );
 
     // Check for stats
-    expect(screen.getByText('99.9%')).toBeInTheDocument();
-    expect(screen.getByText('<2s')).toBeInTheDocument();
-    expect(screen.getByText('10K+')).toBeInTheDocument();
-    expect(screen.getByText('Built-in')).toBeInTheDocument();
+    expect(screen.getByText('1,000+')).toBeInTheDocument();
+    expect(screen.getByText('50K+')).toBeInTheDocument();
+    expect(screen.getByText('500+')).toBeInTheDocument();
+    expect(screen.getByText('99%')).toBeInTheDocument();
 
     // Check for stat labels
-    expect(screen.getByText('Uptime')).toBeInTheDocument();
-    expect(screen.getByText('Avg Exec Time')).toBeInTheDocument();
     expect(screen.getByText('Active Agents')).toBeInTheDocument();
-    expect(screen.getByText('Cost Control')).toBeInTheDocument();
+    expect(screen.getByText('Credits Used')).toBeInTheDocument();
+    expect(screen.getByText('Users')).toBeInTheDocument();
+    expect(screen.getByText('Success Rate')).toBeInTheDocument();
   });
 
   it('renders features section', () => {
@@ -148,15 +146,12 @@ describe('HomePage', () => {
     );
 
     // Check for features section heading
-    expect(screen.getByText(/Platform Features/i)).toBeInTheDocument();
+    expect(screen.getByText(/Core Features/i)).toBeInTheDocument();
 
     // Check for feature titles
-    expect(screen.getByText('Agent Builder')).toBeInTheDocument();
-    expect(screen.getByText('Orchestration Canvas')).toBeInTheDocument();
-    expect(screen.getByText('Integrations')).toBeInTheDocument();
-    expect(screen.getByText('Governance')).toBeInTheDocument();
-    expect(screen.getByText('Deploy')).toBeInTheDocument();
-    expect(screen.getByText('Observability')).toBeInTheDocument();
+    expect(screen.getByText('Connect Agent')).toBeInTheDocument();
+    expect(screen.getByText('Buy Credits')).toBeInTheDocument();
+    expect(screen.getByText('Use Agents')).toBeInTheDocument();
   });
 
   it('renders how it works section', () => {
@@ -168,10 +163,10 @@ describe('HomePage', () => {
 
     // Check for how it works section
     expect(screen.getByText(/How It Works/i)).toBeInTheDocument();
-    expect(screen.getByText(/Three steps to production-ready AI agents/i)).toBeInTheDocument();
-    expect(screen.getByText(/Design on the Canvas/i)).toBeInTheDocument();
-    expect(screen.getByText(/Guardrail with Policies/i)).toBeInTheDocument();
-    expect(screen.getByText(/Observe & Improve/i)).toBeInTheDocument();
+    expect(screen.getByText(/Three simple steps to get started/i)).toBeInTheDocument();
+    expect(screen.getByText(/Connect Your Agent/i)).toBeInTheDocument();
+    expect(screen.getByText(/Buy Credits/i)).toBeInTheDocument();
+    expect(screen.getByText(/Use & Earn/i)).toBeInTheDocument();
   });
 
   it('has correct navigation links', () => {
@@ -182,9 +177,9 @@ describe('HomePage', () => {
     );
 
     // Check that buttons exist (the homepage has buttons, not navigation links)
-    expect(screen.getAllByText(/Start Free/i)[0]).toBeInTheDocument();
-    expect(screen.getByText(/Book a Demo/i)).toBeInTheDocument();
-    expect(screen.getByText(/See Templates/i)).toBeInTheDocument();
+    expect(screen.getByText(/Connect Agent/i)).toBeInTheDocument();
+    expect(screen.getByText(/Buy Credits/i)).toBeInTheDocument();
+    expect(screen.getByText(/Browse Agents/i)).toBeInTheDocument();
   });
 
   it('renders with proper accessibility attributes', () => {

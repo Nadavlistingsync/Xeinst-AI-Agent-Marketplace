@@ -2,15 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
+import { UserMenu, MobileUserMenu } from "./UserMenu";
 import { 
   Menu, 
   X, 
   Bot,
-  Settings,
-  User,
-  LogOut,
   Zap,
   Globe,
   Upload,
@@ -51,7 +49,6 @@ const simpleMenuItems = [
 ];
 
 export default function Header() {
-  const { data: session } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -111,46 +108,9 @@ export default function Header() {
             </div>
 
             {/* User Menu */}
-            {session ? (
-              <div className="relative group">
-                <Button variant="ghost" className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gradient-to-r from-ai-primary to-ai-secondary rounded-full flex items-center justify-center">
-                    <User className="w-4 h-4 text-white" />
-                  </div>
-                  <span className="text-sm text-white">{session.user?.name || session.user?.email}</span>
-                </Button>
-                
-                {/* Dropdown Menu */}
-                <div className="absolute right-0 top-full mt-2 w-48 bg-background border border-border rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                  <div className="py-2">
-                    <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-muted-foreground hover:text-white hover:bg-muted">
-                      <Settings className="w-4 h-4 mr-2" />
-                      Dashboard
-                    </Link>
-                    <button
-                      onClick={() => signOut()}
-                      className="flex items-center w-full px-4 py-2 text-sm text-muted-foreground hover:text-white hover:bg-muted"
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      Sign Out
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2">
-                <Link href="/login">
-                  <Button variant="outline" size="sm" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button size="sm" className="bg-gradient-ai hover:bg-gradient-ai/90">
-                    Sign Up
-                  </Button>
-                </Link>
-              </div>
-            )}
+            <Suspense fallback={<div className="w-32 h-8 bg-gray-800 rounded animate-pulse" />}>
+              <UserMenu />
+            </Suspense>
           </div>
 
           {/* Mobile Menu Button */}
@@ -196,7 +156,12 @@ export default function Header() {
             </nav>
             
             <div className="mt-4 pt-4 border-t border-border">
-              <div className="flex space-x-2 px-4">
+              {/* User Authentication */}
+              <Suspense fallback={<div className="px-4 py-2"><div className="w-full h-16 bg-gray-800 rounded animate-pulse" /></div>}>
+                <MobileUserMenu />
+              </Suspense>
+              
+              <div className="flex space-x-2 px-4 mt-4">
                 <Link href="/upload" className="flex-1">
                   <Button size="sm" className="w-full bg-gradient-ai hover:bg-gradient-ai/90">
                     <Upload className="w-4 h-4 mr-2" />

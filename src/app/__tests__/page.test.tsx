@@ -28,15 +28,15 @@ describe('Home Page', () => {
 
   it('renders the main description', () => {
     render(<Home />)
-    const description = screen.getByText(/Visual orchestration \+ versioned agents/i)
+    const description = screen.getByText(/Connect your AI agents via webhooks/i)
     expect(description).toBeInTheDocument()
   })
 
   it('renders the hero section', () => {
     render(<Home />)
-    const heading = screen.getByText(/Build dependable AI agents/i)
+    const heading = screen.getByText(/AI Agent Marketplace/i)
     expect(heading).toBeInTheDocument()
-    expect(screen.getByText(/Deploy in hours, govern for scale/i)).toBeInTheDocument()
+    expect(screen.getByText(/Webhook Agents • Buy Credits • Use AI/i)).toBeInTheDocument()
   })
 
   it('renders the features section', () => {
@@ -47,10 +47,10 @@ describe('Home Page', () => {
 
   it('renders the stats section', () => {
     render(<Home />)
-    expect(screen.getByText(/Uptime/i)).toBeInTheDocument()
-    expect(screen.getByText(/Avg Exec Time/i)).toBeInTheDocument()
     expect(screen.getByText(/Active Agents/i)).toBeInTheDocument()
-    expect(screen.getByText(/Cost Control/i)).toBeInTheDocument()
+    expect(screen.getByText(/Credits Used/i)).toBeInTheDocument()
+    expect(screen.getByText(/Users/i)).toBeInTheDocument()
+    expect(screen.getByText(/Success Rate/i)).toBeInTheDocument()
   })
 
   it('handles database errors correctly', async () => {

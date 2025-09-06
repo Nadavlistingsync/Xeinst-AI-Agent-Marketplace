@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import { StackProvider, StackTheme } from "@stackframe/stack";
+import { stackServerApp } from "../stack";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -95,7 +97,7 @@ export default function RootLayout({
           `
         }} />
       </head>
-      <body className="min-h-screen bg-black text-white antialiased">
+      <body className="min-h-screen bg-black text-white antialiased"><StackProvider app={stackServerApp}><StackTheme>
         <EnhancedErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
           <Providers>
             <PerformanceMonitor />
@@ -125,7 +127,7 @@ export default function RootLayout({
             <Toaster position="bottom-right" />
           </Providers>
         </EnhancedErrorBoundary>
-      </body>
+      </StackTheme></StackProvider></body>
     </html>
   );
 }
