@@ -10,6 +10,8 @@ import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import { EnhancedErrorBoundary } from '@/components/EnhancedErrorBoundary';
 import PerformanceMonitor from '@/components/PerformanceMonitor';
+import { ErrorProvider } from '@/contexts/ErrorContext';
+import { Toaster as SonnerToaster } from 'sonner';
 
 const montserrat = Montserrat({ 
   subsets: ["latin"],
@@ -99,12 +101,13 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-black text-white antialiased"><StackProvider app={stackServerApp}><StackTheme>
         <EnhancedErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
-          <Providers>
-            <PerformanceMonitor />
-            <Header />
-            <main className="flex-grow">
-              {children}
-            </main>
+          <ErrorProvider>
+            <Providers>
+              <PerformanceMonitor />
+              <Header />
+              <main className="flex-grow">
+                {children}
+              </main>
             <footer className="bg-black border-t border-[#00b4ff]/10 mt-16">
               <div className="container mx-auto px-4 py-10">
                 <div className="flex flex-col md:flex-row justify-between items-center space-y-6 md:space-y-0">
@@ -123,9 +126,11 @@ export default function RootLayout({
                 </div>
               </div>
             </footer>
-            <Analytics />
-            <Toaster position="bottom-right" />
-          </Providers>
+              <Analytics />
+              <Toaster position="bottom-right" />
+              <SonnerToaster position="top-right" richColors />
+            </Providers>
+          </ErrorProvider>
         </EnhancedErrorBoundary>
       </StackTheme></StackProvider></body>
     </html>
