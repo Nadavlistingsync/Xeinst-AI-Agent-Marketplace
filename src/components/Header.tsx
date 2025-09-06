@@ -7,9 +7,7 @@ import { Button } from "@/components/ui/button";
 import { 
   Menu, 
   X, 
-  Search, 
-  Upload, 
-  BookOpen, 
+  BookOpen,
   Bot,
   Settings,
   User,

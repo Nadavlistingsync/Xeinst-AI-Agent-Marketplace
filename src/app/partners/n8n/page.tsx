@@ -8,20 +8,17 @@ import {
   Play, 
   ArrowRight,
   ExternalLink,
-  CheckCircle,
   Star,
   Users,
   Code,
-  Download,
   MessageSquare,
   FileText,
   Lightbulb,
-  Shield,
   GitBranch,
   Heart
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const integrationFeatures = [
   {

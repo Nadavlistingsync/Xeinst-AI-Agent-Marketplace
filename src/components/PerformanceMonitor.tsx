@@ -8,12 +8,11 @@ export default function PerformanceMonitor() {
     // Web Vitals monitoring
     if (typeof window !== 'undefined') {
       // Import web-vitals dynamically
-      import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-        getCLS(reportWebVitals);
-        getFID(reportWebVitals);
-        getFCP(reportWebVitals);
-        getLCP(reportWebVitals);
-        getTTFB(reportWebVitals);
+      import('web-vitals').then(({ onCLS, onFCP, onLCP, onTTFB }) => {
+        onCLS(reportWebVitals);
+        onFCP(reportWebVitals);
+        onLCP(reportWebVitals);
+        onTTFB(reportWebVitals);
       });
 
       // Performance observer for custom metrics

@@ -85,11 +85,11 @@ export const GET = withApiPerformanceTracking(async (_req: NextRequest) => {
     // Get performance statistics
     const performanceReport = getPerformanceReport();
     analyticsResults.performanceStats = {
-      averageResponseTime: performanceReport.averageResponseTime,
-      successRate: performanceReport.successRate,
-      totalOperations: performanceReport.totalOperations,
-      recentErrors: performanceReport.recentErrors,
-      topOperations: performanceReport.topOperations.slice(0, 5)
+      averageResponseTime: performanceReport?.averageResponseTime || 0,
+      successRate: performanceReport?.successRate || 100,
+      totalOperations: performanceReport?.totalOperations || 0,
+      recentErrors: performanceReport?.recentErrors || [],
+      topOperations: performanceReport?.topOperations?.slice(0, 5) || []
     };
 
     // Get revenue statistics (last 30 days)

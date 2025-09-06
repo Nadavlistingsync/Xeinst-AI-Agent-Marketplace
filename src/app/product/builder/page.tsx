@@ -2,21 +2,19 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { 
   Code, 
   Play, 
   ArrowRight,
   Zap,
-  Shield,
   GitBranch,
   TestTube,
   Layers,
-  CheckCircle,
   Sparkles
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const features = [
   {
@@ -243,7 +241,7 @@ export default function BuilderPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="bg-black/50 rounded-lg p-6 font-mono text-sm overflow-x-auto">
-                    <div className="text-green-400">// Output Schema</div>
+                    <div className="text-green-400">{'// Output Schema'}</div>
                     <div className="text-blue-400">{"{"}</div>
                     <div className="ml-4 text-yellow-400">"type": "object",</div>
                     <div className="ml-4 text-yellow-400">"properties": {"{"}</div>

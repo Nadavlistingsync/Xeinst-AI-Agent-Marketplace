@@ -9,18 +9,16 @@ import {
   ArrowRight,
   Zap,
   Search,
-  Filter,
   ExternalLink,
   CheckCircle,
   Star,
   Users,
   Database,
   MessageSquare,
-  Calendar,
   FileText
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 import { useState } from "react";
 
 const integrationCategories = [

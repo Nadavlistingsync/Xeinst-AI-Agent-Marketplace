@@ -12,7 +12,6 @@ import {
   CheckCircle,
   ExternalLink,
   Copy,
-  Download,
   MessageSquare,
   FileText,
   Lightbulb,
@@ -20,7 +19,7 @@ import {
   Database
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 import { useState } from "react";
 
 const quickstarts = [

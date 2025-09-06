@@ -5,24 +5,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { 
   Building, 
-  Play, 
   ArrowRight,
   Shield,
   Users,
   Globe,
   Database,
   CheckCircle,
-  Star,
   Zap,
   Lock,
   Download,
   MessageSquare,
   FileText,
-  Clock,
   Award
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const enterpriseFeatures = [
   {

@@ -222,15 +222,13 @@ class JobQueue {
       // Track performance
       performanceMonitor.trackSyncOperation(
         `job_${job.type}`,
-        () => Date.now() - startTime,
-        { jobId: job.id, status: 'success' }
+        () => Date.now() - startTime
       );
       
     } catch (error) {
       performanceMonitor.trackSyncOperation(
         `job_${job.type}`,
-        () => Date.now() - startTime,
-        { jobId: job.id, status: 'error', error: error instanceof Error ? error.message : String(error) }
+        () => Date.now() - startTime
       );
       throw error;
     }

@@ -2,15 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { 
   Shield, 
   Play, 
   ArrowRight,
   Zap,
   AlertTriangle,
-  CheckCircle,
-  Lock,
   Eye,
   Filter,
   Settings,
@@ -18,7 +16,7 @@ import {
   Database
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const guardrailTypes = [
   {
@@ -244,7 +242,7 @@ export default function GuardrailsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="bg-black/50 rounded-lg p-6 font-mono text-sm overflow-x-auto">
-                    <div className="text-green-400">// PII Detection Policy</div>
+                    <div className="text-green-400">{'// PII Detection Policy'}</div>
                     <div className="text-blue-400">{"{"}</div>
                     <div className="ml-4 text-yellow-400">"name": "pii-protection",</div>
                     <div className="ml-4 text-yellow-400">"version": "1.0",</div>

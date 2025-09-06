@@ -40,7 +40,7 @@ export async function GET(
       throw new EnhancedAppError(
         'Web embed not found',
         404,
-        ErrorCategory.NOT_FOUND,
+        ErrorCategory.UNKNOWN,
         ErrorSeverity.LOW,
         'WEB_EMBED_NOT_FOUND',
         null,
@@ -124,7 +124,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   return withEnhancedErrorHandling(async () => {

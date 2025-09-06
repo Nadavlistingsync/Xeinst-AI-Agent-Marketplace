@@ -8,13 +8,12 @@ import {
   Star, 
   ArrowRight,
   Zap,
-  Shield,
   Users,
   Building,
   Crown
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 import { useState } from "react";
 
 const pricingTiers = [

@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { 
   Shield, 
-  Play, 
   ArrowRight,
   CheckCircle,
   Clock,
@@ -17,11 +16,10 @@ import {
   Download,
   MessageSquare,
   Building,
-  Database,
   Eye
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const complianceFrameworks = [
   {

@@ -5,25 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { 
   Cloud, 
-  Play, 
   ArrowRight,
   Shield,
   Database,
-  Globe,
   Building,
   CheckCircle,
   Zap,
   Users,
-  Lock,
   Download,
   MessageSquare,
   FileText,
-  Clock,
-  Server,
-  Network
+  Server
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const deploymentModels = [
   {

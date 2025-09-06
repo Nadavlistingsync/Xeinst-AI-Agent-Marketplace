@@ -9,17 +9,10 @@ import {
   XCircle,
   Clock,
   RefreshCw,
-  ExternalLink,
   Bell,
   Mail,
   Twitter,
-  ArrowRight,
-  Zap,
-  Globe,
-  Server,
-  Database,
-  Shield,
-  Activity
+  ArrowRight
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";

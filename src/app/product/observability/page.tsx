@@ -2,23 +2,18 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { 
   Eye, 
   Play, 
   ArrowRight,
-  Zap,
   BarChart3,
-  Clock,
   Download,
   Search,
-  Filter,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle
+  TrendingUp
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const features = [
   {

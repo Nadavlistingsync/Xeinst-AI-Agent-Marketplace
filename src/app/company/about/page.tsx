@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+// import { Badge } from "@/components/ui/badge";
 import { 
   Users, 
   Play, 
@@ -11,16 +11,10 @@ import {
   Lightbulb,
   Shield,
   Globe,
-  Heart,
-  Star,
-  Zap,
-  CheckCircle,
-  MessageSquare,
-  Code,
-  Building
+  MessageSquare
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const values = [
   {

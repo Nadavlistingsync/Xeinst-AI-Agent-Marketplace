@@ -11,7 +11,6 @@ import {
   Eye,
   Download,
   CheckCircle,
-  AlertTriangle,
   FileText,
   Key,
   Database,
@@ -20,7 +19,7 @@ import {
   Clock
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const securityFeatures = [
   {

@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
   FileText, 
@@ -11,17 +11,15 @@ import {
   Shield,
   Lock,
   Eye,
-  Database,
   Users,
   Globe,
   Building,
   Zap,
   MessageSquare,
-  Clock,
   Award
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const questionnaireSections = [
   {

@@ -1,93 +1,85 @@
 "use client";
 
-import Link from "next/link";
+// import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { 
   ArrowRight, 
   Sparkles, 
   Shield, 
-  Users, 
-  CheckCircle,
   Bot,
   Cpu,
-  Search,
   Upload,
   Lightbulb,
-  Star,
-  Zap,
   Globe,
   Code,
   DollarSign,
   TrendingUp,
   MessageSquare,
   Play,
-  ChevronDown,
-  ChevronUp,
-  Mail,
-  MapPin
+  Zap
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 
 // FAQ Data
-const faqData = [
-  {
-    question: "What is Xeinst?",
-    answer: "Xeinst is the premier AI agent marketplace where creators can monetize their AI solutions and users can discover powerful, ready-to-use AI agents for any task."
-  },
-  {
-    question: "How do I create and sell AI agents?",
-    answer: "Simply upload your AI agent through our platform, set your pricing, and start earning. We handle hosting, payments, and customer support."
-  },
-  {
-    question: "What types of AI agents can I sell?",
-    answer: "You can sell any type of AI agent: chatbots, data analysis tools, content generators, automation scripts, and more. The possibilities are endless."
-  },
-  {
-    question: "How much can I earn as a creator?",
-    answer: "Creators typically earn 70-85% of each sale, with top creators making $10,000+ monthly. Your earnings depend on agent quality and marketing."
-  },
-  {
-    question: "Is there a free trial available?",
-    answer: "Yes! Most agents offer free trials or demos. You can test agents before purchasing to ensure they meet your needs."
-  },
-  {
-    question: "What support do you provide?",
-    answer: "We provide 24/7 technical support, documentation, tutorials, and a community forum to help you succeed."
-  }
-];
+// const faqData = [
+//   {
+//     question: "What is Xeinst?",
+//     answer: "Xeinst is the premier AI agent marketplace where creators can monetize their AI solutions and users can discover powerful, ready-to-use AI agents for any task."
+//   },
+//   {
+//     question: "How do I create and sell AI agents?",
+//     answer: "Simply upload your AI agent through our platform, set your pricing, and start earning. We handle hosting, payments, and customer support."
+//   },
+//   {
+//     question: "What types of AI agents can I sell?",
+//     answer: "You can sell any type of AI agent: chatbots, data analysis tools, content generators, automation scripts, and more. The possibilities are endless."
+//   },
+//   {
+//     question: "How much can I earn as a creator?",
+//     answer: "Creators typically earn 70-85% of each sale, with top creators making $10,000+ monthly. Your earnings depend on agent quality and marketing."
+//   },
+//   {
+//     question: "Is there a free trial available?",
+//     answer: "Yes! Most agents offer free trials or demos. You can test agents before purchasing to ensure they meet your needs."
+//   },
+//   {
+//     question: "What support do you provide?",
+//     answer: "We provide 24/7 technical support, documentation, tutorials, and a community forum to help you succeed."
+//   }
+// ];
 
 // Testimonials Data
-const testimonials = [
-  {
-    name: "Sarah Chen",
-    role: "AI Developer",
-    company: "TechFlow Solutions",
-    content: "Xeinst helped me monetize my AI agents and reach customers worldwide. The platform is incredibly user-friendly and the support is outstanding.",
-    rating: 5,
-    avatar: "SC"
-  },
-  {
-    name: "Marcus Rodriguez",
-    role: "Business Owner",
-    company: "Digital Dynamics",
-    content: "I found the perfect AI agent for my customer service needs on Xeinst. It saved me months of development time and works flawlessly.",
-    rating: 5,
-    avatar: "MR"
-  },
-  {
-    name: "Emily Watson",
-    role: "Marketing Director",
-    company: "Growth Labs",
-    content: "The affiliate program is fantastic. I'm earning passive income by promoting quality AI agents to my network. Highly recommended!",
-    rating: 5,
-    avatar: "EW"
-  }
-];
+// const testimonials = [
+//   {
+//     name: "Sarah Chen",
+//     role: "AI Developer",
+//     company: "TechFlow Solutions",
+//     content: "Xeinst helped me monetize my AI agents and reach customers worldwide. The platform is incredibly user-friendly and the support is outstanding.",
+//     rating: 5,
+//     avatar: "SC"
+//   },
+//   {
+//     name: "Marcus Rodriguez",
+//     role: "Business Owner",
+//     company: "Digital Dynamics",
+//     content: "I found the perfect AI agent for my customer service needs on Xeinst. It saved me months of development time and works flawlessly.",
+//     rating: 5,
+//     avatar: "MR"
+//   },
+//   {
+//     name: "Emily Watson",
+//     role: "Marketing Director",
+//     company: "Growth Labs",
+//     content: "The affiliate program is fantastic. I'm earning passive income by promoting quality AI agents to my network. Highly recommended!",
+//     rating: 5,
+//     avatar: "EW"
+//   }
+// ];
 
 // Features Data
 const features = [
@@ -165,7 +157,7 @@ const stats = [
 export default function Home() {
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  // const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const handleWaitlistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

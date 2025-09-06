@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Map, 
-  Play, 
+  Play,
   ArrowRight,
   CheckCircle,
   Clock,
@@ -20,7 +19,7 @@ import {
   Calendar
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const roadmapItems = [
   {

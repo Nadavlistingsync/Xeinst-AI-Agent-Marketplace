@@ -16,10 +16,9 @@ import {
   Users,
   Bug,
   Sparkles,
-  AlertTriangle
 } from "lucide-react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+// import Link from "next/link";
 
 const changelogEntries = [
   {

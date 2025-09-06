@@ -2,7 +2,7 @@ import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { prisma } from './prisma';
 import { logAgentEvent } from './agent-monitoring';
 import { z } from 'zod';
-import { rateLimiters } from './rate-limit';
+// import { rateLimiters } from './rate-limit';
 import { withEnhancedErrorHandling } from './enhanced-error-handling';
 
 const s3 = new S3Client({
@@ -67,7 +67,7 @@ export interface ExecutionLog {
 }
 
 // Rate limiter for agent execution (10 runs/minute per user)
-const executionRateLimiter = rateLimiters.api;
+// const executionRateLimiter = rateLimiters.api;
 
 // Execution timeout and kill switch
 const EXECUTION_TIMEOUT = 30000; // 30 seconds
