@@ -88,6 +88,8 @@ model User {
   stripeCustomerId String?
   subscriptionId   String?
   subscriptionStatus String?
+  stripeConnectId  String?  // Stripe Connect account ID
+  stripeConnectEnabled Boolean @default(false)
 
   // Relations
   products        Product[]
@@ -102,6 +104,10 @@ model User {
   agents          Agent[]
   generatedInterfaces GeneratedInterface[]
   webEmbeds        WebEmbed[]
+  payouts         Payout[]
+  disputesReported Dispute[] @relation("DisputeReporter")
+  disputesTargeted Dispute[] @relation("DisputeTarget")
+  auditLogs       AuditLog[] @relation("AuditActor")
 }
 
 model Product {
@@ -446,6 +452,8 @@ model Agent {
   creator         User      @relation(fields: [createdBy], references: [id])
   interfaces      GeneratedInterface[]
   webEmbeds        WebEmbed[]
+  webhookLogs     WebhookLog[]
+  disputes        Dispute[]
 }
 
 model GeneratedInterface {
@@ -468,9 +476,10 @@ model GeneratedInterface {
 model CreditTransaction {
   id          String   @id @default(cuid())
   userId      String
-  type        String   // 'purchase', 'spend', 'earn', 'redeem'
+  type        String   // 'purchase', 'spend', 'earn', 'redeem', 'adjust'
   amount      Int
   agentId     String?
+  stripePaymentIntentId String?
   createdAt   DateTime @default(now())
 
   user        User     @relation(fields: [userId], references: [id])
@@ -584,4 +593,60 @@ model WebEmbedLog {
   
   // Relations
   embed       WebEmbed    @relation(fields: [embedId], references: [id])
+}
+
+model Payout {
+  id              String    @id @default(cuid())
+  userId          String
+  amountCredits   Int
+  amountUsd       Float
+  status          String    // 'requested', 'processing', 'paid', 'failed'
+  stripeTransferId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id])
+}
+
+model Dispute {
+  id              String    @id @default(cuid())
+  reporterId      String
+  targetAgentId   String?
+  targetUserId    String?
+  reason          String
+  status          String    // 'open', 'under_review', 'resolved', 'rejected'
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  reporter        User      @relation("DisputeReporter", fields: [reporterId], references: [id])
+  targetAgent     Agent?    @relation(fields: [targetAgentId], references: [id])
+  targetUser      User?     @relation("DisputeTarget", fields: [targetUserId], references: [id])
+}
+
+model AuditLog {
+  id              String    @id @default(cuid())
+  actorId         String?
+  action          String
+  targetType      String
+  targetId        String?
+  meta            Json?
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  actor           User?     @relation("AuditActor", fields: [actorId], references: [id])
+}
+
+model WebhookLog {
+  id              String    @id @default(cuid())
+  agentId         String
+  statusCode      Int
+  latencyMs       Int
+  payloadSize     Int
+  ok              Boolean
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  agent           Agent     @relation(fields: [agentId], references: [id])
 }
