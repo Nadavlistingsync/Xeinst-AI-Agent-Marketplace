@@ -20,10 +20,10 @@ import {
 // Simplified navigation focused on core features
 const mainMenuItems = [
   {
-    label: "Upload Agent",
+    label: "Connect Agent",
     href: "/upload",
     icon: Bot,
-    description: "Upload and deploy your AI agents"
+    description: "Connect your AI agents via webhook"
   },
   {
     label: "Marketplace",
@@ -99,7 +99,7 @@ export default function Header() {
               <Link href="/upload">
                 <Button size="sm" className="bg-gradient-ai hover:bg-gradient-ai/90">
                   <Upload className="w-4 h-4 mr-2" />
-                  Upload Agent
+                  Connect Agent
                 </Button>
               </Link>
               <Link href="/checkout">
@@ -200,7 +200,7 @@ export default function Header() {
                 <Link href="/upload" className="flex-1">
                   <Button size="sm" className="w-full bg-gradient-ai hover:bg-gradient-ai/90">
                     <Upload className="w-4 h-4 mr-2" />
-                    Upload Agent
+                    Connect Agent
                   </Button>
                 </Link>
                 <Link href="/checkout" className="flex-1">

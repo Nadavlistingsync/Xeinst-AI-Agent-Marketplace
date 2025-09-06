@@ -336,7 +336,7 @@ export default function UploadPage() {
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              🎉 Agent Uploaded Successfully!
+              🎉 Agent Connected Successfully!
             </h1>
             <p className="text-xl text-muted-foreground">
               Now let's create a beautiful AI-powered interface for your agent.
@@ -362,7 +362,7 @@ export default function UploadPage() {
                       ✓
                     </div>
                     <div>
-                      <p className="font-medium">Agent Uploaded</p>
+                      <p className="font-medium">Agent Connected</p>
                       <p className="text-sm text-muted-foreground">Your agent is now in the marketplace</p>
                     </div>
                   </div>
@@ -425,14 +425,14 @@ export default function UploadPage() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Upload className="h-5 w-5" />
-                  {uploadType === 'agent' ? 'Upload Agent to Marketplace' : uploadType === 'web-embed' ? 'Create Web Embed' : 'Choose Upload Type'}
+                  {uploadType === 'agent' ? 'Connect Agent to Marketplace' : uploadType === 'web-embed' ? 'Create Web Embed' : 'Choose Connection Type'}
                 </CardTitle>
                 <CardDescription>
                   {uploadType === 'agent' 
-                    ? 'Create and deploy your webhook-based AI agent in 4 simple steps'
+                    ? 'Connect your webhook-based AI agent to the marketplace in 4 simple steps'
                     : uploadType === 'web-embed'
                     ? 'Embed existing tools/agents without full setup - paste link and deploy'
-                    : 'Choose between uploading a full agent or creating a web embed'
+                    : 'Choose between connecting a full agent or creating a web embed'
                   }
                 </CardDescription>
               </div>
@@ -450,8 +450,8 @@ export default function UploadPage() {
         {currentStep === 0 && (
           <div className="space-y-6">
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-white mb-4">Choose Your Upload Type</h2>
-              <p className="text-muted-foreground">Select how you want to add your AI solution to the platform</p>
+              <h2 className="text-2xl font-bold text-white mb-4">Choose Your Connection Type</h2>
+              <p className="text-muted-foreground">Select how you want to connect your AI solution to the platform</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -462,16 +462,16 @@ export default function UploadPage() {
                   <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center mb-4">
                     <Upload className="w-6 h-6 text-white" />
                   </div>
-                  <CardTitle className="text-white">Upload Full Agent</CardTitle>
+                  <CardTitle className="text-white">Connect Full Agent</CardTitle>
                   <CardDescription className="text-muted-foreground">
-                    Create and upload a complete AI agent with webhook integration, input schema, and full functionality
+                    Connect your complete AI agent via webhook with input schema and full marketplace integration
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Complete agent with webhook</span>
+                      <span>Webhook-based connection</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <CheckCircle className="w-4 h-4 text-green-500" />
@@ -1020,11 +1020,11 @@ export default function UploadPage() {
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Uploading...
+                      Connecting...
                     </>
                   ) : (
                     <>
-                      Upload to Marketplace
+                      Connect to Marketplace
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </>
                   )}

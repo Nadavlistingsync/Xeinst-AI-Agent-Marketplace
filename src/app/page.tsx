@@ -18,8 +18,8 @@ import { motion } from "framer-motion";
 const coreFeatures = [
   {
     icon: Upload,
-    title: "Upload Agent",
-    description: "Upload your AI agent and make it available to others",
+    title: "Connect Agent",
+    description: "Connect your AI agent via webhook and make it available to others",
     href: "/upload",
     color: "from-blue-500 to-purple-500"
   },
@@ -43,8 +43,8 @@ const coreFeatures = [
 const howItWorksSteps = [
   {
     step: "01",
-    title: "Upload Your Agent",
-    description: "Upload your AI agent file and set pricing",
+    title: "Connect Your Agent",
+    description: "Connect your AI agent via webhook and set pricing",
     icon: Upload,
     color: "from-blue-500 to-purple-500"
   },
@@ -58,7 +58,7 @@ const howItWorksSteps = [
   {
     step: "03",
     title: "Use & Earn",
-    description: "Use agents or earn from your uploaded agents",
+    description: "Use agents or earn from your connected agents",
     icon: Zap,
     color: "from-orange-500 to-red-500"
   }
@@ -97,7 +97,7 @@ export default function Home() {
             >
               AI Agent Marketplace
               <br />
-              <span className="text-white">Upload • Buy Credits • Use Agents</span>
+              <span className="text-white">Webhook Agents • Buy Credits • Use AI</span>
             </motion.h1>
 
             {/* Subtitle */}
@@ -107,7 +107,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
             >
-              Upload your AI agents and earn credits, or buy credits to use powerful AI agents from our marketplace.
+              Connect your AI agents via webhooks and earn credits, or buy credits to use powerful AI agents from our marketplace.
             </motion.p>
 
             {/* CTA Buttons */}
@@ -120,7 +120,7 @@ export default function Home() {
               <Link href="/upload">
                 <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
                   <Upload className="w-5 h-5 mr-2" />
-                  Upload Agent
+                  Connect Agent
                   <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
               </Link>
@@ -287,7 +287,7 @@ export default function Home() {
               <Link href="/upload">
                 <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
                   <Upload className="w-5 h-5 mr-2" />
-                  Upload Your First Agent
+                  Connect Your First Agent
                 </Button>
               </Link>
               <Link href="/checkout">
