@@ -1,32 +1,13 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  Plus, 
-  Globe, 
-  Settings, 
-  Eye, 
-  Edit, 
-  Trash2, 
-  Code,
-  Bot,
-  Loader2,
-  Info,
-  Play,
-  Monitor,
-  Link as LinkIcon
-} from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { motion } from "framer-motion";
+import { Globe, Search, Plus, ExternalLink, Eye } from "lucide-react";
+import Link from "next/link";
 
 interface WebEmbed {
   id: string;
@@ -35,50 +16,26 @@ interface WebEmbed {
   url: string;
   embedUrl: string;
   type: 'website' | 'application' | 'dashboard' | 'tool' | 'custom';
-  status: 'active' | 'inactive' | 'pending' | 'error';
   width: string;
   height: string;
   allowFullscreen: boolean;
   allowScripts: boolean;
   sandbox: string;
+  status: 'active' | 'inactive' | 'pending' | 'error';
   viewCount: number;
   lastViewed?: string;
   createdAt: string;
   creator: {
-    id: string;
     name?: string;
     email: string;
-  };
-  agent?: {
-    id: string;
-    name: string;
-    description: string;
   };
 }
 
 export default function WebEmbedsPage() {
-  const { data: session } = useSession();
   const [webEmbeds, setWebEmbeds] = useState<WebEmbed[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [selectedEmbed, setSelectedEmbed] = useState<WebEmbed | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    url: '',
-    embedUrl: '',
-    type: 'tool' as const,
-    width: '100%',
-    height: '600px',
-    allowFullscreen: true,
-    allowScripts: false,
-    sandbox: 'allow-same-origin allow-scripts allow-forms allow-popups',
-    allowedDomains: [] as string[],
-    blockedDomains: [] as string[],
-    requireAuth: false,
-  });
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState<string>("all");
 
   useEffect(() => {
     fetchWebEmbeds();
@@ -86,431 +43,194 @@ export default function WebEmbedsPage() {
 
   const fetchWebEmbeds = async () => {
     try {
-      setIsLoading(true);
       const response = await fetch('/api/web-embeds');
-      if (!response.ok) throw new Error('Failed to fetch web embeds');
-      const data = await response.json();
-      setWebEmbeds(data.webEmbeds || []);
+      if (response.ok) {
+        const data = await response.json();
+        setWebEmbeds(data.webEmbeds || []);
+      }
     } catch (error) {
       console.error('Error fetching web embeds:', error);
-      toast.error('Failed to fetch web embeds');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleCreateEmbed = async () => {
-    if (!session?.user) {
-      toast.error('Please sign in to create web embeds');
-      return;
-    }
+  const filteredWebEmbeds = webEmbeds.filter(embed => {
+    const matchesSearch = embed.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (embed.description && embed.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesType = selectedType === "all" || embed.type === selectedType;
+    return matchesSearch && matchesType;
+  });
 
-    if (!formData.name || !formData.url || !formData.embedUrl) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      setIsCreating(true);
-      const response = await fetch('/api/web-embeds', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) throw new Error('Failed to create web embed');
-      
-      toast.success('Web embed created successfully!');
-      setShowCreateForm(false);
-      setFormData({
-        name: '',
-        description: '',
-        url: '',
-        embedUrl: '',
-        type: 'tool',
-        width: '100%',
-        height: '600px',
-        allowFullscreen: true,
-        allowScripts: false,
-        sandbox: 'allow-same-origin allow-scripts allow-forms allow-popups',
-        allowedDomains: [],
-        blockedDomains: [],
-        requireAuth: false,
-      });
-      fetchWebEmbeds();
-    } catch (error) {
-      console.error('Error creating web embed:', error);
-      toast.error('Failed to create web embed');
-    } finally {
-      setIsCreating(false);
-    }
+  const typeColors = {
+    website: "bg-blue-500/20 text-blue-500",
+    application: "bg-green-500/20 text-green-500",
+    dashboard: "bg-purple-500/20 text-purple-500",
+    tool: "bg-orange-500/20 text-orange-500",
+    custom: "bg-gray-500/20 text-gray-500",
   };
 
-  const handleDeleteEmbed = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this web embed?')) return;
-
-    try {
-      const response = await fetch(`/api/web-embeds/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Failed to delete web embed');
-      
-      toast.success('Web embed deleted successfully!');
-      fetchWebEmbeds();
-    } catch (error) {
-      console.error('Error deleting web embed:', error);
-      toast.error('Failed to delete web embed');
-    }
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'website': return Globe;
-      case 'application': return Code;
-      case 'dashboard': return Monitor;
-      case 'tool': return Settings;
-      case 'custom': return Bot;
-      default: return Globe;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-500';
-      case 'inactive': return 'bg-gray-500';
-      case 'pending': return 'bg-yellow-500';
-      case 'error': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background pt-32">
-        <div className="container">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <Loader2 className="w-8 h-8 animate-spin text-ai-primary" />
-          </div>
+      <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-ai-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading web embeds...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pt-32">
-      <div className="container">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">
-            Web Embeds
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Embed existing tools/agents without full setup - paste link and deploy instantly
-          </p>
-        </div>
-
-        {/* Info Alert */}
-        <Alert className="mb-8 border-ai-primary/20 bg-ai-primary/5">
-          <Info className="h-4 w-4 text-ai-primary" />
-          <AlertDescription className="text-muted-foreground">
-            <strong>Path 3: Web Embeds (No Full Agent Setup)</strong> - Paste link to tool/agent, 
-            configure AI settings, and deploy instantly via iframe or script. Perfect for quick integration 
-            without creating full agents.
-          </AlertDescription>
-        </Alert>
-
-        {/* Quick Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <Button 
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="bg-gradient-ai hover:bg-gradient-ai/90"
+    <div className="min-h-screen bg-background pt-20">
+      {/* Hero Section */}
+      <section className="relative py-16 bg-gradient-dark">
+        <div className="absolute inset-0 grid-bg opacity-10"></div>
+        <div className="container relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center max-w-4xl mx-auto"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            {showCreateForm ? 'Cancel' : 'Create New Embed'}
-          </Button>
-          
-          {webEmbeds.length > 0 && (
-            <Button variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
-              <Play className="w-4 h-4 mr-2" />
-              View All Embeds
-            </Button>
-          )}
-        </div>
+            <div className="inline-flex items-center space-x-2 mb-6">
+              <Badge className="bg-ai-primary/20 text-ai-primary border-ai-primary/30 px-4 py-2 text-sm">
+                <Globe className="w-4 h-4 mr-2" />
+                Web Embeds
+              </Badge>
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+              <span className="text-gradient-animate">Web Embeds</span>
+              <br />
+              <span className="text-white">Collection</span>
+            </h1>
+            
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Browse and use embedded tools and applications from our community.
+            </p>
 
-        {/* Create Form */}
-        {showCreateForm && (
-          <Card className="mb-8 border-ai-primary/20">
-            <CardHeader>
-              <CardTitle className="text-white">Create New Web Embed</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Embed an existing tool/agent by pasting its link and configuring AI settings
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name *</Label>
-                  <Input
-                    id="name"
-                    placeholder="My Tool Embed"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="type">Type</Label>
-                  <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tool">Tool</SelectItem>
-                      <SelectItem value="application">Application</SelectItem>
-                      <SelectItem value="dashboard">Dashboard</SelectItem>
-                      <SelectItem value="website">Website</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Describe what this tool/agent does and what AI functionality you want to add..."
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="url">Original Tool URL *</Label>
-                  <Input
-                    id="url"
-                    placeholder="https://example-tool.com"
-                    value={formData.url}
-                    onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">The original tool/agent URL you want to embed</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="embedUrl">Embed URL *</Label>
-                  <Input
-                    id="embedUrl"
-                    placeholder="https://example-tool.com/embed"
-                    value={formData.embedUrl}
-                    onChange={(e) => setFormData({ ...formData, embedUrl: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">The URL to embed (iframe src) - can be the same as original URL</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="width">Width</Label>
-                  <Input
-                    id="width"
-                    placeholder="100%"
-                    value={formData.width}
-                    onChange={(e) => setFormData({ ...formData, width: e.target.value })}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="height">Height</Label>
-                  <Input
-                    id="height"
-                    placeholder="600px"
-                    value={formData.height}
-                    onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label>Allow Fullscreen</Label>
-                    <p className="text-xs text-muted-foreground">Let users go fullscreen</p>
-                  </div>
-                  <Switch
-                    checked={formData.allowFullscreen}
-                    onCheckedChange={(checked) => setFormData({ ...formData, allowFullscreen: checked })}
-                  />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label>Allow Scripts</Label>
-                    <p className="text-xs text-muted-foreground">Allow JavaScript execution (use with caution)</p>
-                  </div>
-                  <Switch
-                    checked={formData.allowScripts}
-                    onCheckedChange={(checked) => setFormData({ ...formData, allowScripts: checked })}
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <Button 
-                  onClick={handleCreateEmbed}
-                  disabled={isCreating}
-                  className="bg-gradient-ai hover:bg-gradient-ai/90"
-                >
-                  {isCreating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <LinkIcon className="w-4 h-4 mr-2" />
-                      Create Embed
-                    </>
-                  )}
-                </Button>
-                
-                <Button 
-                  variant="outline" 
-                  onClick={() => setShowCreateForm(false)}
-                  className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Web Embeds List */}
-        {webEmbeds.length === 0 ? (
-          <Card className="text-center py-12 border-ai-primary/20">
-            <CardContent>
-              <Globe className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">No Web Embeds Yet</h3>
-              <p className="text-muted-foreground mb-6">
-                Create your first web embed to start integrating existing tools/agents without full setup. 
-                Perfect for quick deployment when you don't need to create complete agents.
-              </p>
-              <Button 
-                onClick={() => setShowCreateForm(true)}
-                className="bg-gradient-ai hover:bg-gradient-ai/90"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Embed
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Button asChild size="lg" className="btn-primary text-lg px-8 py-4">
+                <Link href="/upload" className="flex items-center gap-2">
+                  <Plus className="w-5 h-5" />
+                  Create Web Embed
+                </Link>
               </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {webEmbeds.map((embed) => {
-              const TypeIcon = getTypeIcon(embed.type);
-              return (
-                <Card key={embed.id} className="hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
-                  <CardHeader>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-ai-primary to-ai-secondary flex items-center justify-center">
-                        <TypeIcon className="w-5 h-5 text-white" />
-                      </div>
-                      <Badge className={`${getStatusColor(embed.status)} text-white`}>
-                        {embed.status}
-                      </Badge>
-                    </div>
-                    <CardTitle className="text-white">{embed.name}</CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                      {embed.description || 'No description'}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <LinkIcon className="w-4 h-4" />
-                        <span className="truncate">{embed.url}</span>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <Eye className="w-4 h-4" />
-                        <span>{embed.viewCount} views</span>
-                      </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
 
-                      {embed.agent && (
-                        <div className="flex items-center space-x-2 text-sm text-ai-primary">
-                          <Bot className="w-4 h-4" />
-                          <span>AI Agent Connected</span>
-                        </div>
-                      )}
-
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          className="flex-1 bg-gradient-ai hover:bg-gradient-ai/90"
-                          onClick={() => setSelectedEmbed(embed)}
-                        >
-                          <Eye className="w-4 h-4 mr-2" />
-                          View
-                        </Button>
-                        
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => handleDeleteEmbed(embed.id)}
-                          className="border-red-500/20 text-red-500 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Selected Embed Viewer */}
-        {selectedEmbed && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-background rounded-lg w-full max-w-4xl h-[80vh] flex flex-col">
-              <div className="flex items-center justify-between p-6 border-b border-border">
-                <div>
-                  <h3 className="text-xl font-semibold text-white">{selectedEmbed.name}</h3>
-                  <p className="text-muted-foreground">{selectedEmbed.description}</p>
-                </div>
-                <Button 
-                  variant="ghost" 
-                  onClick={() => setSelectedEmbed(null)}
-                  className="text-muted-foreground hover:text-white"
-                >
-                  ×
-                </Button>
-              </div>
-              <div className="flex-1 p-6">
-                <iframe
-                  src={selectedEmbed.embedUrl}
-                  width={selectedEmbed.width}
-                  height={selectedEmbed.height}
-                  className="w-full h-full border border-border rounded-lg"
-                  allowFullScreen={selectedEmbed.allowFullscreen}
-                  sandbox={selectedEmbed.sandbox}
+      {/* Main Content */}
+      <section className="py-12">
+        <div className="container">
+          {/* Search and Filters */}
+          <div className="mb-8">
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search web embeds..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
                 />
+              </div>
+              
+              <div className="flex gap-2">
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="px-3 py-2 bg-muted/50 border border-border rounded-lg text-white"
+                >
+                  <option value="all">All Types</option>
+                  <option value="website">Website</option>
+                  <option value="application">Application</option>
+                  <option value="dashboard">Dashboard</option>
+                  <option value="tool">Tool</option>
+                  <option value="custom">Custom</option>
+                </select>
               </div>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Web Embeds Grid */}
+          {filteredWebEmbeds.length === 0 ? (
+            <div className="text-center py-12">
+              <Globe className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-white mb-2">No web embeds found</h3>
+              <p className="text-muted-foreground mb-6">
+                {searchTerm || selectedType !== "all" 
+                  ? "Try adjusting your search or filters"
+                  : "Be the first to create a web embed!"
+                }
+              </p>
+              <Button asChild>
+                <Link href="/upload">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Web Embed
+                </Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredWebEmbeds.map((embed, index) => (
+                <motion.div
+                  key={embed.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                >
+                  <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg text-white mb-2">{embed.name}</CardTitle>
+                          <Badge className={`${typeColors[embed.type]} mb-2`}>
+                            {embed.type}
+                          </Badge>
+                        </div>
+                        <div className="text-right text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Eye className="w-3 h-3" />
+                            {embed.viewCount}
+                          </div>
+                        </div>
+                      </div>
+                      {embed.description && (
+                        <CardDescription className="text-muted-foreground">
+                          {embed.description}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="text-sm text-muted-foreground">
+                        <p>Created by: {embed.creator.name || embed.creator.email}</p>
+                        <p>Created: {new Date(embed.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button asChild variant="outline" size="sm" className="flex-1">
+                          <Link href={`/web-embeds/${embed.id}`}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            View
+                          </Link>
+                        </Button>
+                        <Button asChild variant="outline" size="sm">
+                          <a href={embed.url} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   );
 } 

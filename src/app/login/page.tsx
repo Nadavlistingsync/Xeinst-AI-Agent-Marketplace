@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -14,10 +14,10 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
 
     try {
       const result = await signIn("credentials", {
@@ -28,12 +28,11 @@ export default function LoginPage() {
 
       if (result?.error) {
         setError(result.error);
-        return;
+      } else {
+        router.push("/dashboard");
       }
-
-      router.push("/dashboard");
     } catch (err) {
-      setError("An error occurred during login");
+      setError("An unexpected error occurred during sign in");
     } finally {
       setLoading(false);
     }
@@ -73,7 +72,7 @@ export default function LoginPage() {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="text-muted-foreground"
               >
-                Sign in to your Xeinst account
+                Sign in to your account and continue building AI solutions
               </motion.p>
             </div>
 
@@ -82,7 +81,7 @@ export default function LoginPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5 }}
-              onSubmit={handleSubmit}
+              onSubmit={handleLogin}
               className="glass-card p-8 space-y-6"
             >
               {/* Email Field */}
@@ -155,7 +154,7 @@ export default function LoginPage() {
                 )}
               </Button>
 
-              {/* Sign Up Link */}
+              {/* Signup Link */}
               <div className="text-center">
                 <p className="text-muted-foreground">
                   Don't have an account?{" "}

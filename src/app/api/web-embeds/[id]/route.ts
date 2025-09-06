@@ -1,178 +1,163 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { z } from 'zod';
-
-const updateWebEmbedSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  description: z.string().optional(),
-  url: z.string().url().optional(),
-  embedUrl: z.string().url().optional(),
-  type: z.enum(['website', 'application', 'dashboard', 'tool', 'custom']).optional(),
-  status: z.enum(['active', 'inactive', 'pending', 'error']).optional(),
-  width: z.string().optional(),
-  height: z.string().optional(),
-  allowFullscreen: z.boolean().optional(),
-  allowScripts: z.boolean().optional(),
-  sandbox: z.string().optional(),
-  allowedDomains: z.array(z.string()).optional(),
-  blockedDomains: z.array(z.string()).optional(),
-  requireAuth: z.boolean().optional(),
-  agentId: z.string().optional(),
-  agentConfig: z.any().optional(),
-});
+import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
 
 export async function GET(
-  req: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
+  return withEnhancedErrorHandling(async () => {
+    const { id } = params;
+
+    if (!id) {
+      throw new EnhancedAppError(
+        'Web embed ID is required',
+        400,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.LOW,
+        'MISSING_WEB_EMBED_ID',
+        null,
+        false,
+        undefined,
+        'Please provide a valid web embed ID',
+        ['Check the URL', 'Ensure the ID is correct', 'Try browsing from the main page']
+      );
+    }
+
     const webEmbed = await prisma.webEmbed.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         creator: {
           select: {
-            id: true,
             name: true,
-            email: true,
-          },
-        },
-        agent: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            webhookUrl: true,
-          },
-        },
-      },
+            email: true
+          }
+        }
+      }
     });
 
     if (!webEmbed) {
-      return NextResponse.json({ error: 'Web embed not found' }, { status: 404 });
+      throw new EnhancedAppError(
+        'Web embed not found',
+        404,
+        ErrorCategory.NOT_FOUND,
+        ErrorSeverity.LOW,
+        'WEB_EMBED_NOT_FOUND',
+        null,
+        false,
+        undefined,
+        'The requested web embed could not be found',
+        ['Check the URL', 'Browse available web embeds', 'Contact support if needed']
+      );
     }
 
-    // Log view
-    await prisma.webEmbedLog.create({
-      data: {
-        embedId: params.id,
-        action: 'view',
-        metadata: {
-          userAgent: req.headers.get('user-agent'),
-          referer: req.headers.get('referer'),
-          timestamp: new Date().toISOString(),
-        },
-      },
-    });
-
-    // Update view count
+    // Increment view count
     await prisma.webEmbed.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         viewCount: { increment: 1 },
-        lastViewed: new Date(),
-      },
+        lastViewed: new Date()
+      }
     });
 
-    return NextResponse.json(webEmbed);
-  } catch (error) {
-    console.error('Error fetching web embed:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch web embed' },
-      { status: 500 }
-    );
-  }
+    // Log the view
+    await prisma.webEmbedLog.create({
+      data: {
+        embedId: id,
+        action: 'view',
+        metadata: {
+          userAgent: request.headers.get('user-agent'),
+          referer: request.headers.get('referer'),
+          timestamp: new Date().toISOString()
+        }
+      }
+    });
+
+    return NextResponse.json({
+      success: true,
+      webEmbed
+    });
+  }, { endpoint: `/api/web-embeds/${params.id}`, method: 'GET' });
 }
 
 export async function PUT(
-  req: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  return withEnhancedErrorHandling(async () => {
+    const { id } = params;
+    const body = await request.json();
+
+    if (!id) {
+      throw new EnhancedAppError(
+        'Web embed ID is required',
+        400,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.LOW,
+        'MISSING_WEB_EMBED_ID',
+        null,
+        false,
+        undefined,
+        'Please provide a valid web embed ID',
+        ['Check the URL', 'Ensure the ID is correct']
+      );
     }
 
-    const webEmbed = await prisma.webEmbed.findUnique({
-      where: { id: params.id },
-    });
-
-    if (!webEmbed) {
-      return NextResponse.json({ error: 'Web embed not found' }, { status: 404 });
-    }
-
-    if (webEmbed.createdBy !== session.user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const body = await req.json();
-    const validatedData = updateWebEmbedSchema.parse(body);
-
-    const updatedWebEmbed = await prisma.webEmbed.update({
-      where: { id: params.id },
-      data: validatedData,
+    const webEmbed = await prisma.webEmbed.update({
+      where: { id },
+      data: body,
       include: {
         creator: {
           select: {
-            id: true,
             name: true,
-            email: true,
-          },
-        },
-        agent: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-          },
-        },
-      },
+            email: true
+          }
+        }
+      }
     });
 
-    return NextResponse.json(updatedWebEmbed);
-  } catch (error) {
-    console.error('Error updating web embed:', error);
-    return NextResponse.json(
-      { error: 'Failed to update web embed' },
-      { status: 500 }
-    );
-  }
+    return NextResponse.json({
+      success: true,
+      webEmbed
+    });
+  }, { endpoint: `/api/web-embeds/${params.id}`, method: 'PUT' });
 }
 
 export async function DELETE(
-  _req: NextRequest,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  return withEnhancedErrorHandling(async () => {
+    const { id } = params;
+
+    if (!id) {
+      throw new EnhancedAppError(
+        'Web embed ID is required',
+        400,
+        ErrorCategory.VALIDATION,
+        ErrorSeverity.LOW,
+        'MISSING_WEB_EMBED_ID',
+        null,
+        false,
+        undefined,
+        'Please provide a valid web embed ID',
+        ['Check the URL', 'Ensure the ID is correct']
+      );
     }
 
-    const webEmbed = await prisma.webEmbed.findUnique({
-      where: { id: params.id },
+    // Delete associated logs first
+    await prisma.webEmbedLog.deleteMany({
+      where: { embedId: id }
     });
 
-    if (!webEmbed) {
-      return NextResponse.json({ error: 'Web embed not found' }, { status: 404 });
-    }
-
-    if (webEmbed.createdBy !== session.user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
+    // Delete the web embed
     await prisma.webEmbed.delete({
-      where: { id: params.id },
+      where: { id }
     });
 
-    return NextResponse.json({ message: 'Web embed deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting web embed:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete web embed' },
-      { status: 500 }
-    );
-  }
+    return NextResponse.json({
+      success: true,
+      message: 'Web embed deleted successfully'
+    });
+  }, { endpoint: `/api/web-embeds/${params.id}`, method: 'DELETE' });
 } 

@@ -1,15 +1,17 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { 
+  BookOpen, 
   Search, 
   Upload, 
   Globe, 
   Bot, 
+  Code, 
   Settings, 
   ArrowRight,
   CheckCircle,
@@ -17,39 +19,65 @@ import {
   Zap,
   Users,
   Shield,
-  TrendingUp,
-  BookOpen,
-  Database
+  BarChart3
 } from "lucide-react";
 
-const gettingStartedSteps = [
+const steps = [
   {
-    step: "1",
     icon: Search,
-    title: "Browse the Marketplace",
-    description: "Explore our collection of pre-built AI agents. Find agents for data analysis, content creation, customer service, and more.",
+    title: "Browse & Discover",
+    description: "Explore our marketplace of AI agents and find the perfect solution for your needs",
+    details: [
+      "Browse by category, price, or popularity",
+      "Read detailed descriptions and reviews",
+      "Test agents before purchasing",
+      "Filter by features and capabilities"
+    ],
     action: "Browse Marketplace",
     href: "/marketplace",
     color: "from-blue-500 to-purple-500"
   },
   {
-    step: "2",
     icon: Upload,
-    title: "Upload Your Agent",
-    description: "Have your own AI agent? Upload it to share with the community or deploy it for your own use.",
+    title: "Create & Upload",
+    description: "Build your own AI agents or upload existing ones to the marketplace",
+    details: [
+      "Upload webhook-based agents",
+      "Configure input schemas and validation",
+      "Set pricing and access controls",
+      "Add documentation and examples"
+    ],
     action: "Upload Agent",
     href: "/upload",
     color: "from-green-500 to-teal-500"
   },
-
   {
-    step: "4",
     icon: Globe,
-    title: "Create Web Embeds",
-    description: "Embed any website and add AI functionality without modifying the original site",
+    title: "Web Embeds",
+    description: "Embed existing tools and applications without full agent setup",
+    details: [
+      "Paste URLs of existing tools",
+      "Configure embedding settings",
+      "Add AI functionality later",
+      "Instant deployment via iframe"
+    ],
     action: "Create Embed",
-    href: "/web-embeds",
+    href: "/upload",
     color: "from-purple-500 to-pink-500"
+  },
+  {
+    icon: Settings,
+    title: "Manage & Monitor",
+    description: "Track performance, manage deployments, and optimize your agents",
+    details: [
+      "Monitor usage and performance",
+      "View analytics and insights",
+      "Manage user feedback",
+      "Scale and optimize agents"
+    ],
+    action: "Go to Dashboard",
+    href: "/dashboard",
+    color: "from-orange-500 to-red-500"
   }
 ];
 
@@ -57,121 +85,95 @@ const features = [
   {
     icon: Bot,
     title: "AI Agent Marketplace",
-    description: "Browse hundreds of pre-built AI agents for various tasks and industries",
-    benefits: ["Ready to use", "No coding required", "Multiple categories"]
+    description: "Browse and use hundreds of pre-built AI agents for various tasks",
+    benefits: ["Ready-to-use solutions", "No coding required", "Test before buying", "Community reviews"]
   },
-
+  {
+    icon: Code,
+    title: "Custom Agent Creation",
+    description: "Build and deploy your own AI agents with webhook integration",
+    benefits: ["Full customization", "Webhook support", "Input validation", "Documentation tools"]
+  },
   {
     icon: Globe,
     title: "Web Embed System",
-    description: "Embed any website and add AI functionality without modifying the original site",
-    benefits: ["Easy integration", "No code changes", "Secure iframes"]
+    description: "Embed existing tools and applications without full setup",
+    benefits: ["Quick integration", "No full agent needed", "Instant deployment", "Flexible configuration"]
   },
   {
-    icon: Database,
-    title: "Data Processing",
-    description: "Process and analyze large datasets with advanced AI algorithms",
-    benefits: ["Fast processing", "Multiple formats", "Real-time insights"]
-  }
-];
-
-const useCases = [
-  {
-    title: "Customer Service",
-    description: "Upload AI agents to handle customer inquiries 24/7",
-    icon: Users,
-    examples: ["FAQ bots", "Order tracking", "Support tickets"]
-  },
-  {
-    title: "Content Creation",
-    description: "Generate articles, social media posts, and marketing copy",
-    icon: BookOpen,
-    examples: ["Blog posts", "Social media", "Email campaigns"]
-  },
-  {
-    title: "Data Analysis",
-    description: "Analyze large datasets and generate insights automatically",
-    icon: TrendingUp,
-    examples: ["Sales reports", "User analytics", "Market research"]
-  },
-  {
-    title: "Process Automation",
-    description: "Automate repetitive tasks and workflows",
-    icon: Zap,
-    examples: ["Data entry", "File processing", "Report generation"]
+    icon: BarChart3,
+    title: "Analytics & Monitoring",
+    description: "Track performance and get insights into your agent usage",
+    benefits: ["Usage analytics", "Performance metrics", "User feedback", "Optimization tools"]
   }
 ];
 
 const tips = [
   {
     icon: Lightbulb,
-    title: "Start Small",
-    description: "Begin with simple agents and gradually build more complex solutions"
+    title: "Start with Browsing",
+    description: "Explore the marketplace first to understand what's available before creating your own agents."
   },
   {
-    icon: Shield,
-    title: "Test Thoroughly",
-    description: "Always test your agents in a safe environment before deployment"
-  },
-  {
-    icon: Settings,
-    title: "Monitor Performance",
-    description: "Use our dashboard to track agent performance and usage metrics"
+    icon: Zap,
+    title: "Test Before Buying",
+    description: "Always test agents with sample inputs to ensure they meet your requirements."
   },
   {
     icon: Users,
-    title: "Share & Collaborate",
-    description: "Share your agents with the community and get feedback from other users"
+    title: "Check Reviews",
+    description: "Read user reviews and ratings to find the most reliable and effective agents."
+  },
+  {
+    icon: Shield,
+    title: "Security First",
+    description: "When uploading agents, ensure your webhooks are secure and properly validated."
   }
 ];
 
 export default function GuidePage() {
   return (
-    <div className="min-h-screen bg-background pt-32">
-      <div className="container">
-        {/* Hero Section */}
-        <div className="text-center mb-16">
+    <div className="min-h-screen bg-background pt-20">
+      {/* Hero Section */}
+      <section className="relative py-16 bg-gradient-dark">
+        <div className="absolute inset-0 grid-bg opacity-10"></div>
+        <div className="container relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center space-x-2 mb-8"
+            className="text-center max-w-4xl mx-auto"
           >
-            <Badge variant="secondary" className="bg-ai-primary/10 text-ai-primary border-ai-primary/20">
-              <BookOpen className="w-4 h-4 mr-2" />
-              Complete Guide
-            </Badge>
+            <div className="inline-flex items-center space-x-2 mb-6">
+              <Badge className="bg-ai-primary/20 text-ai-primary border-ai-primary/30 px-4 py-2 text-sm">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Platform Guide
+              </Badge>
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+              <span className="text-gradient-animate">How to Use</span>
+              <br />
+              <span className="text-white">XEINST Platform</span>
+            </h1>
+            
+            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Learn how to browse, create, and manage AI agents on our platform. 
+              Everything you need to get started in one comprehensive guide.
+            </p>
           </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl md:text-6xl font-bold text-white mb-6"
-          >
-            How to Use
-            <br />
-            <span className="text-gradient">AI Agency</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl text-muted-foreground max-w-3xl mx-auto"
-          >
-                          Learn how to discover, create, upload, and manage AI agents. Everything you need to know to get started with AI automation.
-          </motion.p>
         </div>
+      </section>
 
-        {/* Getting Started Section */}
-        <section className="mb-20">
-          <div className="text-center mb-12">
+      {/* Getting Started Steps */}
+      <section className="py-20 bg-gradient-to-b from-background to-background/50">
+        <div className="container">
+          <div className="text-center mb-16">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-3xl font-bold text-white mb-4"
+              className="text-4xl font-bold text-white mb-4"
             >
               Getting Started
             </motion.h2>
@@ -179,14 +181,14 @@ export default function GuidePage() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-lg text-muted-foreground"
+              className="text-xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Follow these 4 simple steps to start using AI agents
+              Four simple steps to start using AI agents on our platform
             </motion.p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {gettingStartedSteps.map((step, index) => (
+            {steps.map((step, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
@@ -195,20 +197,23 @@ export default function GuidePage() {
               >
                 <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
                   <CardHeader>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${step.color} flex items-center justify-center`}>
-                        <step.icon className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="w-8 h-8 rounded-full bg-ai-accent flex items-center justify-center">
-                        <span className="text-sm font-bold text-white">{step.step}</span>
-                      </div>
+                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${step.color} flex items-center justify-center mb-4`}>
+                      <step.icon className="w-6 h-6 text-white" />
                     </div>
                     <CardTitle className="text-xl text-white">{step.title}</CardTitle>
                     <CardDescription className="text-muted-foreground">
                       {step.description}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="space-y-4">
+                    <ul className="space-y-2">
+                      {step.details.map((detail, detailIndex) => (
+                        <li key={detailIndex} className="flex items-start space-x-2 text-sm text-muted-foreground">
+                          <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span>{detail}</span>
+                        </li>
+                      ))}
+                    </ul>
                     <Link href={step.href}>
                       <Button className="w-full bg-gradient-to-r from-ai-primary to-ai-secondary hover:from-ai-primary/90 hover:to-ai-secondary/90">
                         {step.action}
@@ -220,30 +225,32 @@ export default function GuidePage() {
               </motion.div>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Features Section */}
-        <section className="mb-20">
-          <div className="text-center mb-12">
+      {/* Platform Features */}
+      <section className="py-20 bg-gradient-to-b from-background/50 to-background">
+        <div className="container">
+          <div className="text-center mb-16">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-3xl font-bold text-white mb-4"
+              className="text-4xl font-bold text-white mb-4"
             >
-              Key Features
+              Platform Features
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-lg text-muted-foreground"
+              className="text-xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Everything you need to build and deploy AI solutions
+              Everything you need to work with AI agents effectively
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
@@ -262,11 +269,11 @@ export default function GuidePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      {feature.benefits.map((benefit, idx) => (
-                        <div key={idx} className="flex items-center space-x-2">
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                          <span className="text-sm text-muted-foreground">{benefit}</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {feature.benefits.map((benefit, benefitIndex) => (
+                        <div key={benefitIndex} className="flex items-center space-x-2 text-sm text-muted-foreground">
+                          <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
+                          <span>{benefit}</span>
                         </div>
                       ))}
                     </div>
@@ -275,71 +282,18 @@ export default function GuidePage() {
               </motion.div>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Use Cases Section */}
-        <section className="mb-20">
-          <div className="text-center mb-12">
+      {/* Pro Tips */}
+      <section className="py-20 bg-gradient-to-b from-background to-background/50">
+        <div className="container">
+          <div className="text-center mb-16">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-3xl font-bold text-white mb-4"
-            >
-              Popular Use Cases
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-lg text-muted-foreground"
-            >
-              See how others are using AI agents to solve real problems
-            </motion.p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {useCases.map((useCase, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-              >
-                <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
-                  <CardHeader>
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-ai-primary to-ai-secondary flex items-center justify-center mb-4">
-                      <useCase.icon className="w-6 h-6 text-white" />
-                    </div>
-                    <CardTitle className="text-xl text-white">{useCase.title}</CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                      {useCase.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {useCase.examples.map((example, idx) => (
-                        <div key={idx} className="flex items-center space-x-2">
-                          <div className="w-2 h-2 bg-ai-primary rounded-full"></div>
-                          <span className="text-sm text-muted-foreground">{example}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-
-        {/* Tips Section */}
-        <section className="mb-20">
-          <div className="text-center mb-12">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-3xl font-bold text-white mb-4"
+              className="text-4xl font-bold text-white mb-4"
             >
               Pro Tips
             </motion.h2>
@@ -347,13 +301,13 @@ export default function GuidePage() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-lg text-muted-foreground"
+              className="text-xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Best practices for getting the most out of AI Agency
+              Expert advice to help you get the most out of the platform
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {tips.map((tip, index) => (
               <motion.div
                 key={index}
@@ -363,35 +317,49 @@ export default function GuidePage() {
               >
                 <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
                   <CardHeader>
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-ai-primary to-ai-secondary flex items-center justify-center mb-4">
-                      <tip.icon className="w-6 h-6 text-white" />
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-center mb-4">
+                      <tip.icon className="w-5 h-5 text-white" />
                     </div>
-                    <CardTitle className="text-xl text-white">{tip.title}</CardTitle>
+                    <CardTitle className="text-lg text-white">{tip.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
                     <CardDescription className="text-muted-foreground">
                       {tip.description}
                     </CardDescription>
-                  </CardHeader>
+                  </CardContent>
                 </Card>
               </motion.div>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* CTA Section */}
-        <section className="text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="max-w-2xl mx-auto"
-          >
-            <h2 className="text-3xl font-bold text-white mb-4">
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-to-b from-background/50 to-background">
+        <div className="container">
+          <div className="text-center">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-4xl font-bold text-white mb-4"
+            >
               Ready to Get Started?
-            </h2>
-            <p className="text-lg text-muted-foreground mb-8">
-              Start exploring AI agents and building your first AI solution today
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
+            >
+              Choose your path and start exploring AI agents today
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
               <Link href="/marketplace">
                 <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
                   <Search className="w-5 h-5 mr-2" />
@@ -402,13 +370,13 @@ export default function GuidePage() {
               <Link href="/upload">
                 <Button size="lg" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
                   <Upload className="w-5 h-5 mr-2" />
-                  Upload Your Agent
+                  Upload Agent
                 </Button>
               </Link>
-            </div>
-          </motion.div>
-        </section>
-      </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 } 

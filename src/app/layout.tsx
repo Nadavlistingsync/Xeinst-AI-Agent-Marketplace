@@ -7,6 +7,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import { EnhancedErrorBoundary } from '@/components/EnhancedErrorBoundary';
+import PerformanceMonitor from '@/components/PerformanceMonitor';
 
 const montserrat = Montserrat({ 
   subsets: ["latin"],
@@ -17,8 +18,30 @@ const montserrat = Montserrat({
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: "Xeinst - AI Solutions for Your Business",
-  description: "We build custom AI tools for free. You only pay if you love the product.",
+  title: "Xeinst - Build Dependable AI Agents",
+  description: "Visual orchestration + versioned agents, guardrails, and deep observability. Deploy in hours, govern for scale.",
+  keywords: "AI agents, LLM orchestration, AI workflow automation, Make AI integration, N8N AI agent, AI guardrails, LLM observability",
+  authors: [{ name: "Xeinst" }],
+  creator: "Xeinst",
+  publisher: "Xeinst",
+  robots: "index, follow",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://xeinst.com",
+    title: "Xeinst - Build Dependable AI Agents",
+    description: "Visual orchestration + versioned agents, guardrails, and deep observability. Deploy in hours, govern for scale.",
+    siteName: "Xeinst",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Xeinst - Build Dependable AI Agents",
+    description: "Visual orchestration + versioned agents, guardrails, and deep observability. Deploy in hours, govern for scale.",
+    creator: "@xeinst",
+  },
+  alternates: {
+    canonical: "https://xeinst.com",
+  },
 };
 
 export const viewport: Viewport = {
@@ -36,19 +59,46 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${montserrat.variable} font-sans ${inter.className}`}>
       <head>
-        <meta name="description" content="We build custom AI tools for free. You only pay if you love the product." />
-        <meta name="keywords" content="AI, artificial intelligence, machine learning, custom AI solutions" />
+        <meta name="description" content="Visual orchestration + versioned agents, guardrails, and deep observability. Deploy in hours, govern for scale." />
+        <meta name="keywords" content="AI agents, LLM orchestration, AI workflow automation, Make AI integration, N8N AI agent, AI guardrails, LLM observability" />
         <meta name="author" content="Xeinst" />
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://xeinst.com" />
         <meta property="og:url" content="https://xeinst.com" />
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="Xeinst - AI Solutions for Your Business" />
-        <meta property="og:description" content="We build custom AI tools for free. You only pay if you love the product." />
+        <meta property="og:title" content="Xeinst - Build Dependable AI Agents" />
+        <meta property="og:description" content="Visual orchestration + versioned agents, guardrails, and deep observability. Deploy in hours, govern for scale." />
+        <meta property="og:image" content="https://xeinst.com/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:image" content="https://xeinst.com/og-image.png" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="manifest" href="/site.webmanifest" />
+        
+        {/* Performance optimizations */}
+        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+        <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        
+        {/* Critical CSS */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            .text-gradient { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+            .bg-gradient-ai { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+            .bg-gradient-dark { background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%); }
+            .grid-bg { background-image: radial-gradient(circle, rgba(99, 102, 241, 0.1) 1px, transparent 1px); background-size: 20px 20px; }
+          `
+        }} />
       </head>
       <body className="min-h-screen bg-black text-white antialiased">
         <EnhancedErrorBoundary showDetails={process.env.NODE_ENV === 'development'}>
           <Providers>
+            <PerformanceMonitor />
             <Header />
             <main className="flex-grow">
               {children}

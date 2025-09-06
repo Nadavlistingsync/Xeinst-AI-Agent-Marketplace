@@ -1,217 +1,175 @@
-import { NextRequest, NextResponse } from 'next/server';
+// Performance optimization utilities
 
-export interface PerformanceMetrics {
-  timestamp: number;
-  operation: string;
-  duration: number;
-  success: boolean;
-  error?: string;
-  metadata?: Record<string, any>;
-}
+// Lazy loading utility for components
+export const lazyLoad = (importFunc: () => Promise<any>) => {
+  return importFunc().then(module => module.default);
+};
 
-class PerformanceMonitor {
-  private metrics: PerformanceMetrics[] = [];
-  private readonly maxMetrics = 1000; // Keep last 1000 metrics
+// Image optimization utility
+export const optimizeImage = (src: string, width?: number, height?: number, quality = 75) => {
+  const params = new URLSearchParams();
+  if (width) params.set('w', width.toString());
+  if (height) params.set('h', height.toString());
+  params.set('q', quality.toString());
+  params.set('f', 'webp');
+  
+  return `${src}?${params.toString()}`;
+};
 
-  trackOperation<T>(
-    operation: string,
-    fn: () => Promise<T>,
-    metadata?: Record<string, any>
-  ): Promise<T> {
-    const startTime = Date.now();
-    
-    return fn()
-      .then((result) => {
-        this.recordMetric({
-          timestamp: startTime,
-          operation,
-          duration: Date.now() - startTime,
-          success: true,
-          metadata
-        });
-        return result;
-      })
-      .catch((error) => {
-        this.recordMetric({
-          timestamp: startTime,
-          operation,
-          duration: Date.now() - startTime,
-          success: false,
-          error: error.message,
-          metadata
-        });
-        throw error;
-      });
-  }
+// Debounce utility for search and input handlers
+export const debounce = <T extends (...args: any[]) => any>(
+  func: T,
+  wait: number
+): ((...args: Parameters<T>) => void) => {
+  let timeout: NodeJS.Timeout;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func(...args), wait);
+  };
+};
 
-  trackSyncOperation<T>(
-    operation: string,
-    fn: () => T,
-    metadata?: Record<string, any>
-  ): T {
-    const startTime = Date.now();
-    
-    try {
-      const result = fn();
-      this.recordMetric({
-        timestamp: startTime,
-        operation,
-        duration: Date.now() - startTime,
-        success: true,
-        metadata
-      });
-      return result;
-    } catch (error) {
-      this.recordMetric({
-        timestamp: startTime,
-        operation,
-        duration: Date.now() - startTime,
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-        metadata
-      });
-      throw error;
+// Throttle utility for scroll and resize handlers
+export const throttle = <T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): ((...args: Parameters<T>) => void) => {
+  let inThrottle: boolean;
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
     }
-  }
-
-  private recordMetric(metric: PerformanceMetrics) {
-    this.metrics.push(metric);
-    
-    // Keep only the last maxMetrics
-    if (this.metrics.length > this.maxMetrics) {
-      this.metrics = this.metrics.slice(-this.maxMetrics);
-    }
-  }
-
-  getMetrics(): PerformanceMetrics[] {
-    return [...this.metrics];
-  }
-
-  getMetricsByOperation(operation: string): PerformanceMetrics[] {
-    return this.metrics.filter(m => m.operation === operation);
-  }
-
-  getAverageResponseTime(operation?: string): number {
-    const metrics = operation 
-      ? this.getMetricsByOperation(operation)
-      : this.metrics;
-    
-    if (metrics.length === 0) return 0;
-    
-    const total = metrics.reduce((sum, m) => sum + m.duration, 0);
-    return total / metrics.length;
-  }
-
-  getSuccessRate(operation?: string): number {
-    const metrics = operation 
-      ? this.getMetricsByOperation(operation)
-      : this.metrics;
-    
-    if (metrics.length === 0) return 0;
-    
-    const successful = metrics.filter(m => m.success).length;
-    return successful / metrics.length;
-  }
-
-  clearMetrics(): void {
-    this.metrics = [];
-  }
-}
-
-// Global performance monitor instance
-export const performanceMonitor = new PerformanceMonitor();
-
-// Middleware to track API performance
-export function withPerformanceTracking<T extends any[], R>(
-  operation: string,
-  fn: (...args: T) => Promise<R>
-): (...args: T) => Promise<R> {
-  return async (...args: T): Promise<R> => {
-    return performanceMonitor.trackOperation(operation, () => fn(...args));
   };
-}
+};
 
-// API route wrapper for performance tracking
-export function withApiPerformanceTracking(
-  handler: (req: NextRequest) => Promise<NextResponse>
-) {
-  return async (req: NextRequest): Promise<NextResponse> => {
-    const url = req.nextUrl.pathname;
-    const method = req.method;
-    const operation = `${method} ${url}`;
-    
-    return performanceMonitor.trackOperation(
-      operation,
-      () => handler(req),
-      {
-        url,
-        method,
-        userAgent: req.headers.get('user-agent'),
-        ip: req.headers.get('x-forwarded-for') || req.ip
-      }
-    );
-  };
-}
+// Intersection Observer utility for lazy loading
+export const createIntersectionObserver = (
+  callback: IntersectionObserverCallback,
+  options?: IntersectionObserverInit
+) => {
+  if (typeof window === 'undefined') return null;
+  
+  return new IntersectionObserver(callback, {
+    rootMargin: '50px',
+    threshold: 0.1,
+    ...options,
+  });
+};
 
-// Database query performance tracking
-export function withDbPerformanceTracking<T>(
-  operation: string,
-  fn: () => Promise<T>
-): Promise<T> {
-  return performanceMonitor.trackOperation(
-    `DB_${operation}`,
-    fn,
-    { type: 'database' }
-  );
-}
+// Preload critical resources
+export const preloadResource = (href: string, as: string) => {
+  if (typeof window === 'undefined') return;
+  
+  const link = document.createElement('link');
+  link.rel = 'preload';
+  link.href = href;
+  link.as = as;
+  document.head.appendChild(link);
+};
 
-// Export performance data for monitoring
-export function getPerformanceReport() {
-  const metrics = performanceMonitor.getMetrics();
-  const recentMetrics = metrics.filter(
-    m => m.timestamp > Date.now() - 24 * 60 * 60 * 1000 // Last 24 hours
-  );
+// Prefetch resources for better navigation
+export const prefetchResource = (href: string) => {
+  if (typeof window === 'undefined') return;
+  
+  const link = document.createElement('link');
+  link.rel = 'prefetch';
+  link.href = href;
+  document.head.appendChild(link);
+};
 
-  return {
-    totalOperations: metrics.length,
-    recentOperations: recentMetrics.length,
-    averageResponseTime: performanceMonitor.getAverageResponseTime(),
-    successRate: performanceMonitor.getSuccessRate(),
-    topOperations: getTopOperations(metrics),
-    recentErrors: getRecentErrors(metrics),
-    timestamp: Date.now()
-  };
-}
+// Performance monitoring
+export const measurePerformance = (name: string, fn: () => void) => {
+  if (typeof window === 'undefined') return fn();
+  
+  const start = performance.now();
+  const result = fn();
+  const end = performance.now();
+  
+  console.log(`${name} took ${end - start} milliseconds`);
+  return result;
+};
 
-function getTopOperations(metrics: PerformanceMetrics[]) {
-  const operationCounts = metrics.reduce((acc, m) => {
-    acc[m.operation] = (acc[m.operation] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+// Bundle size optimization - tree shaking helper
+export const importOnly = <T>(module: T, key: keyof T) => {
+  return module[key];
+};
 
-  return Object.entries(operationCounts)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 10)
-    .map(([operation, count]) => ({
-      operation,
-      count,
-      avgResponseTime: performanceMonitor.getAverageResponseTime(operation),
-      successRate: performanceMonitor.getSuccessRate(operation)
-    }));
-}
+// Memory optimization - cleanup utility
+export const cleanup = (cleanupFn: () => void) => {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', cleanupFn);
+  }
+};
 
-function getRecentErrors(metrics: PerformanceMetrics[]) {
-  const recentMetrics = metrics.filter(
-    m => m.timestamp > Date.now() - 60 * 60 * 1000 // Last hour
-  );
+// Critical CSS inlining helper
+export const inlineCriticalCSS = (css: string) => {
+  if (typeof document === 'undefined') return;
+  
+  const style = document.createElement('style');
+  style.textContent = css;
+  document.head.appendChild(style);
+};
 
-  return recentMetrics
-    .filter(m => !m.success)
-    .map(m => ({
-      operation: m.operation,
-      error: m.error,
-      timestamp: m.timestamp,
-      metadata: m.metadata
-    }))
-    .slice(0, 20); // Last 20 errors
-} 
+// Service Worker registration for caching
+export const registerServiceWorker = async () => {
+  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+  
+  try {
+    const registration = await navigator.serviceWorker.register('/sw.js');
+    console.log('Service Worker registered:', registration);
+  } catch (error) {
+    console.error('Service Worker registration failed:', error);
+  }
+};
+
+// Web Vitals monitoring
+export const reportWebVitals = (metric: any) => {
+  if (typeof window === 'undefined') return;
+  
+  // Send to analytics service
+  console.log('Web Vital:', metric);
+  
+  // Example: Send to Google Analytics
+  if (typeof gtag !== 'undefined') {
+    gtag('event', metric.name, {
+      value: Math.round(metric.value),
+      event_category: 'Web Vitals',
+      event_label: metric.id,
+      non_interaction: true,
+    });
+  }
+};
+
+// Resource hints for better performance
+export const addResourceHints = () => {
+  if (typeof document === 'undefined') return;
+  
+  // DNS prefetch for external domains
+  const dnsPrefetchDomains = [
+    'fonts.googleapis.com',
+    'fonts.gstatic.com',
+    'cdn.jsdelivr.net',
+  ];
+  
+  dnsPrefetchDomains.forEach(domain => {
+    const link = document.createElement('link');
+    link.rel = 'dns-prefetch';
+    link.href = `//${domain}`;
+    document.head.appendChild(link);
+  });
+  
+  // Preconnect to critical origins
+  const preconnectOrigins = [
+    'https://fonts.googleapis.com',
+    'https://fonts.gstatic.com',
+  ];
+  
+  preconnectOrigins.forEach(origin => {
+    const link = document.createElement('link');
+    link.rel = 'preconnect';
+    link.href = origin;
+    link.crossOrigin = 'anonymous';
+    document.head.appendChild(link);
+  });
+};

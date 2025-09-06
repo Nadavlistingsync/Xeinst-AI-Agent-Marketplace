@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { 
   ArrowRight, 
   Sparkles, 
@@ -14,62 +15,187 @@ import {
   Cpu,
   Search,
   Upload,
-  Lightbulb
+  Lightbulb,
+  Star,
+  Zap,
+  Globe,
+  Code,
+  DollarSign,
+  TrendingUp,
+  MessageSquare,
+  Play,
+  ChevronDown,
+  ChevronUp,
+  Mail,
+  MapPin
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { toast } from "react-hot-toast";
 
-const quickActions = [
+// FAQ Data
+const faqData = [
   {
-    icon: Search,
-    title: "Browse & Use",
-    description: "Browse our marketplace of AI agents and find the perfect solution",
-    href: "/marketplace",
-    color: "from-blue-500 to-purple-500",
-    buttonText: "Browse Marketplace"
+    question: "What is Xeinst?",
+    answer: "Xeinst is the premier AI agent marketplace where creators can monetize their AI solutions and users can discover powerful, ready-to-use AI agents for any task."
   },
   {
-    icon: Upload,
-    title: "Create & Deploy",
-    description: "Upload your AI agent or create web embeds - choose your path",
-    href: "/upload",
-    color: "from-green-500 to-teal-500",
-    buttonText: "Upload Agent"
+    question: "How do I create and sell AI agents?",
+    answer: "Simply upload your AI agent through our platform, set your pricing, and start earning. We handle hosting, payments, and customer support."
   },
-
+  {
+    question: "What types of AI agents can I sell?",
+    answer: "You can sell any type of AI agent: chatbots, data analysis tools, content generators, automation scripts, and more. The possibilities are endless."
+  },
+  {
+    question: "How much can I earn as a creator?",
+    answer: "Creators typically earn 70-85% of each sale, with top creators making $10,000+ monthly. Your earnings depend on agent quality and marketing."
+  },
+  {
+    question: "Is there a free trial available?",
+    answer: "Yes! Most agents offer free trials or demos. You can test agents before purchasing to ensure they meet your needs."
+  },
+  {
+    question: "What support do you provide?",
+    answer: "We provide 24/7 technical support, documentation, tutorials, and a community forum to help you succeed."
+  }
 ];
 
-
-
-const features = [
+// Testimonials Data
+const testimonials = [
   {
-    icon: Bot,
-    title: "AI Agent Marketplace",
-    description: "Browse and use hundreds of pre-built AI agents for various tasks",
-    href: "/marketplace"
+    name: "Sarah Chen",
+    role: "AI Developer",
+    company: "TechFlow Solutions",
+    content: "Xeinst helped me monetize my AI agents and reach customers worldwide. The platform is incredibly user-friendly and the support is outstanding.",
+    rating: 5,
+    avatar: "SC"
   },
   {
-    icon: Upload,
-    title: "Upload & Embed System",
-    description: "Upload full agents or create web embeds - choose your path",
-    href: "/upload"
+    name: "Marcus Rodriguez",
+    role: "Business Owner",
+    company: "Digital Dynamics",
+    content: "I found the perfect AI agent for my customer service needs on Xeinst. It saved me months of development time and works flawlessly.",
+    rating: 5,
+    avatar: "MR"
+  },
+  {
+    name: "Emily Watson",
+    role: "Marketing Director",
+    company: "Growth Labs",
+    content: "The affiliate program is fantastic. I'm earning passive income by promoting quality AI agents to my network. Highly recommended!",
+    rating: 5,
+    avatar: "EW"
+  }
+];
+
+// Features Data
+const features = [
+  {
+    icon: Code,
+    title: "Agent Builder",
+    description: "Design agents with roles, tools, memory, and evaluation sets",
+    color: "from-blue-500 to-purple-500"
   },
   {
     icon: Cpu,
-    title: "Smart Automation",
-    description: "Automate complex workflows with AI-powered tools",
-    href: "/dashboard"
+    title: "Orchestration Canvas",
+    description: "Visual workflow with branching, scheduled runs, and human-in-the-loop",
+    color: "from-green-500 to-teal-500"
   },
-
+  {
+    icon: Globe,
+    title: "Integrations",
+    description: "Make/N8N bridges, 100+ apps via native connectors",
+    color: "from-orange-500 to-red-500"
+  },
+  {
+    icon: Shield,
+    title: "Governance",
+    description: "RBAC, audit logs, PII scrubbing, and policy enforcement",
+    color: "from-purple-500 to-pink-500"
+  },
+  {
+    icon: Upload,
+    title: "Deploy",
+    description: "Webhooks, cron, events, queues, serverless targets, VPC",
+    color: "from-yellow-500 to-orange-500"
+  },
+  {
+    icon: Zap,
+    title: "Observability",
+    description: "Traces, replays, metrics, and deterministic outputs",
+    color: "from-indigo-500 to-blue-500"
+  }
 ];
 
+// How It Works Steps
+const howItWorksSteps = [
+  {
+    step: "01",
+    title: "Design on the Canvas",
+    description: "Visual nodes: triggers, tools, agents, code",
+    icon: Code,
+    color: "from-blue-500 to-purple-500"
+  },
+  {
+    step: "02",
+    title: "Guardrail with Policies",
+    description: "Schemas, sandboxes, and safety policies",
+    icon: Shield,
+    color: "from-green-500 to-teal-500"
+  },
+  {
+    step: "03",
+    title: "Observe & Improve",
+    description: "Traces, replays, and evaluation sets",
+    icon: Zap,
+    color: "from-orange-500 to-red-500"
+  }
+];
+
+// Stats
 const stats = [
-  { label: "AI Agents Available", value: "500+", icon: Bot },
-  { label: "Active Users", value: "10K+", icon: Users },
-  { label: "Success Rate", value: "99.9%", icon: CheckCircle },
-  { label: "Uptime", value: "99.99%", icon: Shield }
+  { label: "Uptime", value: "99.9%", icon: Shield },
+  { label: "Avg Exec Time", value: "<2s", icon: Zap },
+  { label: "Active Agents", value: "10K+", icon: Bot },
+  { label: "Cost Control", value: "Built-in", icon: DollarSign }
 ];
 
 export default function Home() {
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  const handleWaitlistSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // TODO: Replace with actual Supabase integration
+      const response = await fetch('/api/waitlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      if (response.ok) {
+        toast.success("You've been added to the waitlist! We'll notify you when we launch.");
+        setEmail("");
+      } else {
+        throw new Error('Failed to submit');
+      }
+    } catch (error) {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -94,7 +220,7 @@ export default function Home() {
             >
               <Badge variant="secondary" className="bg-ai-primary/10 text-ai-primary border-ai-primary/20">
                 <Sparkles className="w-4 h-4 mr-2" />
-                XEINST Platform
+                Coming Soon - Join the Waitlist
               </Badge>
             </motion.div>
 
@@ -105,9 +231,9 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-5xl md:text-7xl font-bold text-gradient mb-6"
             >
-              XEINST Platform
+              Build dependable AI agents.
               <br />
-              <span className="text-white">AI Solutions</span>
+              <span className="text-white">Deploy in hours, govern for scale.</span>
             </motion.h1>
 
             {/* Subtitle */}
@@ -117,8 +243,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
             >
-              Browse, create, and upload AI agents. Embed existing tools without full setup. 
-              Everything you need to build intelligent solutions in one place.
+              Visual orchestration + versioned agents, guardrails, and deep observability. Ship AI agents your ops team can trust—without brittle scripts.
             </motion.p>
 
             {/* CTA Buttons */}
@@ -128,19 +253,18 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
             >
-              <Link href="/marketplace">
-                <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
-                  <Search className="w-5 h-5 mr-2" />
-                  Browse & Use
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-              <Link href="/guide">
-                <Button size="lg" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
-                  <Lightbulb className="w-5 h-5 mr-2" />
-                  Get Started
-                </Button>
-              </Link>
+              <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
+                <Sparkles className="w-5 h-5 mr-2" />
+                Start Free
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+              <Button size="lg" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
+                <Play className="w-5 h-5 mr-2" />
+                Book a Demo
+              </Button>
+              <Button size="lg" variant="ghost" className="text-muted-foreground hover:text-white">
+                See Templates
+              </Button>
             </motion.div>
 
             {/* Stats */}
@@ -164,7 +288,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Get Started Section */}
+      {/* How It Works Section */}
       <section className="py-20 bg-gradient-to-b from-background to-background/50">
         <div className="container">
           <div className="text-center mb-16">
@@ -174,7 +298,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               className="text-4xl font-bold text-white mb-4"
             >
-              Get Started
+              How It Works
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -182,188 +306,33 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Choose from our main user journeys to get started quickly
+              Three steps to production-ready AI agents
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {quickActions.map((action, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {howItWorksSteps.map((step, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="relative"
               >
                 <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
-                  <CardHeader>
-                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${action.color} flex items-center justify-center mb-4`}>
-                      <action.icon className="w-6 h-6 text-white" />
+                  <CardHeader className="text-center">
+                    <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center mb-4 mx-auto`}>
+                      <step.icon className="w-8 h-8 text-white" />
                     </div>
-                    <CardTitle className="text-xl text-white">{action.title}</CardTitle>
+                    <div className="text-sm text-ai-primary font-semibold mb-2">{step.step}</div>
+                    <CardTitle className="text-xl text-white">{step.title}</CardTitle>
                     <CardDescription className="text-muted-foreground">
-                      {action.description}
+                      {step.description}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <Link href={action.href}>
-                      <Button className="w-full bg-gradient-to-r from-ai-primary to-ai-secondary hover:from-ai-primary/90 hover:to-ai-secondary/90">
-                        {action.buttonText}
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
-                  </CardContent>
                 </Card>
               </motion.div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Main User Journeys Section */}
-      <section className="py-20 bg-gradient-to-b from-background/50 to-background">
-        <div className="container">
-          <div className="text-center mb-16">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-4xl font-bold text-white mb-4"
-            >
-              Main User Journeys
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-xl text-muted-foreground max-w-2xl mx-auto"
-            >
-              Three distinct paths to get started with AI solutions
-            </motion.p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Path 1: Browse & Use */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-            >
-              <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
-                <CardHeader>
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center mb-4">
-                    <Search className="w-6 h-6 text-white" />
-                  </div>
-                  <CardTitle className="text-xl text-white">Path 1: Browse & Use</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Find and use existing AI agents from our marketplace
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">1. Marketplace - Browse agents</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">2. Agent Details - View and run</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">3. Dashboard - Monitor usage</span>
-                    </div>
-                  </div>
-                  <Link href="/marketplace">
-                    <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600">
-                      Start Browsing
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Path 2: Create & Deploy */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
-                <CardHeader>
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-green-500 to-teal-500 flex items-center justify-center mb-4">
-                    <Upload className="w-6 h-6 text-white" />
-                  </div>
-                  <CardTitle className="text-xl text-white">Path 2: Create & Deploy</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Build and upload your own AI agents or create web embeds
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">1. Upload - Choose agent or web embed</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">2. Configure - Set up your solution</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">3. Deploy - Launch to marketplace</span>
-                    </div>
-                  </div>
-                  <Link href="/upload">
-                    <Button className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600">
-                      Start Creating
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Path 3: Deploy & Manage */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
-                <CardHeader>
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mb-4">
-                    <Upload className="w-6 h-6 text-white" />
-                  </div>
-                  <CardTitle className="text-xl text-white">Path 3: Upload & Manage</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Upload your solutions and manage them in the cloud
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">1. Deploy - Launch to cloud</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">2. Monitor - Track performance</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">3. Scale - Optimize and grow</span>
-                    </div>
-                  </div>
-                  <Link href="/upload">
-                    <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600">
-                      Start Uploading
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            </motion.div>
           </div>
         </div>
       </section>
@@ -386,11 +355,11 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-xl text-muted-foreground max-w-2xl mx-auto"
             >
-              Everything you need to build and deploy AI solutions
+              Everything you need to build, sell, and use AI agents
             </motion.p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
@@ -400,7 +369,7 @@ export default function Home() {
               >
                 <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
                   <CardHeader>
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-ai-primary to-ai-secondary flex items-center justify-center mb-4">
+                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${feature.color} flex items-center justify-center mb-4`}>
                       <feature.icon className="w-6 h-6 text-white" />
                     </div>
                     <CardTitle className="text-xl text-white">{feature.title}</CardTitle>
@@ -408,14 +377,6 @@ export default function Home() {
                       {feature.description}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <Link href={feature.href}>
-                      <Button variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
-                        Learn More
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
-                  </CardContent>
                 </Card>
               </motion.div>
             ))}
@@ -423,17 +384,115 @@ export default function Home() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* Use Cases Section */}
       <section className="py-20 bg-gradient-to-b from-background/50 to-background">
         <div className="container">
-          <div className="text-center">
+          <div className="text-center mb-16">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
               className="text-4xl font-bold text-white mb-4"
             >
-              Ready to Get Started?
+              Use Cases
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-xl text-muted-foreground max-w-2xl mx-auto"
+            >
+              Production-ready AI agents for every business function
+            </motion.p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+            >
+              <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                <CardHeader>
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center mb-4">
+                    <MessageSquare className="w-6 h-6 text-white" />
+                  </div>
+                  <CardTitle className="text-xl text-white">Customer Support</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Auto-triage support → draft reply → ticket updates
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                <CardHeader>
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-green-500 to-teal-500 flex items-center justify-center mb-4">
+                    <TrendingUp className="w-6 h-6 text-white" />
+                  </div>
+                  <CardTitle className="text-xl text-white">Sales & RevOps</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Lead routing & enrichment → CRM hygiene
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                <CardHeader>
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center mb-4">
+                    <Lightbulb className="w-6 h-6 text-white" />
+                  </div>
+                  <CardTitle className="text-xl text-white">Knowledge Concierge</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Onboarding assistance and knowledge management
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
+              <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
+                <CardHeader>
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mb-4">
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <CardTitle className="text-xl text-white">Content QA</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Compliance checks and quality assurance
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Waitlist Section */}
+      <section className="py-20 bg-gradient-to-b from-background to-background/50">
+        <div className="container">
+          <div className="max-w-4xl mx-auto text-center">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-4xl font-bold text-white mb-4"
+            >
+              Start Building Your First Agent
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -441,27 +500,37 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
             >
-              Choose your path and start building AI solutions today
+              Deploy in 10 minutes. No credit card required.
             </motion.p>
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
+              className="max-w-md mx-auto"
             >
-              <Link href="/marketplace">
-                <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
-                  <Search className="w-5 h-5 mr-2" />
-                  Browse Marketplace
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button size="lg" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
-                  <Users className="w-5 h-5 mr-2" />
-                  Create Account
-                </Button>
-              </Link>
+              <form onSubmit={handleWaitlistSubmit} className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Input
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="flex-1 bg-background/50 border-ai-primary/20 text-white placeholder:text-muted-foreground"
+                    required
+                  />
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="bg-gradient-ai hover:bg-gradient-ai/90"
+                  >
+                    {isSubmitting ? "Starting..." : "Start Free"}
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Get started instantly. No credit card required.
+                </p>
+              </form>
             </motion.div>
           </div>
         </div>
