@@ -49,7 +49,7 @@ describe('Home Page', () => {
     render(<Home />)
     expect(screen.getByText(/Active Agents/i)).toBeInTheDocument()
     expect(screen.getByText(/Credits Used/i)).toBeInTheDocument()
-    expect(screen.getByText(/Users/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/Users/i)).toHaveLength(2) // Multiple instances
     expect(screen.getByText(/Success Rate/i)).toBeInTheDocument()
   })
 

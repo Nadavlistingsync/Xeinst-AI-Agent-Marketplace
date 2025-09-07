@@ -52,6 +52,7 @@
     "@radix-ui/react-slider": "^1.1.2",
     "@radix-ui/react-tabs": "^1.0.4",
     "@radix-ui/react-toast": "^1.1.5",
+    "@sentry/nextjs": "^10.10.0",
     "@stackframe/stack": "^2.8.36",
     "@supabase/supabase-js": "^2.57.2",
     "@tailwindcss/forms": "^0.5.10",

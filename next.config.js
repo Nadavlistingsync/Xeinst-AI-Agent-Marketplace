@@ -1,3 +1,5 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Performance optimizations
@@ -153,7 +155,6 @@ const nextConfig = {
   },
   
   experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
     optimizePackageImports: ['@prisma/client', '@upstash/redis', 'framer-motion', 'lucide-react'],
     optimizeCss: true,
     scrollRestoration: true,
@@ -168,8 +169,7 @@ const nextConfig = {
   // Output configuration for better performance
   output: 'standalone',
   
-  // Enable SWC minification
-  swcMinify: true,
+  // SWC minification is enabled by default in Next.js 15
 };
 
-module.exports = nextConfig; 
+export default nextConfig; 

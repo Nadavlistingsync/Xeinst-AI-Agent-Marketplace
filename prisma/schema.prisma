@@ -108,6 +108,7 @@ model User {
   disputesReported Dispute[] @relation("DisputeReporter")
   disputesTargeted Dispute[] @relation("DisputeTarget")
   auditLogs       AuditLog[] @relation("AuditActor")
+  agentVersions   AgentVersion[]
 }
 
 model Product {
@@ -204,9 +205,10 @@ model Review {
   id              String    @id @default(cuid())
   rating          Int
   deploymentId    String
+  agentId         String?   // Add agentId field for agent reviews
   userId          String
   productId       String?
-  comment         String
+  comment         String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -214,6 +216,7 @@ model Review {
   deployment      Deployment @relation(fields: [deploymentId], references: [id])
   user            User      @relation(fields: [userId], references: [id])
   product         Product?  @relation("ProductReviews", fields: [productId], references: [id])
+  agent           Agent?    @relation(fields: [agentId], references: [id])
 }
 
 model Purchase {
@@ -441,11 +444,13 @@ model Agent {
   framework       String    @default("custom")
   modelType       String    @default("custom")
   isPublic        Boolean   @default(true)
+  status          String    @default("draft") // draft, active, suspended, rejected
   createdBy       String
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   downloadCount   Int       @default(0)
   webhookUrl      String?
+  webhookSecret   String?  // Secret for webhook signing
   config          Json?
 
   // Relations
@@ -454,6 +459,8 @@ model Agent {
   webEmbeds        WebEmbed[]
   webhookLogs     WebhookLog[]
   disputes        Dispute[]
+  versions        AgentVersion[]
+  reviews         Review[]
 }
 
 model GeneratedInterface {
@@ -649,4 +656,21 @@ model WebhookLog {
 
   // Relations
   agent           Agent     @relation(fields: [agentId], references: [id])
+}
+
+model AgentVersion {
+  id              String    @id @default(cuid())
+  agentId         String
+  version         String    // e.g., "1.0.0", "1.1.0"
+  changelog       String    // Markdown changelog
+  webhookUrl      String?
+  webhookSecret   String?
+  config          Json?
+  isActive        Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  createdBy       String
+
+  // Relations
+  agent           Agent     @relation(fields: [agentId], references: [id])
+  creator         User      @relation(fields: [createdBy], references: [id])
 }

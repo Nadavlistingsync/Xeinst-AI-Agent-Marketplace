@@ -246,7 +246,7 @@ export function ErrorProvider({ children }: ErrorProviderProps) {
       errorOptions.retryCallback();
     }
     clearError();
-  }, [errorOptions.retryCallback, clearError]);
+  }, [errorOptions, clearError]);
 
   const handleReport = useCallback(() => {
     if (errorOptions.reportCallback) {
@@ -255,7 +255,7 @@ export function ErrorProvider({ children }: ErrorProviderProps) {
       // Default report action - could open support chat or email
       toast.info('Opening support...');
     }
-  }, [errorOptions.reportCallback]);
+  }, [errorOptions]);
 
   const contextValue: ErrorContextType = {
     showError,

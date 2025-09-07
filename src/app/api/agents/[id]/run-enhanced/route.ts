@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { AuditLogger } from '@/lib/audit-logger';
+import { WebhookSigning } from '@/lib/webhook-signing';
 import { z } from 'zod';
 
 // Credit earning percentage for creators (configurable)
@@ -93,21 +94,43 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     let error: any = null;
 
     try {
+      // Prepare webhook payload
+      const webhookPayload = {
+        agentId: agent.id,
+        userId: userId,
+        input: input,
+        parameters: parameters || {},
+        requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toISOString()
+      };
+
+      // Create signed payload if webhook secret exists
+      let headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Xeinst-Agent-Platform/1.0',
+      };
+
+      let body: string;
+      
+      if (agent.webhookSecret) {
+        const signedPayload = WebhookSigning.createSignedPayload(
+          webhookPayload,
+          agent.webhookSecret
+        );
+        body = signedPayload.payload;
+        headers = {
+          ...headers,
+          ...WebhookSigning.generateWebhookHeaders(signedPayload.payload, agent.webhookSecret)
+        };
+      } else {
+        body = JSON.stringify(webhookPayload);
+      }
+
       // Call agent webhook
       const webhookResponse = await fetch(agent.webhookUrl!, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Xeinst-Agent-Platform/1.0',
-        },
-        body: JSON.stringify({
-          agentId: agent.id,
-          userId: userId,
-          input: input,
-          parameters: parameters || {},
-          requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          timestamp: new Date().toISOString()
-        }),
+        headers,
+        body,
         signal: AbortSignal.timeout(30000) // 30 second timeout
       });
 

@@ -112,9 +112,9 @@ describe('HomePage', () => {
     // Check for subtitle
     expect(screen.getByText(/Connect your AI agents via webhooks/i)).toBeInTheDocument();
 
-    // Check for CTA buttons
-    expect(screen.getByText(/Connect Agent/i)).toBeInTheDocument();
-    expect(screen.getByText(/Buy Credits/i)).toBeInTheDocument();
+    // Check for CTA buttons - use getAllByText to handle multiple instances
+    expect(screen.getAllByText(/Connect Agent/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Buy Credits/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Browse Agents/i)).toBeInTheDocument();
   });
 
@@ -148,9 +148,9 @@ describe('HomePage', () => {
     // Check for features section heading
     expect(screen.getByText(/Core Features/i)).toBeInTheDocument();
 
-    // Check for feature titles
-    expect(screen.getByText('Connect Agent')).toBeInTheDocument();
-    expect(screen.getByText('Buy Credits')).toBeInTheDocument();
+    // Check for feature titles - use getAllByText to handle multiple instances
+    expect(screen.getAllByText('Connect Agent').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Buy Credits').length).toBeGreaterThan(0);
     expect(screen.getByText('Use Agents')).toBeInTheDocument();
   });
 
@@ -165,7 +165,7 @@ describe('HomePage', () => {
     expect(screen.getByText(/How It Works/i)).toBeInTheDocument();
     expect(screen.getByText(/Three simple steps to get started/i)).toBeInTheDocument();
     expect(screen.getByText(/Connect Your Agent/i)).toBeInTheDocument();
-    expect(screen.getByText(/Buy Credits/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Buy Credits/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Use & Earn/i)).toBeInTheDocument();
   });
 
@@ -177,8 +177,8 @@ describe('HomePage', () => {
     );
 
     // Check that buttons exist (the homepage has buttons, not navigation links)
-    expect(screen.getByText(/Connect Agent/i)).toBeInTheDocument();
-    expect(screen.getByText(/Buy Credits/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Connect Agent/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Buy Credits/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Browse Agents/i)).toBeInTheDocument();
   });
 
