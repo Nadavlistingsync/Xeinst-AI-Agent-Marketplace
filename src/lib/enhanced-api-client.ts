@@ -64,7 +64,7 @@ class EnhancedApiClient {
   }
 
   private categorizeError(status: number, message: string): ErrorCategory {
-    if (status >= 500) return ErrorCategory.SERVER;
+    if (status >= 500) return ErrorCategory.DATABASE;
     if (status === 429) return ErrorCategory.RATE_LIMIT;
     if (status === 401) return ErrorCategory.AUTHENTICATION;
     if (status === 403) return ErrorCategory.AUTHORIZATION;
@@ -105,7 +105,7 @@ class EnhancedApiClient {
         return 'You don\'t have permission to perform this action.';
       case ErrorCategory.RATE_LIMIT:
         return 'Too many requests. Please wait a moment and try again.';
-      case ErrorCategory.SERVER:
+      case ErrorCategory.DATABASE:
         return 'A server error occurred. Please try again later.';
       default:
         return 'An error occurred. Please try again.';
@@ -144,7 +144,7 @@ class EnhancedApiClient {
           'Reduce the frequency of requests',
           'Contact support if you need higher limits'
         ];
-      case ErrorCategory.SERVER:
+      case ErrorCategory.DATABASE:
         return [
           'Try again in a few minutes',
           'Check our status page',

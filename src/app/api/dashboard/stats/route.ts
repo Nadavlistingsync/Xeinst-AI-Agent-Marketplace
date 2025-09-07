@@ -28,11 +28,9 @@ export async function GET(req: NextRequest) {
       return sum + (usageCount * (agent.price || 0) * 0.7); // 70% to creator
     }, 0);
 
-    const totalUsers = new Set(
-      agents.flatMap(agent => 
-        agent.webhookLogs.map(log => log.userId).filter(Boolean)
-      )
-    ).size;
+    // For now, we'll estimate total users based on webhook logs
+    // In a real implementation, you'd track user IDs in webhook logs
+    const totalUsers = agents.reduce((sum, agent) => sum + agent.webhookLogs.length, 0);
 
     // Monthly earnings (last 30 days)
     const thirtyDaysAgo = new Date();

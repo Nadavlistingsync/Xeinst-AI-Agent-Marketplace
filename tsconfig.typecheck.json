@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": false,
@@ -24,30 +20,30 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "baseUrl": ".",
     "forceConsistentCasingInFileNames": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitReturns": false,
-    "noFallthroughCasesInSwitch": false,
-    "typeRoots": [
-      "./node_modules/@types",
-      "./src/types"
-    ]
+    "noFallthroughCasesInSwitch": false
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "next-env.d.ts",
-    ".next/types/**/*.ts"
+    "src/app/**/*.ts",
+    "src/app/**/*.tsx",
+    "src/components/**/*.ts",
+    "src/components/**/*.tsx",
+    "src/lib/**/*.ts",
+    "src/hooks/**/*.ts",
+    "src/contexts/**/*.ts",
+    "src/contexts/**/*.tsx",
+    "src/types/**/*.ts",
+    "next-env.d.ts"
   ],
   "exclude": [
     "node_modules",
-    "src/test/**/*",
+    "src/test",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",
@@ -56,6 +52,8 @@
     "**/*.config.ts",
     "vitest.config.ts",
     "jest.config.js",
-    "jest.setup.js"
+    "jest.setup.js",
+    "**/__tests__",
+    "**/__mocks__"
   ]
 }

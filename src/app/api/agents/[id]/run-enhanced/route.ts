@@ -65,11 +65,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     // Validate input against agent's input schema
-    if (agent.inputSchema) {
+    const inputSchema = agent.config && typeof agent.config === 'object' && 'inputSchema' in agent.config 
+      ? (agent.config as any).inputSchema 
+      : null;
+    
+    if (inputSchema) {
       try {
-        const schema = typeof agent.inputSchema === 'string' 
-          ? JSON.parse(agent.inputSchema) 
-          : agent.inputSchema;
+        const schema = typeof inputSchema === 'string' 
+          ? JSON.parse(inputSchema) 
+          : inputSchema;
         
         // Basic validation - you might want to use a more robust JSON schema validator
         if (schema.required && Array.isArray(schema.required)) {

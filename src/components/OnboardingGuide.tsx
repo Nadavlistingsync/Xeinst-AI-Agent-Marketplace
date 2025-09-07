@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, CheckCircle, Zap, Users, DollarSign, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -143,7 +143,7 @@ export default function OnboardingGuide({ isOpen, onClose, userId }: OnboardingG
                   className="text-center"
                 >
                   <div className="w-16 h-16 rounded-full bg-gradient-ai flex items-center justify-center mb-6 mx-auto">
-                    <steps[currentStep].icon className="w-8 h-8 text-white" />
+                    {React.createElement(steps[currentStep].icon, { className: "w-8 h-8 text-white" })}
                   </div>
                   <h3 className="text-2xl font-bold text-white mb-4">
                     {steps[currentStep].title}

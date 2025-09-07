@@ -31,13 +31,21 @@ export default function AgentPage({
   const isActive = deployment.status === 'active';
   const isPending = deployment.status === 'pending' || deployment.status === 'deploying';
   const metrics = deployment.metrics?.[0] || {
+    id: '',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    deploymentId: deployment.id,
     errorRate: 0,
     responseTime: 0,
-    uptime: 100,
-    usage: {
-      total: 0,
-      last24h: 0
-    }
+    successRate: 100,
+    totalRequests: 0,
+    activeUsers: 0,
+    averageResponseTime: 0,
+    requestsPerMinute: 0,
+    averageTokensUsed: 0,
+    costPerRequest: 0,
+    totalCost: 0,
+    lastUpdated: new Date()
   };
 
   const handleDownload = async () => {

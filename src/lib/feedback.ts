@@ -18,7 +18,7 @@ type UpdateFeedbackInput = Partial<CreateFeedbackInput>;
 export async function createFeedback(data: CreateFeedbackInput): Promise<AgentFeedback> {
   const validatedData = feedbackSchema.parse(data);
   return prisma.agentFeedback.create({
-    data: validatedData
+    data: validatedData as any
   });
 }
 

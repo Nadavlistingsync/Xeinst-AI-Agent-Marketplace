@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
         description: agent.description,
         category: agent.category,
         price: agent.price || 0,
-        status: agent.isActive ? 'active' : 'inactive',
+        status: agent.status === 'active' ? 'active' : 'inactive',
         usageCount,
         earnings,
         averageRating,
