@@ -56,6 +56,12 @@
     "**/*.config.ts",
     "vitest.config.ts",
     "jest.config.js",
-    "jest.setup.js"
+    "jest.setup.js",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    "coverage",
+    "dist",
+    "build",
+    ".next"
   ]
 }
