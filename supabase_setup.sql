@@ -402,86 +402,86 @@ CREATE POLICY "Users can update their own profile" ON "User"
 
 -- Product policies
 CREATE POLICY "Anyone can view public products" ON "Product"
-    FOR SELECT USING (isPublic = true OR createdBy = auth.uid());
+    FOR SELECT USING ("isPublic" = true OR "createdBy" = auth.uid());
 
 CREATE POLICY "Users can create products" ON "Product"
-    FOR INSERT WITH CHECK (auth.uid() = createdBy);
+    FOR INSERT WITH CHECK (auth.uid() = "createdBy");
 
 CREATE POLICY "Users can update their own products" ON "Product"
-    FOR UPDATE USING (auth.uid() = createdBy);
+    FOR UPDATE USING (auth.uid() = "createdBy");
 
 CREATE POLICY "Users can delete their own products" ON "Product"
-    FOR DELETE USING (auth.uid() = createdBy);
+    FOR DELETE USING (auth.uid() = "createdBy");
 
 -- Agent policies
 CREATE POLICY "Anyone can view public agents" ON "Agent"
-    FOR SELECT USING (isPublic = true OR createdBy = auth.uid());
+    FOR SELECT USING ("isPublic" = true OR "createdBy" = auth.uid());
 
 CREATE POLICY "Users can create agents" ON "Agent"
-    FOR INSERT WITH CHECK (auth.uid() = createdBy);
+    FOR INSERT WITH CHECK (auth.uid() = "createdBy");
 
 CREATE POLICY "Users can update their own agents" ON "Agent"
-    FOR UPDATE USING (auth.uid() = createdBy);
+    FOR UPDATE USING (auth.uid() = "createdBy");
 
 CREATE POLICY "Users can delete their own agents" ON "Agent"
-    FOR DELETE USING (auth.uid() = createdBy);
+    FOR DELETE USING (auth.uid() = "createdBy");
 
 -- Deployment policies
 CREATE POLICY "Anyone can view public deployments" ON "Deployment"
-    FOR SELECT USING (isPublic = true OR createdBy = auth.uid() OR deployedBy = auth.uid());
+    FOR SELECT USING ("isPublic" = true OR "createdBy" = auth.uid() OR "deployedBy" = auth.uid());
 
 CREATE POLICY "Users can create deployments" ON "Deployment"
-    FOR INSERT WITH CHECK (auth.uid() = createdBy OR auth.uid() = deployedBy);
+    FOR INSERT WITH CHECK (auth.uid() = "createdBy" OR auth.uid() = "deployedBy");
 
 CREATE POLICY "Users can update their own deployments" ON "Deployment"
-    FOR UPDATE USING (auth.uid() = createdBy OR auth.uid() = deployedBy);
+    FOR UPDATE USING (auth.uid() = "createdBy" OR auth.uid() = "deployedBy");
 
 -- Agent Feedback policies
 CREATE POLICY "Users can view feedback on their deployments" ON "AgentFeedback"
     FOR SELECT USING (
         EXISTS (
             SELECT 1 FROM "Deployment" 
-            WHERE "Deployment".id = "AgentFeedback".deploymentId 
-            AND ("Deployment".createdBy = auth.uid() OR "Deployment".deployedBy = auth.uid())
-        ) OR userId = auth.uid()
+            WHERE "Deployment".id = "AgentFeedback"."deploymentId" 
+            AND ("Deployment"."createdBy" = auth.uid() OR "Deployment"."deployedBy" = auth.uid())
+        ) OR "userId" = auth.uid()
     );
 
 CREATE POLICY "Users can create feedback" ON "AgentFeedback"
-    FOR INSERT WITH CHECK (auth.uid() = userId);
+    FOR INSERT WITH CHECK (auth.uid() = "userId");
 
 CREATE POLICY "Users can update their own feedback" ON "AgentFeedback"
-    FOR UPDATE USING (auth.uid() = userId);
+    FOR UPDATE USING (auth.uid() = "userId");
 
 -- Review policies
 CREATE POLICY "Anyone can view reviews" ON "Review"
     FOR SELECT USING (true);
 
 CREATE POLICY "Users can create reviews" ON "Review"
-    FOR INSERT WITH CHECK (auth.uid() = userId);
+    FOR INSERT WITH CHECK (auth.uid() = "userId");
 
 CREATE POLICY "Users can update their own reviews" ON "Review"
-    FOR UPDATE USING (auth.uid() = userId);
+    FOR UPDATE USING (auth.uid() = "userId");
 
 -- Notification policies
 CREATE POLICY "Users can view their own notifications" ON "Notification"
-    FOR SELECT USING (auth.uid() = userId);
+    FOR SELECT USING (auth.uid() = "userId");
 
 CREATE POLICY "Users can update their own notifications" ON "Notification"
-    FOR UPDATE USING (auth.uid() = userId);
+    FOR UPDATE USING (auth.uid() = "userId");
 
 -- Web Embed policies
 CREATE POLICY "Anyone can view public embeds" ON "WebEmbed"
-    FOR SELECT USING (status = 'active' OR createdBy = auth.uid());
+    FOR SELECT USING ("status" = 'active' OR "createdBy" = auth.uid());
 
 CREATE POLICY "Users can create embeds" ON "WebEmbed"
-    FOR INSERT WITH CHECK (auth.uid() = createdBy);
+    FOR INSERT WITH CHECK (auth.uid() = "createdBy");
 
 CREATE POLICY "Users can update their own embeds" ON "WebEmbed"
-    FOR UPDATE USING (auth.uid() = createdBy);
+    FOR UPDATE USING (auth.uid() = "createdBy");
 
 -- Credit Transaction policies
 CREATE POLICY "Users can view their own transactions" ON "CreditTransaction"
-    FOR SELECT USING (auth.uid() = userId);
+    FOR SELECT USING (auth.uid() = "userId");
 
 -- =============================================================================
 -- FUNCTIONS
