@@ -19,9 +19,10 @@ const coreFeatures = [
   {
     icon: Upload,
     title: "Connect Agent",
-    description: "Connect your AI agent via webhook and make it available to others",
-    href: "/upload",
-    color: "from-blue-500 to-purple-500"
+    description: "Upload your AI agent in 3 simple steps and start earning credits",
+    href: "/upload-simple",
+    color: "from-blue-500 to-purple-500",
+    featured: true
   },
   {
     icon: DollarSign,
@@ -117,7 +118,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
             >
-              <Link href="/upload">
+              <Link href="/upload-simple">
                 <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
                   <Upload className="w-5 h-5 mr-2" />
                   Connect Agent
@@ -284,7 +285,7 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <Link href="/upload">
+              <Link href="/upload-simple">
                 <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
                   <Upload className="w-5 h-5 mr-2" />
                   Connect Your First Agent

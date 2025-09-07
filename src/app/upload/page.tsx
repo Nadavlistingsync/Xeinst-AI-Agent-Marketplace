@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "react-hot-toast";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import AIInterfaceGenerator from "@/components/AIInterfaceGenerator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -59,6 +59,18 @@ interface WebEmbedData {
 
 export default function UploadPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isWelcome = searchParams.get('welcome') === 'true';
+  
+  // Redirect to simple upload for better UX
+  useEffect(() => {
+    if (isWelcome) {
+      router.replace('/upload-simple?welcome=true');
+    } else {
+      router.replace('/upload-simple');
+    }
+  }, [isWelcome, router]);
+
   const [uploadType, setUploadType] = useState<'agent' | 'web-embed' | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
