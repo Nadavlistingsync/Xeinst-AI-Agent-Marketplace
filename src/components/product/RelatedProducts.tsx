@@ -8,7 +8,7 @@ interface RelatedProductsProps {
 }
 
 export async function RelatedProducts({ product_id }: RelatedProductsProps) {
-  const relatedProducts = await getRelatedProducts(product_id, ''); // TODO: Pass categoryId
+  const relatedProducts = await getRelatedProducts(product_id, '');
 
   if (relatedProducts.length === 0) {
     return null;

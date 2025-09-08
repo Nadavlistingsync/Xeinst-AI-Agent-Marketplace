@@ -53,7 +53,7 @@ export async function createCheckoutSession(data: CreateCheckoutSessionData): Pr
           product_data: {
             name: product.name,
             description: product.description,
-            // images: product.images, // TODO: Add images field to Product model or handle differently
+            images: product.images || [],
           },
           unit_amount: Math.round(Number(product.price) * 100)
         },

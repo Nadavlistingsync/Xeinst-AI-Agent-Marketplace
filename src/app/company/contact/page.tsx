@@ -101,8 +101,19 @@ export default function ContactPage() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Replace with actual form submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Submit form data to API endpoint
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message');
+      }
+
       toast.success("Message sent successfully! We'll get back to you soon.");
       setFormData({
         name: "",
