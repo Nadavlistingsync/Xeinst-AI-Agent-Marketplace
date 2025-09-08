@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
+import { Navbar } from "@/components/ui/Navbar";
+import { Footer } from "@/components/ui/Footer";
+import { MotionWrapper } from "@/components/ui/MotionWrapper";
 import { securityManager, addWatermark } from "@/lib/security";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -86,7 +89,11 @@ export default function RootLayout({
       </head>
       <body className={inter.className} data-watermark={sessionInfo.watermark}>
         <Providers>
-          {children}
+          <Navbar />
+          <MotionWrapper>
+            {children}
+          </MotionWrapper>
+          <Footer />
         </Providers>
         
         {/* Hidden watermark in footer */}

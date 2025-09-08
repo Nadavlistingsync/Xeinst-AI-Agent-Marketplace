@@ -1,8 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   ArrowRight, 
   Upload,
@@ -10,9 +8,16 @@ import {
   DollarSign,
   Zap,
   CheckCircle,
-  Star
+  Star,
+  Play,
+  Users,
+  TrendingUp,
+  Shield
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { GlowButton } from "@/components/ui/GlowButton";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { Section } from "@/components/ui/Section";
 
 // Core Features
 const coreFeatures = [
@@ -20,23 +25,20 @@ const coreFeatures = [
     icon: Upload,
     title: "Connect Agent",
     description: "Upload your AI agent in 3 simple steps and start earning credits",
-    href: "/upload-simple",
-    color: "from-blue-500 to-purple-500",
+    href: "/upload",
     featured: true
   },
   {
     icon: DollarSign,
     title: "Buy Credits",
     description: "Purchase credits to use AI agents on the platform",
-    href: "/checkout",
-    color: "from-green-500 to-teal-500"
+    href: "/checkout"
   },
   {
     icon: Bot,
     title: "Use Agents",
     description: "Browse and use AI agents from the marketplace",
-    href: "/marketplace",
-    color: "from-orange-500 to-red-500"
+    href: "/marketplace"
   }
 ];
 
@@ -46,261 +48,258 @@ const howItWorksSteps = [
     step: "01",
     title: "Connect Your Agent",
     description: "Connect your AI agent via webhook and set pricing",
-    icon: Upload,
-    color: "from-blue-500 to-purple-500"
+    icon: Upload
   },
   {
     step: "02",
-    title: "Buy Credits",
-    description: "Purchase credits to use agents on the platform",
-    icon: DollarSign,
-    color: "from-green-500 to-teal-500"
+    title: "Users Buy Credits",
+    description: "Users purchase credits to access your agent",
+    icon: DollarSign
   },
   {
     step: "03",
-    title: "Use & Earn",
-    description: "Use agents or earn from your connected agents",
-    icon: Zap,
-    color: "from-orange-500 to-red-500"
+    title: "Earn Money",
+    description: "Get paid 80% of each credit spent on your agent",
+    icon: TrendingUp
   }
 ];
 
 // Stats
 const stats = [
-  { label: "Active Agents", value: "1,000+", icon: Bot },
-  { label: "Credits Used", value: "50K+", icon: Zap },
-  { label: "Users", value: "500+", icon: Star },
-  { label: "Success Rate", value: "99%", icon: CheckCircle }
+  { label: "Active Agents", value: "1,234", icon: Bot },
+  { label: "Total Credits", value: "50K+", icon: DollarSign },
+  { label: "Happy Users", value: "5,678", icon: Users },
+  { label: "Success Rate", value: "99.9%", icon: CheckCircle }
 ];
 
-export default function Home() {
+// Features
+const features = [
+  {
+    icon: Shield,
+    title: "Secure & Reliable",
+    description: "Enterprise-grade security with 99.9% uptime guarantee"
+  },
+  {
+    icon: Zap,
+    title: "Lightning Fast",
+    description: "Execute agents in milliseconds with our optimized infrastructure"
+  },
+  {
+    icon: TrendingUp,
+    title: "Scalable",
+    description: "Handle millions of requests with automatic scaling"
+  },
+  {
+    icon: Star,
+    title: "Premium Quality",
+    description: "Curated agents with quality assurance and performance monitoring"
+  }
+];
+
+export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
-        {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-dark"></div>
-        <div className="absolute inset-0 grid-bg opacity-20"></div>
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-ai-primary/20 rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute top-40 right-10 w-96 h-96 bg-ai-secondary/20 rounded-full blur-3xl animate-pulse-slow delay-1000"></div>
-          <div className="absolute bottom-20 left-1/2 w-80 h-80 bg-ai-accent/20 rounded-full blur-3xl animate-pulse-slow delay-2000"></div>
-        </div>
-
-        <div className="container relative z-10">
-          <div className="text-center max-w-4xl mx-auto">
-            {/* Main Heading */}
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-5xl md:text-7xl font-bold text-gradient mb-6"
-            >
-              AI Agent Marketplace
+      <Section className="pt-32 pb-16">
+        <div className="text-center space-y-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="space-y-6"
+          >
+            <h1 className="text-5xl md:text-7xl font-bold text-glow">
+              AI Agent
               <br />
-              <span className="text-white">Webhook Agents • Buy Credits • Use AI</span>
-            </motion.h1>
-
-            {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
-            >
-              Connect your AI agents via webhooks and earn credits, or buy credits to use powerful AI agents from our marketplace.
-            </motion.p>
-
-            {/* CTA Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
-            >
-              <Link href="/upload-simple">
-                <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
-                  <Upload className="w-5 h-5 mr-2" />
-                  Connect Agent
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-              </Link>
-              <Link href="/checkout">
-                <Button size="lg" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
-                  <DollarSign className="w-5 h-5 mr-2" />
-                  Buy Credits
-                </Button>
-              </Link>
+              <span className="text-accent">Marketplace</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-white/70 max-w-3xl mx-auto">
+              Connect your AI agents, sell access with credits, and earn money. 
+              The future of AI monetization is here.
+            </p>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          >
+            <GlowButton size="lg" asChild>
               <Link href="/marketplace">
-                <Button size="lg" variant="ghost" className="text-muted-foreground hover:text-white">
-                  <Bot className="w-5 h-5 mr-2" />
-                  Browse Agents
-                </Button>
+                Browse Agents
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
-            </motion.div>
-
-            {/* Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-6"
-            >
-              {stats.map((stat, index) => (
-                <div key={index} className="text-center">
-                  <div className="flex items-center justify-center mb-2">
-                    <stat.icon className="w-6 h-6 text-ai-primary mr-2" />
-                    <span className="text-2xl font-bold text-white">{stat.value}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                </div>
-              ))}
-            </motion.div>
-          </div>
+            </GlowButton>
+            <GlowButton variant="secondary" size="lg" asChild>
+              <Link href="/upload">
+                <Upload className="mr-2 h-5 w-5" />
+                Connect Agent
+              </Link>
+            </GlowButton>
+          </motion.div>
         </div>
-      </section>
+      </Section>
 
-      {/* Core Features Section */}
-      <section className="py-20 bg-gradient-to-b from-background to-background/50">
-        <div className="container">
-          <div className="text-center mb-16">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-4xl font-bold text-white mb-4"
-            >
+      {/* Core Features */}
+      <Section>
+        <div className="text-center space-y-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="space-y-4"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-glow-sm">
               How It Works
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-xl text-muted-foreground max-w-2xl mx-auto"
-            >
-              Three simple steps to get started
-            </motion.p>
-          </div>
+            </h2>
+            <p className="text-lg text-white/70 max-w-2xl mx-auto">
+              Three simple steps to start earning from your AI agents
+            </p>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             {howItWorksSteps.map((step, index) => (
               <motion.div
-                key={index}
+                key={step.step}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="relative"
+                viewport={{ once: true }}
               >
-                <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40">
-                  <CardHeader className="text-center">
-                    <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center mb-4 mx-auto`}>
-                      <step.icon className="w-8 h-8 text-white" />
-                    </div>
-                    <div className="text-sm text-ai-primary font-semibold mb-2">{step.step}</div>
-                    <CardTitle className="text-xl text-white">{step.title}</CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                      {step.description}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                <GlassCard className="text-center space-y-4">
+                  <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-accent/20">
+                    <step.icon className="h-8 w-8 text-accent" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-accent">{step.step}</div>
+                    <h3 className="text-xl font-semibold text-white">{step.title}</h3>
+                    <p className="text-white/70">{step.description}</p>
+                  </div>
+                </GlassCard>
               </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </Section>
 
-      {/* Core Features Section */}
-      <section className="py-20 bg-gradient-to-b from-background/50 to-background">
-        <div className="container">
-          <div className="text-center mb-16">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-4xl font-bold text-white mb-4"
-            >
-              Core Features
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-xl text-muted-foreground max-w-2xl mx-auto"
-            >
-              Everything you need to upload, buy, and use AI agents
-            </motion.p>
-          </div>
+      {/* Features Grid */}
+      <Section>
+        <div className="text-center space-y-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="space-y-4"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-glow-sm">
+              Why Choose Xeinst?
+            </h2>
+            <p className="text-lg text-white/70 max-w-2xl mx-auto">
+              Built for developers, by developers. The most powerful AI agent marketplace.
+            </p>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {coreFeatures.map((feature, index) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((feature, index) => (
               <motion.div
-                key={index}
+                key={feature.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
               >
-                <Link href={feature.href}>
-                  <Card className="h-full hover:shadow-lg transition-all duration-300 border-ai-primary/20 hover:border-ai-primary/40 cursor-pointer">
-                    <CardHeader>
-                      <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${feature.color} flex items-center justify-center mb-4`}>
-                        <feature.icon className="w-6 h-6 text-white" />
-                      </div>
-                      <CardTitle className="text-xl text-white">{feature.title}</CardTitle>
-                      <CardDescription className="text-muted-foreground">
-                        {feature.description}
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
-                </Link>
+                <GlassCard className="text-center space-y-4">
+                  <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-accent/20">
+                    <feature.icon className="h-6 w-6 text-accent" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-white">{feature.title}</h3>
+                    <p className="text-sm text-white/70">{feature.description}</p>
+                  </div>
+                </GlassCard>
               </motion.div>
             ))}
           </div>
         </div>
-      </section>
+      </Section>
+
+      {/* Stats */}
+      <Section>
+        <div className="text-center space-y-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="space-y-4"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-glow-sm">
+              Trusted by Thousands
+            </h2>
+            <p className="text-lg text-white/70 max-w-2xl mx-auto">
+              Join the growing community of AI developers and users
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="text-center space-y-2"
+              >
+                <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-accent/20">
+                  <stat.icon className="h-6 w-6 text-accent" />
+                </div>
+                <div className="text-3xl font-bold text-glow">{stat.value}</div>
+                <div className="text-sm text-white/70">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </Section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-b from-background to-background/50">
-        <div className="container">
-          <div className="max-w-4xl mx-auto text-center">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-4xl font-bold text-white mb-4"
-            >
-              Ready to Get Started?
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
-            >
-              Join thousands of users who are already uploading agents and earning credits.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <Link href="/upload-simple">
-                <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
-                  <Upload className="w-5 h-5 mr-2" />
-                  Connect Your First Agent
-                </Button>
-              </Link>
-              <Link href="/checkout">
-                <Button size="lg" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
-                  <DollarSign className="w-5 h-5 mr-2" />
-                  Buy Credits Now
-                </Button>
-              </Link>
-            </motion.div>
-          </div>
-        </div>
-      </section>
+      <Section>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          <GlassCard className="text-center space-y-8 p-12">
+            <div className="space-y-4">
+              <h2 className="text-3xl md:text-4xl font-bold text-glow-sm">
+                Ready to Get Started?
+              </h2>
+              <p className="text-lg text-white/70 max-w-2xl mx-auto">
+                Join thousands of developers who are already earning from their AI agents
+              </p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <GlowButton size="lg" asChild>
+                <Link href="/upload">
+                  <Upload className="mr-2 h-5 w-5" />
+                  Connect Your Agent
+                </Link>
+              </GlowButton>
+              <GlowButton variant="secondary" size="lg" asChild>
+                <Link href="/marketplace">
+                  <Play className="mr-2 h-5 w-5" />
+                  Browse Marketplace
+                </Link>
+              </GlowButton>
+            </div>
+          </GlassCard>
+        </motion.div>
+      </Section>
     </div>
   );
 }

@@ -9,8 +9,9 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        background: "#000000",
+        foreground: "#FFFFFF",
+        accent: "#00BFFF",
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
@@ -51,10 +52,6 @@ module.exports = {
           DEFAULT: 'hsl(var(--muted))',
           foreground: 'hsl(var(--muted-foreground))',
         },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
@@ -69,17 +66,6 @@ module.exports = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-        // Black and White Glow colors
-        glow: {
-          white: '#ffffff',
-          black: '#000000',
-          'gray-light': '#f5f5f5',
-          'gray-medium': '#666666',
-          'gray-dark': '#333333',
-          'gray-darker': '#1a1a1a',
-          'shadow': '0 0 20px rgba(255, 255, 255, 0.1)',
-          'shadow-strong': '0 0 40px rgba(255, 255, 255, 0.2)',
-        }
       },
       fontFamily: {
         sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
@@ -182,9 +168,14 @@ module.exports = {
         xs: '2px',
       },
       boxShadow: {
-        'glow': '0 0 20px rgba(0, 180, 255, 0.5)',
-        'glow-lg': '0 0 40px rgba(0, 180, 255, 0.3)',
-        'inner-glow': 'inset 0 0 20px rgba(0, 180, 255, 0.2)',
+        glow: "0 0 20px rgba(0,191,255,0.5)",
+        "glow-sm": "0 0 10px rgba(255,255,255,0.25)",
+        "glow-lg": "0 0 30px rgba(0,191,255,0.6)",
+        "glow-white": "0 0 20px rgba(255,255,255,0.3)",
+        "inner-glow": "inset 0 0 20px rgba(0, 180, 255, 0.2)",
+      },
+      borderColor: {
+        glass: "rgba(255,255,255,0.2)",
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
@@ -198,5 +189,46 @@ module.exports = {
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
     require('@tailwindcss/container-queries'),
+    require("tailwindcss-animate"),
+    function ({ addUtilities }: any) {
+      addUtilities({
+        ".text-glow": {
+          textShadow: "0 0 10px rgba(255,255,255,0.8)",
+        },
+        ".text-glow-sm": {
+          textShadow: "0 0 8px rgba(255,255,255,0.6)",
+        },
+        ".text-glow-lg": {
+          textShadow: "0 0 15px rgba(255,255,255,1)",
+        },
+        ".glass": {
+          backgroundColor: "rgba(255,255,255,0.08)",
+          backdropFilter: "blur(12px)",
+          border: "1px solid rgba(255,255,255,0.2)",
+          borderRadius: "1rem",
+        },
+        ".glass-hover": {
+          transition: "all 180ms ease",
+        },
+        ".glass-hover:hover": {
+          borderColor: "rgba(255,255,255,0.4)",
+          boxShadow: "0 0 20px rgba(255,255,255,0.15)",
+        },
+        ".glow-ring": {
+          boxShadow: "0 0 0 2px rgba(0,191,255,0.4), 0 0 20px rgba(0,191,255,0.45)",
+        },
+        ".button-glow": {
+          transition: "all 200ms ease",
+        },
+        ".button-glow:hover": {
+          boxShadow: "0 0 24px rgba(0,191,255,0.5)",
+        },
+        ".card-grid": {
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+          gap: "1.5rem",
+        },
+      })
+    },
   ],
 } 
