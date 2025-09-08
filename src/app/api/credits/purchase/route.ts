@@ -3,11 +3,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Initialize Stripe only if the secret key is available
+const stripe = process.env.STRIPE_SECRET_KEY ? new (require('stripe').default)(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-06-20',
-});
+}) : null;
 
 const purchaseCreditsSchema = z.object({
   creditPackage: z.enum(['small', 'medium', 'large', 'enterprise']),
@@ -26,6 +26,13 @@ const CREDIT_PACKAGES = {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    if (!stripe) {
+      return NextResponse.json({ 
+        error: 'Payment system not configured',
+        details: 'Stripe is not properly configured'
+      }, { status: 503 });
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import Stripe from 'stripe';
 import { headers } from 'next/headers';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Initialize Stripe only if the secret key is available
+const stripe = process.env.STRIPE_SECRET_KEY ? new (require('stripe').default)(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2024-06-20',
-});
+}) : null;
 
 // Credit packages mapping
 const CREDIT_PACKAGES = {
@@ -17,6 +17,13 @@ const CREDIT_PACKAGES = {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    if (!stripe) {
+      return NextResponse.json({ 
+        error: 'Payment system not configured',
+        details: 'Stripe is not properly configured'
+      }, { status: 503 });
+    }
+
     const body = await request.text();
     const signature = headers().get('stripe-signature');
 

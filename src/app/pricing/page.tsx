@@ -1,8 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { GlowButton } from "@/components/ui/GlowButton";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { Section } from "@/components/ui/Section";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { 
   CheckCircle, 
   Star, 
@@ -10,10 +11,12 @@ import {
   Zap,
   Users,
   Building,
-  Crown
+  Crown,
+  CreditCard,
+  DollarSign,
+  TrendingUp
 } from "lucide-react";
 import { motion } from "framer-motion";
-// import Link from "next/link";
 import { useState } from "react";
 
 const pricingTiers = [
@@ -23,7 +26,6 @@ const pricingTiers = [
     period: "forever",
     description: "Perfect for getting started",
     icon: Zap,
-    color: "from-blue-500 to-purple-500",
     features: [
       "1 agent",
       "500 runs/month",
@@ -32,7 +34,7 @@ const pricingTiers = [
       "Standard integrations"
     ],
     cta: "Start Free",
-    ctaVariant: "outline" as const,
+    ctaVariant: "secondary" as const,
     popular: false
   },
   {
@@ -41,311 +43,296 @@ const pricingTiers = [
     period: "per month",
     description: "For growing teams",
     icon: Star,
-    color: "from-green-500 to-teal-500",
     features: [
       "5 agents",
       "50,000 runs/month",
       "Email support",
       "Advanced templates",
       "100+ integrations",
-      "Basic analytics",
-      "API access"
+      "Priority processing",
+      "Analytics dashboard"
     ],
-    cta: "Start Pro Trial",
-    ctaVariant: "default" as const,
+    cta: "Start Pro",
+    ctaVariant: "primary" as const,
     popular: true
-  },
-  {
-    name: "Team",
-    price: "$499",
-    period: "per month",
-    description: "For organizations",
-    icon: Users,
-    color: "from-orange-500 to-red-500",
-    features: [
-      "Unlimited agents",
-      "500,000 runs/month",
-      "Priority support",
-      "SSO & RBAC",
-      "Shared workspaces",
-      "Audit logs",
-      "Advanced analytics",
-      "Custom integrations"
-    ],
-    cta: "Contact Sales",
-    ctaVariant: "default" as const,
-    popular: false
   },
   {
     name: "Enterprise",
     price: "Custom",
-    period: "pricing",
-    description: "For large enterprises",
+    period: "contact us",
+    description: "For large organizations",
     icon: Building,
-    color: "from-purple-500 to-pink-500",
     features: [
-      "Unlimited everything",
-      "VPC deployment",
-      "Private models",
-      "SLA guarantees",
-      "Dedicated support",
-      "Custom compliance",
-      "On-premise options",
-      "White-label options"
+      "Unlimited agents",
+      "Unlimited runs",
+      "24/7 phone support",
+      "Custom templates",
+      "All integrations",
+      "Dedicated infrastructure",
+      "Advanced analytics",
+      "SLA guarantee",
+      "Custom integrations"
     ],
     cta: "Contact Sales",
-    ctaVariant: "default" as const,
+    ctaVariant: "secondary" as const,
     popular: false
   }
 ];
 
-const faqData = [
+const creditPackages = [
   {
-    question: "What's included in the free tier?",
-    answer: "The free tier includes 1 agent, 500 runs per month, community support, and access to basic templates. Perfect for trying out Xeinst and building your first agent."
+    name: "Starter Pack",
+    credits: 10,
+    price: 9.99,
+    savings: 0,
+    popular: false
   },
   {
-    question: "How are runs calculated?",
-    answer: "A run is counted each time an agent executes, regardless of the number of steps or tools used. Failed runs due to errors don't count toward your limit."
+    name: "Power Pack",
+    credits: 50,
+    price: 39.99,
+    savings: 10,
+    popular: true
   },
   {
-    question: "Can I change plans anytime?",
-    answer: "Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately, and we'll prorate any billing differences."
+    name: "Pro Pack",
+    credits: 100,
+    price: 69.99,
+    savings: 30,
+    popular: false
   },
   {
-    question: "What payment methods do you accept?",
-    answer: "We accept all major credit cards, PayPal, and for Enterprise customers, we can arrange invoicing with net payment terms."
+    name: "Enterprise Pack",
+    credits: 500,
+    price: 299.99,
+    savings: 200,
+    popular: false
+  }
+];
+
+const features = [
+  {
+    icon: CreditCard,
+    title: "Flexible Pricing",
+    description: "Pay only for what you use with our credit-based system"
   },
   {
-    question: "Is there a setup fee?",
-    answer: "No setup fees for any plan. You only pay the monthly subscription fee. Enterprise customers may have custom implementation costs."
+    icon: TrendingUp,
+    title: "Scale with Growth",
+    description: "Start small and scale up as your agent usage grows"
   },
   {
-    question: "Do you offer discounts for annual billing?",
-    answer: "Yes! Annual billing comes with a 20% discount on Pro and Team plans. Contact us for Enterprise annual pricing."
+    icon: DollarSign,
+    title: "Earn More",
+    description: "Higher tiers give you better earnings splits and features"
   }
 ];
 
 export default function PricingPage() {
-  const [isAnnual, setIsAnnual] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="relative pt-32 pb-20 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-dark"></div>
-        <div className="absolute inset-0 grid-bg opacity-20"></div>
-        
-        <div className="container relative z-10">
-          <div className="text-center max-w-4xl mx-auto">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-5xl md:text-6xl font-bold text-gradient mb-6"
-            >
-              Simple, Transparent Pricing
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
-            >
-              Start free, scale as you grow. No hidden fees, no surprises.
-            </motion.p>
+    <div className="min-h-screen">
+      <PageHeader
+        title="Simple, Transparent Pricing"
+        subtitle="Choose the plan that fits your needs. Start free and scale as you grow."
+      />
 
-            {/* Billing Toggle */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="flex items-center justify-center space-x-4 mb-12"
-            >
-              <span className={`text-sm ${!isAnnual ? 'text-white' : 'text-muted-foreground'}`}>
-                Monthly
-              </span>
-              <button
-                onClick={() => setIsAnnual(!isAnnual)}
-                className="relative inline-flex h-6 w-11 items-center rounded-full bg-ai-primary/20 transition-colors focus:outline-none focus:ring-2 focus:ring-ai-primary focus:ring-offset-2"
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-ai-primary transition-transform ${
-                    isAnnual ? 'translate-x-6' : 'translate-x-1'
+      <Section>
+        <div className="space-y-16">
+          {/* Billing Toggle */}
+          <div className="flex items-center justify-center">
+            <div className="glass p-1 rounded-xl">
+              <div className="flex items-center space-x-1">
+                <button
+                  onClick={() => setBillingPeriod('monthly')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    billingPeriod === 'monthly'
+                      ? 'bg-accent text-black'
+                      : 'text-white/70 hover:text-white'
                   }`}
-                />
-              </button>
-              <span className={`text-sm ${isAnnual ? 'text-white' : 'text-muted-foreground'}`}>
-                Annual
-              </span>
-              {isAnnual && (
-                <Badge variant="secondary" className="bg-green-500/10 text-green-500 border-green-500/20">
-                  Save 20%
-                </Badge>
-              )}
-            </motion.div>
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setBillingPeriod('yearly')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    billingPeriod === 'yearly'
+                      ? 'bg-accent text-black'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  Yearly
+                  <span className="ml-1 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">
+                    Save 20%
+                  </span>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* Pricing Cards */}
-      <section className="py-20 bg-gradient-to-b from-background to-background/50">
-        <div className="container">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* Pricing Tiers */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {pricingTiers.map((tier, index) => (
               <motion.div
-                key={index}
+                key={tier.name}
                 initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
                 className="relative"
               >
                 {tier.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
-                    <Badge className="bg-gradient-ai text-white border-0">
-                      <Crown className="w-3 h-3 mr-1" />
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <div className="bg-accent text-black px-4 py-1 rounded-full text-sm font-medium">
                       Most Popular
-                    </Badge>
+                    </div>
                   </div>
                 )}
                 
-                <Card className={`h-full hover:shadow-lg transition-all duration-300 ${
-                  tier.popular 
-                    ? 'border-ai-primary/40 shadow-ai-primary/10' 
-                    : 'border-ai-primary/20 hover:border-ai-primary/40'
-                }`}>
-                  <CardHeader className="text-center">
-                    <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${tier.color} flex items-center justify-center mb-4 mx-auto`}>
-                      <tier.icon className="w-6 h-6 text-white" />
+                <GlassCard className={`p-8 h-full ${tier.popular ? 'ring-2 ring-accent' : ''}`}>
+                  <div className="text-center mb-8">
+                    <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-accent/20 mb-4">
+                      <tier.icon className="h-8 w-8 text-accent" />
                     </div>
-                    <CardTitle className="text-2xl text-white">{tier.name}</CardTitle>
-                    <CardDescription className="text-muted-foreground mb-4">
-                      {tier.description}
-                    </CardDescription>
+                    <h3 className="text-2xl font-bold text-white mb-2">{tier.name}</h3>
+                    <p className="text-white/70 mb-4">{tier.description}</p>
                     <div className="mb-4">
-                      <span className="text-4xl font-bold text-white">
-                        {tier.name === "Enterprise" ? tier.price : isAnnual ? `$${Math.round(parseInt(tier.price.replace('$', '')) * 0.8)}` : tier.price}
-                      </span>
-                      <span className="text-muted-foreground ml-2">
-                        {tier.name === "Enterprise" ? "" : isAnnual ? "/year" : tier.period}
-                      </span>
+                      <span className="text-4xl font-bold text-glow">{tier.price}</span>
+                      <span className="text-white/70 ml-2">/{tier.period}</span>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ul className="space-y-3">
-                      {tier.features.map((feature, featureIndex) => (
-                        <li key={featureIndex} className="flex items-center space-x-3">
-                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                          <span className="text-muted-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="pt-4">
-                      <Button 
-                        className={`w-full ${
-                          tier.popular 
-                            ? 'bg-gradient-ai hover:bg-gradient-ai/90' 
-                            : tier.ctaVariant === 'outline' 
-                              ? 'border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10'
-                              : 'bg-ai-primary hover:bg-ai-primary/90'
-                        }`}
-                        variant={tier.ctaVariant}
-                      >
-                        {tier.cta}
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                  </div>
+
+                  <ul className="space-y-4 mb-8">
+                    {tier.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-center space-x-3">
+                        <CheckCircle className="h-5 w-5 text-accent flex-shrink-0" />
+                        <span className="text-white/80">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <GlowButton
+                    variant={tier.ctaVariant}
+                    fullWidth
+                    size="lg"
+                  >
+                    {tier.cta}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </GlowButton>
+                </GlassCard>
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* FAQ Section */}
-      <section className="py-20 bg-gradient-to-b from-background/50 to-background">
-        <div className="container">
-          <div className="text-center mb-16">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-4xl font-bold text-white mb-4"
-            >
-              Frequently Asked Questions
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-xl text-muted-foreground max-w-2xl mx-auto"
-            >
-              Everything you need to know about our pricing
-            </motion.p>
+          {/* Credit Packages */}
+          <div className="text-center space-y-8">
+            <div>
+              <h2 className="text-3xl font-bold text-glow-sm mb-4">Credit Packages</h2>
+              <p className="text-white/70 max-w-2xl mx-auto">
+                Buy credits to use AI agents on the platform. Credits never expire and can be used across all agents.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {creditPackages.map((pkg, index) => (
+                <motion.div
+                  key={pkg.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="relative"
+                >
+                  {pkg.popular && (
+                    <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                      <div className="bg-accent text-black px-3 py-1 rounded-full text-xs font-medium">
+                        Best Value
+                      </div>
+                    </div>
+                  )}
+                  
+                  <GlassCard className={`p-6 text-center ${pkg.popular ? 'ring-2 ring-accent' : ''}`}>
+                    <h3 className="text-lg font-semibold text-white mb-2">{pkg.name}</h3>
+                    <div className="mb-4">
+                      <div className="text-3xl font-bold text-glow">{pkg.credits}</div>
+                      <div className="text-sm text-white/70">credits</div>
+                    </div>
+                    <div className="mb-4">
+                      <div className="text-2xl font-bold text-accent">${pkg.price}</div>
+                      {pkg.savings > 0 && (
+                        <div className="text-sm text-green-400">
+                          Save ${pkg.savings}
+                        </div>
+                      )}
+                    </div>
+                    <GlowButton
+                      variant={pkg.popular ? "primary" : "secondary"}
+                      fullWidth
+                      size="sm"
+                    >
+                      Buy Now
+                    </GlowButton>
+                  </GlassCard>
+                </motion.div>
+              ))}
+            </div>
           </div>
 
-          <div className="max-w-3xl mx-auto space-y-6">
-            {faqData.map((faq, index) => (
+          {/* Features */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
               <motion.div
-                key={index}
+                key={feature.title}
                 initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Card className="border-ai-primary/20">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-white">{faq.question}</CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                      {faq.answer}
-                    </CardDescription>
-                  </CardHeader>
-                </Card>
+                <GlassCard className="text-center p-6">
+                  <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-accent/20 mb-4">
+                    <feature.icon className="h-6 w-6 text-accent" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+                  <p className="text-white/70 text-sm">{feature.description}</p>
+                </GlassCard>
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-b from-background to-background/50">
-        <div className="container">
-          <div className="text-center">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-4xl font-bold text-white mb-4"
-            >
-              Ready to Get Started?
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto"
-            >
-              Start building your first agent in minutes. No credit card required.
-            </motion.p>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <Button size="lg" className="bg-gradient-ai hover:bg-gradient-ai/90">
-                <Zap className="w-5 h-5 mr-2" />
-                Start Free
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              <Button size="lg" variant="outline" className="border-ai-primary/20 text-ai-primary hover:bg-ai-primary/10">
-                <Users className="w-5 h-5 mr-2" />
-                Contact Sales
-              </Button>
-            </motion.div>
-          </div>
+          {/* FAQ Section */}
+          <GlassCard className="p-8">
+            <h2 className="text-2xl font-bold text-glow-sm mb-8 text-center">Frequently Asked Questions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">How do credits work?</h3>
+                <p className="text-white/70 text-sm">
+                  Credits are used to execute AI agents. Each agent has a fixed cost per execution. 
+                  Credits never expire and can be used across all agents on the platform.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Can I change plans anytime?</h3>
+                <p className="text-white/70 text-sm">
+                  Yes, you can upgrade or downgrade your plan at any time. Changes take effect immediately 
+                  and we'll prorate any billing differences.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">What happens to unused credits?</h3>
+                <p className="text-white/70 text-sm">
+                  Credits never expire and remain in your account until used. You can always purchase 
+                  more credits or use existing ones across any agent.
+                </p>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">Is there a free trial?</h3>
+                <p className="text-white/70 text-sm">
+                  Yes! The Free plan includes 500 runs per month to get you started. 
+                  No credit card required to begin.
+                </p>
+              </div>
+            </div>
+          </GlassCard>
         </div>
-      </section>
+      </Section>
     </div>
   );
 }
