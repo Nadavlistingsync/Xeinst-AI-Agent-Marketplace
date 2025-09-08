@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
+import { webhookConfig, getCallbackUrl, isWebhookSystemReady } from '@/lib/webhook-config';
 
 // Webhook trigger for agents (like n8n/Zapier)
 export async function POST(
@@ -11,6 +12,14 @@ export async function POST(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
+    // Check if webhook system is ready
+    if (!isWebhookSystemReady()) {
+      return NextResponse.json({ 
+        error: 'Webhook system is not properly configured',
+        details: 'Please check your environment variables'
+      }, { status: 503 });
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -112,7 +121,7 @@ export async function POST(
       options: options,
       
       // Callback URL for response
-      callbackUrl: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/agent-response`,
+      callbackUrl: getCallbackUrl(),
       
       // Webhook metadata
       webhook: {
@@ -128,8 +137,7 @@ export async function POST(
     const webhookResponse = await fetch(agent.webhookUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'AI-Agent-Marketplace/1.0',
+        ...webhookConfig.production.defaultHeaders,
         'X-Webhook-Event': trigger,
         'X-Execution-ID': execution.id,
         'X-Agent-ID': agentId,
@@ -138,7 +146,8 @@ export async function POST(
           'Authorization': `Bearer ${agent.webhookSecret}`
         })
       },
-      body: JSON.stringify(webhookPayload)
+      body: JSON.stringify(webhookPayload),
+      signal: AbortSignal.timeout(webhookConfig.timeout)
     });
 
     if (!webhookResponse.ok) {
