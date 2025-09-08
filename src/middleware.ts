@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { securityManager, validateRequest } from './lib/security-edge';
-import { logger } from './lib/logger';
 
 /**
  * Security Middleware
@@ -39,10 +38,7 @@ export function middleware(request: NextRequest) {
       }
     } catch (validationError) {
       // Log the error but don't block the request
-      logger.warn('Request validation failed', { 
-        error: validationError instanceof Error ? validationError.message : 'Unknown error',
-        pathname 
-      });
+      console.warn('Request validation failed:', validationError instanceof Error ? validationError.message : 'Unknown error');
     }
 
     // Block suspicious user agents (simplified)
@@ -51,10 +47,7 @@ export function middleware(request: NextRequest) {
     
     if (isBot && !pathname.startsWith('/api/') && !pathname.startsWith('/_next/')) {
       // Log suspicious activity
-      logger.warn('Bot detected', { 
-        userAgent, 
-        pathname
-      });
+      console.warn('Bot detected:', userAgent, pathname);
       
       // Return a response with security headers but limited content
       return new NextResponse('Access Denied', { 
@@ -94,19 +87,14 @@ export function middleware(request: NextRequest) {
         response.headers.set('X-Session-ID', securityManager.getSessionInfo().sessionId);
       } catch (sessionError) {
         // Log error but don't fail the request
-        logger.warn('Failed to set session headers', { 
-          error: sessionError instanceof Error ? sessionError.message : 'Unknown error' 
-        });
+        console.warn('Failed to set session headers:', sessionError instanceof Error ? sessionError.message : 'Unknown error');
       }
     }
 
     return response;
   } catch (error) {
     // Log the error and return a basic response
-    logger.error('Middleware error', { 
-      error: error instanceof Error ? error.message : 'Unknown error',
-      pathname: request.nextUrl.pathname 
-    });
+    console.error('Middleware error:', error instanceof Error ? error.message : 'Unknown error', request.nextUrl.pathname);
     
     // Return a basic response with security headers
     const response = new NextResponse('Internal Server Error', { status: 500 });

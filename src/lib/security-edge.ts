@@ -4,7 +4,6 @@
  */
 
 import { NextRequest } from 'next/server';
-import { logger } from './logger';
 
 // Watermarking and tracking
 const WATERMARK_SIGNATURE = 'AI_AGENCY_2024';
@@ -65,17 +64,13 @@ export class SecurityManager {
       );
       
       if (!hasRequiredHeaders) {
-        logger.warn('Missing security headers', { 
-          headers: Object.fromEntries(request.headers.entries()) 
-        });
+        console.warn('Missing security headers');
         return false;
       }
       
       return true;
     } catch (error) {
-      logger.error('Request validation failed', { 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      });
+      console.error('Request validation failed:', error instanceof Error ? error.message : 'Unknown error');
       return false;
     }
   }
