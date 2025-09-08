@@ -69,31 +69,16 @@ module.exports = {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-        // Custom AI Agency colors
-        ai: {
-          primary: '#00b4ff',
-          secondary: '#6366f1',
-          accent: '#8b5cf6',
-          success: '#10b981',
-          warning: '#f59e0b',
-          error: '#ef4444',
-          dark: {
-            50: '#f8fafc',
-            100: '#f1f5f9',
-            200: '#e2e8f0',
-            300: '#cbd5e1',
-            400: '#94a3b8',
-            500: '#64748b',
-            600: '#475569',
-            700: '#334155',
-            800: '#1e293b',
-            900: '#0f172a',
-            950: '#020617',
-          },
-          glass: {
-            bg: 'rgba(30, 34, 54, 0.7)',
-            border: 'rgba(255,255,255,0.12)',
-          }
+        // Black and White Glow colors
+        glow: {
+          white: '#ffffff',
+          black: '#000000',
+          'gray-light': '#f5f5f5',
+          'gray-medium': '#666666',
+          'gray-dark': '#333333',
+          'gray-darker': '#1a1a1a',
+          'shadow': '0 0 20px rgba(255, 255, 255, 0.1)',
+          'shadow-strong': '0 0 40px rgba(255, 255, 255, 0.2)',
         }
       },
       fontFamily: {
