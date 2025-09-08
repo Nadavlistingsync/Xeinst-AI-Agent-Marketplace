@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { deleteFile } from '@/lib/upload';
 import { prisma } from '@/lib/prisma';
 
-const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads');
+// Temporary file storage for webhook-based agents
+const TEMP_UPLOAD_DIR = join(process.cwd(), 'temp', 'uploads');
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit for webhook payloads
+const FILE_RETENTION_HOURS = 24; // Auto-delete after 24 hours
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
@@ -22,6 +24,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const formData = await request.formData();
     const file = formData.get('file');
+    const agentId = formData.get('agentId') as string;
 
     if (!file || !(file instanceof File)) {
       return NextResponse.json(
@@ -30,27 +33,49 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const fileName = `${uuidv4()}-${file.name}`;
-    const filePath = join(UPLOAD_DIR, fileName);
+    // Check file size limit for webhook payloads
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { success: false, error: `File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+        { status: 400 }
+      );
+    }
 
-    await mkdir(UPLOAD_DIR, { recursive: true });
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const fileId = uuidv4();
+    const fileName = `${fileId}-${file.name}`;
+    const filePath = join(TEMP_UPLOAD_DIR, fileName);
+
+    await mkdir(TEMP_UPLOAD_DIR, { recursive: true });
     await writeFile(filePath, buffer);
 
-    const fileRecord = await prisma.file.create({
+    // Store temporary file record with expiration
+    const expiresAt = new Date(Date.now() + FILE_RETENTION_HOURS * 60 * 60 * 1000);
+    
+    const fileRecord = await prisma.tempFile.create({
       data: {
+        id: fileId,
         name: file.name,
         path: filePath,
         type: file.type,
         size: file.size,
-        url: `/api/files/${uuidv4()}`,
-        uploadedBy: session.user.id
+        uploadedBy: session.user.id,
+        agentId: agentId || null,
+        expiresAt,
+        status: 'pending' // pending, processing, completed, failed
       }
     });
 
     return NextResponse.json({
       success: true,
-      data: fileRecord
+      data: {
+        fileId: fileRecord.id,
+        name: fileRecord.name,
+        type: fileRecord.type,
+        size: fileRecord.size,
+        expiresAt: fileRecord.expiresAt,
+        status: fileRecord.status
+      }
     });
   } catch (error) {
     console.error('Error uploading file:', error);
@@ -69,15 +94,75 @@ export async function DELETE(request: Request): Promise<NextResponse> {
     }
 
     const { searchParams } = new URL(request.url);
-    const fileKey = searchParams.get('fileKey');
-    if (!fileKey) {
-      return NextResponse.json({ error: 'No file key provided' }, { status: 400 });
+    const fileId = searchParams.get('fileId');
+    if (!fileId) {
+      return NextResponse.json({ error: 'No file ID provided' }, { status: 400 });
     }
 
-    await deleteFile(fileKey);
+    // Find and delete temporary file
+    const fileRecord = await prisma.tempFile.findUnique({
+      where: { id: fileId }
+    });
+
+    if (!fileRecord) {
+      return NextResponse.json({ error: 'File not found' }, { status: 404 });
+    }
+
+    // Delete physical file
+    try {
+      await unlink(fileRecord.path);
+    } catch (fileError) {
+      console.warn('Physical file not found, continuing with database cleanup:', fileError);
+    }
+
+    // Delete database record
+    await prisma.tempFile.delete({
+      where: { id: fileId }
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error deleting file:', error);
     return NextResponse.json({ error: 'Failed to delete file' }, { status: 500 });
+  }
+}
+
+// Cleanup expired files (should be called by a cron job)
+export async function GET(request: Request): Promise<NextResponse> {
+  try {
+    const { searchParams } = new URL(request.url);
+    const action = searchParams.get('action');
+
+    if (action === 'cleanup') {
+      const expiredFiles = await prisma.tempFile.findMany({
+        where: {
+          expiresAt: {
+            lt: new Date()
+          }
+        }
+      });
+
+      let deletedCount = 0;
+      for (const file of expiredFiles) {
+        try {
+          await unlink(file.path);
+          await prisma.tempFile.delete({ where: { id: file.id } });
+          deletedCount++;
+        } catch (error) {
+          console.warn(`Failed to delete expired file ${file.id}:`, error);
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        deletedCount,
+        message: `Cleaned up ${deletedCount} expired files`
+      });
+    }
+
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+  } catch (error) {
+    console.error('Error in cleanup:', error);
+    return NextResponse.json({ error: 'Cleanup failed' }, { status: 500 });
   }
 } 

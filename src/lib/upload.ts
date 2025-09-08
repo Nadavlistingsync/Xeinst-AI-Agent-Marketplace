@@ -1,34 +1,128 @@
-import { writeFile } from 'fs/promises';
+import { writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 import { unlink } from 'fs/promises';
 import { prisma } from './db';
+import { v4 as uuidv4 } from 'uuid';
 
-export async function uploadFile(file: File, directory: string): Promise<string> {
+// Temporary file storage for webhook-based agents
+const TEMP_UPLOAD_DIR = join(process.cwd(), 'temp', 'uploads');
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit for webhook payloads
+
+export async function uploadTempFile(
+  file: File, 
+  userId: string, 
+  agentId?: string
+): Promise<{ fileId: string; path: string }> {
   try {
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      throw new Error(`File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     
     // Create a unique filename
-    const uniqueFilename = `${Date.now()}-${file.name}`;
-    const filepath = join(process.cwd(), 'public', directory, uniqueFilename);
+    const fileId = uuidv4();
+    const uniqueFilename = `${fileId}-${file.name}`;
+    const filepath = join(TEMP_UPLOAD_DIR, uniqueFilename);
     
-    // Write the file
+    // Ensure directory exists
     await writeFile(filepath, buffer);
     
-    return `/${directory}/${uniqueFilename}`;
+    // Store in database with expiration
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+    
+    await prisma.tempFile.create({
+      data: {
+        id: fileId,
+        name: file.name,
+        path: filepath,
+        type: file.type,
+        size: file.size,
+        uploadedBy: userId,
+        agentId: agentId || null,
+        expiresAt,
+        status: 'pending'
+      }
+    });
+    
+    return { fileId, path: filepath };
   } catch (error) {
-    console.error('Error uploading file:', error);
-    throw new Error('Failed to upload file');
+    console.error('Error uploading temp file:', error);
+    throw new Error('Failed to upload temporary file');
   }
 }
 
-export async function deleteFile(filepath: string): Promise<void> {
+export async function getTempFileContent(fileId: string): Promise<Buffer | null> {
   try {
-    const fullPath = join(process.cwd(), 'public', filepath);
-    await unlink(fullPath);
+    const fileRecord = await prisma.tempFile.findUnique({
+      where: { id: fileId }
+    });
+
+    if (!fileRecord) {
+      return null;
+    }
+
+    return await readFile(fileRecord.path);
   } catch (error) {
-    console.error('Error deleting file:', error);
-    throw new Error('Failed to delete file');
+    console.error('Error reading temp file:', error);
+    return null;
+  }
+}
+
+export async function deleteTempFile(fileId: string): Promise<void> {
+  try {
+    const fileRecord = await prisma.tempFile.findUnique({
+      where: { id: fileId }
+    });
+
+    if (!fileRecord) {
+      return;
+    }
+
+    // Delete physical file
+    try {
+      await unlink(fileRecord.path);
+    } catch (fileError) {
+      console.warn('Physical file not found, continuing with database cleanup:', fileError);
+    }
+
+    // Delete database record
+    await prisma.tempFile.delete({
+      where: { id: fileId }
+    });
+  } catch (error) {
+    console.error('Error deleting temp file:', error);
+    throw new Error('Failed to delete temporary file');
+  }
+}
+
+export async function cleanupExpiredFiles(): Promise<number> {
+  try {
+    const expiredFiles = await prisma.tempFile.findMany({
+      where: {
+        expiresAt: {
+          lt: new Date()
+        }
+      }
+    });
+
+    let deletedCount = 0;
+    for (const file of expiredFiles) {
+      try {
+        await unlink(file.path);
+        await prisma.tempFile.delete({ where: { id: file.id } });
+        deletedCount++;
+      } catch (error) {
+        console.warn(`Failed to delete expired file ${file.id}:`, error);
+      }
+    }
+
+    return deletedCount;
+  } catch (error) {
+    console.error('Error cleaning up expired files:', error);
+    return 0;
   }
 }
 
