@@ -80,7 +80,7 @@ export async function PUT(
       data: {
         webhookUrl,
         webhookSecret,
-        webhookConfig: {
+        config: {
           triggers,
           timeout,
           retryCount,
@@ -96,7 +96,7 @@ export async function PUT(
         id: updatedAgent.id,
         name: updatedAgent.name,
         webhookUrl: updatedAgent.webhookUrl,
-        webhookConfig: updatedAgent.webhookConfig,
+        webhookConfig: updatedAgent.config,
         webhookEnabled: enabled
       }
     });
@@ -133,9 +133,8 @@ export async function GET(
         id: true,
         name: true,
         webhookUrl: true,
-        webhookConfig: true,
-        totalRuns: true,
-        lastRunAt: true
+        config: true,
+        downloadCount: true
       }
     });
 
@@ -147,11 +146,11 @@ export async function GET(
       success: true,
       webhook: {
         url: agent.webhookUrl,
-        config: agent.webhookConfig,
-        enabled: agent.webhookUrl && agent.webhookConfig?.enabled,
+        config: agent.config,
+        enabled: agent.webhookUrl && (agent.config as any)?.enabled,
         stats: {
-          totalRuns: agent.totalRuns,
-          lastRunAt: agent.lastRunAt
+          totalRuns: agent.downloadCount,
+          lastRunAt: null
         }
       }
     });

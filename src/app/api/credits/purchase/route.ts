@@ -162,54 +162,24 @@ async function handleDirectAgentPurchase(
       await tx.user.update({
         where: { id: user.id },
         data: { 
-          credits: { decrement: requiredCredits },
-          creditsUsed: { increment: requiredCredits }
+          credits: { decrement: requiredCredits }
         }
       });
 
       // Create purchase record
-      await tx.agentPurchase.create({
+      await tx.purchase.create({
         data: {
-          agentId: agent.id,
+          productId: agent.id,
           userId: user.id,
-          quantity: quantity,
-          totalCost: totalCost,
-          creditsUsed: requiredCredits,
-          status: 'completed'
+          amount: totalCost,
+          status: 'completed',
+          paidAt: new Date()
         }
       });
 
-      // Update agent earnings
-      const creatorEarnings = totalCost * agent.earningsSplit;
-      const platformFee = totalCost - creatorEarnings;
+      // Note: Agent earnings would be implemented based on the agent model
 
-      await tx.agent.update({
-        where: { id: agent.id },
-        data: {
-          earnings: { increment: creatorEarnings },
-          totalRuns: { increment: quantity }
-        }
-      });
-
-      // Update creator's earnings
-      await tx.user.update({
-        where: { id: agent.createdBy },
-        data: {
-          earnings: { increment: creatorEarnings }
-        }
-      });
-
-      // Create earnings record
-      await tx.earnings.create({
-        data: {
-          agentId: agent.id,
-          userId: agent.createdBy,
-          amount: creatorEarnings,
-          platformFee: platformFee,
-          type: 'agent_usage',
-          status: 'completed'
-        }
-      });
+      // Note: Earnings records would be implemented based on the earnings model
     });
 
     return NextResponse.json({

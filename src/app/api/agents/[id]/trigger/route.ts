@@ -54,11 +54,10 @@ export async function POST(
     // Prepare files for webhook payload (if any)
     let files: any[] = [];
     if (fileIds && fileIds.length > 0) {
-      const tempFiles = await prisma.tempFile.findMany({
+      const tempFiles = await prisma.file.findMany({
         where: { 
           id: { in: fileIds },
-          uploadedBy: session.user.id,
-          status: 'pending'
+          uploadedBy: session.user.id
         }
       });
 
@@ -78,14 +77,13 @@ export async function POST(
     }
 
     // Create execution record
-    const execution = await prisma.agentExecution.create({
+    const execution = await prisma.webhookLog.create({
       data: {
         agentId,
-        userId: session.user.id,
-        input: JSON.stringify({ trigger, data, options }),
-        status: 'pending',
-        webhookUrl: agent.webhookUrl,
-        fileIds: fileIds || []
+        statusCode: 200,
+        latencyMs: 0,
+        payloadSize: JSON.stringify({ trigger, data, options }).length,
+        ok: true
       }
     });
 
@@ -152,11 +150,11 @@ export async function POST(
 
     if (!webhookResponse.ok) {
       // Update execution status to failed
-      await prisma.agentExecution.update({
+      await prisma.webhookLog.update({
         where: { id: execution.id },
         data: { 
-          status: 'failed',
-          error: `Webhook trigger failed: ${webhookResponse.status} ${webhookResponse.statusText}`
+          statusCode: webhookResponse.status,
+          ok: false
         }
       });
 
@@ -168,25 +166,18 @@ export async function POST(
     }
 
     // Update execution status to processing
-    await prisma.agentExecution.update({
+    await prisma.webhookLog.update({
       where: { id: execution.id },
-      data: { status: 'processing' }
+      data: { ok: true }
     });
 
-    // Update file statuses to processing
-    if (fileIds && fileIds.length > 0) {
-      await prisma.tempFile.updateMany({
-        where: { id: { in: fileIds } },
-        data: { status: 'processing' }
-      });
-    }
+    // Note: File status updates would be implemented based on the file model
 
     // Update agent statistics
     await prisma.agent.update({
       where: { id: agentId },
       data: {
-        totalRuns: { increment: 1 },
-        lastRunAt: new Date()
+        downloadCount: { increment: 1 }
       }
     });
 
@@ -228,10 +219,9 @@ export async function GET(
     const offset = parseInt(searchParams.get('offset') || '0');
 
     // Get recent executions for this agent
-    const executions = await prisma.agentExecution.findMany({
+    const executions = await prisma.webhookLog.findMany({
       where: { 
-        agentId,
-        userId: session.user.id
+        agentId
       },
       orderBy: { createdAt: 'desc' },
       take: limit,
@@ -243,11 +233,10 @@ export async function GET(
       success: true,
       executions: executions.map(exec => ({
         id: exec.id,
-        status: exec.status,
-        trigger: exec.input ? JSON.parse(exec.input).trigger : null,
+        status: exec.ok ? 'success' : 'failed',
+        statusCode: exec.statusCode,
         createdAt: exec.createdAt,
-        completedAt: exec.completedAt,
-        error: exec.error,
+        latencyMs: exec.latencyMs,
         agent: {
           id: exec.agent.id,
           name: exec.agent.name

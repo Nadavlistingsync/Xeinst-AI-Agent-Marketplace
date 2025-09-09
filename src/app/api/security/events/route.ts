@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
     const paginatedEvents = filteredEvents.slice(offset, offset + limit);
 
     // Log the security event access
-    AuditLogger.log('SECURITY_EVENTS_ACCESSED', undefined, {
+    AuditLogger.log('SECURITY_EVENTS_ACCESSED', {
       limit,
       offset,
       severity,

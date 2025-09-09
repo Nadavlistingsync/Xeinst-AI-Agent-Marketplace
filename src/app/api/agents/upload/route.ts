@@ -57,8 +57,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         id: true, 
         email: true, 
         credits: true,
-        subscription: true,
-        canUploadAgents: true
+        subscriptionTier: true
       }
     });
 
@@ -67,7 +66,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Check if user can upload agents (premium feature or admin)
-    if (!user.canUploadAgents && user.subscription !== 'premium') {
+    if (user.subscriptionTier !== 'premium') {
       return NextResponse.json({ 
         error: 'Agent upload requires premium subscription',
         details: 'Upgrade to premium to upload and sell agents'
@@ -117,42 +116,40 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         price: validatedData.price,
         webhookUrl: validatedData.webhookUrl,
         webhookSecret: validatedData.webhookSecret,
-        inputSchema: validatedData.inputSchema,
-        exampleInputs: validatedData.exampleInputs || [],
         documentation: validatedData.documentation,
-        tags: validatedData.tags || [],
+        fileUrl: '',
         version: validatedData.version,
         environment: validatedData.environment,
         framework: validatedData.framework,
         modelType: validatedData.modelType,
-        config: validatedData.config,
+        config: {
+          inputSchema: validatedData.inputSchema,
+          exampleInputs: validatedData.exampleInputs || [],
+          tags: validatedData.tags || [],
+          ...validatedData.config
+        },
         createdBy: session.user.id,
-        earningsSplit: validatedData.earningsSplit,
         isPublic: validatedData.isPublic,
-        requiresApproval: validatedData.requiresApproval,
-        status: validatedData.requiresApproval ? 'pending' : 'active',
-        webhookConfig: {
-          timeout: webhookConfig.timeout,
-          maxRetries: webhookConfig.maxRetries,
-          retryDelay: webhookConfig.retryDelay,
-          lastTested: new Date().toISOString(),
-          testStatus: 'passed'
-        }
+        status: 'draft',
       }
     });
 
     // Create deployment record for tracking
     await prisma.deployment.create({
       data: {
-        agentId: agent.id,
-        userId: session.user.id,
+        name: agent.name,
+        description: agent.description,
         status: 'active',
+        accessLevel: 'public',
+        licenseType: 'commercial',
         environment: validatedData.environment,
-        config: {
-          webhookUrl: validatedData.webhookUrl,
-          framework: validatedData.framework,
-          modelType: validatedData.modelType
-        }
+        framework: validatedData.framework,
+        modelType: validatedData.modelType,
+        source: 'agent_upload',
+        deployedBy: session.user.id,
+        createdBy: session.user.id,
+        isPublic: validatedData.isPublic,
+        version: validatedData.version
       }
     });
 
@@ -166,11 +163,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         price: agent.price,
         status: agent.status,
         webhookUrl: agent.webhookUrl,
-        earningsSplit: agent.earningsSplit,
         createdAt: agent.createdAt,
-        message: validatedData.requiresApproval 
-          ? 'Agent uploaded successfully and is pending approval'
-          : 'Agent uploaded successfully and is now live'
+        message: 'Agent uploaded successfully and is now live'
       }
     });
 
@@ -224,13 +218,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         category: true,
         price: true,
         status: true,
-        totalRuns: true,
-        earnings: true,
+        downloadCount: true,
         createdAt: true,
         updatedAt: true,
         _count: {
           select: {
-            executions: true,
+            webhookLogs: true,
             reviews: true
           }
         }

@@ -1,150 +1,179 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useSession, signIn, signOut } from "next-auth/react"
-import { motion } from "framer-motion"
-import { Menu, X, User, CreditCard } from "lucide-react"
+import { Menu, X, Bot, CreditCard, User } from "lucide-react"
 import { GlowButton } from "./GlowButton"
-import { cn } from "@/lib/utils"
+import { motion, AnimatePresence } from "framer-motion"
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
-  const { data: session } = useSession()
+  const [scrolled, setScrolled] = useState(false)
 
-  const navItems = [
-    { name: "Marketplace", href: "/marketplace" },
-    { name: "Upload Agent", href: "/upload" },
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Pricing", href: "/pricing" },
-  ]
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
-    <motion.nav
-      initial={{ y: -100, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="sticky top-0 z-50 w-full border-b border-glass bg-black/80 backdrop-blur-md"
+    <motion.nav 
+      className={`nav-glass sticky top-0 z-50 transition-all duration-300 ${
+        scrolled ? 'backdrop-blur-xl bg-black/20' : ''
+      }`}
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5 }}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="text-2xl font-bold text-glow"
+          <motion.div 
+            className="flex items-center space-x-2"
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div 
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-neon"
+              whileHover={{ rotate: 360 }}
+              transition={{ duration: 0.5 }}
             >
-              Xeinst
+              <Bot className="h-6 w-6 text-black" />
             </motion.div>
-          </Link>
+            <span className="text-xl font-bold text-glow">Xeinst</span>
+          </motion.div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="text-white hover:text-accent transition-colors duration-200"
-              >
-                {item.name}
-              </Link>
-            ))}
+          <div className="hidden md:block">
+            <div className="ml-10 flex items-baseline space-x-8">
+              {[
+                { href: "/marketplace", label: "Marketplace" },
+                { href: "/upload", label: "Upload Agent" },
+                { href: "/dashboard", label: "Dashboard" },
+                { href: "/pricing", label: "Pricing" }
+              ].map((link, index) => (
+                <motion.div
+                  key={link.href}
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                  <Link 
+                    href={link.href} 
+                    className="text-white hover:text-cyan-400 transition-colors duration-200 font-medium relative group"
+                  >
+                    {link.label}
+                    <motion.div
+                      className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-400 group-hover:w-full transition-all duration-300"
+                      whileHover={{ width: "100%" }}
+                    />
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
           </div>
 
-          {/* Right side - Auth & Credits */}
-          <div className="hidden md:flex items-center space-x-4">
-            {session ? (
-              <>
-                <div className="flex items-center space-x-2 text-sm">
-                  <CreditCard className="h-4 w-4 text-accent" />
-                  <span className="text-white">Credits: 0</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <User className="h-4 w-4 text-white" />
-                  <span className="text-white">{session.user?.name || session.user?.email}</span>
-                </div>
-                <GlowButton
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => signOut()}
-                >
-                  Sign Out
-                </GlowButton>
-              </>
-            ) : (
-              <GlowButton
-                variant="primary"
-                size="sm"
-                onClick={() => signIn()}
-              >
-                Sign In
-              </GlowButton>
-            )}
-          </div>
+          {/* Desktop Auth */}
+          <motion.div 
+            className="hidden md:flex items-center space-x-4"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.4 }}
+          >
+            <motion.div 
+              className="flex items-center space-x-2 text-white"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
+            >
+              <CreditCard className="h-4 w-4" />
+              <span className="text-sm font-medium">1,250 Credits</span>
+            </motion.div>
+            <GlowButton variant="glass" size="sm">
+              <User className="h-4 w-4 mr-2" />
+              Sign In
+            </GlowButton>
+          </motion.div>
 
           {/* Mobile menu button */}
-          <button
-            className="md:hidden text-white"
-            onClick={() => setIsOpen(!isOpen)}
+          <motion.div 
+            className="md:hidden"
+            whileHover={{ scale: 1.1 }}
+            transition={{ duration: 0.2 }}
           >
-            {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-white hover:text-cyan-400 transition-colors duration-200"
+            >
+              <motion.div
+                animate={{ rotate: isOpen ? 180 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </motion.div>
+            </button>
+          </motion.div>
         </div>
+      </div>
 
-        {/* Mobile Navigation */}
+      {/* Mobile Navigation */}
+      <AnimatePresence>
         {isOpen && (
-          <motion.div
+          <motion.div 
+            className="md:hidden glass-panel mx-4 mb-4"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-glass"
+            transition={{ duration: 0.3 }}
           >
-            <div className="py-4 space-y-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="block text-white hover:text-accent transition-colors duration-200"
-                  onClick={() => setIsOpen(false)}
+            <motion.div 
+              className="px-2 pt-2 pb-3 space-y-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
+              {[
+                { href: "/marketplace", label: "Marketplace" },
+                { href: "/upload", label: "Upload Agent" },
+                { href: "/dashboard", label: "Dashboard" },
+                { href: "/pricing", label: "Pricing" }
+              ].map((link, index) => (
+                <motion.div
+                  key={link.href}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 + index * 0.1 }}
                 >
-                  {item.name}
-                </Link>
-              ))}
-              
-              <div className="pt-4 border-t border-glass">
-                {session ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2 text-sm">
-                      <CreditCard className="h-4 w-4 text-accent" />
-                      <span className="text-white">Credits: 0</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-sm">
-                      <User className="h-4 w-4 text-white" />
-                      <span className="text-white">{session.user?.name || session.user?.email}</span>
-                    </div>
-                    <GlowButton
-                      variant="secondary"
-                      size="sm"
-                      fullWidth
-                      onClick={() => signOut()}
-                    >
-                      Sign Out
-                    </GlowButton>
-                  </div>
-                ) : (
-                  <GlowButton
-                    variant="primary"
-                    size="sm"
-                    fullWidth
-                    onClick={() => signIn()}
+                  <Link 
+                    href={link.href} 
+                    className="block px-3 py-2 text-white hover:text-cyan-400 transition-colors duration-200 font-medium"
+                    onClick={() => setIsOpen(false)}
                   >
+                    {link.label}
+                  </Link>
+                </motion.div>
+              ))}
+              <motion.div 
+                className="pt-4 border-t border-white/20"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.5 }}
+              >
+                <div className="flex items-center justify-between px-3 py-2">
+                  <div className="flex items-center space-x-2 text-white">
+                    <CreditCard className="h-4 w-4" />
+                    <span className="text-sm font-medium">1,250 Credits</span>
+                  </div>
+                  <GlowButton variant="glass" size="sm">
+                    <User className="h-4 w-4 mr-2" />
                     Sign In
                   </GlowButton>
-                )}
-              </div>
-            </div>
+                </div>
+              </motion.div>
+            </motion.div>
           </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </motion.nav>
   )
 }

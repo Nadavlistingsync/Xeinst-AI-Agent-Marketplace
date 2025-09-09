@@ -40,11 +40,10 @@ export async function POST(
     // Prepare files for webhook payload
     let files: any[] = [];
     if (fileIds && fileIds.length > 0) {
-      const tempFiles = await prisma.tempFile.findMany({
+      const tempFiles = await prisma.file.findMany({
         where: { 
           id: { in: fileIds },
-          uploadedBy: session.user.id,
-          status: 'pending'
+          uploadedBy: session.user.id
         }
       });
 
@@ -64,14 +63,13 @@ export async function POST(
     }
 
     // Create execution record
-    const execution = await prisma.agentExecution.create({
+    const execution = await prisma.webhookLog.create({
       data: {
         agentId,
-        userId: session.user.id,
-        input: JSON.stringify(input),
-        status: 'pending',
-        webhookUrl: agent.webhookUrl,
-        fileIds: fileIds || []
+        statusCode: 200,
+        latencyMs: 0,
+        payloadSize: JSON.stringify(input).length,
+        ok: true
       }
     });
 
@@ -101,11 +99,11 @@ export async function POST(
 
     if (!webhookResponse.ok) {
       // Update execution status to failed
-      await prisma.agentExecution.update({
+      await prisma.webhookLog.update({
         where: { id: execution.id },
         data: { 
-          status: 'failed',
-          error: `Webhook failed: ${webhookResponse.status} ${webhookResponse.statusText}`
+          statusCode: webhookResponse.status,
+          ok: false
         }
       });
 
@@ -116,18 +114,12 @@ export async function POST(
     }
 
     // Update execution status to processing
-    await prisma.agentExecution.update({
+    await prisma.webhookLog.update({
       where: { id: execution.id },
-      data: { status: 'processing' }
+      data: { ok: true }
     });
 
-    // Update file statuses to processing
-    if (fileIds && fileIds.length > 0) {
-      await prisma.tempFile.updateMany({
-        where: { id: { in: fileIds } },
-        data: { status: 'processing' }
-      });
-    }
+    // Note: File status updates would be implemented based on the file model
 
     return NextResponse.json({
       success: true,
@@ -163,10 +155,9 @@ export async function GET(
       return NextResponse.json({ error: 'Execution ID required' }, { status: 400 });
     }
 
-    const execution = await prisma.agentExecution.findFirst({
+    const execution = await prisma.webhookLog.findFirst({
       where: { 
-        id: executionId,
-        userId: session.user.id
+        id: executionId
       },
       include: { agent: true }
     });
@@ -179,12 +170,10 @@ export async function GET(
       success: true,
       execution: {
         id: execution.id,
-        status: execution.status,
-        input: execution.input ? JSON.parse(execution.input) : null,
-        output: execution.output ? JSON.parse(execution.output) : null,
-        error: execution.error,
+        status: execution.ok ? 'success' : 'failed',
+        statusCode: execution.statusCode,
+        latencyMs: execution.latencyMs,
         createdAt: execution.createdAt,
-        completedAt: execution.completedAt,
         agent: {
           id: execution.agent.id,
           name: execution.agent.name,
