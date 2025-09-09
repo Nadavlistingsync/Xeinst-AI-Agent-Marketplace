@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { forwardRef } from "react"
 
-type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+type Props = Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> & {
   variant?: "neon" | "glass" | "ghost"
   size?: "sm" | "md" | "lg"
   fullWidth?: boolean

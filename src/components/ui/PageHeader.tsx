@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { forwardRef } from "react"
 
-interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+interface PageHeaderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> {
   title: string
   subtitle?: string
   actions?: React.ReactNode

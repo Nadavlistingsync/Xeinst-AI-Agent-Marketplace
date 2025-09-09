@@ -216,19 +216,19 @@ export default function SimpleDashboardPage() {
             <GlassCard>
               <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <GlowButton variant="secondary" fullWidth asChild>
+                <GlowButton variant="glass" fullWidth asChild>
                   <a href="/upload">
                     <Upload className="mr-2 h-4 w-4" />
                     Upload New Agent
                   </a>
                 </GlowButton>
-                <GlowButton variant="secondary" fullWidth asChild>
+                <GlowButton variant="glass" fullWidth asChild>
                   <a href="/marketplace">
                     <Bot className="mr-2 h-4 w-4" />
                     Browse Agents
                   </a>
                 </GlowButton>
-                <GlowButton variant="secondary" fullWidth asChild>
+                <GlowButton variant="glass" fullWidth asChild>
                   <a href="/credits/purchase">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Buy Credits
@@ -303,7 +303,7 @@ export default function SimpleDashboardPage() {
                       </div>
                     ))}
                     {agents.length > 5 && (
-                      <GlowButton variant="secondary" fullWidth asChild>
+                      <GlowButton variant="glass" fullWidth asChild>
                         <a href="/dashboard/uploads">
                           View All Agents
                           <ArrowRight className="ml-2 h-4 w-4" />
@@ -324,7 +324,7 @@ export default function SimpleDashboardPage() {
               <GlassCard>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
-                  <GlowButton size="sm" variant="secondary" asChild>
+                  <GlowButton size="sm" variant="glass" asChild>
                     <a href="/dashboard/purchases">
                       View All
                     </a>

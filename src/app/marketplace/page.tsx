@@ -128,8 +128,7 @@ export default function MarketplacePage() {
       <div className="min-h-screen flex items-center justify-center">
         <EnhancedErrorDisplay 
           error={error} 
-          isRetrying={isRetrying}
-          onRetry={retryOperation}
+          onRetry={() => retryOperation(fetchAgents)}
         />
       </div>
     );
@@ -141,7 +140,7 @@ export default function MarketplacePage() {
         title="AI Agent Marketplace"
         subtitle="Discover and use powerful AI agents created by developers worldwide"
         actions={
-          <GlowButton variant="secondary" asChild>
+          <GlowButton variant="glass" asChild>
             <a href="/upload">Upload Agent</a>
           </GlowButton>
         }

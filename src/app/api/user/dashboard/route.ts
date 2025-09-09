@@ -20,11 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         email: true,
         name: true,
         credits: true,
-        creditsUsed: true,
-        creditsPurchased: true,
-        earnings: true,
-        subscription: true,
-        canUploadAgents: true,
+        subscriptionTier: true,
         createdAt: true
       }
     });
@@ -43,41 +39,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         category: true,
         price: true,
         status: true,
-        totalRuns: true,
-        earnings: true,
+        downloadCount: true,
         createdAt: true,
         _count: {
           select: {
-            executions: true,
-            reviews: true,
-            purchases: true
+            reviews: true
           }
         }
       },
       orderBy: { createdAt: 'desc' }
     });
 
-    // Get recent executions
-    const recentExecutions = await prisma.agentExecution.findMany({
-      where: { userId: userId },
-      include: {
-        agent: {
-          select: {
-            id: true,
-            name: true,
-            price: true
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10
-    });
-
     // Get recent purchases
-    const recentPurchases = await prisma.agentPurchase.findMany({
+    const recentPurchases = await prisma.purchase.findMany({
       where: { userId: userId },
       include: {
-        agent: {
+        product: {
           select: {
             id: true,
             name: true,
@@ -90,10 +67,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
 
     // Get earnings breakdown
-    const earningsBreakdown = await prisma.earnings.findMany({
+    const earningsBreakdown = await prisma.earning.findMany({
       where: { userId: userId },
       include: {
-        agent: {
+        product: {
           select: {
             id: true,
             name: true
@@ -105,16 +82,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
 
     // Calculate total stats
-    const totalAgentEarnings = userAgents.reduce((sum, agent) => sum + (agent.earnings || 0), 0);
-    const totalAgentRuns = userAgents.reduce((sum, agent) => sum + agent.totalRuns, 0);
-    const totalAgentPurchases = userAgents.reduce((sum, agent) => sum + agent._count.purchases, 0);
+    const totalAgentEarnings = 0; // No earnings field in Agent model
+    const totalAgentRuns = userAgents.reduce((sum, agent) => sum + agent.downloadCount, 0);
+    const totalAgentPurchases = userAgents.reduce((sum, agent) => sum + agent._count.reviews, 0);
 
     // Get monthly earnings
     const currentMonth = new Date();
     currentMonth.setDate(1);
     currentMonth.setHours(0, 0, 0, 0);
 
-    const monthlyEarnings = await prisma.earnings.aggregate({
+    const monthlyEarnings = await prisma.earning.aggregate({
       where: {
         userId: userId,
         createdAt: { gte: currentMonth }
@@ -123,7 +100,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
 
     // Get credit transactions
-    const creditTransactions = await prisma.transaction.findMany({
+    const creditTransactions = await prisma.creditTransaction.findMany({
       where: { userId: userId },
       orderBy: { createdAt: 'desc' },
       take: 20
@@ -139,7 +116,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         monthlyEarnings: monthlyEarnings._sum.amount || 0
       },
       agents: userAgents,
-      recentExecutions,
       recentPurchases,
       earningsBreakdown,
       creditTransactions,

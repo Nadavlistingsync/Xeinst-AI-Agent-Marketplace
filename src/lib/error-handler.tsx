@@ -3,6 +3,7 @@
  * Provides consistent error handling across the application
  */
 
+import React from 'react';
 import { logger } from './logger';
 import { NextResponse } from 'next/server';
 
@@ -192,7 +193,7 @@ export function createErrorBoundary() {
     render() {
       if (this.state.hasError) {
         const FallbackComponent = this.props.fallback || DefaultErrorFallback;
-        return <FallbackComponent error={this.state.error!} />;
+        return React.createElement(FallbackComponent as React.ComponentType<{ error: Error }>, { error: this.state.error! });
       }
 
       return this.props.children;

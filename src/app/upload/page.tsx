@@ -512,7 +512,7 @@ export default function UploadPage() {
             {/* Navigation */}
             <div className="flex items-center justify-between pt-8 border-t border-white/10">
               <GlowButton
-                variant="secondary"
+                variant="glass"
                 onClick={handlePrevious}
                 disabled={currentStep === 1}
               >

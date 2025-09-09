@@ -14,7 +14,7 @@ export class SecurityTesting {
     let blockedAt = -1;
     
     for (let i = 1; i <= requests; i++) {
-      const result = RateLimiter.checkLimit(identifier);
+      const result = RateLimiter.check(identifier);
       results.push({
         request: i,
         allowed: result.allowed,
@@ -53,7 +53,7 @@ export class SecurityTesting {
       }
     });
     
-    const normalResult = RequestSecurity.validateRequest(normalRequest);
+    const normalResult = RequestSecurity.validate(normalRequest);
     results.push({
       test: 'Normal Request',
       passed: normalResult.isValid,
@@ -68,7 +68,7 @@ export class SecurityTesting {
       }
     });
     
-    const suspiciousResult = RequestSecurity.validateRequest(suspiciousRequest);
+    const suspiciousResult = RequestSecurity.validate(suspiciousRequest);
     results.push({
       test: 'Suspicious User Agent',
       passed: !suspiciousResult.isValid,
@@ -83,7 +83,7 @@ export class SecurityTesting {
       }
     });
     
-    const originResult = RequestSecurity.validateRequest(originRequest);
+    const originResult = RequestSecurity.validate(originRequest);
     results.push({
       test: 'Suspicious Origin',
       passed: !originResult.isValid,
@@ -111,7 +111,7 @@ export class SecurityTesting {
     
     // Test 1: Basic logging
     try {
-      AuditLogger.log('TEST_EVENT', 'test-user', { test: true });
+      AuditLogger.log('TEST_EVENT', { userId: 'test-user', test: true });
       results.push({
         test: 'Basic Logging',
         passed: true,
@@ -127,7 +127,8 @@ export class SecurityTesting {
     
     // Test 2: Logging with metadata
     try {
-      AuditLogger.log('TEST_EVENT_WITH_METADATA', 'test-user', { 
+      AuditLogger.log('TEST_EVENT_WITH_METADATA', {
+        userId: 'test-user', 
         test: true, 
         metadata: { key: 'value' },
         timestamp: new Date().toISOString()

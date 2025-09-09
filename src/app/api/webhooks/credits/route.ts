@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { headers } from 'next/headers';
+import Stripe from 'stripe';
 
 // Initialize Stripe only if the secret key is available
 const stripe = process.env.STRIPE_SECRET_KEY ? new (require('stripe').default)(process.env.STRIPE_SECRET_KEY, {
@@ -61,37 +62,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         await tx.user.update({
           where: { id: userId },
           data: {
-            credits: { increment: parseInt(credits) },
-            creditsPurchased: { increment: parseInt(credits) }
+            credits: { increment: parseInt(credits) }
           }
         });
 
-        // Create credit purchase record
-        await tx.creditPurchase.create({
+        // Create credit transaction record
+        await tx.creditTransaction.create({
           data: {
-            userId: userId,
-            creditPackage: creditPackage,
-            credits: parseInt(credits),
-            amount: paymentIntent.amount / 100, // Convert from cents
-            stripePaymentIntentId: paymentIntent.id,
-            status: 'completed'
+            userId,
+            type: 'purchase',
+            amount: parseInt(credits),
+            stripePaymentIntentId: paymentIntent.id
           }
         });
 
-        // Create transaction record
-        await tx.transaction.create({
-          data: {
-            userId: userId,
-            type: 'credit_purchase',
-            amount: paymentIntent.amount / 100,
-            credits: parseInt(credits),
-            status: 'completed',
-            metadata: {
-              paymentIntentId: paymentIntent.id,
-              creditPackage: creditPackage
-            }
-          }
-        });
+        // Transaction record is already created above as CreditTransaction
       });
 
       console.log(`Successfully added ${credits} credits to user ${userId}`);
@@ -104,16 +89,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const { userId, creditPackage, credits } = paymentIntent.metadata;
       
       if (userId && creditPackage && credits) {
-        // Create failed purchase record
-        await prisma.creditPurchase.create({
+        // Create failed transaction record
+        await prisma.creditTransaction.create({
           data: {
             userId: userId,
-            creditPackage: creditPackage,
-            credits: parseInt(credits),
-            amount: paymentIntent.amount / 100,
-            stripePaymentIntentId: paymentIntent.id,
-            status: 'failed',
-            failureReason: paymentIntent.last_payment_error?.message || 'Payment failed'
+            type: 'purchase_failed',
+            amount: parseInt(credits),
+            stripePaymentIntentId: paymentIntent.id
           }
         });
 

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { forwardRef } from "react"
 
-type Props = React.HTMLAttributes<HTMLDivElement> & {
+type Props = Omit<React.HTMLAttributes<HTMLDivElement>, 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> & {
   hover?: boolean
   glow?: boolean
   delay?: number

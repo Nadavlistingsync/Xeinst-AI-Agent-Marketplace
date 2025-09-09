@@ -167,7 +167,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Log the security event creation
-    AuditLogger.log('SECURITY_EVENT_CREATED', undefined, {
+    AuditLogger.log('SECURITY_EVENT_CREATED', {
       eventId: event.id,
       type,
       severity,

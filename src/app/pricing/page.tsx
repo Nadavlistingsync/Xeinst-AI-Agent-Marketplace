@@ -34,7 +34,7 @@ const pricingTiers = [
       "Standard integrations"
     ],
     cta: "Start Free",
-    ctaVariant: "secondary" as const,
+    ctaVariant: "glass" as const,
     popular: false
   },
   {
@@ -53,7 +53,7 @@ const pricingTiers = [
       "Analytics dashboard"
     ],
     cta: "Start Pro",
-    ctaVariant: "primary" as const,
+    ctaVariant: "neon" as const,
     popular: true
   },
   {
@@ -74,7 +74,7 @@ const pricingTiers = [
       "Custom integrations"
     ],
     cta: "Contact Sales",
-    ctaVariant: "secondary" as const,
+    ctaVariant: "glass" as const,
     popular: false
   }
 ];
@@ -265,7 +265,7 @@ export default function PricingPage() {
                       )}
                     </div>
                     <GlowButton
-                      variant={pkg.popular ? "primary" : "secondary"}
+                      variant={pkg.popular ? "neon" : "glass"}
                       fullWidth
                       size="sm"
                     >

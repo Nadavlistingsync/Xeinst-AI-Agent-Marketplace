@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
     };
 
     // Log the security metrics access
-    AuditLogger.log('SECURITY_METRICS_ACCESSED', undefined, {
+    AuditLogger.log('SECURITY_METRICS_ACCESSED', {
       period,
       timestamp: new Date().toISOString()
     });

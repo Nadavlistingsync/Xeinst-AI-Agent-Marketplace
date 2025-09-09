@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import { forwardRef } from "react"
 
-interface SectionProps extends React.HTMLAttributes<HTMLElement> {
+interface SectionProps extends Omit<React.HTMLAttributes<HTMLElement>, 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> {
   children: React.ReactNode
   className?: string
 }

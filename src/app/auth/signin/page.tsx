@@ -83,7 +83,6 @@ export default function SignIn() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              icon={<Mail className="h-4 w-4" />}
             />
 
             <GlowInput
@@ -93,7 +92,6 @@ export default function SignIn() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              icon={<Lock className="h-4 w-4" />}
             />
 
             <GlowButton

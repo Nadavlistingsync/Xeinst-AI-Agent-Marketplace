@@ -191,7 +191,6 @@ export default function SignupPage() {
               onChange={(e) => handleInputChange(e)}
               name="name"
               required
-              icon={<User className="h-4 w-4" />}
             />
 
             <GlowInput
@@ -202,7 +201,6 @@ export default function SignupPage() {
               onChange={(e) => handleInputChange(e)}
               name="email"
               required
-              icon={<Mail className="h-4 w-4" />}
             />
 
             <GlowInput
@@ -214,7 +212,6 @@ export default function SignupPage() {
               name="password"
               required
               minLength={8}
-              icon={<Lock className="h-4 w-4" />}
             />
 
             <GlowInput
@@ -225,7 +222,6 @@ export default function SignupPage() {
               onChange={(e) => handleInputChange(e)}
               name="confirmPassword"
               required
-              icon={<Lock className="h-4 w-4" />}
             />
 
             <GlowButton
@@ -278,7 +274,7 @@ export default function SignupPage() {
           {/* Back Button */}
           <div className="text-center mt-6">
             <GlowButton
-              variant="secondary"
+              variant="glass"
               onClick={() => setStep(0)}
             >
               ← Back to overview

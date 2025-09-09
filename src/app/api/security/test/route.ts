@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Log the security test execution
-    AuditLogger.log('SECURITY_TESTS_EXECUTED', undefined, {
+    AuditLogger.log('SECURITY_TESTS_EXECUTED', {
       testType,
       passed: testResults.passed,
       timestamp: new Date().toISOString()
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log the custom security test execution
-    AuditLogger.log('CUSTOM_SECURITY_TEST_EXECUTED', undefined, {
+    AuditLogger.log('CUSTOM_SECURITY_TEST_EXECUTED', {
       testType,
       parameters,
       passed: testResults.passed,

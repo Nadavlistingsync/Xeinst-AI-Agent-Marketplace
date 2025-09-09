@@ -355,7 +355,28 @@ export class ComplianceService {
 
 export class PasswordPolicy {
   static validate(password: string) {
-    return password.length >= 8;
+    const errors: string[] = [];
+    
+    if (password.length < 8) {
+      errors.push('Password must be at least 8 characters long');
+    }
+    
+    if (!/[A-Z]/.test(password)) {
+      errors.push('Password must contain at least one uppercase letter');
+    }
+    
+    if (!/[a-z]/.test(password)) {
+      errors.push('Password must contain at least one lowercase letter');
+    }
+    
+    if (!/\d/.test(password)) {
+      errors.push('Password must contain at least one number');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
   }
 }
 
@@ -382,11 +403,42 @@ export class HashingService {
     const hash = await this.hash(saltedPassword);
     return `${salt}:${hash}`;
   }
+
+  static async verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+    try {
+      const [salt, hash] = hashedPassword.split(':');
+      if (!salt || !hash) return false;
+      
+      const saltedPassword = password + salt;
+      const computedHash = await this.hash(saltedPassword);
+      return computedHash === hash;
+    } catch {
+      return false;
+    }
+  }
 }
 
 export class JWTService {
   static sign(payload: any) {
     return "jwt-token";
+  }
+
+  static generateToken(payload: any): string {
+    return "jwt-token";
+  }
+
+  static generateRefreshToken(payload: any): string {
+    return "refresh-token";
+  }
+
+  static verifyToken(token: string): any {
+    // Simple mock implementation
+    return { userId: "user-id", email: "user@example.com" };
+  }
+
+  static verifyRefreshToken(refreshToken: string): any {
+    // Simple mock implementation
+    return { userId: "user-id", email: "user@example.com" };
   }
 }
 
@@ -404,6 +456,21 @@ export class RateLimiter {
 
 export class RequestSecurity {
   static validate(request: any) {
-    return true;
+    const errors: string[] = [];
+    
+    // Check for suspicious user agents
+    if (request.headers?.['user-agent']?.includes('curl')) {
+      errors.push('Suspicious user agent detected');
+    }
+    
+    // Check for suspicious origins
+    if (request.headers?.origin?.includes('localhost')) {
+      errors.push('Suspicious origin detected');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
   }
 }

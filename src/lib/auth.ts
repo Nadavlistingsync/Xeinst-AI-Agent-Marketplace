@@ -82,7 +82,8 @@ export class AuthService {
       });
 
       // Log registration
-      AuditLogger.log('USER_REGISTERED', user.id, {
+      AuditLogger.log('USER_REGISTERED', {
+        userId: user.id,
         email: user.email,
         role: user.role,
       });
@@ -138,7 +139,8 @@ export class AuthService {
       
       const isPasswordValid = await HashingService.verifyPassword(credentials.password, user.password);
       if (!isPasswordValid) {
-        AuditLogger.log('LOGIN_FAILED', user.id, {
+        AuditLogger.log('LOGIN_FAILED', {
+          userId: user.id,
           email: credentials.email,
           reason: 'invalid_password',
         });
@@ -167,7 +169,8 @@ export class AuthService {
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
       // Log successful login
-      AuditLogger.log('LOGIN_SUCCESS', user.id, {
+      AuditLogger.log('LOGIN_SUCCESS', {
+        userId: user.id,
         email: user.email,
         role: user.role,
       });
@@ -375,7 +378,8 @@ export class AuthService {
       
       // Store reset token (in a real implementation, you'd store this in the database)
       // For now, we'll just log it
-      AuditLogger.log('PASSWORD_RESET_REQUESTED', user.id, {
+      AuditLogger.log('PASSWORD_RESET_REQUESTED', {
+        userId: user.id,
         email: user.email,
         resetToken: resetToken.substring(0, 20) + '...', // Log only first 20 chars
       });

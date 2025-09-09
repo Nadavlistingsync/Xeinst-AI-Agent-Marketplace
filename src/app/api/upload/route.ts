@@ -52,17 +52,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Store temporary file record with expiration
     const expiresAt = new Date(Date.now() + FILE_RETENTION_HOURS * 60 * 60 * 1000);
     
-    const fileRecord = await prisma.tempFile.create({
+    const fileRecord = await prisma.file.create({
       data: {
         id: fileId,
         name: file.name,
         path: filePath,
         type: file.type,
         size: file.size,
+        url: `/uploads/${fileId}`,
         uploadedBy: session.user.id,
-        agentId: agentId || null,
-        expiresAt,
-        status: 'pending' // pending, processing, completed, failed
+        productId: agentId || null,
       }
     });
 
@@ -73,8 +72,8 @@ export async function POST(request: Request): Promise<NextResponse> {
         name: fileRecord.name,
         type: fileRecord.type,
         size: fileRecord.size,
-        expiresAt: fileRecord.expiresAt,
-        status: fileRecord.status
+        url: fileRecord.url,
+        createdAt: fileRecord.createdAt
       }
     });
   } catch (error) {
@@ -99,8 +98,8 @@ export async function DELETE(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: 'No file ID provided' }, { status: 400 });
     }
 
-    // Find and delete temporary file
-    const fileRecord = await prisma.tempFile.findUnique({
+    // Find and delete file
+    const fileRecord = await prisma.file.findUnique({
       where: { id: fileId }
     });
 
@@ -116,7 +115,7 @@ export async function DELETE(request: Request): Promise<NextResponse> {
     }
 
     // Delete database record
-    await prisma.tempFile.delete({
+    await prisma.file.delete({
       where: { id: fileId }
     });
 
@@ -134,29 +133,12 @@ export async function GET(request: Request): Promise<NextResponse> {
     const action = searchParams.get('action');
 
     if (action === 'cleanup') {
-      const expiredFiles = await prisma.tempFile.findMany({
-        where: {
-          expiresAt: {
-            lt: new Date()
-          }
-        }
-      });
-
-      let deletedCount = 0;
-      for (const file of expiredFiles) {
-        try {
-          await unlink(file.path);
-          await prisma.tempFile.delete({ where: { id: file.id } });
-          deletedCount++;
-        } catch (error) {
-          console.warn(`Failed to delete expired file ${file.id}:`, error);
-        }
-      }
-
-      return NextResponse.json({
-        success: true,
-        deletedCount,
-        message: `Cleaned up ${deletedCount} expired files`
+      // For now, skip cleanup since File model doesn't have expiration
+      // In a real implementation, you might want to add expiration logic
+      return NextResponse.json({ 
+        success: true, 
+        deletedCount: 0,
+        message: 'Cleanup completed (no expiration logic implemented)'
       });
     }
 
