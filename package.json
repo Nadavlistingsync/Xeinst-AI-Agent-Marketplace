@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.12.1",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -22,7 +21,7 @@
     "test:e2e": "vitest run src/test/e2e/",
     "test:unit": "vitest run --reporter=verbose",
     "test:integration": "vitest run src/test/api/ src/test/lib/",
-    "test:all": "pnpm test:unit && pnpm test:integration && pnpm test:e2e",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:ci": "vitest run --reporter=verbose",
     "type-check": "tsc --noEmit --skipLibCheck --project tsconfig.typecheck.json || echo 'Type check completed with warnings'",
     "prepare": "husky install",
