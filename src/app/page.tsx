@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { ArrowRight, Bot, Zap, Users, DollarSign, Sparkles, Star, TrendingUp } from "lucide-react"
 import { GlowButton } from "@/components/ui/GlowButton"
 import { GlassCard } from "@/components/ui/GlassCard"
@@ -7,6 +8,17 @@ import { motion } from "framer-motion"
 import Link from "next/link"
 
 export default function HomePage() {
+  // Test function to trigger Sentry error
+  const testSentryError = () => {
+    // This will trigger an error that Sentry will capture
+    myUndefinedFunction();
+  };
+
+  // Auto-trigger test error on page load (uncomment to test)
+  // React.useEffect(() => {
+  //   myUndefinedFunction();
+  // }, []);
+
   const features = [
     {
       icon: Bot,
@@ -123,6 +135,14 @@ export default function HomePage() {
               </GlowButton>
               <GlowButton variant="glass" size="lg">
                 <Link href="/upload">Upload Your Agent</Link>
+              </GlowButton>
+              <GlowButton 
+                variant="neon" 
+                size="lg" 
+                onClick={testSentryError}
+                className="bg-red-500 hover:bg-red-600 border-red-400"
+              >
+                🧪 Test Sentry Error
               </GlowButton>
             </motion.div>
           </motion.div>

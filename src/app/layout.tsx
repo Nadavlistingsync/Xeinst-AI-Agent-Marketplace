@@ -6,42 +6,47 @@ import { Navbar } from "@/components/ui/Navbar";
 import { Footer } from "@/components/ui/Footer";
 import { MotionWrapper } from "@/components/ui/MotionWrapper";
 import { securityManager, addWatermark } from "@/lib/security";
+import * as Sentry from '@sentry/nextjs';
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "AI Agency Website - Copyright Protected",
-  description: "AI Agency Website - Protected by copyright law. Unauthorized use prohibited.",
-  keywords: "AI, Agency, Website, Copyright, Protected, Licensed",
-  authors: [{ name: "AI Agency Website Team" }],
-  creator: "AI Agency Website",
-  publisher: "AI Agency Website",
-  robots: {
-    index: false, // Prevent indexing to protect content
-    follow: false,
-    googleBot: {
-      index: false,
+// Add or edit your "generateMetadata" to include the Sentry trace data:
+export function generateMetadata(): Metadata {
+  return {
+    title: "AI Agency Website - Copyright Protected",
+    description: "AI Agency Website - Protected by copyright law. Unauthorized use prohibited.",
+    keywords: "AI, Agency, Website, Copyright, Protected, Licensed",
+    authors: [{ name: "AI Agency Website Team" }],
+    creator: "AI Agency Website",
+    publisher: "AI Agency Website",
+    robots: {
+      index: false, // Prevent indexing to protect content
       follow: false,
+      googleBot: {
+        index: false,
+        follow: false,
+      },
     },
-  },
-  openGraph: {
-    title: "AI Agency Website - Copyright Protected",
-    description: "AI Agency Website - Protected by copyright law. Unauthorized use prohibited.",
-    type: "website",
-    locale: "en_US",
-    siteName: "AI Agency Website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "AI Agency Website - Copyright Protected",
-    description: "AI Agency Website - Protected by copyright law. Unauthorized use prohibited.",
-  },
-  other: {
-    "copyright": "Copyright (c) 2024 AI Agency Website. All rights reserved.",
-    "license": "MIT with commercial restrictions",
-    "watermark": "AI_AGENCY_2024",
-  },
-};
+    openGraph: {
+      title: "AI Agency Website - Copyright Protected",
+      description: "AI Agency Website - Protected by copyright law. Unauthorized use prohibited.",
+      type: "website",
+      locale: "en_US",
+      siteName: "AI Agency Website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "AI Agency Website - Copyright Protected",
+      description: "AI Agency Website - Protected by copyright law. Unauthorized use prohibited.",
+    },
+    other: {
+      "copyright": "Copyright (c) 2024 AI Agency Website. All rights reserved.",
+      "license": "MIT with commercial restrictions",
+      "watermark": "AI_AGENCY_2024",
+      ...Sentry.getTraceData()
+    },
+  };
+}
 
 export default function RootLayout({
   children,

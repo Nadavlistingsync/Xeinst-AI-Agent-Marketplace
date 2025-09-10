@@ -163,3 +163,6 @@ coverage/
 .npm/
 .eslintcache
 .stylelintcache
+
+# Sentry Config File
+.env.sentry-build-plugin
