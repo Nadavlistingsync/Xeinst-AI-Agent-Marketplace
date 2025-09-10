@@ -131,6 +131,10 @@ public
 pnpm-lock.yaml
 package-lock.json
 tsconfig.tsbuildinfo
+
+# Next.js build outputs
+**/.next/
+**/out/
 coverage/
 
 # Additional files to reduce context usage
