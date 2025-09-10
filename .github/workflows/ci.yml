@@ -33,49 +33,33 @@ jobs:
       with:
         node-version: '20'
 
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 9
-
-    - name: Debug pnpm install
-      run: |
-        echo $PATH
-        which pnpm || true
-        pnpm --version || true
-
-    - name: Get pnpm store directory
-      shell: bash
-      run: |
-        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-    
-    - name: Setup pnpm cache
+    - name: Setup npm cache
       uses: actions/cache@v3
       with:
-        path: ${{ env.STORE_PATH }}
-        key: ${{ runner.os }}-pnpm-store-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
+        path: ~/.npm
+        key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
-          ${{ runner.os }}-pnpm-store-v2-
+          ${{ runner.os }}-npm-
     
     - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      run: npm ci
     
     - name: Generate Prisma Client
-      run: pnpm prisma generate
+      run: npm run prisma:generate
     
     - name: Run database migrations
-      run: pnpm prisma migrate deploy
+      run: npm run prisma:migrate
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
     
     - name: Run type check
-      run: pnpm type-check
+      run: npm run type-check
     
     - name: Run linting
-      run: pnpm lint
+      run: npm run lint
     
     - name: Run tests
-      run: pnpm test
+      run: npm test
       env:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
         TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_agency_test
@@ -98,40 +82,28 @@ jobs:
       with:
         node-version: '20'
     
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v3
-      id: pnpm-setup
-      with:
-        version: 9
-        run_install: false
-    
-    - name: Get pnpm store directory
-      shell: bash
-      run: |
-        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-    
-    - name: Setup pnpm cache
+    - name: Setup npm cache
       uses: actions/cache@v3
       with:
-        path: ${{ env.STORE_PATH }}
-        key: ${{ runner.os }}-pnpm-store-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
+        path: ~/.npm
+        key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
-          ${{ runner.os }}-pnpm-store-v2-
+          ${{ runner.os }}-npm-
     
     - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      run: npm ci
     
     - name: Type check
-      run: pnpm type-check
+      run: npm run type-check
     
     - name: Run tests
-      run: pnpm test
+      run: npm test
 
     - name: Generate Prisma Client
-      run: pnpm prisma generate
+      run: npm run prisma:generate
     
     - name: Build
-      run: pnpm build
+      run: npm run build
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
@@ -164,26 +136,16 @@ jobs:
       with:
         node-version: '20'
 
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v3
-      with:
-        version: 9
-
-    - name: Get pnpm store directory
-      shell: bash
-      run: |
-        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-    - name: Setup pnpm cache
+    - name: Setup npm cache
       uses: actions/cache@v3
       with:
-        path: ${{ env.STORE_PATH }}
-        key: ${{ runner.os }}-pnpm-store-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
+        path: ~/.npm
+        key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
         restore-keys: |
-          ${{ runner.os }}-pnpm-store-v2-
+          ${{ runner.os }}-npm-
 
     - name: Install dependencies
-      run: pnpm install --frozen-lockfile
+      run: npm ci
 
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25

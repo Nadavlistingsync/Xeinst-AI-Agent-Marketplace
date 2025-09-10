@@ -153,7 +153,6 @@ ai-agency-website/
 generated/
 prisma/
 .vercel/
-.github/
 .husky/
 .swc/
 .vscode/
