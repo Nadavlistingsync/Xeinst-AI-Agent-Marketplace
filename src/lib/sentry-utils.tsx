@@ -1,8 +1,8 @@
 import * as Sentry from "@sentry/nextjs";
 import React from "react";
 
-// Get the logger from Sentry
-const { logger } = Sentry;
+// Get the logger from Sentry (with fallback for testing)
+const { logger } = Sentry || { logger: console };
 
 /**
  * Sentry Error Boundary Component

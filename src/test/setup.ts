@@ -39,7 +39,18 @@ vi.mock('next-auth/react', () => ({
 vi.mock('framer-motion', () => {
   const createMockComponent = (tag: string) => {
     return React.forwardRef(({ children, ...props }: any, ref: any) => {
-      return React.createElement(tag, { ...props, ref }, children);
+      // Remove motion-specific props that cause React warnings
+      const { 
+        animate, initial, transition, whileHover, whileTap, whileInView,
+        variants, custom, inherit, layout, layoutId, layoutDependency,
+        layoutScroll, layoutRoot, drag, dragConstraints, dragElastic,
+        dragMomentum, dragPropagation, dragSnapToOrigin, dragTransition,
+        dragDirectionLock, dragListener, dragControls, onDrag, onDragStart,
+        onDragEnd, pan, panDirectionLock, panSnapToOrigin, panTransition,
+        onPan, onPanStart, onPanEnd, ...cleanProps 
+      } = props;
+      
+      return React.createElement(tag, { ...cleanProps, ref }, children);
     });
   };
 
@@ -62,10 +73,21 @@ vi.mock('framer-motion', () => {
     motionComponents[tag] = createMockComponent(tag);
   });
 
+  // Ensure all motion components are properly defined
+  const motion = new Proxy(motionComponents, {
+    get(target, prop) {
+      if (typeof prop === 'string' && target[prop]) {
+        return target[prop];
+      }
+      // Fallback for any missing motion components
+      return createMockComponent(prop as string);
+    }
+  });
+
   const AnimatePresence = ({ children, ...props }: any) => React.createElement('div', props, children);
 
   return {
-    motion: motionComponents,
+    motion,
     AnimatePresence,
     useAnimation: () => ({
       start: vi.fn(),
@@ -267,6 +289,17 @@ vi.mock('@sentry/nextjs', () => ({
   setTag: vi.fn(),
   setExtra: vi.fn(),
   addBreadcrumb: vi.fn(),
+  startSpan: vi.fn(),
+  captureMessage: vi.fn(),
+  logger: {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    fmt: vi.fn(),
+  },
   Severity: {
     Error: 'error',
     Warning: 'warning',
