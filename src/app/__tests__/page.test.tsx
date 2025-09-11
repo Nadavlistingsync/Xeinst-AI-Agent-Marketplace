@@ -28,29 +28,29 @@ describe('Home Page', () => {
 
   it('renders the main description', () => {
     render(<Home />)
-    const description = screen.getByText(/Connect your AI agents via webhooks/i)
+    const description = screen.getByText(/Connect, create, and monetize AI agents/i)
     expect(description).toBeInTheDocument()
   })
 
   it('renders the hero section', () => {
     render(<Home />)
-    const heading = screen.getByText(/AI Agent Marketplace/i)
+    const heading = screen.getByText(/The Future of AI is/i)
     expect(heading).toBeInTheDocument()
-    expect(screen.getByText(/Webhook Agents • Buy Credits • Use AI/i)).toBeInTheDocument()
+    expect(screen.getByText(/Marketplace-Driven/i)).toBeInTheDocument()
   })
 
   it('renders the features section', () => {
     render(<Home />)
-    const featuresHeading = screen.getByText(/features/i)
+    const featuresHeading = screen.getByText(/Why Choose Xeinst/i)
     expect(featuresHeading).toBeInTheDocument()
   })
 
   it('renders the stats section', () => {
     render(<Home />)
     expect(screen.getByText(/Active Agents/i)).toBeInTheDocument()
-    expect(screen.getByText(/Credits Used/i)).toBeInTheDocument()
-    expect(screen.getAllByText(/Users/i)).toHaveLength(2) // Multiple instances
-    expect(screen.getByText(/Success Rate/i)).toBeInTheDocument()
+    expect(screen.getByText(/Credits Earned/i)).toBeInTheDocument()
+    expect(screen.getByText(/Happy Creators/i)).toBeInTheDocument()
+    expect(screen.getByText(/Uptime/i)).toBeInTheDocument()
   })
 
   it('handles database errors correctly', async () => {

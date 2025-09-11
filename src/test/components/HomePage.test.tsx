@@ -106,16 +106,16 @@ describe('HomePage', () => {
     );
 
     // Check for main heading
-    expect(screen.getByText(/AI Agent Marketplace/i)).toBeInTheDocument();
-    expect(screen.getByText(/Webhook Agents • Buy Credits • Use AI/i)).toBeInTheDocument();
+    expect(screen.getByText(/The Future of AI is/i)).toBeInTheDocument();
+    expect(screen.getByText(/Marketplace-Driven/i)).toBeInTheDocument();
 
     // Check for subtitle
-    expect(screen.getByText(/Connect your AI agents via webhooks/i)).toBeInTheDocument();
+    expect(screen.getByText(/Connect, create, and monetize AI agents/i)).toBeInTheDocument();
 
-    // Check for CTA buttons - use getAllByText to handle multiple instances
-    expect(screen.getAllByText(/Connect Agent/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Buy Credits/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Browse Agents/i)).toBeInTheDocument();
+    // Check for CTA buttons
+    expect(screen.getByText(/Explore Marketplace/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Upload Your Agent/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Test Sentry Error/i)).toBeInTheDocument();
   });
 
   it('displays stats section with correct values', () => {
@@ -129,13 +129,13 @@ describe('HomePage', () => {
     expect(screen.getByText('1,000+')).toBeInTheDocument();
     expect(screen.getByText('50K+')).toBeInTheDocument();
     expect(screen.getByText('500+')).toBeInTheDocument();
-    expect(screen.getByText('99%')).toBeInTheDocument();
+    expect(screen.getByText('99.9%')).toBeInTheDocument();
 
     // Check for stat labels
     expect(screen.getByText('Active Agents')).toBeInTheDocument();
-    expect(screen.getByText('Credits Used')).toBeInTheDocument();
-    expect(screen.getByText('Users')).toBeInTheDocument();
-    expect(screen.getByText('Success Rate')).toBeInTheDocument();
+    expect(screen.getByText('Credits Earned')).toBeInTheDocument();
+    expect(screen.getByText('Happy Creators')).toBeInTheDocument();
+    expect(screen.getByText('Uptime')).toBeInTheDocument();
   });
 
   it('renders features section', () => {
@@ -146,12 +146,13 @@ describe('HomePage', () => {
     );
 
     // Check for features section heading
-    expect(screen.getByText(/Core Features/i)).toBeInTheDocument();
+    expect(screen.getByText(/Why Choose Xeinst/i)).toBeInTheDocument();
 
-    // Check for feature titles - use getAllByText to handle multiple instances
-    expect(screen.getAllByText('Connect Agent').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Buy Credits').length).toBeGreaterThan(0);
-    expect(screen.getByText('Use Agents')).toBeInTheDocument();
+    // Check for feature titles
+    expect(screen.getByText('AI Agent Marketplace')).toBeInTheDocument();
+    expect(screen.getByText('Instant Deployment')).toBeInTheDocument();
+    expect(screen.getByText('Community Driven')).toBeInTheDocument();
+    expect(screen.getByText('Monetize Your Work')).toBeInTheDocument();
   });
 
   it('renders how it works section', () => {
@@ -163,10 +164,10 @@ describe('HomePage', () => {
 
     // Check for how it works section
     expect(screen.getByText(/How It Works/i)).toBeInTheDocument();
-    expect(screen.getByText(/Three simple steps to get started/i)).toBeInTheDocument();
-    expect(screen.getByText(/Connect Your Agent/i)).toBeInTheDocument();
-    expect(screen.getAllByText(/Buy Credits/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Use & Earn/i)).toBeInTheDocument();
+    expect(screen.getByText(/Get started with AI agents in three simple steps/i)).toBeInTheDocument();
+    expect(screen.getByText(/Browse & Discover/i)).toBeInTheDocument();
+    expect(screen.getByText(/Purchase Credits/i)).toBeInTheDocument();
+    expect(screen.getByText(/Execute & Get Results/i)).toBeInTheDocument();
   });
 
   it('has correct navigation links', () => {
@@ -177,9 +178,9 @@ describe('HomePage', () => {
     );
 
     // Check that buttons exist (the homepage has buttons, not navigation links)
-    expect(screen.getAllByText(/Connect Agent/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Buy Credits/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Browse Agents/i)).toBeInTheDocument();
+    expect(screen.getByText(/Explore Marketplace/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Upload Your Agent/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Browse Marketplace/i)).toBeInTheDocument();
   });
 
   it('renders with proper accessibility attributes', () => {

@@ -38,7 +38,7 @@ vi.mock('next-auth/react', () => ({
 // Mock framer-motion
 vi.mock('framer-motion', () => {
   const createMockComponent = (tag: string) => {
-    return React.forwardRef(({ children, ...props }: any, ref: any) => {
+    return ({ children, ...props }: any) => {
       // Remove motion-specific props that cause React warnings
       const { 
         animate, initial, transition, whileHover, whileTap, whileInView,
@@ -50,8 +50,8 @@ vi.mock('framer-motion', () => {
         onPan, onPanStart, onPanEnd, ...cleanProps 
       } = props;
       
-      return React.createElement(tag, { ...cleanProps, ref }, children);
-    });
+      return React.createElement(tag, { ...cleanProps }, children);
+    };
   };
 
   const motionComponents: any = {};
