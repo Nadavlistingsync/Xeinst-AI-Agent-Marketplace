@@ -3,5 +3,7 @@ export { GlowButton } from './GlowButton';
 export { GlassCard } from './GlassCard';
 export { GlowInput } from './GlowInput';
 export { Button, buttonVariants } from './button';
+export { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
+export { Badge } from './badge';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './button';
 export type { GlowInputProps } from './GlowInput';

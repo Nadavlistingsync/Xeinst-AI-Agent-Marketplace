@@ -1,26 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
+// import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withEnhancedErrorHandling(async () => {
+  try {
     const { id } = params;
 
     if (!id) {
-      throw new EnhancedAppError(
-        'Web embed ID is required',
-        400,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.LOW,
-        'MISSING_WEB_EMBED_ID',
-        null,
-        false,
-        undefined,
-        'Please provide a valid web embed ID',
-        ['Check the URL', 'Ensure the ID is correct', 'Try browsing from the main page']
+      return NextResponse.json(
+        { success: false, error: 'Web embed ID is required' },
+        { status: 400 }
       );
     }
 
@@ -77,29 +69,27 @@ export async function GET(
       success: true,
       webEmbed
     });
-  }, { endpoint: `/api/web-embeds/${params.id}`, method: 'GET' });
+  } catch (error) {
+    console.error('GET /api/web-embeds/[id] error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch web embed' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withEnhancedErrorHandling(async () => {
+  try {
     const { id } = params;
     const body = await request.json();
 
     if (!id) {
-      throw new EnhancedAppError(
-        'Web embed ID is required',
-        400,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.LOW,
-        'MISSING_WEB_EMBED_ID',
-        null,
-        false,
-        undefined,
-        'Please provide a valid web embed ID',
-        ['Check the URL', 'Ensure the ID is correct']
+      return NextResponse.json(
+        { success: false, error: 'Web embed ID is required' },
+        { status: 400 }
       );
     }
 
@@ -120,28 +110,26 @@ export async function PUT(
       success: true,
       webEmbed
     });
-  }, { endpoint: `/api/web-embeds/${params.id}`, method: 'PUT' });
+  } catch (error) {
+    console.error('PUT /api/web-embeds/[id] error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update web embed' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  return withEnhancedErrorHandling(async () => {
+  try {
     const { id } = params;
 
     if (!id) {
-      throw new EnhancedAppError(
-        'Web embed ID is required',
-        400,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.LOW,
-        'MISSING_WEB_EMBED_ID',
-        null,
-        false,
-        undefined,
-        'Please provide a valid web embed ID',
-        ['Check the URL', 'Ensure the ID is correct']
+      return NextResponse.json(
+        { success: false, error: 'Web embed ID is required' },
+        { status: 400 }
       );
     }
 
@@ -159,5 +147,11 @@ export async function DELETE(
       success: true,
       message: 'Web embed deleted successfully'
     });
-  }, { endpoint: `/api/web-embeds/${params.id}`, method: 'DELETE' });
+  } catch (error) {
+    console.error('DELETE /api/web-embeds/[id] error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to delete web embed' },
+      { status: 500 }
+    );
+  }
 } 
