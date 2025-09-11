@@ -1,7 +1,22 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-import { Agent } from '@/types/agent';
+
+// Define Agent type locally since it's not available
+interface Agent {
+  id: string;
+  name?: string;
+  description?: string;
+  category?: string;
+  price?: number;
+  documentation?: string;
+  fileUrl?: string;
+  version?: string;
+  environment?: string;
+  framework?: string;
+  modelType?: string;
+  isPublic?: boolean;
+}
 
 interface EditAgentFormProps {
   agent: Agent;
