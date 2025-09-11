@@ -295,7 +295,7 @@ if (typeof window !== 'undefined') {
 beforeAll(async () => {
   try {
     // Generate Prisma client
-    execSync('pnpm prisma generate', {
+    execSync('npm run prisma:generate', {
       env: {
         ...process.env,
         DATABASE_URL: process.env.TEST_DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ai_agency_test',

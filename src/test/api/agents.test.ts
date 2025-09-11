@@ -89,15 +89,13 @@ describe('Agents API', () => {
 
       const request = new NextRequest('http://localhost:3000/api/agents');
       
-      // The enhanced error handling will throw an EnhancedAppError
-      // We need to catch it and verify the error structure
-      try {
-        await GET(request);
-        expect.fail('Expected an error to be thrown');
-      } catch (error: any) {
-        expect(error).toBeInstanceOf(Error);
-        expect(error.message).toContain('Database error');
-      }
+      // The API now returns a NextResponse.json instead of throwing
+      const response = await GET(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
+      expect(data.error).toContain('Failed to fetch agents');
     });
 
     it('filters agents by category', async () => {
@@ -212,14 +210,13 @@ describe('Agents API', () => {
         body: JSON.stringify(invalidAgentData),
       });
 
-      // The enhanced error handling will throw an EnhancedAppError for validation errors
-      try {
-        await POST(request);
-        expect.fail('Expected a validation error to be thrown');
-      } catch (error: any) {
-        expect(error).toBeInstanceOf(Error);
-        expect(error.message).toContain('name: Required');
-      }
+      // The API now returns a NextResponse.json instead of throwing
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.success).toBe(false);
+      expect(data.error).toContain('Validation failed');
     });
 
     it('validates price is positive', async () => {
@@ -240,14 +237,13 @@ describe('Agents API', () => {
         body: JSON.stringify(invalidAgentData),
       });
 
-      // The enhanced error handling will throw an EnhancedAppError for validation errors
-      try {
-        await POST(request);
-        expect.fail('Expected a validation error to be thrown');
-      } catch (error: any) {
-        expect(error).toBeInstanceOf(Error);
-        expect(error.message).toContain('price: Price must be non-negative');
-      }
+      // The API now returns a NextResponse.json instead of throwing
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(400);
+      expect(data.success).toBe(false);
+      expect(data.error).toContain('Validation failed');
     });
 
     it('handles database errors during creation', async () => {
@@ -271,13 +267,13 @@ describe('Agents API', () => {
       });
 
       // The enhanced error handling will throw an EnhancedAppError for database errors
-      try {
-        await POST(request);
-        expect.fail('Expected a database error to be thrown');
-      } catch (error: any) {
-        expect(error).toBeInstanceOf(Error);
-        expect(error.message).toContain('Database error');
-      }
+      // The API now returns a NextResponse.json instead of throwing
+      const response = await POST(request);
+      const data = await response.json();
+      
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
+      expect(data.error).toContain('Failed to create agent');
     });
   });
 }); 

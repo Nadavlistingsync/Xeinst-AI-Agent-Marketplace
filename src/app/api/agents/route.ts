@@ -171,7 +171,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const validatedData = uploadAgentSchema.parse(body);
+    
+    // Validate the request data
+    let validatedData;
+    try {
+      validatedData = uploadAgentSchema.parse(body);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { success: false, error: 'Validation failed', details: error.errors },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
 
     // Map fields from test format to database format
     const modelType = validatedData.modelType || validatedData.model_type || 'custom';
