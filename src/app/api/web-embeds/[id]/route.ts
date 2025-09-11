@@ -29,17 +29,9 @@ export async function GET(
     });
 
     if (!webEmbed) {
-      throw new EnhancedAppError(
-        'Web embed not found',
-        404,
-        ErrorCategory.UNKNOWN,
-        ErrorSeverity.LOW,
-        'WEB_EMBED_NOT_FOUND',
-        null,
-        false,
-        undefined,
-        'The requested web embed could not be found',
-        ['Check the URL', 'Browse available web embeds', 'Contact support if needed']
+      return NextResponse.json(
+        { success: false, error: 'Web embed not found' },
+        { status: 404 }
       );
     }
 
