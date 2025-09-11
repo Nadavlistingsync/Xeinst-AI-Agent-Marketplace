@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import EditAgentForm from '@/components/EditAgentForm';
+import { EditAgentForm } from '@/components';
 import { toast } from 'react-hot-toast';
 import { Agent } from '@/types/agent';
 

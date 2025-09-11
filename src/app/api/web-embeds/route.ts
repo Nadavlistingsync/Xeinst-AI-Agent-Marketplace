@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
+// import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
 
 const webEmbedSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -19,7 +19,7 @@ const webEmbedSchema = z.object({
 });
 
 export async function GET() {
-  return withEnhancedErrorHandling(async () => {
+  try {
     const webEmbeds = await prisma.webEmbed.findMany({
       where: { status: 'active' },
       include: {
@@ -38,24 +38,22 @@ export async function GET() {
       webEmbeds,
       total: webEmbeds.length
     });
-  }, { endpoint: '/api/web-embeds', method: 'GET' });
+  } catch (error) {
+    console.error('GET /api/web-embeds error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch web embeds' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
-  return withEnhancedErrorHandling(async () => {
+  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      throw new EnhancedAppError(
-        'Authentication required',
-        401,
-        ErrorCategory.AUTHENTICATION,
-        ErrorSeverity.MEDIUM,
-        'AUTH_REQUIRED',
-        null,
-        false,
-        undefined,
-        'Please sign in to create a web embed',
-        ['Sign in to your account', 'Check your credentials', 'Reset your password if needed']
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
       );
     }
 
@@ -92,5 +90,11 @@ export async function POST(request: NextRequest) {
       success: true,
       webEmbed
     });
-  }, { endpoint: '/api/web-embeds', method: 'POST' });
+  } catch (error) {
+    console.error('POST /api/web-embeds error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to create web embed' },
+      { status: 500 }
+    );
+  }
 } 
