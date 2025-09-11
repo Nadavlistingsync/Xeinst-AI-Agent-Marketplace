@@ -39,7 +39,7 @@ vi.mock('next-auth/react', () => ({
 vi.mock('framer-motion', () => {
   const createMockComponent = (tag: string) => {
     return ({ children, ...props }: any) => {
-      // Remove motion-specific props that cause React warnings
+      // Remove ALL motion-specific props that cause React warnings
       const { 
         animate, initial, transition, whileHover, whileTap, whileInView,
         variants, custom, inherit, layout, layoutId, layoutDependency,
@@ -47,7 +47,7 @@ vi.mock('framer-motion', () => {
         dragMomentum, dragPropagation, dragSnapToOrigin, dragTransition,
         dragDirectionLock, dragListener, dragControls, onDrag, onDragStart,
         onDragEnd, pan, panDirectionLock, panSnapToOrigin, panTransition,
-        onPan, onPanStart, onPanEnd, ...cleanProps 
+        onPan, onPanStart, onPanEnd, viewport, ...cleanProps 
       } = props;
       
       return React.createElement(tag, { ...cleanProps }, children);

@@ -13,14 +13,25 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock framer-motion
+// Mock framer-motion - use the same comprehensive mock as setup.ts
 vi.mock('framer-motion', () => {
   const React = require('react');
   
   const createMockComponent = (tag: string) => {
-    return React.forwardRef(({ children, ...props }: any, ref: any) => {
-      return React.createElement(tag, { ...props, ref }, children);
-    });
+    return ({ children, ...props }: any) => {
+      // Remove ALL motion-specific props that cause React warnings
+      const { 
+        animate, initial, transition, whileHover, whileTap, whileInView,
+        variants, custom, inherit, layout, layoutId, layoutDependency,
+        layoutScroll, layoutRoot, drag, dragConstraints, dragElastic,
+        dragMomentum, dragPropagation, dragSnapToOrigin, dragTransition,
+        dragDirectionLock, dragListener, dragControls, onDrag, onDragStart,
+        onDragEnd, pan, panDirectionLock, panSnapToOrigin, panTransition,
+        onPan, onPanStart, onPanEnd, viewport, ...cleanProps 
+      } = props;
+      
+      return React.createElement(tag, { ...cleanProps }, children);
+    };
   };
 
   const motionComponents: any = {};
