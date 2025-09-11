@@ -16,6 +16,12 @@ const nextConfig = {
   webpack: (config, { isServer }) => {
     config.externals = [...(config.externals || []), 'canvas', 'jsdom'];
     
+    // Add explicit path resolution
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': require('path').resolve(__dirname, 'src'),
+    };
+    
     // Add better error logging
     if (!isServer) {
       config.resolve.fallback = {
