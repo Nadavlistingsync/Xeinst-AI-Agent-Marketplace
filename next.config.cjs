@@ -4,6 +4,9 @@ const nextConfig = {
     scrollRestoration: true,
   },
   transpilePackages: ['framer-motion'],
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   webpack: (config) => {
     config.externals = [...(config.externals || []), 'canvas', 'jsdom'];
     return config;

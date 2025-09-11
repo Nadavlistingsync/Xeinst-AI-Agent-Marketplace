@@ -240,7 +240,7 @@ export default function UploadPage() {
                   placeholder="Enter your agent name"
                   value={agentData.name}
                   onChange={(e) => updateAgentData('name', e.target.value)}
-                  error={errors.name}
+                  error={!!errors.name}
                 />
 
                 <div className="space-y-2">
@@ -322,7 +322,7 @@ export default function UploadPage() {
                   placeholder="https://your-domain.com/webhook"
                   value={agentData.webhookUrl}
                   onChange={(e) => updateAgentData('webhookUrl', e.target.value)}
-                  error={errors.webhookUrl}
+                  error={!!errors.webhookUrl}
                   helperText="The URL where your agent will receive webhook calls"
                 />
 
@@ -403,7 +403,7 @@ export default function UploadPage() {
                   placeholder="10"
                   value={agentData.price}
                   onChange={(e) => updateAgentData('price', e.target.value)}
-                  error={errors.price}
+                  error={!!errors.price}
                   helperText="Price between 1-1000 credits per use"
                 />
 

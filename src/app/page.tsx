@@ -11,6 +11,7 @@ export default function HomePage() {
   // Test function to trigger Sentry error
   const testSentryError = () => {
     // This will trigger an error that Sentry will capture
+    // @ts-ignore
     myUndefinedFunction();
   };
 
