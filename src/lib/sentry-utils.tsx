@@ -139,12 +139,7 @@ export const SentryUtils = {
     },
     
     fatal: (message: string, context?: Record<string, any>) => {
-      logger.fatal(message, context);
-    },
-    
-    // Template literal function for structured logging
-    fmt: (strings: TemplateStringsArray, ...values: any[]) => {
-      return logger.fmt(strings, ...values);
+      logger.error(message, context);
     },
   },
 };

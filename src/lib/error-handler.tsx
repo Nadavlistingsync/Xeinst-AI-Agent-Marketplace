@@ -277,7 +277,7 @@ export const ErrorUtils = {
   },
 };
 
-export default {
+const ErrorHandler = {
   CustomError,
   ValidationError,
   AuthenticationError,
@@ -292,3 +292,5 @@ export default {
   createErrorBoundary,
   ErrorUtils,
 };
+
+export default ErrorHandler;
