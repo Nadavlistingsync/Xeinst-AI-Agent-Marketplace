@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
-import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
+// import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -18,19 +18,11 @@ const BUCKET_NAME = process.env.S3_BUCKET_NAME!;
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   
-  return withEnhancedErrorHandling(async () => {
+  try {
     if (!session?.user?.id) {
-      throw new EnhancedAppError(
-        'Authentication required',
-        401,
-        ErrorCategory.AUTHENTICATION,
-        ErrorSeverity.MEDIUM,
-        'AUTH_REQUIRED',
-        null,
-        false,
-        undefined,
-        'Please sign in to upload agents',
-        ['Sign in to your account', 'Check your credentials']
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
       );
     }
 
@@ -41,17 +33,9 @@ export async function POST(req: NextRequest) {
 
     const maxUploads = 50; // Limit users to 50 agents
     if (userUploadCount >= maxUploads) {
-      throw new EnhancedAppError(
-        'Upload limit exceeded',
-        429,
-        ErrorCategory.RATE_LIMIT,
-        ErrorSeverity.MEDIUM,
-        'UPLOAD_LIMIT_EXCEEDED',
-        { current: userUploadCount, limit: maxUploads },
-        false,
-        undefined,
-        `You have reached the maximum of ${maxUploads} agent uploads`,
-        ['Delete some existing agents', 'Contact support for limit increase']
+      return NextResponse.json(
+        { success: false, error: 'Upload limit exceeded' },
+        { status: 429 }
       );
     }
 
@@ -60,17 +44,9 @@ export async function POST(req: NextRequest) {
     try {
       formData = await req.formData();
     } catch (error) {
-      throw new EnhancedAppError(
-        'Invalid form data',
-        400,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.MEDIUM,
-        'INVALID_FORM_DATA',
-        null,
-        false,
-        undefined,
-        'Failed to parse upload form data',
-        ['Check your upload format', 'Try uploading again']
+      return NextResponse.json(
+        { success: false, error: 'Invalid form data' },
+        { status: 400 }
       );
     }
 
@@ -84,111 +60,55 @@ export async function POST(req: NextRequest) {
 
     // Validate required fields
     if (!file || !name || !description) {
-      throw new EnhancedAppError(
-        'Missing required fields',
-        400,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.MEDIUM,
-        'MISSING_REQUIRED_FIELDS',
-        { provided: { hasFile: !!file, hasName: !!name, hasDescription: !!description } },
-        false,
-        undefined,
-        'Please provide all required fields: file, name, and description',
-        ['Check all required fields are filled', 'Ensure file is selected']
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields' },
+        { status: 400 }
       );
     }
 
     // Validate file type and size
     if (!file.name.endsWith('.zip')) {
-      throw new EnhancedAppError(
-        'Invalid file type',
-        400,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.MEDIUM,
-        'INVALID_FILE_TYPE',
-        { fileName: file.name, fileType: file.type },
-        false,
-        undefined,
-        'Only ZIP files are allowed for agent uploads',
-        ['Convert your file to ZIP format', 'Check file extension']
+      return NextResponse.json(
+        { success: false, error: 'Invalid file type' },
+        { status: 400 }
       );
     }
 
     if (file.size > 50 * 1024 * 1024) { // 50MB limit
-      throw new EnhancedAppError(
-        'File too large',
-        400,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.MEDIUM,
-        'FILE_TOO_LARGE',
-        { fileSize: file.size, maxSize: 50 * 1024 * 1024 },
-        false,
-        undefined,
-        'File size exceeds 50MB limit',
-        ['Compress your file', 'Reduce file size', 'Split into smaller files']
+      return NextResponse.json(
+        { success: false, error: 'File too large' },
+        { status: 400 }
       );
     }
 
     // Validate name and description
     if (name.length < 1 || name.length > 100) {
-      throw new EnhancedAppError(
-        'Invalid agent name',
-        400,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.MEDIUM,
-        'INVALID_AGENT_NAME',
-        { nameLength: name.length, minLength: 1, maxLength: 100 },
-        false,
-        undefined,
-        'Agent name must be between 1 and 100 characters',
-        ['Shorten or lengthen the name', 'Use descriptive but concise names']
+      return NextResponse.json(
+        { success: false, error: 'Invalid agent name' },
+        { status: 400 }
       );
     }
 
     if (description.length < 1 || description.length > 1000) {
-      throw new EnhancedAppError(
-        'Invalid description',
-        400,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.MEDIUM,
-        'INVALID_DESCRIPTION',
-        { descriptionLength: description.length, minLength: 1, maxLength: 1000 },
-        false,
-        undefined,
-        'Description must be between 1 and 1000 characters',
-        ['Shorten or lengthen the description', 'Provide clear but concise description']
+      return NextResponse.json(
+        { success: false, error: 'Invalid description' },
+        { status: 400 }
       );
     }
 
     // Validate price
     if (pricePerRun < 0 || pricePerRun > 1000) {
-      throw new EnhancedAppError(
-        'Invalid price',
-        400,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.MEDIUM,
-        'INVALID_PRICE',
-        { price: pricePerRun, minPrice: 0, maxPrice: 1000 },
-        false,
-        undefined,
-        'Price must be between 0 and 1000 credits',
-        ['Set a price between 0 and 1000', 'Consider market rates']
+      return NextResponse.json(
+        { success: false, error: 'Invalid price' },
+        { status: 400 }
       );
     }
 
     // Validate tags
     if (tags.length > 10) {
-      throw new EnhancedAppError(
-        'Too many tags',
-        400,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.MEDIUM,
-        'TOO_MANY_TAGS',
-        { tagCount: tags.length, maxTags: 10 },
-        false,
-        undefined,
-        'Maximum 10 tags allowed',
-        ['Reduce number of tags', 'Combine similar tags']
+      return NextResponse.json(
+        { success: false, error: 'Too many tags' },
+        { status: 400 }
       );
     }
 
@@ -201,17 +121,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingAgent) {
-      throw new EnhancedAppError(
-        'Agent name already exists',
-        409,
-        ErrorCategory.VALIDATION,
-        ErrorSeverity.MEDIUM,
-        'DUPLICATE_AGENT_NAME',
-        { existingAgentId: existingAgent.id },
-        false,
-        undefined,
-        'You already have an agent with this name',
-        ['Choose a different name', 'Update existing agent', 'Delete old agent first']
+      return NextResponse.json(
+        { success: false, error: 'Agent name already exists' },
+        { status: 409 }
       );
     }
 
@@ -224,17 +136,9 @@ export async function POST(req: NextRequest) {
       const bytes = await file.arrayBuffer();
       buffer = Buffer.from(bytes);
     } catch (error) {
-      throw new EnhancedAppError(
-        'File processing failed',
-        500,
-        ErrorCategory.FILE_UPLOAD,
-        ErrorSeverity.HIGH,
-        'FILE_PROCESSING_ERROR',
-        { error: error instanceof Error ? error.message : 'Unknown error' },
-        true, // Retryable
-        5000, // Retry after 5 seconds
-        'Failed to process uploaded file',
-        ['Try uploading again', 'Check file integrity', 'Use a different file']
+      return NextResponse.json(
+        { success: false, error: 'File processing failed' },
+        { status: 500 }
       );
     }
 
@@ -253,17 +157,9 @@ export async function POST(req: NextRequest) {
       }));
     } catch (error) {
       console.error('S3 upload error:', error);
-      throw new EnhancedAppError(
-        'File upload failed',
-        500,
-        ErrorCategory.FILE_UPLOAD,
-        ErrorSeverity.HIGH,
-        'S3_UPLOAD_FAILED',
-        { error: error instanceof Error ? error.message : 'Unknown S3 error' },
-        true, // Retryable
-        10000, // Retry after 10 seconds
-        'Failed to upload file to storage',
-        ['Try uploading again', 'Check your connection', 'Contact support']
+      return NextResponse.json(
+        { success: false, error: 'File upload failed' },
+        { status: 500 }
       );
     }
 
@@ -313,17 +209,9 @@ export async function POST(req: NextRequest) {
         console.error('Failed to cleanup S3 file:', cleanupError);
       }
 
-      throw new EnhancedAppError(
-        'Agent creation failed',
-        500,
-        ErrorCategory.DATABASE,
-        ErrorSeverity.HIGH,
-        'AGENT_CREATION_FAILED',
-        { error: error instanceof Error ? error.message : 'Unknown database error' },
-        true, // Retryable
-        5000, // Retry after 5 seconds
-        'Failed to create agent in database',
-        ['Try uploading again', 'Check your data', 'Contact support']
+      return NextResponse.json(
+        { success: false, error: 'Agent creation failed' },
+        { status: 500 }
       );
     }
 
@@ -357,9 +245,11 @@ export async function POST(req: NextRequest) {
       } 
     });
 
-  }, { 
-    endpoint: '/api/upload-agent', 
-    method: 'POST',
-    context: { userId: session?.user?.id }
-  });
+  } catch (error) {
+    console.error('POST /api/upload-agent error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to upload agent' },
+      { status: 500 }
+    );
+  }
 } 

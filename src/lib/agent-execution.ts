@@ -3,7 +3,7 @@ import { prisma } from './prisma';
 import { logAgentEvent } from './agent-monitoring';
 import { z } from 'zod';
 // import { rateLimiters } from './rate-limit';
-import { withEnhancedErrorHandling } from './enhanced-error-handling';
+// import { withEnhancedErrorHandling } from './enhanced-error-handling';
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -277,11 +277,10 @@ export async function executeAgent(
   input: any,
   options: AgentExecutionOptions = {}
 ): Promise<AgentExecutionResult> {
-  return withEnhancedErrorHandling(async () => {
-    const startTime = Date.now();
-    const requestId = options.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    try {
+  const startTime = Date.now();
+  const requestId = options.requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  try {
       // Get agent details from database
       const agent = await prisma.deployment.findUnique({
         where: { id: agentId },
@@ -336,29 +335,15 @@ export async function executeAgent(
         executionTime: Date.now() - startTime,
         requestId,
       };
-    } catch (error) {
-      console.error('Error in executeAgent:', error);
-      
-      // Log error
-      await logAgentEvent(agentId, 'error', 'Agent execution failed', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        executionTime: Date.now() - startTime,
-        requestId,
-        userId: options.userId,
-      });
-
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown execution error',
-        executionTime: Date.now() - startTime,
-        requestId,
-      };
-    }
-  }, { 
-    endpoint: '/api/agents/execute', 
-    method: 'POST',
-    context: { agentId, userId: options.userId }
-  });
+  } catch (outerError) {
+    console.error('Outer error in executeAgent:', outerError);
+    return {
+      success: false,
+      error: outerError instanceof Error ? outerError.message : 'Unknown execution error',
+      executionTime: Date.now() - startTime,
+      requestId,
+    };
+  }
 }
 
 /**
