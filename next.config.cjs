@@ -7,8 +7,32 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  webpack: (config) => {
+  // Enhanced logging for debugging
+  logging: {
+    fetches: {
+      fullUrl: true,
+    },
+  },
+  webpack: (config, { isServer }) => {
     config.externals = [...(config.externals || []), 'canvas', 'jsdom'];
+    
+    // Add better error logging
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+    
+    // Enhanced error reporting
+    config.stats = {
+      ...config.stats,
+      errorDetails: true,
+      moduleTrace: true,
+    };
+    
     return config;
   },
   images: {

@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node scripts/debug-build.js && prisma generate && next build",
+    "build:debug": "node scripts/debug-build.js",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",

@@ -53,8 +53,21 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Initialize security measures
-  const sessionInfo = securityManager.getSessionInfo();
+  // Initialize security measures with error logging
+  let sessionInfo;
+  try {
+    sessionInfo = securityManager.getSessionInfo();
+    console.log('✅ Security session info retrieved successfully');
+  } catch (error) {
+    console.error('❌ Failed to get security session info:', error);
+    Sentry.captureException(error);
+    // Fallback session info
+    sessionInfo = {
+      watermark: 'AI_AGENCY_2024',
+      sessionId: 'fallback_session',
+      timestamp: new Date().toISOString()
+    };
+  }
   
   return (
     <html lang="en" data-watermark={sessionInfo.watermark} data-session={sessionInfo.sessionId}>

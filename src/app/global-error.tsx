@@ -9,7 +9,28 @@ export default function GlobalError({
   error: Error & { digest?: string };
 }) {
   useEffect(() => {
-    Sentry.captureException(error);
+    // Enhanced error logging
+    console.error('🚨 Global Error Caught:', {
+      message: error.message,
+      stack: error.stack,
+      digest: error.digest,
+      timestamp: new Date().toISOString(),
+      userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
+      url: typeof window !== 'undefined' ? window.location.href : 'server'
+    });
+    
+    // Send to Sentry with additional context
+    Sentry.captureException(error, {
+      tags: {
+        errorBoundary: 'global',
+        digest: error.digest || 'unknown'
+      },
+      extra: {
+        timestamp: new Date().toISOString(),
+        userAgent: typeof window !== 'undefined' ? window.navigator.userAgent : 'server',
+        url: typeof window !== 'undefined' ? window.location.href : 'server'
+      }
+    });
   }, [error]);
 
   return (
