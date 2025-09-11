@@ -39,9 +39,11 @@ export interface EnhancedApiError {
   requestId?: string;
 }
 
-export class EnhancedAppError extends Error {
+export class EnhancedAppError {
+  public name = 'EnhancedAppError';
+  
   constructor(
-    message: string,
+    public message: string,
     public status: number = 500,
     public category: ErrorCategory = ErrorCategory.UNKNOWN,
     public severity: ErrorSeverity = ErrorSeverity.MEDIUM,
@@ -51,10 +53,7 @@ export class EnhancedAppError extends Error {
     public retryAfter?: number,
     public userMessage?: string,
     public suggestedActions?: string[]
-  ) {
-    super(message);
-    this.name = 'EnhancedAppError';
-  }
+  ) {}
 }
 
 // Error message templates for better user experience

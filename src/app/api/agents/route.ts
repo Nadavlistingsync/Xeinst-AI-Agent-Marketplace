@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
+// import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
 
 const agentSchema = z.object({
   id: z.string(),
@@ -92,7 +92,7 @@ const exampleAgents: Agent[] = [
 ];
 
 export async function GET() {
-  return withEnhancedErrorHandling(async () => {
+  try {
     console.log('GET /api/agents: Starting to fetch agents...');
     
     // First try to get agents from the database
@@ -151,24 +151,22 @@ export async function GET() {
       total: allAgents.length,
       timestamp: new Date().toISOString()
     });
-  }, { endpoint: '/api/agents', method: 'GET' });
+  } catch (error) {
+    console.error('GET /api/agents error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch agents' },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
-  return withEnhancedErrorHandling(async () => {
+  try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      throw new EnhancedAppError(
-        'Authentication required',
-        401,
-        ErrorCategory.AUTHENTICATION,
-        ErrorSeverity.MEDIUM,
-        'AUTH_REQUIRED',
-        null,
-        false,
-        undefined,
-        'Please sign in to upload an agent',
-        ['Sign in to your account', 'Check your credentials', 'Reset your password if needed']
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
       );
     }
 
@@ -256,5 +254,11 @@ export async function POST(request: NextRequest) {
       success: true,
       agent: marketplaceAgent
     });
-  }, { endpoint: '/api/agents', method: 'POST' });
+  } catch (error) {
+    console.error('POST /api/agents error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to create agent' },
+      { status: 500 }
+    );
+  }
 } 

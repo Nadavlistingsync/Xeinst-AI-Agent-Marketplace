@@ -107,10 +107,10 @@ export const SentryUtils = {
   /**
    * Start a span for performance monitoring
    */
-  startSpan: <T>(
+  startSpan<T>(
     options: { op: string; name: string; attributes?: Record<string, any> },
     callback: (span: any) => T
-  ): T => {
+  ): T {
     return Sentry.startSpan(options, callback);
   },
 
