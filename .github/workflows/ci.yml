@@ -75,10 +75,10 @@ jobs:
     if: github.ref == 'refs/heads/main'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '20'
     
@@ -93,12 +93,6 @@ jobs:
     - name: Install dependencies
       run: npm install
     
-    - name: Type check
-      run: npm run type-check
-    
-    - name: Run tests
-      run: npm test
-
     - name: Generate Prisma Client
       run: npm run prisma:generate
     
@@ -110,12 +104,14 @@ jobs:
         NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+        NODE_ENV: production
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: build
         path: .next
+        retention-days: 1
 
   deploy:
     needs: [test, build]
@@ -124,12 +120,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: build
-        path: .next
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -146,6 +136,19 @@ jobs:
 
     - name: Install dependencies
       run: npm install
+
+    - name: Generate Prisma Client
+      run: npm run prisma:generate
+
+    - name: Build for deployment
+      run: npm run build
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+        NODE_ENV: production
 
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25
