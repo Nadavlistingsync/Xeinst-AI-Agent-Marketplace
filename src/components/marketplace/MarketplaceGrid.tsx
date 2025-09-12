@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from "../ui/card";
 import { InteractiveAgentCard } from './InteractiveAgentCard';
 import { Agent } from '@/app/api/agents/route';
 

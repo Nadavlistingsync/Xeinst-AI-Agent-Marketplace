@@ -2,9 +2,9 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, CheckCircle, Zap, Users, DollarSign, Upload } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Button } from ".//ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from ".//ui/card";
+import { Progress } from ".//ui/progress";
 import { useRouter } from "next/navigation";
 
 interface OnboardingStep {

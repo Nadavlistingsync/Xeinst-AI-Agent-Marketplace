@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from "../ui/button";
 import { Edit, Eye, Plus } from 'lucide-react';
 
 export function CreateAgentButton() {

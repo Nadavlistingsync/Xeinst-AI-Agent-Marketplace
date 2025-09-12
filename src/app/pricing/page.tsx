@@ -1,9 +1,9 @@
 "use client";
 
-import { GlowButton } from "@/components/ui/GlowButton";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { Section } from "@/components/ui/Section";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { GlowButton } from "../../components/ui/GlowButton";
+import { GlassCard } from "../../components/ui/GlassCard";
+import { Section } from "../../components/ui/Section";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { 
   CheckCircle, 
   Star, 

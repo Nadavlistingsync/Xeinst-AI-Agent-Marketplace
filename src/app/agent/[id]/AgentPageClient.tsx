@@ -2,7 +2,7 @@
 
 import { Star } from 'lucide-react';
 import Image from 'next/image';
-import { AgentReviews } from '@/components/AgentReviews';
+import { AgentReviews } from "../../../components/AgentReviews";
 import type { AppProduct } from '@/lib/schema';
 import { Decimal } from '@prisma/client/runtime/library';
 

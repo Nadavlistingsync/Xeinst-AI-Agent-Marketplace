@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from ".//ui/dialog";
+import { Button } from ".//ui/button";
+import { Alert, AlertDescription, AlertTitle } from ".//ui/alert";
+import { Badge } from ".//ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from ".//ui/tabs";
 import { 
   AlertTriangle, 
   Info, 

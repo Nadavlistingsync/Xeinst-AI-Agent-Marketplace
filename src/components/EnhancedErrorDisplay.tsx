@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from ".//ui/alert";
+import { Button } from ".//ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from ".//ui/dialog";
 import { RefreshCw, AlertTriangle, Info, XCircle, CheckCircle, Copy, ExternalLink } from 'lucide-react';
 import { ErrorCategory, ErrorSeverity } from '@/lib/enhanced-error-handling';
 

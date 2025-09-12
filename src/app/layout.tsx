@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import { Navbar } from "@/components/ui/Navbar";
-import { Footer } from "@/components/ui/Footer";
-import { MotionWrapper } from "@/components/ui/MotionWrapper";
+import { Navbar } from "../components/ui/Navbar";
+import { Footer } from "../components/ui/Footer";
+import { MotionWrapper } from "../components/ui/MotionWrapper";
 import { securityManager, addWatermark } from "@/lib/security";
 import * as Sentry from '@sentry/nextjs';
 

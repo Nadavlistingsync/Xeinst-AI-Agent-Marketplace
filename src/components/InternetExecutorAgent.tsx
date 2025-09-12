@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from ".//ui/button";
+import { Input } from ".//ui/input";
+import { Textarea } from ".//ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from ".//ui/card";
+import { Label } from ".//ui/label";
+import { Switch } from ".//ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from ".//ui/tabs";
+import { Alert, AlertDescription } from ".//ui/alert";
 import { Loader2, Globe, Zap, Shield, Settings, Download, ExternalLink } from 'lucide-react';
 
 interface APICall {

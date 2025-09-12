@@ -18,11 +18,11 @@ import {
   Tag,
   Info
 } from "lucide-react";
-import { GlowButton } from "@/components/ui/GlowButton";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { GlowInput } from "@/components/ui/GlowInput";
-import { Section } from "@/components/ui/Section";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { GlowButton } from "../../components/ui/GlowButton";
+import { GlassCard } from "../../components/ui/GlassCard";
+import { GlowInput } from "../../components/ui/GlowInput";
+import { Section } from "../../components/ui/Section";
+import { PageHeader } from "../../components/ui/PageHeader";
 
 interface AgentData {
   name: string;

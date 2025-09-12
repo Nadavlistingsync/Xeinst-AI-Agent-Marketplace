@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { FeaturedAgents } from '@/components/FeaturedAgents';
+import { FeaturedAgents } from "../../components/FeaturedAgents";
 import { vi } from 'vitest';
 
 // Mock fetch

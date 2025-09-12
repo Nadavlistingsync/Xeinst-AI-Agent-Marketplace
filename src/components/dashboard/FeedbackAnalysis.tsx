@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { Star, TrendingUp, TrendingDown, MessageSquare, AlertTriangle, ThumbsUp } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from "../ui/use-toast";
 import { formatDistanceToNow } from 'date-fns';
 
 interface FeedbackMetrics {

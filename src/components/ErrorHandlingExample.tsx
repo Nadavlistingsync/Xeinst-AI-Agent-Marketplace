@@ -1,8 +1,8 @@
 "use client";
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from ".//ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from ".//ui/card";
 import { useClickErrorHandling, useApiClickHandling, useFormSubmitHandling } from '@/hooks/useClickErrorHandling';
 import { apiClient } from '@/lib/enhanced-api-client';
 import { useError } from '@/contexts/ErrorContext';

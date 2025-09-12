@@ -2,8 +2,8 @@
 
 import React from "react"
 import { ArrowRight, Bot, Zap, Users, DollarSign, Sparkles, Star, TrendingUp } from "lucide-react"
-import { GlowButton } from "@/components/ui/GlowButton"
-import { GlassCard } from "@/components/ui/GlassCard"
+import { GlowButton } from "../components/ui/GlowButton"
+import { GlassCard } from "../components/ui/GlassCard"
 import { motion } from "framer-motion"
 import Link from "next/link"
 

@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FeedbackAnalysis } from '@/components/dashboard/FeedbackAnalysis';
-import { FeedbackResponse } from '@/components/feedback/FeedbackResponse';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { FeedbackAnalysis } from "../dashboard/FeedbackAnalysis";
+import { FeedbackResponse } from "../feedback/FeedbackResponse";
+import { NotificationCenter } from "../notifications/NotificationCenter";
 import { toast } from 'react-hot-toast';
 
 interface AgentDetailsProps {

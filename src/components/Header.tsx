@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from ".//ui/button";
 import { UserMenu, MobileUserMenu } from "./UserMenu";
 import { 
   Menu, 

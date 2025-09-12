@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getDeploymentById } from "@/lib/db-helpers";
-import AgentDetails from "@/components/marketplace/AgentDetails";
+import AgentDetails from "../../../components/marketplace/AgentDetails";
 
 interface PageProps {
   params: {

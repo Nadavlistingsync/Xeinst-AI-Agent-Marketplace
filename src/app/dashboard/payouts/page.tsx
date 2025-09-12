@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { PayoutDashboard } from '@/components/dashboard/PayoutDashboard';
+import { PayoutDashboard } from "../../../components/dashboard/PayoutDashboard";
 
 export const metadata: Metadata = {
   title: 'Payouts | Xeinst',

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
-import { DetailedErrorModal } from '@/components/DetailedErrorModal';
+import { DetailedErrorModal } from "../components/DetailedErrorModal";
 import { ErrorCategory, ErrorSeverity } from '@/lib/enhanced-error-handling';
 import { toast } from 'sonner';
 

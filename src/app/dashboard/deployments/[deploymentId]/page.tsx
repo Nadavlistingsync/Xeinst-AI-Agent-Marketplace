@@ -3,9 +3,9 @@ import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { DeploymentOverview } from '@/components/dashboard/DeploymentOverview';
-import { DeploymentMetrics } from "@/components/dashboard/DeploymentMetrics";
-import { DeploymentLogs } from "@/components/dashboard/DeploymentLogs";
+import { DeploymentOverview } from "../../../../components/dashboard/DeploymentOverview";
+import { DeploymentMetrics } from "../../../../components/dashboard/DeploymentMetrics";
+import { DeploymentLogs } from "../../../../components/dashboard/DeploymentLogs";
 import { DeploymentWithMetrics } from '@/types/deployment';
 import { DeploymentStatus } from '@prisma/client';
 

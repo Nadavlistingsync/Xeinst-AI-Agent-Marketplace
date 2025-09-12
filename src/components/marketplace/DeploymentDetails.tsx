@@ -1,6 +1,6 @@
 import { Deployment } from "@prisma/client";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "../ui/badge";
+import { Card, CardContent, CardHeader } from "../ui/card";
 import { StarIcon } from "@heroicons/react/20/solid";
 import { formatDistanceToNow } from "date-fns";
 

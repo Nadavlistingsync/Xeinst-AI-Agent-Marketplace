@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import { AdminDashboard } from "../../components/admin/AdminDashboard";
 
 export const metadata: Metadata = {
   title: 'Admin Dashboard | Xeinst',

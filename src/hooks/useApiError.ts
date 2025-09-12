@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { captureException } from '@/lib/sentry';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from "../components/ui/use-toast";
 
 interface ApiError {
   message: string;

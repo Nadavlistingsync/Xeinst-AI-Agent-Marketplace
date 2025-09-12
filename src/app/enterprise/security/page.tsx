@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
-import SecurityDashboard from '@/components/security/SecurityDashboard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import SecurityDashboard from "../../../components/security/SecurityDashboard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
+import { Badge } from "../../../components/ui/badge";
 import { 
   Shield, 
   Lock, 

@@ -14,13 +14,13 @@ import {
   Clock,
   Users
 } from "lucide-react";
-import { GlowButton } from "@/components/ui/GlowButton";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { GlowInput } from "@/components/ui/GlowInput";
-import { Section } from "@/components/ui/Section";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { GlowButton } from "../../components/ui/GlowButton";
+import { GlassCard } from "../../components/ui/GlassCard";
+import { GlowInput } from "../../components/ui/GlowInput";
+import { Section } from "../../components/ui/Section";
+import { PageHeader } from "../../components/ui/PageHeader";
 import { useEnhancedApiError } from "@/hooks/useEnhancedApiError";
-import { EnhancedErrorDisplay } from "@/components/EnhancedErrorDisplay";
+import { EnhancedErrorDisplay } from "../../components/EnhancedErrorDisplay";
 
 interface Agent {
   id: string;

@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from ".//ui/button";
+import { Textarea } from ".//ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from ".//ui/card";
+import { Alert, AlertDescription } from ".//ui/alert";
 import { Loader2, Play, CheckCircle, XCircle, ArrowRight, Settings, Zap, FileText, TestTube } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Progress } from '@/components/ui/progress';
+import { Badge } from ".//ui/badge";
+import { Separator } from ".//ui/separator";
+import { Progress } from ".//ui/progress";
 
 interface AgentRunResult {
   success: boolean;

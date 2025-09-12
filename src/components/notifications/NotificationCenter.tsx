@@ -1,13 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Bell } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from "../ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/components/ui/use-toast';
+} from "../ui/popover";
+import { ScrollArea } from "../ui/scroll-area";
+import { useToast } from "../ui/use-toast";
 import { formatDistanceToNow } from 'date-fns';
 import { useSession } from 'next-auth/react';
 import io from 'socket.io-client';

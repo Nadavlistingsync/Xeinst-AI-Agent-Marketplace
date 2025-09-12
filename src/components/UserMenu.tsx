@@ -1,7 +1,7 @@
 "use client";
 
 import { useUser } from "@stackframe/stack";
-import { Button } from "@/components/ui/button";
+import { Button } from ".//ui/button";
 import { SignInButton, SignUpButton, UserProfile } from "./NeonAuth";
 import { User, Settings } from "lucide-react";
 import Link from "next/link";

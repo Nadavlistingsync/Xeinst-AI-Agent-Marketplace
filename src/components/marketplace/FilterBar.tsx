@@ -1,4 +1,4 @@
-import { Select } from '@/components/ui/select';
+import { Select } from "../ui/select";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback } from 'react';
 
