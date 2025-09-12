@@ -7,7 +7,7 @@ let stripe: Stripe | null = null;
 if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.trim() !== '') {
   try {
     stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-05-28.basil',
+      apiVersion: (process.env.NODE_ENV === 'production' ? '2025-08-27.basil' : '2025-05-28.basil') as any,
       typescript: true
     });
   } catch (error) {
