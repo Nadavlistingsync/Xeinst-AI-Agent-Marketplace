@@ -6,9 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Bot } from 'lucide-react';
-import { GlowButton } from '@/components/ui/GlowButton';
-import { GlassCard } from '@/components/ui/GlassCard';
-import { GlowInput } from '@/components/ui/GlowInput';
+import { GlowButton, GlassCard, GlowInput } from '@/components/ui';
 
 export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
