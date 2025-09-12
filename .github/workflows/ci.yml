@@ -143,23 +143,22 @@ jobs:
     - name: Build for deployment
       run: npm run build
       env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-        NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
         NODE_ENV: production
 
-    - name: Deploy to Vercel
-      uses: amondnet/vercel-action@v25
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
       with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        working-directory: ./
-        vercel-args: '--prod'
-      env:
-        DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-        NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }} 
+        name: production-build
+        path: .next
+        retention-days: 7
+
+    - name: Deployment Summary
+      run: |
+        echo "✅ Build completed successfully!"
+        echo "📦 Build artifacts uploaded"
+        echo "🚀 Ready for deployment"
+        echo ""
+        echo "To deploy to Vercel:"
+        echo "1. Set up Vercel secrets in GitHub repository settings"
+        echo "2. Add VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID"
+        echo "3. Re-enable Vercel deployment step in workflow" 
