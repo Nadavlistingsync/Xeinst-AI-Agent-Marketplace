@@ -1,8 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui";
-import { Badge } from "@/components/ui";
+import { Button } from "../../components/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui";
+import { Badge } from "../../components/ui";
 import { 
   FileText, 
   Play, 
