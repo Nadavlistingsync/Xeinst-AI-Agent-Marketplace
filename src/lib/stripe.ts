@@ -2,11 +2,18 @@ import Stripe from 'stripe';
 import { prisma } from '@/lib/prisma';
 
 let stripe: Stripe | null = null;
-if (process.env.STRIPE_SECRET_KEY) {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2025-05-28.basil',
-    typescript: true
-  });
+
+// Only initialize Stripe if the secret key is provided
+if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.trim() !== '') {
+  try {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-05-28.basil',
+      typescript: true
+    });
+  } catch (error) {
+    console.warn('Failed to initialize Stripe:', error);
+    stripe = null;
+  }
 }
 
 export { stripe };
@@ -25,7 +32,7 @@ interface CreatePortalSessionData {
 
 export async function createCheckoutSession(data: CreateCheckoutSessionData): Promise<Stripe.Checkout.Session> {
   if (!stripe) {
-    throw new Error('Stripe is not configured');
+    throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.');
   }
 
   const product = await prisma.product.findUnique({
@@ -71,7 +78,7 @@ export async function createCheckoutSession(data: CreateCheckoutSessionData): Pr
 
 export async function createPortalSession(data: CreatePortalSessionData): Promise<Stripe.BillingPortal.Session> {
   if (!stripe) {
-    throw new Error('Stripe is not configured');
+    throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.');
   }
 
   const user = await prisma.user.findUnique({
@@ -108,7 +115,7 @@ export async function createPortalSession(data: CreatePortalSessionData): Promis
 
 export async function handleWebhookEvent(event: Stripe.Event): Promise<void> {
   if (!stripe) {
-    throw new Error('Stripe is not configured');
+    throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.');
   }
 
   switch (event.type) {
