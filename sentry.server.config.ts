@@ -5,32 +5,14 @@
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
+  dsn: "https://be2173364ac7642694a8bcdc437f0ecc@o4509995254087680.ingest.us.sentry.io/4509995312414720",
 
-  // Performance Monitoring
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+  tracesSampleRate: 1,
 
   // Enable logs to be sent to Sentry
   enableLogs: true,
 
-  // Debug mode
-  debug: process.env.NODE_ENV === 'development',
-
-  // Environment
-  environment: process.env.NODE_ENV || 'development',
-
-  // Before send hook to filter sensitive data
-  beforeSend(event, hint) {
-    // Filter out non-error events in development
-    if (process.env.NODE_ENV === 'development' && event.level !== 'error') {
-      return null;
-    }
-    
-    // Remove sensitive data
-    if (event.request?.cookies) {
-      delete event.request.cookies;
-    }
-    
-    return event;
-  },
+  // Setting this option to true will print useful information to the console while you're setting up Sentry.
+  debug: false,
 });
