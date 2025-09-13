@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "dev": "next dev",
@@ -105,7 +105,7 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "14.1.0",
     "eslint-import-resolver-typescript": "^4.4.4",
-    "husky": "^9.0.11",
+    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "lint-staged": "^15.5.2",
     "node-fetch": "^3.3.2",
