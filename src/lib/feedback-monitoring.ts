@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import type { NotificationType, AgentFeedback } from '@/types/prisma';
+import type { NotificationType, AgentFeedback } from '../types/prisma';
 import { prisma } from "./prisma";
 import { createNotification } from './notification';
 

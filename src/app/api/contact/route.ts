@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { logger } from '@/lib/logger';
+import { logger } from '../../../lib/logger';
 
 const contactSchema = z.object({
   name: z.string().min(1, 'Name is required'),

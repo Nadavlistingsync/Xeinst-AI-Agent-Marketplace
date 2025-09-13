@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import type { Deployment } from '@/types/prisma';
+import type { Deployment } from '../types/prisma';
 import { prisma } from "./prisma";
 
 // Define types

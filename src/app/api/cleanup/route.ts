@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { cleanupExpiredFiles } from '@/lib/upload';
+import { cleanupExpiredFiles } from '../../../lib/upload';
 import { prisma } from "../../../lib/prisma";
 
 // Cleanup expired files and old execution records

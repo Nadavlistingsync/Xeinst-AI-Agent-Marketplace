@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
-import { type FeedbackRecommendation } from '@/types/feedback';
+import { type FeedbackRecommendation } from '../../../../../types/feedback';
 
 type Priority = 'high' | 'medium' | 'low';
 type RecommendationStatus = 'pending' | 'in_progress' | 'completed';

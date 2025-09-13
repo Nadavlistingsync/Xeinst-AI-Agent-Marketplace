@@ -1,4 +1,4 @@
-import { prisma } from '@/types/prisma';
+import { prisma } from '../types/prisma';
 import type { Purchase } from '@prisma/client';
 
 interface CreateOrderInput {

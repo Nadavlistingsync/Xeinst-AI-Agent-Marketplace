@@ -1,6 +1,6 @@
 import type { Prisma, UserRole, SubscriptionTier } from '@prisma/client';
-import type { User, DeploymentStatus } from '@/types/prisma';
-import { prisma } from '@/types/prisma';
+import type { User, DeploymentStatus } from '../types/prisma';
+import { prisma } from '../types/prisma';
 
 export interface CreateUserInput {
   name: string;

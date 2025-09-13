@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Agent } from '@/types/agent';
+import { Agent } from '../types/agent';
 
 export function FeaturedAgents() {
   const [featuredAgents, setFeaturedAgents] = useState<Agent[]>([]);

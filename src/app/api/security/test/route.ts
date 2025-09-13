@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import SecurityTesting from '@/lib/security-testing';
+import SecurityTesting from '../../../../lib/security-testing';
 import { AuditLogger } from "../../../../lib/security";
 
 // GET /api/security/test - Run security tests

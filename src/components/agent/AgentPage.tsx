@@ -5,7 +5,7 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { Play, Pause, RefreshCw, Trash2, Download, Coins, Edit } from 'lucide-react';
-import { DeploymentWithMetrics } from '@/types/deployment';
+import { DeploymentWithMetrics } from '../../types/deployment';
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';

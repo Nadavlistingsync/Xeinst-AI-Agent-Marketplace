@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { captureException } from '@/lib/sentry';
+import { captureException } from '../lib/sentry';
 
 interface Props {
   children: React.ReactNode;

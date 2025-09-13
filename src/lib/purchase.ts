@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import type { Prisma, Purchase } from '@/types/prisma';
+import type { Prisma, Purchase } from '../types/prisma';
 
 export interface PurchaseOptions {
   userId?: string;

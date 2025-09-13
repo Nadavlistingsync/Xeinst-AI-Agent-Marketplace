@@ -1,5 +1,5 @@
 import { prisma } from './db';
-// import { Agent } from '@/types/agents';
+// import { Agent } from '../types/agents';
 import { Deployment, DeploymentStatus } from '@prisma/client';
 
 export async function getFeaturedAgents(): Promise<Deployment[]> {

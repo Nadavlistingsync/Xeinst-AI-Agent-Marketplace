@@ -1,5 +1,5 @@
-import type { User } from '@/types/prisma';
-import { prisma } from '@/types/prisma';
+import type { User } from '../types/prisma';
+import { prisma } from '../types/prisma';
 import type { SubscriptionTier } from '@prisma/client';
 
 interface SubscriptionStatus {

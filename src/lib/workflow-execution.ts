@@ -1,4 +1,4 @@
-import { prisma } from '@/types/prisma';
+import { prisma } from '../types/prisma';
 import { WorkflowExecution } from '@prisma/client';
 
 export interface CreateExecutionInput {

@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import type { Review } from '@/types/prisma';
+import type { Review } from '../types/prisma';
 import { prisma } from "./prisma";
 
 export interface ReviewOptions {

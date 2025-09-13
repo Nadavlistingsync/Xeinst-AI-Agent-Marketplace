@@ -1,4 +1,4 @@
-import { DeploymentStatusUpdate } from '@/types/websocket';
+import { DeploymentStatusUpdate } from '../types/websocket';
 
 interface DeploymentMetricsProps {
   metrics: DeploymentStatusUpdate['metrics'];

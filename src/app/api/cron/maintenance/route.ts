@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from "../../../../lib/prisma";
-import { withApiPerformanceTracking } from '@/lib/performance';
-import { jobQueue } from '@/lib/background-jobs';
+import { withApiPerformanceTracking } from '../../../../lib/performance';
+import { jobQueue } from '../../../../lib/background-jobs';
 
 export const GET = withApiPerformanceTracking(async () => {
   try {

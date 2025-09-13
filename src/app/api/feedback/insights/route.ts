@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
 import { handleApiError } from '../../../../lib/error-handling';
-import type { FeedbackInsightsResponse, FeedbackInsights } from '@/types/feedback-analytics';
-import type { AgentFeedback } from '@/types/prisma';
+import type { FeedbackInsightsResponse, FeedbackInsights } from '../../../../types/feedback-analytics';
+import type { AgentFeedback } from '../../../../types/prisma';
 
 export const dynamic = 'force-dynamic';
 

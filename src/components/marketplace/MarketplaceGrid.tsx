@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "../ui/card";
 import { InteractiveAgentCard } from './InteractiveAgentCard';
-import { Agent } from '@/app/api/agents/route';
+import { Agent } from '../../app/api/agents/route';
 
 interface MarketplaceGridProps {
   agents: Agent[];

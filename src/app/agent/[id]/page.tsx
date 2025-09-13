@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { MonitoringDashboard } from "../../../components/dashboard/MonitoringDashboard";
 import AgentPage from "../../../components/agent/AgentPage";
 import { prisma } from "../../../lib/prisma";
-import { DeploymentWithMetrics } from '@/types/deployment';
+import { DeploymentWithMetrics } from '../../../types/deployment';
 
 interface AgentPageProps {
   params: {

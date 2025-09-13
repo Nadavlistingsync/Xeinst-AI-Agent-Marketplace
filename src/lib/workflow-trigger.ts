@@ -1,4 +1,4 @@
-import { prisma } from '@/types/prisma';
+import { prisma } from '../types/prisma';
 import type { WorkflowTrigger } from '@prisma/client';
 
 export interface WorkflowTriggerWithConfig extends WorkflowTrigger {

@@ -1,4 +1,4 @@
-import { prisma } from '@/types/prisma';
+import { prisma } from '../types/prisma';
 import type { AgentFeedback } from '@prisma/client';
 import { z } from 'zod';
 

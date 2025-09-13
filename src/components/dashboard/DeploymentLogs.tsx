@@ -1,7 +1,7 @@
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";
 import { ScrollArea } from "../ui/scroll-area";
-import { useDeploymentSocket } from '@/hooks/useDeploymentSocket';
+import { useDeploymentSocket } from '../../hooks/useDeploymentSocket';
 
 interface DeploymentLogsProps {
   deploymentId: string;

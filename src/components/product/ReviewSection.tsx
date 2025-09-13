@@ -1,4 +1,4 @@
-import { getProductReviews } from '@/lib/product-helpers';
+import { getProductReviews } from '../../lib/product-helpers';
 import { formatDate } from "../../lib/utils";
 
 interface ReviewSectionProps {

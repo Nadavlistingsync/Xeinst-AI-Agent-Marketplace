@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Feedback, FeedbackSummary, FeedbackTrend, FeedbackAnalytics, FeedbackRecommendation, FeedbackSearchResult, FeedbackExport, UpdateFeedbackInput } from '@/types/feedback';
-import { ApiError } from '@/lib/errors';
+import { Feedback, FeedbackSummary, FeedbackTrend, FeedbackAnalytics, FeedbackRecommendation, FeedbackSearchResult, FeedbackExport, UpdateFeedbackInput } from '../types/feedback';
+import { ApiError } from '../lib/errors';
 import { toast } from 'react-hot-toast';
 
 export function useFeedback(agentId: string) {

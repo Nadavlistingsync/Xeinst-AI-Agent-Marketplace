@@ -3,7 +3,7 @@ import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from "./prisma";
-import type { File } from '@/types/prisma';
+import type { File } from '../types/prisma';
 
 export async function uploadFile(file: { name: string; size: number; type: string; arrayBuffer: () => Promise<ArrayBuffer> }, userId: string) {
   const uploadDir = join(process.cwd(), 'public', 'uploads');

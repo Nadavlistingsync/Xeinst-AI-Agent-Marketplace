@@ -1,6 +1,6 @@
 import { Server } from 'socket.io';
 import { DeploymentStatus } from '@prisma/client';
-import type { WebSocketMessage, DeploymentStatusUpdate } from '@/types/websocket';
+import type { WebSocketMessage, DeploymentStatusUpdate } from '../types/websocket';
 
 let io: Server;
 

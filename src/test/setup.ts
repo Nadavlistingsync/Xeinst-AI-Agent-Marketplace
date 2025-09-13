@@ -272,7 +272,7 @@ vi.mock('@prisma/client', () => {
   };
 });
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('../../lib/prisma', () => ({
   __esModule: true,
   default: mockPrisma,
   prisma: mockPrisma,

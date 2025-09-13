@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import type { User } from '@/types/prisma';
+import type { User } from '../types/prisma';
 
 interface UserStats {
   totalPurchases: number;

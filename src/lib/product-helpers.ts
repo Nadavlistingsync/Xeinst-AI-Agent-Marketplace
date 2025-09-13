@@ -1,5 +1,5 @@
 import { prisma } from './db';
-import type { Product } from '@/types/prisma';
+import type { Product } from '../types/prisma';
 
 interface ProductWithNumbers extends Omit<Product, 'price' | 'earningsSplit'> {
   price: number;

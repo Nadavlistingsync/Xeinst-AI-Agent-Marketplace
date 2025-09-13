@@ -3,9 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
 import { z } from 'zod';
-import { Feedback, FeedbackSuccess, FeedbackError, FeedbackListResponse } from '@/types/feedback';
+import { Feedback, FeedbackSuccess, FeedbackError, FeedbackListResponse } from '../../../types/feedback';
 import { JsonValue } from '@prisma/client/runtime/library';
-import type { NotificationType } from '@/types/prisma';
+import type { NotificationType } from '../../../types/prisma';
 
 export const dynamic = 'force-dynamic';
 

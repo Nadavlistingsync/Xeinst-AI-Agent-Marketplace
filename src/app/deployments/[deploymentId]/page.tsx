@@ -2,11 +2,11 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
 import { notFound } from 'next/navigation';
-import { DeploymentWithMetrics } from '@/types/deployment';
+import { DeploymentWithMetrics } from '../../../types/deployment';
 import { Badge } from "../../../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../../../components/ui/card";
 import { formatDistanceToNow } from 'date-fns';
-import type { DeploymentStatus } from '@/types/prisma';
+import type { DeploymentStatus } from '../../../types/prisma';
 import Image from 'next/image';
 
 export default async function DeploymentPage({

@@ -1,4 +1,4 @@
-import { prisma } from '@/types/prisma';
+import { prisma } from '../types/prisma';
 import type { WorkflowExecution } from '@prisma/client';
 
 interface WorkflowMetrics {

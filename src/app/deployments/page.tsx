@@ -1,4 +1,4 @@
-import { getDeployments } from '@/lib/deployments';
+import { getDeployments } from '../../lib/deployments';
 import { formatDate } from "../../lib/utils";
 import Link from "next/link";
 

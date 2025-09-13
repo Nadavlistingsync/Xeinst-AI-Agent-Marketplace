@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
-import { ApiError, ApiResponse, ApiSuccess } from '@/types/api';
+import { ApiError, ApiResponse, ApiSuccess } from '../types/api';
 
 export function createErrorResponse(error: unknown): NextResponse<ApiResponse<unknown>> {
   if (error instanceof ZodError) {
