@@ -4,7 +4,7 @@ import { authOptions } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import { webhookConfig, getCallbackUrl, isWebhookSystemReady } from '@/lib/webhook-config';
+import { webhookConfig, getCallbackUrl, isWebhookSystemReady } from '../../../../../lib/webhook-config';
 
 // Webhook trigger for agents (like n8n/Zapier)
 export async function POST(

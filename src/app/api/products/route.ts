@@ -3,7 +3,7 @@ import { prisma } from "../../../lib/prisma";
 import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../lib/auth";
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from '@/lib/api';
+import { createErrorResponse, createSuccessResponse } from '../../../lib/api';
 
 const ProductInputSchema = z.object({
   name: z.string().min(1).max(100),

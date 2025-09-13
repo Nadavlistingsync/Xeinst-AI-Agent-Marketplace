@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../lib/auth";
 import { initializeSocket } from '@/lib/socket';
-import { createErrorResponse } from '@/lib/api';
+import { createErrorResponse } from '../../../lib/api';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';

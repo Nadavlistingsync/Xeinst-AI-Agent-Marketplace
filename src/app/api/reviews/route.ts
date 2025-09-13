@@ -3,9 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
 import { z } from 'zod';
-import { withErrorHandling } from '@/lib/error-handling';
+import { withErrorHandling } from '../../../lib/error-handling';
 import { db, withRetry } from '@/lib/db';
-import { AppError } from '@/lib/error-handling';
+import { AppError } from '../../../lib/error-handling';
 import { cache } from '@/lib/cache';
 
 const reviewSchema = z.object({
