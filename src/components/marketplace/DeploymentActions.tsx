@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { Deployment } from "@/types/deployment";
+import { Deployment } from "../../types/deployment";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";

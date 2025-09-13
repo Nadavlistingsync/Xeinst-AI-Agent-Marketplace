@@ -7,7 +7,7 @@ import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { Label } from "../ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { useReviews } from "@/hooks/useReviews";
+import { useReviews } from "../../hooks/useReviews";
 import { formatDistanceToNow } from "date-fns";
 
 interface DeploymentFeedbackProps {
