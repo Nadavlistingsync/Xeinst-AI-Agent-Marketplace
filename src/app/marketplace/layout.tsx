@@ -13,23 +13,24 @@ export default function MarketplaceLayout({
       {/* Navigation */}
       <MarketplaceNav />
 
-      {/* Main Content */}
-      <main>
+      {/* Main Content - Account for sidebar */}
+      <main className="ml-64 pt-16">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
+          className="min-h-screen"
         >
           {children}
         </motion.div>
       </main>
 
       {/* Footer */}
-      <footer className="bg-black/50 backdrop-blur-md border-t border-white/10 mt-12">
+      <footer className="bg-black/50 backdrop-blur-md border-t border-white/10 mt-12 ml-64">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="text-gray-400 text-sm">
-              © 2024 AI Agency. All rights reserved.
+              © 2024 Xeinst. All rights reserved.
             </div>
             <div className="flex space-x-6">
               <Link
