@@ -1,5 +1,5 @@
 import { getDeployments } from '@/lib/deployments';
-import { formatDate } from '@/lib/utils';
+import { formatDate } from "../../lib/utils";
 import Link from "next/link";
 
 // Force dynamic rendering to prevent build-time database calls

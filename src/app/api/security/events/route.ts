@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AuditLogger } from '@/lib/security';
+import { AuditLogger } from "../../../../lib/security";
 
 // GET /api/security/events - Get security events
 export async function GET(request: NextRequest) {

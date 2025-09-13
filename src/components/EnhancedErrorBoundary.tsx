@@ -5,7 +5,7 @@ import { Button } from ".//ui/button";
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from ".//ui/dialog";
 import { RefreshCw, AlertTriangle, Info, XCircle, CheckCircle } from 'lucide-react';
-import { ErrorCategory, ErrorSeverity } from '@/lib/enhanced-error-handling';
+import { ErrorCategory, ErrorSeverity } from "../lib/enhanced-error-handling";
 
 interface Props {
   children: ReactNode;

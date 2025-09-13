@@ -5,8 +5,8 @@ import {
   PasswordPolicy, 
   AuditLogger,
   EncryptionService 
-} from '@/lib/security';
-import { prisma } from '@/lib/prisma';
+} from "./security";
+import { prisma } from "./prisma";
 
 // Authentication types
 export interface User {

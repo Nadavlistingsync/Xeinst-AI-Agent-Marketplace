@@ -3,8 +3,8 @@ import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from "../../../lib/auth";
+import { prisma } from "../../../lib/prisma";
 
 // Temporary file storage for webhook-based agents
 const TEMP_UPLOAD_DIR = join(process.cwd(), 'temp', 'uploads');

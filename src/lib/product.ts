@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from "./prisma";
 import { Prisma, ProductStatus, ProductAccessLevel, ProductLicenseType } from '@prisma/client';
 import type { Product } from '@/types/prisma';
 

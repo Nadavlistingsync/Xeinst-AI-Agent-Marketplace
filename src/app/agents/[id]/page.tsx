@@ -1,8 +1,8 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from "../../../lib/auth";
+import { prisma } from "../../../lib/prisma";
 import { AgentDetails } from "../../../components/agents/AgentDetails";
 import { FeedbackAnalysis } from "../../../components/dashboard/FeedbackAnalysis";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";

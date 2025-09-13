@@ -1,5 +1,5 @@
-import { getUserPurchases } from "@/lib/db-helpers";
-import type { PurchaseWithProduct } from "@/lib/db-helpers";
+import { getUserPurchases } from "../../../lib/db-helpers";
+import type { PurchaseWithProduct } from "../../../lib/db-helpers";
 import Link from "next/link";
 
 export default async function PurchasesPage({ searchParams }: { searchParams?: { userId?: string } }) {

@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from "../../lib/utils";
 
 interface ProductDetailsProps {
   product: {

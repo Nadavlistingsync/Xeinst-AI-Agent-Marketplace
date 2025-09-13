@@ -1,5 +1,5 @@
 import { getProductReviews } from '@/lib/product-helpers';
-import { formatDate } from '@/lib/utils';
+import { formatDate } from "../../lib/utils";
 
 interface ReviewSectionProps {
   product_id: string;

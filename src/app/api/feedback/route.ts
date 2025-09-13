@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { authOptions } from "../../../lib/auth";
+import { prisma } from "../../../lib/prisma";
 import { z } from 'zod';
 import { Feedback, FeedbackSuccess, FeedbackError, FeedbackListResponse } from '@/types/feedback';
 import { JsonValue } from '@prisma/client/runtime/library';

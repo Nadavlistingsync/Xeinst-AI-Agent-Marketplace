@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { RateLimiter, RequestSecurity, AuditLogger } from '@/lib/security';
+import { RateLimiter, RequestSecurity, AuditLogger } from "./security";
 
 // Security testing utilities for enterprise validation
 export class SecurityTesting {

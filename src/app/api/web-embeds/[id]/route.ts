@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-// import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from '@/lib/enhanced-error-handling';
+import { prisma } from "../../../../lib/prisma";
+// import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from "../../../../lib/enhanced-error-handling";
 
 export async function GET(
   request: NextRequest,
