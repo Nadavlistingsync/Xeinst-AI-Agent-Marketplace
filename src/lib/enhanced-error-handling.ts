@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { Prisma } from '@prisma/client';
-import { captureException } from '@/lib/sentry';
+import { captureException } from './sentry';
 
 // Enhanced error types with better categorization
 export enum ErrorCategory {

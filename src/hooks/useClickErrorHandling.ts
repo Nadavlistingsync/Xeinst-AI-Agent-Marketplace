@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from 'react';
-import { useError } from '@/contexts/ErrorContext';
+import { useError } from '../contexts/ErrorContext';
 import { ErrorCategory, ErrorSeverity } from "../lib/enhanced-error-handling";
 
 interface ClickErrorOptions {

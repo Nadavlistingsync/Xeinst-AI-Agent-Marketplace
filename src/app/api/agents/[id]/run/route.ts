@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../../../lib/auth";
 import { prisma } from "../../../../../lib/prisma";
-import { executeAgent } from '@/lib/agent-execution';
+import { executeAgent } from '../../../../../lib/agent-execution';
 // import { withEnhancedErrorHandling, ErrorCategory, ErrorSeverity, EnhancedAppError } from "../../../../../lib/enhanced-error-handling";
-import { AuditLogger } from '@/lib/audit-logger';
+import { AuditLogger } from '../../../../../lib/audit-logger';
 import { z } from 'zod';
 
 // Enhanced request validation schema

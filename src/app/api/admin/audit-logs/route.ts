@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../../lib/auth";
-import { AuditLogger } from '@/lib/audit-logger';
+import { AuditLogger } from '../../../../lib/audit-logger';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Check if user is admin
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('../../../../lib/prisma');
     const user = await prisma.user.findUnique({
       where: { id: session.user.id }
     });
