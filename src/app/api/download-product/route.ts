@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const fileBuffer = await readFile(filePath);
 
     // Return file as download
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength), {
       headers: {
         'Content-Type': 'application/octet-stream',
         'Content-Disposition': `attachment; filename="${product.name}"`,
@@ -85,7 +85,7 @@ export async function GET(request: Request) {
     const fileBuffer = await readFile(filePath);
 
     // Return file as download
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength), {
       headers: {
         'Content-Type': 'application/octet-stream',
         'Content-Disposition': `attachment; filename="${product.name}"`,
