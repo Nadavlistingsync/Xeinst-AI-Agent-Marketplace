@@ -4,7 +4,7 @@ import { authOptions } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
 import { z } from "zod";
 import { DeploymentStatus } from "@prisma/client";
-import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../../lib/db-check";
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../lib/db-check";
 
 const deploymentSchema = z.object({
   name: z.string().min(1).max(100),
