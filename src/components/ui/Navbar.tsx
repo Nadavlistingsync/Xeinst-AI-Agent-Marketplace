@@ -1,13 +1,17 @@
 "use client"
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Menu, X, Bot, CreditCard, User } from "lucide-react"
+import { usePathname } from "next/navigation"
+import { Menu, Bot, CreditCard, User, Search, Bell, ChevronDown } from "lucide-react"
+import { MobileNav } from "./MobileNav"
 import { GlowButton } from "./GlowButton"
 import { motion, AnimatePresence } from "framer-motion"
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -17,10 +21,26 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Close mobile menu when path changes
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname])
+
+  const isActive = (path: string) => {
+    return pathname === path || pathname.startsWith(`${path}/`)
+  }
+
+  const navLinks = [
+    { href: "/marketplace", label: "Marketplace", icon: Search },
+    { href: "/upload", label: "Upload Agent", icon: Bot },
+    { href: "/dashboard", label: "Dashboard", icon: CreditCard },
+    { href: "/pricing", label: "Pricing", icon: ChevronDown }
+  ]
+
   return (
     <motion.nav 
       className={`nav-glass sticky top-0 z-50 transition-all duration-300 ${
-        scrolled ? 'backdrop-blur-xl bg-black/20' : ''
+        scrolled ? 'backdrop-blur-xl bg-black/30 shadow-lg shadow-cyan-500/5' : ''
       }`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -29,30 +49,27 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <motion.div 
-            className="flex items-center space-x-2"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.2 }}
-          >
+          <Link href="/">
             <motion.div 
-              className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-neon"
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.5 }}
+              className="flex items-center space-x-2"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
             >
-              <Bot className="h-6 w-6 text-black" />
+              <motion.div 
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-neon shadow-lg shadow-cyan-500/20"
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Bot className="h-6 w-6 text-black" />
+              </motion.div>
+              <span className="text-xl font-bold text-glow">Xeinst</span>
             </motion.div>
-            <span className="text-xl font-bold text-glow">Xeinst</span>
-          </motion.div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
-              {[
-                { href: "/marketplace", label: "Marketplace" },
-                { href: "/upload", label: "Upload Agent" },
-                { href: "/dashboard", label: "Dashboard" },
-                { href: "/pricing", label: "Pricing" }
-              ].map((link, index) => (
+            <div className="ml-10 flex items-baseline space-x-6">
+              {navLinks.map((link, index) => (
                 <motion.div
                   key={link.href}
                   initial={{ opacity: 0, y: -20 }}
@@ -61,13 +78,20 @@ export function Navbar() {
                 >
                   <Link 
                     href={link.href} 
-                    className="text-white hover:text-cyan-400 transition-colors duration-200 font-medium relative group"
+                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-all duration-200 font-medium relative group
+                      ${isActive(link.href) 
+                        ? 'text-cyan-400 bg-white/5' 
+                        : 'text-white hover:text-cyan-400 hover:bg-white/5'}`}
                   >
-                    {link.label}
-                    <motion.div
-                      className="absolute -bottom-1 left-0 w-0 h-0.5 bg-cyan-400 group-hover:w-full transition-all duration-300"
-                      whileHover={{ width: "100%" }}
-                    />
+                    <link.icon className="h-4 w-4" />
+                    <span>{link.label}</span>
+                    {isActive(link.href) && (
+                      <motion.div
+                        className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan-400"
+                        layoutId="activeNavIndicator"
+                        transition={{ type: "spring", duration: 0.5 }}
+                      />
+                    )}
                   </Link>
                 </motion.div>
               ))}
@@ -81,15 +105,38 @@ export function Navbar() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.4 }}
           >
-            <motion.div 
-              className="flex items-center space-x-2 text-white"
+            {/* Search button */}
+            <motion.button
+              className="p-2 text-white/70 hover:text-cyan-400 rounded-full hover:bg-white/5 transition-colors duration-200"
               whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowSearch(!showSearch)}
+            >
+              <Search className="h-5 w-5" />
+            </motion.button>
+            
+            {/* Notifications */}
+            <motion.button
+              className="p-2 text-white/70 hover:text-cyan-400 rounded-full hover:bg-white/5 transition-colors duration-200 relative"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-1 right-1 w-2 h-2 bg-cyan-400 rounded-full"></span>
+            </motion.button>
+            
+            {/* Credits */}
+            <motion.div 
+              className="flex items-center space-x-2 text-white bg-white/5 px-3 py-1.5 rounded-full"
+              whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
               transition={{ duration: 0.2 }}
             >
-              <CreditCard className="h-4 w-4" />
+              <CreditCard className="h-4 w-4 text-cyan-400" />
               <span className="text-sm font-medium">1,250 Credits</span>
             </motion.div>
-            <GlowButton variant="glass" size="sm">
+            
+            {/* Sign In Button */}
+            <GlowButton variant="neon" size="sm">
               <User className="h-4 w-4 mr-2" />
               Sign In
             </GlowButton>
@@ -103,7 +150,8 @@ export function Navbar() {
           >
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-white hover:text-cyan-400 transition-colors duration-200"
+              className="p-2 text-white hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors duration-200"
+              aria-label="Toggle menu"
             >
               <motion.div
                 animate={{ rotate: isOpen ? 180 : 0 }}
@@ -116,64 +164,33 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* Search bar - conditionally shown */}
       <AnimatePresence>
-        {isOpen && (
-          <motion.div 
-            className="md:hidden glass-panel mx-4 mb-4"
+        {showSearch && (
+          <motion.div
+            className="border-t border-white/10 bg-black/30 backdrop-blur-xl"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <motion.div 
-              className="px-2 pt-2 pb-3 space-y-1"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-            >
-              {[
-                { href: "/marketplace", label: "Marketplace" },
-                { href: "/upload", label: "Upload Agent" },
-                { href: "/dashboard", label: "Dashboard" },
-                { href: "/pricing", label: "Pricing" }
-              ].map((link, index) => (
-                <motion.div
-                  key={link.href}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 + index * 0.1 }}
-                >
-                  <Link 
-                    href={link.href} 
-                    className="block px-3 py-2 text-white hover:text-cyan-400 transition-colors duration-200 font-medium"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {link.label}
-                  </Link>
-                </motion.div>
-              ))}
-              <motion.div 
-                className="pt-4 border-t border-white/20"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.5 }}
-              >
-                <div className="flex items-center justify-between px-3 py-2">
-                  <div className="flex items-center space-x-2 text-white">
-                    <CreditCard className="h-4 w-4" />
-                    <span className="text-sm font-medium">1,250 Credits</span>
-                  </div>
-                  <GlowButton variant="glass" size="sm">
-                    <User className="h-4 w-4 mr-2" />
-                    Sign In
-                  </GlowButton>
-                </div>
-              </motion.div>
-            </motion.div>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/50" />
+                <input
+                  type="text"
+                  placeholder="Search agents, tools, categories..."
+                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-white/10 bg-white/5 text-white placeholder:text-white/50 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:outline-none transition-all duration-200"
+                  autoFocus
+                />
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Mobile Navigation */}
+      <MobileNav isOpen={isOpen} onClose={() => setIsOpen(false)} />
     </motion.nav>
   )
 }
