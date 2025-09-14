@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../lib/db-check";
 
 // Temporary file storage for webhook-based agents
 const TEMP_UPLOAD_DIR = join(process.cwd(), 'temp', 'uploads');
@@ -13,6 +14,14 @@ const FILE_RETENTION_HOURS = 24; // Auto-delete after 24 hours
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
+    // Check if database is available
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(
+        createDatabaseErrorResponse(),
+        { status: 503 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
 
     if (!session) {

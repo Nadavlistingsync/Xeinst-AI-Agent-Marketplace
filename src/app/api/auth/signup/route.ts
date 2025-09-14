@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from "../../../../lib/prisma";
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../../lib/db-check";
 
 const signupSchema = z.object({
   name: z.string().min(2).max(50),
@@ -11,6 +12,14 @@ const signupSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    // Check if database is available
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(
+        createDatabaseErrorResponse(),
+        { status: 503 }
+      );
+    }
+
     const body = await req.json();
     const { name, email, password } = signupSchema.parse(body);
 

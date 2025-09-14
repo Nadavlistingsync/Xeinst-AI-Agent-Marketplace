@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../lib/auth";
 import { z } from 'zod';
 import { createErrorResponse, createSuccessResponse } from '../../../lib/api';
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../../lib/db-check";
 
 const ProductInputSchema = z.object({
   name: z.string().min(1).max(100),
@@ -27,6 +28,14 @@ const ProductInputSchema = z.object({
 });
 
 export async function GET(): Promise<NextResponse> {
+    // Check if database is available
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(
+        createDatabaseErrorResponse(),
+        { status: 503 }
+      );
+    }
+
   try {
     const session = await getServerSession(authOptions);
     const allProducts = await prisma.product.findMany({

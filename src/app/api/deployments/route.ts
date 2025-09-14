@@ -4,6 +4,7 @@ import { authOptions } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
 import { z } from "zod";
 import { DeploymentStatus } from "@prisma/client";
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../../lib/db-check";
 
 const deploymentSchema = z.object({
   name: z.string().min(1).max(100),
@@ -21,6 +22,14 @@ const deploymentSchema = z.object({
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
+    // Check if database is available
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(
+        createDatabaseErrorResponse(),
+        { status: 503 }
+      );
+    }
+
   try {
     const session = await getServerSession(authOptions);
 

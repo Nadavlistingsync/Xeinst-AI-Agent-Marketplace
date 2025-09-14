@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from "../../../../lib/prisma";
 import { z } from 'zod';
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../lib/db-check";
 
 const DeploymentSchema = z.object({
   id: z.string(),
@@ -18,6 +19,14 @@ const DeploymentSchema = z.object({
 });
 
 export async function GET() {
+    // Check if database is available
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(
+        createDatabaseErrorResponse(),
+        { status: 503 }
+      );
+    }
+
   try {
     // Check if we're in build mode or database is not available and return mock data
     if (process.env.NODE_ENV === 'production' && !process.env.DATABASE_URL || 

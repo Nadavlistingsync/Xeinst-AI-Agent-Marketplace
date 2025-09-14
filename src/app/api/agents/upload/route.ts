@@ -4,6 +4,7 @@ import { authOptions } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
 import { z } from 'zod';
 import { webhookConfig, isWebhookSystemReady } from '../../../../lib/webhook-config';
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../lib/db-check";
 
 // Schema for agent upload
 const agentUploadSchema = z.object({
@@ -33,6 +34,14 @@ const agentUploadSchema = z.object({
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+    // Check if database is available
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(
+        createDatabaseErrorResponse(),
+        { status: 503 }
+      );
+    }
+
   try {
     // Check if webhook system is ready
     if (!isWebhookSystemReady()) {

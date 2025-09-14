@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from "../../../../lib/prisma";
 import { z } from 'zod';
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../lib/db-check";
 
 // Mark this route as dynamic
 export const dynamic = 'force-dynamic';
@@ -34,6 +35,14 @@ const ProductSchema = z.object({
 });
 
 export async function GET() {
+    // Check if database is available
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(
+        createDatabaseErrorResponse(),
+        { status: 503 }
+      );
+    }
+
   try {
     // Add retry logic for database connection
     let retries = 3;
