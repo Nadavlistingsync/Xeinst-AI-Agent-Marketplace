@@ -37,7 +37,7 @@ async function getAgents(): Promise<Agent[]> {
       throw new Error('Main API failed');
     }
     const data = await res.json();
-    return data.agents || data;
+    return data.agents || [];
   } catch (error) {
     // Fallback to simple API
     try {

@@ -95,6 +95,18 @@ export async function GET() {
   try {
     console.log('GET /api/agents: Starting to fetch agents...');
     
+    // Check if DATABASE_URL is available
+    if (!process.env.DATABASE_URL) {
+      console.log('GET /api/agents: No DATABASE_URL found, returning mock data');
+      return NextResponse.json({
+        success: true,
+        agents: exampleAgents,
+        total: exampleAgents.length,
+        timestamp: new Date().toISOString(),
+        message: "Using mock data - set up DATABASE_URL for real database connection"
+      });
+    }
+    
     // First try to get agents from the database
     console.log('GET /api/agents: Attempting database query...');
     const dbAgents = await prisma.agent.findMany({
