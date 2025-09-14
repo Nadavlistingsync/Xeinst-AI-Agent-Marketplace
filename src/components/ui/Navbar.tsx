@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, Bot, CreditCard, User, Search, Bell, ChevronDown } from "lucide-react"
+import { Menu, X, Bot, CreditCard, User, Search, Bell, ChevronDown } from "lucide-react"
 import { MobileNav } from "./MobileNav"
 import { GlowButton } from "./GlowButton"
 import { motion, AnimatePresence } from "framer-motion"
