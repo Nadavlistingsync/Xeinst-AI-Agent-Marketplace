@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from "../../../../lib/prisma";
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../lib/db-check";
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../../lib/db-check";
 
 const signupSchema = z.object({
   name: z.string().min(2).max(50),

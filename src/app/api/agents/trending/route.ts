@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from "../../../../lib/prisma";
 import { z } from 'zod';
-import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../lib/db-check";
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../../lib/db-check";
 
 const DeploymentSchema = z.object({
   id: z.string(),
