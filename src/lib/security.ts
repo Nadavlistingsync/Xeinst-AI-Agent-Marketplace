@@ -47,7 +47,7 @@ export class SecurityManager {
     this.config = {
       enableWatermarking: true,
       enableTracking: true,
-      enableLicenseValidation: true,
+      enableLicenseValidation: process.env.NODE_ENV !== 'production', // Disable in production builds
       enableAntiTampering: true,
       ...config
     };
