@@ -29,16 +29,30 @@ interface Agent {
 
 async function getAgents(): Promise<Agent[]> {
   try {
+    // First try the main API
     const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/agents`, { 
       cache: 'no-store' 
     });
     if (!res.ok) {
-      throw new Error('Failed to fetch agents');
+      throw new Error('Main API failed');
     }
     const data = await res.json();
     return data.agents || data;
   } catch (error) {
-    // Return mock data if API fails
+    // Fallback to simple API
+    try {
+      const simpleRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/agents/simple`, { 
+        cache: 'no-store' 
+      });
+      if (simpleRes.ok) {
+        const simpleData = await simpleRes.json();
+        return simpleData.agents || [];
+      }
+    } catch (simpleError) {
+      console.warn('Simple API also failed:', simpleError);
+    }
+    
+    // Return mock data if all APIs fail
     return [
       {
         id: "1",
