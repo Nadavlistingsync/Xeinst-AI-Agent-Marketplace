@@ -3,17 +3,29 @@ import { prisma } from "./prisma";
 
 let stripe: Stripe | null = null;
 
-// Only initialize Stripe if the secret key is provided
+// Initialize Stripe with production-ready configuration
 if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.trim() !== '') {
   try {
-    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: (process.env.NODE_ENV === 'production' ? '2025-08-27.basil' : '2025-05-28.basil') as any,
-      typescript: true
-    });
+    const stripeConfig = {
+      apiVersion: '2024-12-18.acacia' as any, // Use stable API version
+      typescript: true,
+      maxNetworkRetries: 3,
+      timeout: 30000, // 30 second timeout
+      appInfo: {
+        name: 'Xeinst AI Agent Marketplace',
+        version: '1.0.0',
+        url: process.env.NEXT_PUBLIC_APP_URL || 'https://xeinst.com'
+      }
+    };
+
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, stripeConfig);
+    console.log('✅ Stripe initialized successfully');
   } catch (error) {
-    console.warn('Failed to initialize Stripe:', error);
+    console.error('❌ Failed to initialize Stripe:', error);
     stripe = null;
   }
+} else {
+  console.warn('⚠️ STRIPE_SECRET_KEY not found, Stripe features disabled');
 }
 
 export { stripe };
