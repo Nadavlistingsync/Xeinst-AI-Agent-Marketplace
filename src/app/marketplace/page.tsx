@@ -29,104 +29,26 @@ interface Agent {
 
 async function getAgents(): Promise<Agent[]> {
   try {
-    // First try the main API
+    // Try the main API
     const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/agents`, { 
       cache: 'no-store' 
     });
+    
     if (!res.ok) {
-      throw new Error('Main API failed');
-    }
-    const data = await res.json();
-    return data.agents || [];
-  } catch (error) {
-    // Fallback to simple API
-    try {
-      const simpleRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/agents/simple`, { 
-        cache: 'no-store' 
-      });
-      if (simpleRes.ok) {
-        const simpleData = await simpleRes.json();
-        return simpleData.agents || [];
-      }
-    } catch (simpleError) {
-      console.warn('Simple API also failed:', simpleError);
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || `API failed with status ${res.status}`);
     }
     
-    // Return mock data if all APIs fail
-    return [
-      {
-        id: "1",
-        name: "Content Generator Pro",
-        description: "Generate high-quality blog posts, articles, and marketing copy with AI-powered content creation.",
-        category: "content",
-        price: 50,
-        rating: 4.8,
-        totalRuns: 1250,
-        tags: ["content", "writing", "marketing"],
-        status: "active",
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: "2", 
-        name: "Data Analyzer",
-        description: "Automatically analyze datasets and generate insights, charts, and reports.",
-        category: "data",
-        price: 75,
-        rating: 4.6,
-        totalRuns: 890,
-        tags: ["data", "analytics", "reports"],
-        status: "active",
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: "3",
-        name: "Social Media Manager",
-        description: "Schedule posts, engage with followers, and analyze social media performance across platforms.",
-        category: "marketing",
-        price: 60,
-        rating: 4.7,
-        totalRuns: 2100,
-        tags: ["social", "marketing", "automation"],
-        status: "active",
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: "4",
-        name: "Code Reviewer",
-        description: "Automatically review code for bugs, security issues, and best practices.",
-        category: "development",
-        price: 40,
-        rating: 4.9,
-        totalRuns: 1800,
-        tags: ["development", "code", "review"],
-        status: "active",
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: "5",
-        name: "Research Assistant",
-        description: "Gather and summarize information from multiple sources for research projects.",
-        category: "research",
-        price: 35,
-        rating: 4.5,
-        totalRuns: 950,
-        tags: ["research", "information", "summarization"],
-        status: "active",
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: "6",
-        name: "Email Automation",
-        description: "Create personalized email campaigns and automate follow-ups based on user behavior.",
-        category: "automation",
-        price: 55,
-        rating: 4.6,
-        totalRuns: 1650,
-        tags: ["email", "automation", "marketing"],
-        status: "active",
-        createdAt: new Date().toISOString()
-      }
-    ];
+    const data = await res.json();
+    
+    if (!data.success) {
+      throw new Error(data.message || 'Failed to fetch agents');
+    }
+    
+    return data.agents || [];
+  } catch (error) {
+    // Re-throw the error to be handled by the component
+    throw error;
   }
 }
 
@@ -209,14 +131,31 @@ export default function MarketplacePage() {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <GlassCard className="max-w-md text-center">
-          <div className="space-y-4">
-            <Bot className="h-12 w-12 text-cyan-400 mx-auto" />
-            <h3 className="text-lg font-semibold text-white">Error Loading Agents</h3>
-            <p className="text-white/70">{error}</p>
-            <GlowButton onClick={fetchAgents} variant="outline">
-              Try Again
-            </GlowButton>
+        <GlassCard className="max-w-lg text-center">
+          <div className="space-y-6">
+            <Bot className="h-16 w-16 text-red-400 mx-auto" />
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-white">Database Not Configured</h3>
+              <p className="text-white/70">
+                The AI Agent Marketplace requires a database connection to display agents.
+              </p>
+            </div>
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-left">
+              <h4 className="font-medium text-red-400 mb-2">Setup Required:</h4>
+              <ul className="text-sm text-white/70 space-y-1">
+                <li>• Set up Supabase database</li>
+                <li>• Add DATABASE_URL to environment variables</li>
+                <li>• Follow the SUPABASE_SETUP_GUIDE.md</li>
+              </ul>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <GlowButton onClick={fetchAgents} variant="outline" size="sm">
+                Try Again
+              </GlowButton>
+              <GlowButton href="/upload" variant="neon" size="sm">
+                Upload Agent
+              </GlowButton>
+            </div>
           </div>
         </GlassCard>
       </div>

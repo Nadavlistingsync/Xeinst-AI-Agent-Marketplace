@@ -97,14 +97,16 @@ export async function GET() {
     
     // Check if DATABASE_URL is available
     if (!process.env.DATABASE_URL) {
-      console.log('GET /api/agents: No DATABASE_URL found, returning mock data');
-      return NextResponse.json({
-        success: true,
-        agents: exampleAgents,
-        total: exampleAgents.length,
-        timestamp: new Date().toISOString(),
-        message: "Using mock data - set up DATABASE_URL for real database connection"
-      });
+      console.log('GET /api/agents: No DATABASE_URL found, returning error');
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Database not configured',
+          message: 'Please set up DATABASE_URL environment variable to access agents',
+          timestamp: new Date().toISOString()
+        },
+        { status: 503 }
+      );
     }
     
     // First try to get agents from the database
