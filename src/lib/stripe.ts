@@ -8,7 +8,7 @@ if (process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.trim() !== ''
   try {
     const stripeConfig = {
       apiVersion: '2024-12-18.acacia' as any, // Use stable API version
-      typescript: true,
+      typescript: true as const,
       maxNetworkRetries: 3,
       timeout: 30000, // 30 second timeout
       appInfo: {
