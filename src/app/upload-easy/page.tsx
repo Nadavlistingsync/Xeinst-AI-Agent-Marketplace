@@ -28,6 +28,9 @@ interface SimpleAgentData {
   price: string;
   inputType: string;
   inputDescription: string;
+  platform: string;
+  makeScenarioId?: string;
+  zapierWebhookUrl?: string;
 }
 
 export default function EasyUploadPage() {
@@ -45,8 +48,17 @@ export default function EasyUploadPage() {
     webhookUrl: "",
     price: "0",
     inputType: "text",
-    inputDescription: "Input text"
+    inputDescription: "Input text",
+    platform: "custom"
   });
+
+  const platforms = [
+    { value: "custom", label: "Custom Webhook", description: "Your own API endpoint" },
+    { value: "make", label: "Make.com", description: "Make.com scenario webhook" },
+    { value: "zapier", label: "Zapier", description: "Zapier webhook trigger" },
+    { value: "n8n", label: "n8n", description: "n8n workflow webhook" },
+    { value: "pipedream", label: "Pipedream", description: "Pipedream workflow" }
+  ];
 
   const inputTypes = [
     { value: "text", label: "Text Input", description: "Simple text input" },
@@ -57,26 +69,57 @@ export default function EasyUploadPage() {
     { value: "file", label: "File Upload", description: "File upload input" }
   ];
 
+  const generateWebhookUrl = () => {
+    switch (formData.platform) {
+      case "make":
+        return formData.makeScenarioId 
+          ? `https://hook.eu1.make.com/${formData.makeScenarioId}`
+          : formData.webhookUrl;
+      case "zapier":
+        return formData.zapierWebhookUrl || formData.webhookUrl;
+      default:
+        return formData.webhookUrl;
+    }
+  };
+
   const generateJson = () => {
     const category = getCategoryFromDescription(formData.description);
     const inputSchema = generateInputSchema(formData.inputType, formData.inputDescription);
+    const webhookUrl = generateWebhookUrl();
     
     const agentJson = {
       name: formData.name,
       description: formData.description,
       category: category,
       price: parseFloat(formData.price),
-      webhookUrl: formData.webhookUrl,
+      webhookUrl: webhookUrl,
       version: "1.0.0",
       environment: "production",
-      framework: "custom",
+      framework: formData.platform,
       modelType: "custom",
       inputSchema: inputSchema,
       exampleInputs: generateExampleInputs(formData.inputType),
-      documentation: `This agent ${formData.description.toLowerCase()}. Simply provide the required input and get instant results.`
+      documentation: generateDocumentation()
     };
 
     return JSON.stringify(agentJson, null, 2);
+  };
+
+  const generateDocumentation = () => {
+    const baseDoc = `This agent ${formData.description.toLowerCase()}. Simply provide the required input and get instant results.`;
+    
+    switch (formData.platform) {
+      case "make":
+        return `${baseDoc}\n\nPowered by Make.com - this agent runs your Make.com scenario automatically.`;
+      case "zapier":
+        return `${baseDoc}\n\nPowered by Zapier - this agent triggers your Zapier workflow.`;
+      case "n8n":
+        return `${baseDoc}\n\nPowered by n8n - this agent executes your n8n workflow.`;
+      case "pipedream":
+        return `${baseDoc}\n\nPowered by Pipedream - this agent runs your Pipedream workflow.`;
+      default:
+        return baseDoc;
+    }
   };
 
   const getCategoryFromDescription = (description: string): string => {
@@ -189,8 +232,24 @@ export default function EasyUploadPage() {
 
     try {
       // Validate required fields
-      if (!formData.name || !formData.description || !formData.webhookUrl) {
-        setError("Please fill in all required fields");
+      if (!formData.name || !formData.description) {
+        setError("Please fill in agent name and description");
+        return;
+      }
+
+      // Platform-specific validation
+      if (formData.platform === "make" && !formData.makeScenarioId && !formData.webhookUrl) {
+        setError("Please provide either a Make.com Scenario ID or webhook URL");
+        return;
+      }
+
+      if (formData.platform === "zapier" && !formData.zapierWebhookUrl && !formData.webhookUrl) {
+        setError("Please provide either a Zapier webhook URL or custom webhook URL");
+        return;
+      }
+
+      if (formData.platform === "custom" && !formData.webhookUrl) {
+        setError("Please provide a webhook URL");
         return;
       }
 
@@ -324,7 +383,8 @@ export default function EasyUploadPage() {
                     webhookUrl: "",
                     price: "0",
                     inputType: "text",
-                    inputDescription: "Input text"
+                    inputDescription: "Input text",
+                    platform: "custom"
                   });
                 }}
               >
@@ -426,6 +486,22 @@ export default function EasyUploadPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <label className="text-sm font-medium text-white">What platform is your agent on?</label>
+                  <select
+                    name="platform"
+                    value={formData.platform}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-input/50 bg-background/50 rounded-md text-sm text-white"
+                  >
+                    {platforms.map((platform) => (
+                      <option key={platform.value} value={platform.value}>
+                        {platform.label} - {platform.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-sm font-medium text-white">What type of input does it need?</label>
                   <select
                     name="inputType"
@@ -506,17 +582,54 @@ export default function EasyUploadPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {formData.platform === "make" && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white">Make.com Scenario ID *</label>
+                    <Input
+                      name="makeScenarioId"
+                      value={formData.makeScenarioId || ""}
+                      onChange={handleInputChange}
+                      placeholder="abc123def456"
+                      className="bg-background/50 border-input/50"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Find this in your Make.com scenario's webhook URL: https://hook.eu1.make.com/[SCENARIO_ID]
+                    </p>
+                  </div>
+                )}
+
+                {formData.platform === "zapier" && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white">Zapier Webhook URL *</label>
+                    <Input
+                      name="zapierWebhookUrl"
+                      value={formData.zapierWebhookUrl || ""}
+                      onChange={handleInputChange}
+                      placeholder="https://hooks.zapier.com/hooks/catch/123456/abc123/"
+                      className="bg-background/50 border-input/50"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Copy the webhook URL from your Zapier trigger step
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white">Webhook URL *</label>
+                  <label className="text-sm font-medium text-white">
+                    {formData.platform === "custom" ? "Webhook URL *" : "Custom Webhook URL (optional)"}
+                  </label>
                   <Input
                     name="webhookUrl"
                     value={formData.webhookUrl}
                     onChange={handleInputChange}
-                    placeholder="https://your-api.com/webhook"
+                    placeholder={formData.platform === "custom" ? "https://your-api.com/webhook" : "https://your-custom-endpoint.com/webhook"}
                     className="bg-background/50 border-input/50"
                   />
                   <p className="text-xs text-muted-foreground">
-                    This is where we'll send user requests. Your agent should accept POST requests with JSON data.
+                    {formData.platform === "custom" 
+                      ? "This is where we'll send user requests. Your agent should accept POST requests with JSON data."
+                      : "Optional: Override the platform webhook with your own custom endpoint"
+                    }
                   </p>
                 </div>
 
@@ -531,18 +644,46 @@ export default function EasyUploadPage() {
                   </ul>
                 </div>
 
-                <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-400 mb-2">🚀 Don't have a webhook yet?</h4>
-                  <p className="text-sm text-blue-300 mb-3">
-                    No problem! Create one quickly with:
-                  </p>
-                  <ul className="text-sm text-blue-300 space-y-1">
-                    <li>• <strong>Python Flask/FastAPI</strong> - 5 minutes setup</li>
-                    <li>• <strong>Node.js Express</strong> - Quick JavaScript solution</li>
-                    <li>• <strong>Zapier/Make.com</strong> - No-code webhook</li>
-                    <li>• <strong>Vercel Functions</strong> - Serverless endpoint</li>
-                  </ul>
-                </div>
+                {formData.platform === "make" && (
+                  <div className="bg-orange-500/10 border border-orange-500/20 p-4 rounded-lg">
+                    <h4 className="font-medium text-orange-400 mb-2">🔧 Make.com Setup Guide</h4>
+                    <ol className="text-sm text-orange-300 space-y-1 list-decimal list-inside">
+                      <li>Create a new scenario in Make.com</li>
+                      <li>Add a "Webhooks" trigger as the first module</li>
+                      <li>Copy the webhook URL and extract the Scenario ID</li>
+                      <li>Build your automation workflow</li>
+                      <li>Paste the Scenario ID above</li>
+                    </ol>
+                  </div>
+                )}
+
+                {formData.platform === "zapier" && (
+                  <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
+                    <h4 className="font-medium text-blue-400 mb-2">⚡ Zapier Setup Guide</h4>
+                    <ol className="text-sm text-blue-300 space-y-1 list-decimal list-inside">
+                      <li>Create a new Zap in Zapier</li>
+                      <li>Choose "Webhooks by Zapier" as trigger</li>
+                      <li>Select "Catch Hook" trigger event</li>
+                      <li>Copy the webhook URL provided</li>
+                      <li>Paste it above and build your workflow</li>
+                    </ol>
+                  </div>
+                )}
+
+                {formData.platform === "custom" && (
+                  <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
+                    <h4 className="font-medium text-blue-400 mb-2">🚀 Don't have a webhook yet?</h4>
+                    <p className="text-sm text-blue-300 mb-3">
+                      No problem! Create one quickly with:
+                    </p>
+                    <ul className="text-sm text-blue-300 space-y-1">
+                      <li>• <strong>Python Flask/FastAPI</strong> - 5 minutes setup</li>
+                      <li>• <strong>Node.js Express</strong> - Quick JavaScript solution</li>
+                      <li>• <strong>Vercel Functions</strong> - Serverless endpoint</li>
+                      <li>• <strong>Netlify Functions</strong> - Easy deployment</li>
+                    </ul>
+                  </div>
+                )}
 
                 {error && (
                   <Alert variant="destructive">
@@ -595,6 +736,7 @@ export default function EasyUploadPage() {
                     <h4 className="font-medium text-white mb-3">Agent Details</h4>
                     <div className="space-y-2 text-sm">
                       <p><strong>Name:</strong> {formData.name}</p>
+                      <p><strong>Platform:</strong> <Badge variant="secondary">{platforms.find(p => p.value === formData.platform)?.label}</Badge></p>
                       <p><strong>Category:</strong> <Badge variant="secondary">{getCategoryFromDescription(formData.description)}</Badge></p>
                       <p><strong>Price:</strong> ${formData.price} per use</p>
                       <p><strong>Input Type:</strong> {inputTypes.find(t => t.value === formData.inputType)?.label}</p>
@@ -603,9 +745,12 @@ export default function EasyUploadPage() {
                   <div>
                     <h4 className="font-medium text-white mb-3">Technical Details</h4>
                     <div className="space-y-2 text-sm">
-                      <p><strong>Webhook:</strong> {formData.webhookUrl}</p>
+                      <p><strong>Webhook:</strong> {generateWebhookUrl()}</p>
                       <p><strong>Status:</strong> <Badge variant="secondary">Ready to Deploy</Badge></p>
                       <p><strong>JSON Schema:</strong> <Badge variant="secondary">Auto-Generated</Badge></p>
+                      {formData.platform === "make" && formData.makeScenarioId && (
+                        <p><strong>Make Scenario ID:</strong> {formData.makeScenarioId}</p>
+                      )}
                     </div>
                   </div>
                 </div>
