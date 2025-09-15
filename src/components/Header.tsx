@@ -19,9 +19,9 @@ import {
 const mainMenuItems = [
   {
     label: "Connect Agent",
-    href: "/upload-easy",
+    href: "/upload-super-easy",
     icon: Bot,
-    description: "Super easy agent upload (auto-generates JSON)"
+    description: "Upload agent in 30 seconds - works with any platform"
   },
   {
     label: "Marketplace",
@@ -162,7 +162,7 @@ export default function Header() {
               </Suspense>
               
               <div className="flex space-x-2 px-4 mt-4">
-                <Link href="/upload-easy" className="flex-1">
+                <Link href="/upload-super-easy" className="flex-1">
                   <Button size="sm" className="w-full bg-gradient-ai hover:bg-gradient-ai/90">
                     <Upload className="w-4 h-4 mr-2" />
                     Connect Agent
