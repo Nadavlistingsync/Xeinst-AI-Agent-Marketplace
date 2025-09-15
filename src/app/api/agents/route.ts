@@ -70,7 +70,10 @@ export async function GET() {
     // First try to get agents from the database
     console.log('GET /api/agents: Attempting database query...');
     const dbAgents = await prisma.agent.findMany({
-      where: { status: 'active' },
+      where: { 
+        status: 'active',
+        isPublic: true 
+      },
       orderBy: { createdAt: 'desc' }
     });
 
@@ -81,20 +84,20 @@ export async function GET() {
       id: agent.id,
       name: agent.name,
       description: agent.description,
-      apiUrl: agent.file_url || agent.webhook_url || '', // Use file_url or webhook_url as apiUrl
+      apiUrl: agent.fileUrl || agent.webhookUrl || '', // Use fileUrl or webhookUrl as apiUrl
       category: agent.category,
       price: agent.price,
-      rating: Number(agent.rating) || 0,
-      download_count: agent.total_runs || 0,
+      rating: 0, // Default rating (not in Prisma schema)
+      download_count: agent.downloadCount || 0,
       review_count: 0, // Default review count
-      model_type: 'custom', // Default model type
-      framework: 'custom', // Default framework
-      version: '1.0.0', // Default version
+      model_type: agent.modelType || 'custom',
+      framework: agent.framework || 'custom',
+      version: agent.version || '1.0.0',
       status: agent.status,
-      tags: agent.tags || [],
-      created_at: agent.created_at,
-      user_id: agent.created_by || '',
-      file_path: agent.file_url || '',
+      tags: [], // Default empty tags (not in Prisma schema)
+      created_at: agent.createdAt,
+      user_id: agent.createdBy || '',
+      file_path: agent.fileUrl || '',
       inputSchema: {
         type: 'object',
         properties: {
