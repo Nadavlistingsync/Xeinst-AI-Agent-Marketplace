@@ -77,14 +77,8 @@ CREATE TABLE IF NOT EXISTS credit_transactions (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Insert sample data
-INSERT INTO agents (name, description, category, price, rating, total_runs, tags, status) VALUES
-('Content Generator Pro', 'Generate high-quality blog posts, articles, and marketing copy with AI-powered content creation.', 'content', 50, 4.8, 1250, ARRAY['content', 'writing', 'marketing'], 'active'),
-('Data Analyzer', 'Automatically analyze datasets and generate insights, charts, and reports.', 'data', 75, 4.6, 890, ARRAY['data', 'analytics', 'reports'], 'active'),
-('Social Media Manager', 'Schedule posts, engage with followers, and analyze social media performance across platforms.', 'marketing', 60, 4.7, 2100, ARRAY['social', 'marketing', 'automation'], 'active'),
-('Code Reviewer', 'Automatically review code for bugs, security issues, and best practices.', 'development', 40, 4.9, 1800, ARRAY['development', 'code', 'review'], 'active'),
-('Research Assistant', 'Gather and summarize information from multiple sources for research projects.', 'research', 35, 4.5, 950, ARRAY['research', 'information', 'summarization'], 'active'),
-('Email Automation', 'Create personalized email campaigns and automate follow-ups based on user behavior.', 'automation', 55, 4.6, 1650, ARRAY['email', 'automation', 'marketing'], 'active');
+-- No sample data - marketplace starts empty
+-- Agents will be added through the upload functionality
 
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_agents_category ON agents(category);

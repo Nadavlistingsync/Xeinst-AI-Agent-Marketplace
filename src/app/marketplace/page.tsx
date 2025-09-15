@@ -404,12 +404,23 @@ export default function MarketplacePage() {
 
               {!loading && filteredAgents.length === 0 && (
                 <GlassCard className="text-center py-12">
-                  <div className="space-y-4">
-                    <Bot className="h-12 w-12 text-white/50 mx-auto" />
-                    <h3 className="text-lg font-semibold text-white">No agents found</h3>
-                    <p className="text-white/70">
-                      Try adjusting your filters or search terms to find more agents.
-                    </p>
+                  <div className="space-y-6">
+                    <Bot className="h-16 w-16 text-cyan-400 mx-auto" />
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold text-white">No agents available yet</h3>
+                      <p className="text-white/70 max-w-md mx-auto">
+                        Be the first to upload an AI agent to the marketplace! Share your creations with the community.
+                      </p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <GlowButton href="/upload" variant="neon" size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Upload Your First Agent
+                      </GlowButton>
+                      <GlowButton variant="outline" size="sm" onClick={() => window.location.reload()}>
+                        Refresh
+                      </GlowButton>
+                    </div>
                   </div>
                 </GlassCard>
               )}

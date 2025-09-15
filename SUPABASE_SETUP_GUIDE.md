@@ -93,20 +93,20 @@ UPSTASH_REDIS_REST_TOKEN=...
 ## 🧪 Step 6: Test Your Setup
 
 1. **Visit your marketplace URL**
-2. **Verify agents are loading (should show 6 sample agents)**
-3. **Test search and filtering functionality**
+2. **Verify marketplace loads (should show empty state initially)**
+3. **Test the upload functionality**
 4. **Check that no errors appear in browser console**
 
 ## 🔍 Step 7: Verify Database Connection
 
 1. **Go to your Supabase dashboard**
 2. **Click "Table Editor"**
-3. **Verify you can see the `agents` table with 6 sample records**
-4. **Check that the marketplace is pulling real data from Supabase**
+3. **Verify you can see the `agents` table (initially empty)**
+4. **Check that the marketplace loads without errors**
 
 ## 🚨 Troubleshooting
 
-### If agents aren't loading:
+### If marketplace shows errors:
 1. Check Vercel environment variables are set correctly
 2. Verify DATABASE_URL format is correct
 3. Check Supabase logs in the dashboard
