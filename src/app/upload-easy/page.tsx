@@ -1,20 +1,17 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
-  Upload, 
+  Zap, 
   ArrowRight, 
   CheckCircle, 
-  Zap, 
   Globe, 
-  Code, 
-  Settings,
+  DollarSign,
   Sparkles,
   Rocket,
-  DollarSign,
-  Users,
-  Clock
+  Copy,
+  Download
 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -22,46 +19,163 @@ import { Textarea } from "../../components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Alert, AlertDescription } from "../../components/ui/alert";
 import { Badge } from "../../components/ui/badge";
-import { Progress } from "../../components/ui/progress";
 import { toast } from "sonner";
 
-interface AgentData {
+interface SimpleAgentData {
   name: string;
   description: string;
-  category: string;
   webhookUrl: string;
   price: string;
+  inputType: string;
+  inputDescription: string;
 }
 
-export default function SimpleUploadPage() {
+export default function EasyUploadPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const isWelcome = searchParams.get('welcome') === 'true';
-  
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [agentId, setAgentId] = useState<string | null>(null);
+  const [generatedJson, setGeneratedJson] = useState<string>("");
   
-  const [formData, setFormData] = useState<AgentData>({
+  const [formData, setFormData] = useState<SimpleAgentData>({
     name: "",
     description: "",
-    category: "",
     webhookUrl: "",
-    price: "0"
+    price: "0",
+    inputType: "text",
+    inputDescription: "Input text"
   });
 
-  const categories = [
-    "Text Analysis",
-    "Image Processing", 
-    "Data Processing",
-    "API Integration",
-    "Automation",
-    "Communication",
-    "Analytics",
-    "Other"
+  const inputTypes = [
+    { value: "text", label: "Text Input", description: "Simple text input" },
+    { value: "textarea", label: "Long Text", description: "Multi-line text input" },
+    { value: "number", label: "Number", description: "Numeric input" },
+    { value: "email", label: "Email", description: "Email address input" },
+    { value: "url", label: "URL", description: "Website URL input" },
+    { value: "file", label: "File Upload", description: "File upload input" }
   ];
+
+  const generateJson = () => {
+    const category = getCategoryFromDescription(formData.description);
+    const inputSchema = generateInputSchema(formData.inputType, formData.inputDescription);
+    
+    const agentJson = {
+      name: formData.name,
+      description: formData.description,
+      category: category,
+      price: parseFloat(formData.price),
+      webhookUrl: formData.webhookUrl,
+      version: "1.0.0",
+      environment: "production",
+      framework: "custom",
+      modelType: "custom",
+      inputSchema: inputSchema,
+      exampleInputs: generateExampleInputs(formData.inputType),
+      documentation: `This agent ${formData.description.toLowerCase()}. Simply provide the required input and get instant results.`
+    };
+
+    return JSON.stringify(agentJson, null, 2);
+  };
+
+  const getCategoryFromDescription = (description: string): string => {
+    const desc = description.toLowerCase();
+    if (desc.includes('text') || desc.includes('summar') || desc.includes('analyze')) return "Text Analysis";
+    if (desc.includes('image') || desc.includes('photo') || desc.includes('picture')) return "Image Processing";
+    if (desc.includes('data') || desc.includes('csv') || desc.includes('process')) return "Data Processing";
+    if (desc.includes('api') || desc.includes('webhook') || desc.includes('integrate')) return "API Integration";
+    if (desc.includes('automate') || desc.includes('workflow')) return "Automation";
+    if (desc.includes('email') || desc.includes('message') || desc.includes('chat')) return "Communication";
+    if (desc.includes('analytics') || desc.includes('report') || desc.includes('metrics')) return "Analytics";
+    return "Other";
+  };
+
+  const generateInputSchema = (inputType: string, description: string) => {
+    const baseSchema = {
+      type: "object",
+      properties: {
+        input: {
+          type: getJsonSchemaType(inputType),
+          description: description
+        }
+      },
+      required: ["input"]
+    };
+
+    // Add specific constraints based on input type
+    switch (inputType) {
+      case "number":
+        return {
+          ...baseSchema,
+          properties: {
+            input: {
+              ...baseSchema.properties.input,
+              minimum: 0
+            }
+          }
+        };
+      case "email":
+        return {
+          ...baseSchema,
+          properties: {
+            input: {
+              ...baseSchema.properties.input,
+              format: "email"
+            }
+          }
+        };
+      case "url":
+        return {
+          ...baseSchema,
+          properties: {
+            input: {
+              ...baseSchema.properties.input,
+              format: "uri"
+            }
+          }
+        };
+      case "file":
+        return {
+          ...baseSchema,
+          properties: {
+            input: {
+              ...baseSchema.properties.input,
+              format: "data-url"
+            }
+          }
+        };
+      default:
+        return baseSchema;
+    }
+  };
+
+  const getJsonSchemaType = (inputType: string): string => {
+    switch (inputType) {
+      case "number": return "number";
+      case "file": return "string";
+      default: return "string";
+    }
+  };
+
+  const generateExampleInputs = (inputType: string) => {
+    switch (inputType) {
+      case "text":
+        return { input: "Hello, this is a sample text input" };
+      case "textarea":
+        return { input: "This is a longer text input that can span multiple lines and contain more detailed information." };
+      case "number":
+        return { input: 42 };
+      case "email":
+        return { input: "user@example.com" };
+      case "url":
+        return { input: "https://example.com" };
+      case "file":
+        return { input: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==" };
+      default:
+        return { input: "Sample input" };
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -75,37 +189,18 @@ export default function SimpleUploadPage() {
 
     try {
       // Validate required fields
-      if (!formData.name || !formData.description || !formData.category || !formData.webhookUrl) {
+      if (!formData.name || !formData.description || !formData.webhookUrl) {
         setError("Please fill in all required fields");
         return;
       }
 
+      const agentJson = generateJson();
+      setGeneratedJson(agentJson);
+
       const response = await fetch('/api/agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          version: "1.0.0",
-          environment: "production",
-          framework: "custom",
-          modelType: "custom",
-          inputSchema: JSON.stringify({
-            type: "object",
-            properties: {
-              input: {
-                type: "string",
-                description: "Input for the agent"
-              }
-            },
-            required: ["input"]
-          }),
-          exampleInputs: JSON.stringify({
-            input: "Hello, this is a test input"
-          }),
-          inputTypes: ["text"],
-          supportsStreaming: false,
-          supportsEmailCallback: false
-        })
+        body: agentJson
       });
 
       if (!response.ok) {
@@ -128,6 +223,24 @@ export default function SimpleUploadPage() {
     }
   };
 
+  const copyJson = () => {
+    navigator.clipboard.writeText(generatedJson);
+    toast.success("JSON copied to clipboard!");
+  };
+
+  const downloadJson = () => {
+    const blob = new Blob([generatedJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${formData.name.replace(/\s+/g, '-').toLowerCase()}-agent.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("JSON file downloaded!");
+  };
+
   const progress = ((step + 1) / 4) * 100;
 
   if (success && agentId) {
@@ -144,10 +257,10 @@ export default function SimpleUploadPage() {
               <CheckCircle className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-4xl font-bold text-white mb-4">
-              🎉 Agent Connected Successfully!
+              🎉 Agent Created Successfully!
             </h1>
             <p className="text-xl text-muted-foreground mb-8">
-              Your AI agent is now live in the marketplace and ready to earn credits!
+              Your AI agent is now live and ready to earn credits!
             </p>
           </motion.div>
 
@@ -175,10 +288,10 @@ export default function SimpleUploadPage() {
             <Card className="border-purple-500/20 bg-purple-500/5">
               <CardHeader>
                 <div className="w-12 h-12 rounded-lg bg-purple-500 flex items-center justify-center mb-4">
-                  <Users className="w-6 h-6 text-white" />
+                  <Sparkles className="w-6 h-6 text-white" />
                 </div>
-                <CardTitle className="text-white">Track Performance</CardTitle>
-                <CardDescription>Monitor usage, earnings, and user feedback</CardDescription>
+                <CardTitle className="text-white">Auto-Generated</CardTitle>
+                <CardDescription>All JSON was automatically created for you</CardDescription>
               </CardHeader>
             </Card>
           </div>
@@ -208,13 +321,14 @@ export default function SimpleUploadPage() {
                   setFormData({
                     name: "",
                     description: "",
-                    category: "",
                     webhookUrl: "",
-                    price: "0"
+                    price: "0",
+                    inputType: "text",
+                    inputDescription: "Input text"
                   });
                 }}
               >
-                Upload Another Agent
+                Create Another Agent
               </Button>
             </div>
           </div>
@@ -226,31 +340,19 @@ export default function SimpleUploadPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-8">
       <div className="max-w-4xl mx-auto">
-        {/* Welcome Message */}
-        {isWelcome && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-8"
-          >
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-ai rounded-2xl mb-4">
-              <Sparkles className="w-8 h-8 text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Welcome to Xeinst!</h1>
-            <p className="text-muted-foreground">Let's get your first AI agent connected in just 3 simple steps</p>
-            <div className="mt-4">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => router.push('/upload-easy')}
-                className="text-accent border-accent hover:bg-accent hover:text-black"
-              >
-                🚀 Try Super Easy Mode (Auto-generates JSON)
-              </Button>
-            </div>
-          </motion.div>
-        )}
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-8"
+        >
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-ai rounded-2xl mb-4">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-2">Super Easy Agent Upload</h1>
+          <p className="text-muted-foreground">Just answer 4 simple questions and we'll create everything for you!</p>
+        </motion.div>
 
         {/* Progress Header */}
         <Card className="mb-8">
@@ -258,8 +360,8 @@ export default function SimpleUploadPage() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  Connect Your AI Agent
+                  <Zap className="h-5 w-5" />
+                  Create Your AI Agent
                 </CardTitle>
                 <CardDescription>
                   {step === 0 && "Tell us about your agent"}
@@ -271,7 +373,12 @@ export default function SimpleUploadPage() {
                 <div className="text-sm text-muted-foreground mb-1">
                   Step {step + 1} of 3
                 </div>
-                <Progress value={progress} className="w-32" />
+                <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-ai transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -288,10 +395,10 @@ export default function SimpleUploadPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Zap className="h-5 w-5" />
-                  Step 1: Agent Information
+                  Step 1: What does your agent do?
                 </CardTitle>
                 <CardDescription>
-                  Tell us about your AI agent so users can find and use it
+                  Tell us about your agent in simple terms
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -307,30 +414,40 @@ export default function SimpleUploadPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white">Category *</label>
+                  <label className="text-sm font-medium text-white">What does it do? *</label>
+                  <Textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    placeholder="e.g., Summarizes long text into key points, Analyzes images and tells you what's in them, Processes CSV data and finds patterns..."
+                    rows={3}
+                    className="bg-background/50 border-input/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white">What type of input does it need?</label>
                   <select
-                    name="category"
-                    value={formData.category}
+                    name="inputType"
+                    value={formData.inputType}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-input/50 bg-background/50 rounded-md text-sm text-white"
                   >
-                    <option value="">Select a category</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
+                    {inputTypes.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label} - {type.description}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-white">Description *</label>
-                  <Textarea
-                    name="description"
-                    value={formData.description}
+                  <label className="text-sm font-medium text-white">Input Description</label>
+                  <Input
+                    name="inputDescription"
+                    value={formData.inputDescription}
                     onChange={handleInputChange}
-                    placeholder="Describe what your agent does and how it helps users..."
-                    rows={4}
+                    placeholder="e.g., The text to summarize, The image to analyze, The data to process"
                     className="bg-background/50 border-input/50"
                   />
                 </div>
@@ -361,7 +478,7 @@ export default function SimpleUploadPage() {
                 <Button 
                   onClick={() => setStep(1)}
                   className="w-full bg-gradient-ai hover:bg-gradient-ai/90 text-white"
-                  disabled={!formData.name || !formData.category || !formData.description}
+                  disabled={!formData.name || !formData.description}
                 >
                   Next Step
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -382,10 +499,10 @@ export default function SimpleUploadPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Globe className="h-5 w-5" />
-                  Step 2: Webhook Configuration
+                  Step 2: Where is your agent?
                 </CardTitle>
                 <CardDescription>
-                  Connect your agent via webhook - this is where we'll send user requests
+                  Just paste your webhook URL - we'll handle the rest
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -404,29 +521,26 @@ export default function SimpleUploadPage() {
                 </div>
 
                 <div className="bg-muted/20 p-4 rounded-lg">
-                  <h4 className="font-medium text-white mb-2">Expected Request Format:</h4>
-                  <pre className="text-xs text-muted-foreground bg-background/50 p-3 rounded">
-{`POST /your-webhook-url
-Content-Type: application/json
-
-{
-  "input": "User input text here",
-  "userId": "user123",
-  "requestId": "req_123456"
-}`}
-                  </pre>
+                  <h4 className="font-medium text-white mb-2">💡 We'll automatically generate:</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Complete JSON schema for your agent</li>
+                    <li>• Input validation rules</li>
+                    <li>• Example inputs for testing</li>
+                    <li>• Proper category classification</li>
+                    <li>• All required metadata</li>
+                  </ul>
                 </div>
 
                 <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
-                  <h4 className="font-medium text-blue-400 mb-2">💡 Don't have a webhook yet?</h4>
+                  <h4 className="font-medium text-blue-400 mb-2">🚀 Don't have a webhook yet?</h4>
                   <p className="text-sm text-blue-300 mb-3">
-                    No problem! You can create a simple webhook using:
+                    No problem! Create one quickly with:
                   </p>
                   <ul className="text-sm text-blue-300 space-y-1">
-                    <li>• <strong>Python Flask/FastAPI</strong> - Quick setup for AI agents</li>
-                    <li>• <strong>Node.js Express</strong> - Great for JavaScript developers</li>
-                    <li>• <strong>Zapier/Make.com</strong> - No-code webhook solutions</li>
-                    <li>• <strong>Vercel Functions</strong> - Serverless webhook endpoints</li>
+                    <li>• <strong>Python Flask/FastAPI</strong> - 5 minutes setup</li>
+                    <li>• <strong>Node.js Express</strong> - Quick JavaScript solution</li>
+                    <li>• <strong>Zapier/Make.com</strong> - No-code webhook</li>
+                    <li>• <strong>Vercel Functions</strong> - Serverless endpoint</li>
                   </ul>
                 </div>
 
@@ -468,11 +582,11 @@ Content-Type: application/json
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
+                  <CheckCircle className="h-5 w-5" />
                   Step 3: Review & Submit
                 </CardTitle>
                 <CardDescription>
-                  Review your agent details and submit to the marketplace
+                  We've generated everything for you - just review and submit!
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -481,8 +595,9 @@ Content-Type: application/json
                     <h4 className="font-medium text-white mb-3">Agent Details</h4>
                     <div className="space-y-2 text-sm">
                       <p><strong>Name:</strong> {formData.name}</p>
-                      <p><strong>Category:</strong> {formData.category}</p>
+                      <p><strong>Category:</strong> <Badge variant="secondary">{getCategoryFromDescription(formData.description)}</Badge></p>
                       <p><strong>Price:</strong> ${formData.price} per use</p>
+                      <p><strong>Input Type:</strong> {inputTypes.find(t => t.value === formData.inputType)?.label}</p>
                     </div>
                   </div>
                   <div>
@@ -490,6 +605,7 @@ Content-Type: application/json
                     <div className="space-y-2 text-sm">
                       <p><strong>Webhook:</strong> {formData.webhookUrl}</p>
                       <p><strong>Status:</strong> <Badge variant="secondary">Ready to Deploy</Badge></p>
+                      <p><strong>JSON Schema:</strong> <Badge variant="secondary">Auto-Generated</Badge></p>
                     </div>
                   </div>
                 </div>
@@ -500,13 +616,33 @@ Content-Type: application/json
                 </div>
 
                 <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-lg">
-                  <h4 className="font-medium text-green-400 mb-2">🚀 What happens next?</h4>
+                  <h4 className="font-medium text-green-400 mb-2">✨ What we generated for you:</h4>
                   <ul className="text-sm text-green-300 space-y-1">
-                    <li>• Your agent will be live in the marketplace within minutes</li>
-                    <li>• Users can discover and use your agent immediately</li>
-                    <li>• You'll earn credits every time someone uses it</li>
-                    <li>• Track performance and earnings in your dashboard</li>
+                    <li>• Complete JSON schema with proper validation</li>
+                    <li>• Input type constraints and descriptions</li>
+                    <li>• Example inputs for testing</li>
+                    <li>• Automatic category classification</li>
+                    <li>• All required metadata and versioning</li>
                   </ul>
+                </div>
+
+                <div className="bg-muted/20 p-4 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-white">Generated JSON</h4>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={copyJson}>
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={downloadJson}>
+                        <Download className="h-4 w-4 mr-1" />
+                        Download
+                      </Button>
+                    </div>
+                  </div>
+                  <pre className="text-xs text-muted-foreground bg-background/50 p-3 rounded overflow-x-auto max-h-40">
+                    {generateJson()}
+                  </pre>
                 </div>
 
                 {error && (
@@ -531,12 +667,12 @@ Content-Type: application/json
                     {loading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Connecting...
+                        Creating Agent...
                       </>
                     ) : (
                       <>
                         <Rocket className="mr-2 h-4 w-4" />
-                        Connect to Marketplace
+                        Create Agent
                       </>
                     )}
                   </Button>

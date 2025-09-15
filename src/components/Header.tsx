@@ -19,9 +19,9 @@ import {
 const mainMenuItems = [
   {
     label: "Connect Agent",
-    href: "/upload",
+    href: "/upload-easy",
     icon: Bot,
-    description: "Connect your AI agents via webhook"
+    description: "Super easy agent upload (auto-generates JSON)"
   },
   {
     label: "Marketplace",
@@ -162,7 +162,7 @@ export default function Header() {
               </Suspense>
               
               <div className="flex space-x-2 px-4 mt-4">
-                <Link href="/upload" className="flex-1">
+                <Link href="/upload-easy" className="flex-1">
                   <Button size="sm" className="w-full bg-gradient-ai hover:bg-gradient-ai/90">
                     <Upload className="w-4 h-4 mr-2" />
                     Connect Agent

@@ -135,7 +135,7 @@ export default function HomePage() {
                 </Link>
               </GlowButton>
               <GlowButton variant="glass" size="lg">
-                <Link href="/upload">Upload Your Agent</Link>
+                <Link href="/upload-easy">Upload Your Agent</Link>
               </GlowButton>
               <GlowButton 
                 variant="neon" 
