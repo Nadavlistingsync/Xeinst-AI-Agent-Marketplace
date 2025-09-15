@@ -47,49 +47,7 @@ const uploadAgentSchema = z.object({
   file_path: z.string().optional(),
 });
 
-// Example agents for demonstration
-const exampleAgents: Agent[] = [
-  {
-    id: '1',
-    name: 'Text Summarizer',
-    description: 'Summarizes a long text into a few key sentences.',
-    apiUrl: 'https://api.example.com/summarize',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        text: { type: 'string', description: 'The text to summarize.' },
-        sentences: { type: 'number', description: 'Number of sentences in the summary.' },
-      },
-      required: ['text', 'sentences'],
-    },
-  },
-  {
-    id: '2',
-    name: 'Image Classifier',
-    description: 'Classifies the content of an image from a URL.',
-    apiUrl: 'https://api.example.com/classify',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        imageUrl: { type: 'string', description: 'URL of the image to classify.' },
-      },
-      required: ['imageUrl'],
-    },
-  },
-  {
-    id: '3',
-    name: 'Sentiment Analysis',
-    description: 'Analyzes the sentiment of a piece of text (positive, negative, or neutral).',
-    apiUrl: 'https://api.example.com/sentiment',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        text: { type: 'string', description: 'The text to analyze.' },
-      },
-      required: ['text'],
-    },
-  },
-];
+// Agents are now loaded from Supabase database
 
 export async function GET() {
   try {
@@ -146,15 +104,12 @@ export async function GET() {
       },
     }));
 
-    // Combine with example agents
-    const allAgents = [...exampleAgents, ...marketplaceAgents];
-
-    console.log(`GET /api/agents: Returning ${allAgents.length} total agents`);
+    console.log(`GET /api/agents: Returning ${marketplaceAgents.length} agents from database`);
 
     return NextResponse.json({
       success: true,
-      agents: allAgents,
-      total: allAgents.length,
+      agents: marketplaceAgents,
+      total: marketplaceAgents.length,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
