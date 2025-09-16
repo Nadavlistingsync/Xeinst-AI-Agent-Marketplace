@@ -86,6 +86,8 @@ export async function POST(request: NextRequest) {
         },
         input: JSON.stringify(input),
         status: 'running',
+        output: '{}',
+        executionTime: 0,
         requestId: requestId || `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       }
     });
