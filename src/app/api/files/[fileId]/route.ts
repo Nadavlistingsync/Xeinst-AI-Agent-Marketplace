@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createErrorResponse } from '../../../../lib/api';
+import { createErrorResponse } from '@/lib/api';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";

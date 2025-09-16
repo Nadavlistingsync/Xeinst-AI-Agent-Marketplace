@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { handleApiError } from '../../../../lib/error-handling';
+import { handleApiError } from '@/lib/error-handling';
 import type { FeedbackInsightsResponse, FeedbackInsights } from '../../../../types/feedback-analytics';
 import type { AgentFeedback } from '../../../../types/prisma';
 

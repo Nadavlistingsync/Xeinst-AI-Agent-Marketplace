@@ -1,4 +1,4 @@
-import { getProduct } from '../../../lib/product-helpers';
+import { getProduct } from '@/lib/product-helpers';
 import { notFound } from "next/navigation";
 import { ProductDetails } from "../../../components/product/ProductDetails";
 import { ReviewSection } from "../../../components/product/ReviewSection";

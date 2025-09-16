@@ -1,4 +1,4 @@
-import { getUserProducts } from "../../../lib/db-helpers";
+import { getUserProducts } from "@/lib/db-helpers";
 import Link from "next/link";
 
 export default async function UploadsPage({ searchParams }: { searchParams?: { userId?: string } }) {

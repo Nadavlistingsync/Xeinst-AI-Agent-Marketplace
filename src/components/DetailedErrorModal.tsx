@@ -23,7 +23,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { ErrorCategory, ErrorSeverity } from "../lib/enhanced-error-handling";
+import { ErrorCategory, ErrorSeverity } from "@/lib/enhanced-error-handling";
 import { toast } from 'sonner';
 
 interface DetailedError {

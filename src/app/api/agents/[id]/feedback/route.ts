@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";
-import { getAgentFeedback, createAgentFeedback } from '../../../../../lib/agent-monitoring';
-import { createErrorResponse, createSuccessResponse } from '../../../../../lib/api';
+import { getAgentFeedback, createAgentFeedback } from '@/lib/agent-monitoring';
+import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
 
 const feedbackSchema = z.object({

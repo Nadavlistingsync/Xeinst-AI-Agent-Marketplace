@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 import { Navbar } from "../components/ui/Navbar";
 import { Footer } from "../components/ui/Footer";
 import { MotionWrapper } from "../components/ui/MotionWrapper";
-import { securityManager, addWatermark } from "../lib/security";
+import { securityManager, addWatermark } from "@/lib/security";
 import * as Sentry from '@sentry/nextjs';
 
 const inter = Inter({ subsets: ["latin"] });

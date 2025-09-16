@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";
-import { getAgentHealth } from '../../../../../lib/agent-monitoring';
+import { getAgentHealth } from '@/lib/agent-monitoring';
 import { prisma } from "@/lib/prisma";
-import { createErrorResponse, createSuccessResponse } from '../../../../../lib/api';
+import { createErrorResponse, createSuccessResponse } from '@/lib/api';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';

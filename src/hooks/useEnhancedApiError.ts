@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import { useToast } from "../components/ui/use-toast";
-import { captureException } from '../lib/sentry';
-import { ErrorCategory, ErrorSeverity } from "../lib/enhanced-error-handling";
+import { captureException } from '@/lib/sentry';
+import { ErrorCategory, ErrorSeverity } from "@/lib/enhanced-error-handling";
 
 interface EnhancedApiError {
   message: string;

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";
-import { prisma } from '../../../../lib/db';
-import { ApiError } from '../../../../lib/errors';
+import { prisma } from '@/lib/db';
+import { ApiError } from '@/lib/errors';
 import type { AgentFeedback } from '../../../../types/prisma';
-import type { AgentFeedbackWhereInput } from '../../../../lib/schema';
+import type { AgentFeedbackWhereInput } from '@/lib/schema';
 
 interface FeedbackTrend {
   date: string;

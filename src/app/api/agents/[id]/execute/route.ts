@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from 'zod';
-import { webhookConfig, isWebhookSystemReady } from '../../../../../lib/webhook-config';
+import { webhookConfig, isWebhookSystemReady } from '@/lib/webhook-config';
 
 const executeAgentSchema = z.object({
   trigger: z.string().min(1, "Trigger type is required"),

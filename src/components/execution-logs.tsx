@@ -16,7 +16,7 @@ import {
   EyeOff,
   Copy
 } from 'lucide-react';
-import { cn } from "../lib/utils";
+import { cn } from "@/lib/utils";
 
 export interface ExecutionLog {
   id: string;
