@@ -92,13 +92,17 @@ export async function POST(request: NextRequest) {
     // Create agent version
     await prisma.agentVersion.create({
       data: {
-        agentId,
+        agent: {
+          connect: { id: agentId }
+        },
         version: agent.version,
         webhookUrl,
         webhookSecret: finalWebhookSecret,
         config: config || {},
         isActive: true,
-        createdBy: session.user.id
+        creator: {
+          connect: { id: session.user.id }
+        }
       }
     });
 
