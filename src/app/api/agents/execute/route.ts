@@ -78,8 +78,12 @@ export async function POST(request: NextRequest) {
     // Create execution record
     const execution = await prisma.agentExecution.create({
       data: {
-        agentId,
-        userId: session.user.id,
+        agent: {
+          connect: { id: agentId }
+        },
+        user: {
+          connect: { id: session.user.id }
+        },
         input: JSON.stringify(input),
         status: 'running',
         requestId: requestId || `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
