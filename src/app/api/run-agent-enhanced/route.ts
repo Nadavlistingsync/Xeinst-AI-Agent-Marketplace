@@ -97,21 +97,37 @@ export async function POST(request: NextRequest) {
     };
 
     // Call the agent's webhook with enhanced data
-    const webhookResponse = await fetch(agent.webhookUrl || agent.fileUrl || '', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Xeinst-Agent-Platform/1.0'
-      },
-      body: JSON.stringify(enhancedRequest),
-      timeout: 30000 // 30 second timeout
-    });
+    let webhookResponse;
+    let result;
+    
+    try {
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-    if (!webhookResponse.ok) {
-      throw new Error(`Webhook responded with status ${webhookResponse.status}`);
+      webhookResponse = await fetch(agent.webhookUrl || agent.fileUrl || '', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Xeinst-Agent-Platform/1.0'
+        },
+        body: JSON.stringify(enhancedRequest),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!webhookResponse.ok) {
+        throw new Error(`Webhook responded with status ${webhookResponse.status}`);
+      }
+
+      result = await webhookResponse.json();
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout: Agent took too long to respond');
+      }
+      throw error;
     }
-
-    const result = await webhookResponse.json();
 
     // Update last used timestamp
     await prisma.connectedAccount.update({
