@@ -14,8 +14,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let agentId, input, accountId;
+  
   try {
-    const { agentId, input, accountId } = await request.json();
+    const requestData = await request.json();
+    agentId = requestData.agentId;
+    input = requestData.input;
+    accountId = requestData.accountId;
 
     if (!agentId || !input) {
       return NextResponse.json(
