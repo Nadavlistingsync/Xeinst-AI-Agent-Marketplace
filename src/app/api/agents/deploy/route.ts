@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
           connect: { id: agentId }
         },
         version: agent.version,
+        changelog: "Initial deployment",
         webhookUrl,
         webhookSecret: finalWebhookSecret,
         config: config || {},
@@ -115,6 +116,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           webhookUrl,
           version: agent.version,
+        changelog: "Initial deployment",
           deployedBy: session.user.id
         }
       }
