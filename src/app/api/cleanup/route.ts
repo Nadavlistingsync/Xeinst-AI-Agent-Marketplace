@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cleanupExpiredFiles } from '../../../lib/upload';
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@/lib/prisma";
 
 // Cleanup expired files and old execution records
 export async function POST(): Promise<NextResponse> {

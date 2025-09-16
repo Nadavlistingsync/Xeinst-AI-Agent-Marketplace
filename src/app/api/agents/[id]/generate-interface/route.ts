@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from "../../../../../lib/auth";
-import { prisma } from "../../../../../lib/prisma";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { aiInterfaceGenerator, AIGenerationOptions } from '../../../../../lib/ai-interface-generator';
 
 export async function POST(

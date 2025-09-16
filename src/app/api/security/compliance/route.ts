@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ComplianceService, AuditLogger } from "../../../../lib/security";
+import { ComplianceService, AuditLogger } from "@/lib/security";
 
 // GET /api/security/compliance - Get compliance status
 export async function GET(request: NextRequest) {
