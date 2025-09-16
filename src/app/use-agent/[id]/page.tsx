@@ -48,7 +48,7 @@ interface ExecutionResult {
 export default function UseAgent() {
   const { data: session } = useSession();
   const params = useParams();
-  const agentId = params.agentId as string;
+  const agentId = params.id as string;
   
   const [agent, setAgent] = useState<Agent | null>(null);
   const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([]);

@@ -89,7 +89,7 @@ export default function AgentSetup() {
 
   const fetchData = async () => {
     try {
-      const agentId = searchParams.get('agentId');
+      const agentId = searchParams.get('agentId') || searchParams.get('id');
       if (agentId) {
         const agentRes = await fetch(`/api/agents/${agentId}`);
         if (agentRes.ok) {

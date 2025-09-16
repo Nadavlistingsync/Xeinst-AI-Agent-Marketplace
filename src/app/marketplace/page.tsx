@@ -1,18 +1,23 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { 
   Search, 
-  Grid, 
-  List, 
+  Filter, 
   Star, 
-  Bot,
+  Zap, 
+  Users, 
   TrendingUp,
-  Plus
-} from "lucide-react";
-import { GlowButton } from "../../components/ui/GlowButton";
-import { GlassCard } from "../../components/ui/GlassCard";
+  Clock,
+  ArrowRight,
+  Grid,
+  List
+} from 'lucide-react';
+import Link from 'next/link';
 
 interface Agent {
   id: string;
@@ -20,412 +25,329 @@ interface Agent {
   description: string;
   category: string;
   price: number;
-  rating?: number;
-  totalRuns?: number;
-  tags?: string[];
-  status: string;
+  downloadCount: number;
+  averageRating: number;
+  totalReviews: number;
   createdAt: string;
+  creator: {
+    name: string;
+  };
 }
 
-async function getAgents(): Promise<Agent[]> {
-  try {
-    // Try the main API
-    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/api/agents`, { 
-      cache: 'no-store' 
-    });
-    
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => ({}));
-      throw new Error(errorData.message || `API failed with status ${res.status}`);
-    }
-    
-    const data = await res.json();
-    
-    if (!data.success) {
-      throw new Error(data.message || 'Failed to fetch agents');
-    }
-    
-    return data.agents || [];
-  } catch (error) {
-    // Re-throw the error to be handled by the component
-    throw error;
-  }
-}
+const categories = [
+  { id: 'all', name: 'All Categories', icon: Grid },
+  { id: 'automation', name: 'Automation', icon: Zap },
+  { id: 'communication', name: 'Communication', icon: Users },
+  { id: 'data', name: 'Data Processing', icon: TrendingUp },
+  { id: 'email', name: 'Email', icon: Users },
+  { id: 'social', name: 'Social Media', icon: Users },
+  { id: 'productivity', name: 'Productivity', icon: Clock },
+  { id: 'analytics', name: 'Analytics', icon: TrendingUp }
+];
 
-export default function MarketplacePage() {
+const sortOptions = [
+  { id: 'newest', name: 'Newest' },
+  { id: 'popular', name: 'Most Popular' },
+  { id: 'rating', name: 'Highest Rated' },
+  { id: 'price_low', name: 'Price: Low to High' },
+  { id: 'price_high', name: 'Price: High to Low' }
+];
+
+export default function Marketplace() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [filteredAgents, setFilteredAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [sortBy, setSortBy] = useState("popular");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [priceRange, setPriceRange] = useState([0, 1000]);
-  
-  const [error, setError] = useState<string | null>(null);
-
-  const categories = [
-    "all",
-    "automation",
-    "content",
-    "data",
-    "development",
-    "marketing",
-    "productivity",
-    "research",
-    "social",
-    "other"
-  ];
-
-  const fetchAgents = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const agentsData = await getAgents();
-      setAgents(agentsData);
-      setFilteredAgents(agentsData);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to fetch agents');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     fetchAgents();
-  }, [fetchAgents]);
+  }, []);
 
-  // Filter and sort agents
   useEffect(() => {
-    let filtered = agents.filter(agent => {
-      const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           agent.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           agent.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesCategory = selectedCategory === "all" || agent.category === selectedCategory;
-      const matchesPrice = agent.price >= priceRange[0] && agent.price <= priceRange[1];
-      
-      return matchesSearch && matchesCategory && matchesPrice && agent.status === "active";
-    });
+    filterAndSortAgents();
+  }, [agents, searchQuery, selectedCategory, sortBy]);
+
+  const fetchAgents = async () => {
+    try {
+      const response = await fetch('/api/agents');
+      if (response.ok) {
+        const data = await response.json();
+        setAgents(data.agents || []);
+      }
+    } catch (error) {
+      console.error('Error fetching agents:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterAndSortAgents = () => {
+    let filtered = agents;
+
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(agent =>
+        agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        agent.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        agent.category.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Filter by category
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(agent =>
+        agent.category.toLowerCase() === selectedCategory.toLowerCase()
+      );
+    }
 
     // Sort agents
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "price-low":
-          return a.price - b.price;
-        case "price-high":
-          return b.price - a.price;
-        case "rating":
-          return (b.rating || 0) - (a.rating || 0);
-        case "newest":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case "popular":
-        default:
-          return (b.totalRuns || 0) - (a.totalRuns || 0);
-      }
-    });
+    switch (sortBy) {
+      case 'newest':
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+      case 'popular':
+        filtered.sort((a, b) => b.downloadCount - a.downloadCount);
+        break;
+      case 'rating':
+        filtered.sort((a, b) => b.averageRating - a.averageRating);
+        break;
+      case 'price_low':
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case 'price_high':
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+    }
 
     setFilteredAgents(filtered);
-  }, [agents, searchTerm, selectedCategory, sortBy, priceRange]);
+  };
 
-  if (error) {
+  const getCategoryIcon = (category: string) => {
+    const categoryData = categories.find(cat => cat.id === category);
+    return categoryData?.icon || Grid;
+  };
+
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`h-4 w-4 ${
+          i < Math.floor(rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'
+        }`}
+      />
+    ));
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <GlassCard className="max-w-lg text-center">
-          <div className="space-y-6">
-            <Bot className="h-16 w-16 text-red-400 mx-auto" />
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-white">Database Not Configured</h3>
-              <p className="text-white/70">
-                The AI Agent Marketplace requires a database connection to display agents.
-              </p>
-            </div>
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-left">
-              <h4 className="font-medium text-red-400 mb-2">Setup Required:</h4>
-              <ul className="text-sm text-white/70 space-y-1">
-                <li>• Set up Supabase database</li>
-                <li>• Add DATABASE_URL to environment variables</li>
-                <li>• Follow the SUPABASE_SETUP_GUIDE.md</li>
-              </ul>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <GlowButton onClick={fetchAgents} variant="outline" size="sm">
-                Try Again
-              </GlowButton>
-              <GlowButton href="/upload" variant="neon" size="sm">
-                Upload Agent
-              </GlowButton>
-            </div>
-          </div>
-        </GlassCard>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800">
-      {/* Header */}
-      <div className="py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div className="space-y-2">
-              <h1 className="text-4xl md:text-5xl font-bold text-glow">
-                AI Agent Marketplace
-              </h1>
-              <p className="text-xl text-white/70 max-w-2xl">
-                Discover and use powerful AI agents created by developers worldwide
-              </p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">AI Agent Marketplace</h1>
+          <p className="text-gray-600 mt-2">Discover and use powerful AI agents for your business</p>
+        </div>
+
+        {/* Search and Filters */}
+        <div className="mb-8 space-y-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Input
+              placeholder="Search agents..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-3 text-lg"
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Categories */}
+            <div className="flex items-center space-x-2">
+              <Filter className="h-5 w-5 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Category:</span>
+              <div className="flex flex-wrap gap-2">
+                {categories.map((category) => {
+                  const Icon = category.icon;
+                  return (
+                    <Button
+                      key={category.id}
+                      variant={selectedCategory === category.id ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedCategory(category.id)}
+                      className="flex items-center space-x-1"
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{category.name}</span>
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
-            <GlowButton variant="neon" href="/upload">
-              <Plus className="h-4 w-4 mr-2" />
-              Upload Agent
-            </GlowButton>
+
+            {/* Sort */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-700">Sort by:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* View Mode */}
+            <div className="flex items-center space-x-2 ml-auto">
+              <Button
+                variant={viewMode === 'grid' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="px-4 pb-16">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-4 gap-8">
-            {/* Filters Sidebar */}
-            <div className="lg:col-span-1">
-              <GlassCard className="sticky top-24">
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-white">Filters</h3>
-                  
-                  {/* Search */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white">Search</label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/50" />
-                      <input
-                        type="text"
-                        placeholder="Search agents..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-xl border border-white/20 bg-white/5 text-white placeholder:text-white/50 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:outline-none transition-all duration-200"
-                      />
-                    </div>
-                  </div>
+        {/* Results Count */}
+        <div className="mb-6">
+          <p className="text-gray-600">
+            Showing {filteredAgents.length} of {agents.length} agents
+          </p>
+        </div>
 
-                  {/* Category */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white">Category</label>
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-white/20 bg-white/5 text-white focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:outline-none transition-all duration-200"
-                    >
-                      {categories.map(category => (
-                        <option key={category} value={category} className="bg-black text-white">
-                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Price Range */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white">Price Range</label>
-                    <div className="space-y-2">
-                      <input
-                        type="range"
-                        min="0"
-                        max="1000"
-                        value={priceRange[1]}
-                        onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                        className="w-full"
-                      />
-                      <div className="flex justify-between text-sm text-white/70">
-                        <span>0 credits</span>
-                        <span>{priceRange[1]} credits</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Sort */}
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-white">Sort By</label>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-white/20 bg-white/5 text-white focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 focus:outline-none transition-all duration-200"
-                    >
-                      <option value="popular" className="bg-black text-white">Most Popular</option>
-                      <option value="rating" className="bg-black text-white">Highest Rated</option>
-                      <option value="price-low" className="bg-black text-white">Price: Low to High</option>
-                      <option value="price-high" className="bg-black text-white">Price: High to Low</option>
-                      <option value="newest" className="bg-black text-white">Newest</option>
-                    </select>
-                  </div>
-                </div>
-              </GlassCard>
-            </div>
-
-            {/* Agents Grid */}
-            <div className="lg:col-span-3">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-4">
-                  <h2 className="text-xl font-semibold text-white">
-                    {filteredAgents.length} Agents Found
-                  </h2>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setViewMode("grid")}
-                      className={`p-2 rounded-lg transition-colors ${
-                        viewMode === "grid" 
-                          ? "bg-cyan-400 text-black" 
-                          : "text-white/70 hover:text-white"
-                      }`}
-                    >
-                      <Grid className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setViewMode("list")}
-                      className={`p-2 rounded-lg transition-colors ${
-                        viewMode === "list" 
-                          ? "bg-cyan-400 text-black" 
-                          : "text-white/70 hover:text-white"
-                      }`}
-                    >
-                      <List className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[...Array(6)].map((_, i) => (
-                    <GlassCard key={i} className="animate-pulse">
-                      <div className="space-y-4">
-                        <div className="h-4 bg-white/20 rounded w-3/4"></div>
-                        <div className="h-3 bg-white/20 rounded w-full"></div>
-                        <div className="h-3 bg-white/20 rounded w-2/3"></div>
-                      </div>
-                    </GlassCard>
-                  ))}
-                </div>
-              ) : (
-                <div className={viewMode === "grid" 
-                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
-                  : "space-y-4"
-                }>
-                  {filteredAgents.map((agent, index) => (
-                    <motion.div
-                      key={agent.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                    >
-                      <GlassCard className={viewMode === "list" ? "flex items-center space-x-4" : ""}>
-                        {viewMode === "grid" ? (
-                          <div className="space-y-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-center space-x-2">
-                                <div className="w-10 h-10 rounded-full bg-cyan-400/20 flex items-center justify-center">
-                                  <Bot className="h-5 w-5 text-cyan-400" />
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-white">{agent.name}</h3>
-                                  <p className="text-sm text-white/70">{agent.category}</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-lg font-bold text-cyan-400">{agent.price}</div>
-                                <div className="text-xs text-white/50">credits</div>
-                              </div>
-                            </div>
-                            
-                            <p className="text-sm text-white/70 line-clamp-2">
-                              {agent.description}
-                            </p>
-                            
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-4 text-sm text-white/60">
-                                {agent.rating && (
-                                  <div className="flex items-center space-x-1">
-                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                    <span>{agent.rating.toFixed(1)}</span>
-                                  </div>
-                                )}
-                                {agent.totalRuns && (
-                                  <div className="flex items-center space-x-1">
-                                    <TrendingUp className="h-3 w-3" />
-                                    <span>{agent.totalRuns}</span>
-                                  </div>
-                                )}
-                              </div>
-                              <GlowButton size="sm">
-                                Use Agent
-                              </GlowButton>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="w-12 h-12 rounded-full bg-cyan-400/20 flex items-center justify-center flex-shrink-0">
-                              <Bot className="h-6 w-6 text-cyan-400" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                <h3 className="font-semibold text-white truncate">{agent.name}</h3>
-                                <div className="text-lg font-bold text-cyan-400">{agent.price} credits</div>
-                              </div>
-                              <p className="text-sm text-white/70 mt-1 line-clamp-1">
-                                {agent.description}
-                              </p>
-                              <div className="flex items-center space-x-4 mt-2 text-sm text-white/60">
-                                <span className="capitalize">{agent.category}</span>
-                                {agent.rating && (
-                                  <div className="flex items-center space-x-1">
-                                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                                    <span>{agent.rating.toFixed(1)}</span>
-                                  </div>
-                                )}
-                                {agent.totalRuns && (
-                                  <div className="flex items-center space-x-1">
-                                    <TrendingUp className="h-3 w-3" />
-                                    <span>{agent.totalRuns} runs</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <GlowButton size="sm">
-                              Use Agent
-                            </GlowButton>
-                          </>
-                        )}
-                      </GlassCard>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-
-              {!loading && filteredAgents.length === 0 && (
-                <GlassCard className="text-center py-12">
-                  <div className="space-y-6">
-                    <Bot className="h-16 w-16 text-cyan-400 mx-auto" />
-                    <div className="space-y-2">
-                      <h3 className="text-xl font-semibold text-white">No agents available yet</h3>
-                      <p className="text-white/70 max-w-md mx-auto">
-                        Be the first to upload an AI agent to the marketplace! Share your creations with the community.
-                      </p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                      <GlowButton href="/upload" variant="neon" size="sm">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Upload Your First Agent
-                      </GlowButton>
-                      <GlowButton variant="outline" size="sm" onClick={() => window.location.reload()}>
-                        Refresh
-                      </GlowButton>
-                    </div>
-                  </div>
-                </GlassCard>
-              )}
-            </div>
+        {/* Agents Grid/List */}
+        {filteredAgents.length === 0 ? (
+          <div className="text-center py-12">
+            <Zap className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No agents found</h3>
+            <p className="text-gray-500 mb-6">Try adjusting your search or filters</p>
+            <Link href="/upload-super-easy">
+              <Button>Upload Your First Agent</Button>
+            </Link>
           </div>
+        ) : (
+          <div className={
+            viewMode === 'grid' 
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'
+              : 'space-y-4'
+          }>
+            {filteredAgents.map((agent) => {
+              const CategoryIcon = getCategoryIcon(agent.category);
+              
+              return (
+                <Card key={agent.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                          <CategoryIcon className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{agent.name}</CardTitle>
+                          <CardDescription className="flex items-center space-x-2 mt-1">
+                            <span className="text-sm">by {agent.creator.name}</span>
+                            <Badge variant="outline" className="text-xs">
+                              {agent.category}
+                            </Badge>
+                          </CardDescription>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-blue-600">{agent.price}</div>
+                        <div className="text-sm text-gray-500">credits</div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent>
+                    <p className="text-gray-600 mb-4 line-clamp-3">{agent.description}</p>
+                    
+                    {/* Rating and Stats */}
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center">
+                          {renderStars(agent.averageRating)}
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          {agent.averageRating.toFixed(1)} ({agent.totalReviews})
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <Users className="h-4 w-4 mr-1" />
+                          {agent.downloadCount}
+                        </div>
+                        <div className="flex items-center">
+                          <Clock className="h-4 w-4 mr-1" />
+                          {new Date(agent.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex space-x-2">
+                      <Link href={`/use-agent/${agent.id}`} className="flex-1">
+                        <Button className="w-full">
+                          Use Agent
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      </Link>
+                      <Link href={`/agent-setup?agentId=${agent.id}`}>
+                        <Button variant="outline">
+                          Setup
+                        </Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Upload CTA */}
+        <div className="mt-12 text-center">
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="pt-6">
+              <Zap className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Have an AI Agent to Share?
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Upload your AI agent and start earning from every execution
+              </p>
+              <Link href="/upload-super-easy">
+                <Button size="lg">
+                  Upload Your Agent
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
