@@ -109,6 +109,8 @@ model User {
   disputesTargeted Dispute[] @relation("DisputeTarget")
   auditLogs       AuditLog[] @relation("AuditActor")
   agentVersions   AgentVersion[]
+  connectedAccounts ConnectedAccount[]
+  agentExecutions AgentExecution[]
 }
 
 model Product {
@@ -461,6 +463,8 @@ model Agent {
   disputes        Dispute[]
   versions        AgentVersion[]
   reviews         Review[]
+  connectedAccounts ConnectedAccount[]
+  executions      AgentExecution[]
 }
 
 model GeneratedInterface {
@@ -673,4 +677,52 @@ model AgentVersion {
   // Relations
   agent           Agent     @relation(fields: [agentId], references: [id])
   creator         User      @relation(fields: [createdBy], references: [id])
+}
+
+model ConnectedAccount {
+  id              String    @id @default(cuid())
+  userId          String
+  agentId         String
+  platform        String    // 'make', 'zapier', 'n8n', 'custom'
+  platformUserId  String
+  platformUserName String
+  credentials     String    // Encrypted credentials
+  permissions     String[]  @default([])
+  status          String    @default("connected") // 'connected', 'error', 'expired'
+  lastUsed        DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent           Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, agentId, platform])
+  @@index([userId])
+  @@index([agentId])
+  @@index([platform])
+  @@index([status])
+}
+
+model AgentExecution {
+  id              String    @id @default(cuid())
+  agentId         String
+  userId          String
+  input           String    // JSON string of input
+  output          String    // JSON string of output
+  status          String    // 'completed', 'failed', 'running'
+  executionTime   Int       // Time in milliseconds
+  requestId       String    // Unique request identifier
+  error           String?   // Error message if failed
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  agent           Agent     @relation(fields: [agentId], references: [id])
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([agentId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
