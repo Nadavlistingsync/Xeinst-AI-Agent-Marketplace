@@ -1,24 +1,22 @@
-"use client";
-import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { motion } from "framer-motion";
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Play, 
   CheckCircle, 
-  AlertCircle,
-  Zap,
+  XCircle, 
   Clock,
-  User,
+  CreditCard,
   Settings,
   ArrowLeft
-} from "lucide-react";
-import { Button } from "../../../../components/ui/button";
-import { Input } from "../../../../components/ui/input";
-import { Textarea } from "../../../../components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card";
-import { Alert, AlertDescription } from "../../../../components/ui/alert";
-import { Badge } from "../../../../components/ui/badge";
-import { toast } from "sonner";
+} from 'lucide-react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 interface Agent {
   id: string;
@@ -27,8 +25,7 @@ interface Agent {
   category: string;
   price: number;
   webhookUrl: string;
-  framework: string;
-  inputSchema: any;
+  config: any;
 }
 
 interface ConnectedAccount {
@@ -36,313 +33,257 @@ interface ConnectedAccount {
   platform: string;
   platformUserName: string;
   status: string;
-  lastUsed?: string;
 }
 
 interface ExecutionResult {
-  success: boolean;
-  result: any;
-  requestId: string;
-  agent: {
-    id: string;
-    name: string;
-  };
+  executionId: string;
+  status: string;
+  output: any;
+  error?: string;
+  executionTime: number;
+  creditsUsed: number;
+  remainingCredits: number;
 }
 
-export default function UseAgentPage() {
-  const router = useRouter();
+export default function UseAgent() {
+  const { data: session } = useSession();
   const params = useParams();
   const agentId = params.agentId as string;
   
   const [agent, setAgent] = useState<Agent | null>(null);
   const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([]);
-  const [selectedAccount, setSelectedAccount] = useState<string>("");
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [input, setInput] = useState('');
+  const [executing, setExecuting] = useState(false);
   const [result, setResult] = useState<ExecutionResult | null>(null);
-  const [executionHistory, setExecutionHistory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (agentId) {
-      fetchAgent();
-      fetchConnectedAccounts();
-      fetchExecutionHistory();
+    if (session?.user?.id && agentId) {
+      fetchData();
     }
-  }, [agentId]);
+  }, [session, agentId]);
 
-  const fetchAgent = async () => {
+  const fetchData = async () => {
     try {
-      const response = await fetch(`/api/agents/${agentId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch agent');
-      }
-      const agentData = await response.json();
-      setAgent(agentData);
-    } catch (error) {
-      console.error('Error fetching agent:', error);
-      setError('Failed to load agent details');
-    }
-  };
+      const [agentRes, accountsRes] = await Promise.all([
+        fetch(`/api/agents/${agentId}`),
+        fetch('/api/accounts')
+      ]);
 
-  const fetchConnectedAccounts = async () => {
-    try {
-      const response = await fetch(`/api/accounts?agentId=${agentId}`);
-      if (response.ok) {
-        const accounts = await response.json();
-        setConnectedAccounts(accounts);
-        if (accounts.length > 0) {
-          setSelectedAccount(accounts[0].id);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching connected accounts:', error);
-    }
-  };
-
-  const fetchExecutionHistory = async () => {
-    try {
-      const response = await fetch(`/api/executions?agentId=${agentId}`);
-      if (response.ok) {
-        const history = await response.json();
-        setExecutionHistory(history);
-      }
-    } catch (error) {
-      console.error('Error fetching execution history:', error);
-    }
-  };
-
-  const handleExecute = async () => {
-    if (!selectedAccount) {
-      toast.error('Please select an account to use');
-      return;
-    }
-
-    if (!input.trim()) {
-      toast.error('Please provide input for the agent');
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-    setResult(null);
-
-    try {
-      const response = await fetch('/api/run-agent-enhanced', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          agentId,
-          input,
-          accountId: selectedAccount
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to execute agent');
+      if (agentRes.ok) {
+        const agentData = await agentRes.json();
+        setAgent(agentData.agent);
       }
 
-      const executionResult = await response.json();
-      setResult(executionResult);
-      toast.success('Agent executed successfully!');
-      
-      // Refresh execution history
-      fetchExecutionHistory();
-
+      if (accountsRes.ok) {
+        const accountsData = await accountsRes.json();
+        setConnectedAccounts(accountsData.accounts.filter((acc: ConnectedAccount) => acc.agentId === agentId));
+      }
     } catch (error) {
-      console.error('Execution error:', error);
-      setError(error instanceof Error ? error.message : 'Failed to execute agent');
-      toast.error('Failed to execute agent');
+      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const getAccountStatus = (account: ConnectedAccount) => {
-    switch (account.status) {
-      case 'connected':
-        return <Badge variant="secondary" className="bg-green-500/20 text-green-400">Connected</Badge>;
-      case 'error':
-        return <Badge variant="destructive">Error</Badge>;
-      case 'expired':
-        return <Badge variant="outline" className="border-yellow-500 text-yellow-400">Expired</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
+  const executeAgent = async () => {
+    if (!agent || !input.trim()) return;
+
+    setExecuting(true);
+    setResult(null);
+
+    try {
+      const response = await fetch('/api/agents/execute', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agentId: agent.id,
+          input: JSON.parse(input),
+          requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setResult(data);
+      } else {
+        const errorData = await response.json();
+        setResult({
+          executionId: '',
+          status: 'failed',
+          output: null,
+          error: errorData.error || 'Execution failed',
+          executionTime: 0,
+          creditsUsed: 0,
+          remainingCredits: 0
+        });
+      }
+    } catch (error) {
+      setResult({
+        executionId: '',
+        status: 'failed',
+        output: null,
+        error: 'Network error occurred',
+        executionTime: 0,
+        creditsUsed: 0,
+        remainingCredits: 0
+      });
+    } finally {
+      setExecuting(false);
     }
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
+      case 'failed':
+        return <XCircle className="h-5 w-5 text-red-600" />;
+      case 'running':
+        return <Clock className="h-5 w-5 text-blue-600 animate-spin" />;
+      default:
+        return <Clock className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'failed': return 'bg-red-100 text-red-800';
+      case 'running': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   if (!agent) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading agent...</p>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Agent Not Found</h1>
+          <p className="text-gray-600 mb-6">The agent you're looking for doesn't exist.</p>
+          <Link href="/marketplace">
+            <Button>Browse Agents</Button>
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-8">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-8"
-        >
-          <div className="flex items-center gap-4 mb-6">
-            <Button 
-              variant="outline" 
-              onClick={() => router.back()}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-white">{agent.name}</h1>
-              <p className="text-muted-foreground">{agent.description}</p>
-            </div>
-          </div>
-        </motion.div>
+        <div className="mb-8">
+          <Link href="/marketplace" className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Marketplace
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900">{agent.name}</h1>
+          <p className="text-gray-600 mt-2">{agent.description}</p>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Agent Info */}
+            {/* Input Section */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5" />
-                  Agent Details
+                <CardTitle className="flex items-center">
+                  <Settings className="h-5 w-5 mr-2" />
+                  Agent Input
                 </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-4 mb-4">
-                  <Badge variant="secondary">{agent.category}</Badge>
-                  <Badge variant="outline">${agent.price} per use</Badge>
-                  <Badge variant="outline">{agent.framework}</Badge>
-                </div>
-                <p className="text-muted-foreground">{agent.description}</p>
-              </CardContent>
-            </Card>
-
-            {/* Connected Accounts */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Connected Accounts
-                </CardTitle>
-                <CardDescription>
-                  Select which account to use for this execution
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {connectedAccounts.length === 0 ? (
-                  <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertDescription>
-                      No accounts connected. Please go back and connect an account first.
-                    </AlertDescription>
-                  </Alert>
-                ) : (
-                  <div className="space-y-3">
-                    {connectedAccounts.map((account) => (
-                      <div 
-                        key={account.id}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          selectedAccount === account.id 
-                            ? 'border-accent bg-accent/10' 
-                            : 'border-border hover:border-accent/50'
-                        }`}
-                        onClick={() => setSelectedAccount(account.id)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium text-white">{account.platformUserName}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {account.platform} • Last used {account.lastUsed ? new Date(account.lastUsed).toLocaleDateString() : 'Never'}
-                            </p>
-                          </div>
-                          {getAccountStatus(account)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Input */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Input</CardTitle>
                 <CardDescription>
                   Provide the input data for the agent to process
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Enter your input here..."
-                  rows={6}
-                  className="bg-background/50 border-input/50"
-                />
+                <div className="space-y-4">
+                  <Textarea
+                    placeholder="Enter your input as JSON format..."
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    className="min-h-[200px] font-mono text-sm"
+                  />
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-500">
+                      Enter valid JSON input for the agent
+                    </p>
+                    <Button
+                      onClick={executeAgent}
+                      disabled={executing || !input.trim()}
+                      className="flex items-center"
+                    >
+                      {executing ? (
+                        <>
+                          <Clock className="h-4 w-4 mr-2 animate-spin" />
+                          Executing...
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Execute Agent
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Execute Button */}
-            <Button 
-              onClick={handleExecute}
-              disabled={loading || !selectedAccount || !input.trim()}
-              className="w-full bg-gradient-ai hover:bg-gradient-ai/90 text-white py-3 text-lg"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Executing...
-                </>
-              ) : (
-                <>
-                  <Play className="mr-2 h-5 w-5" />
-                  Execute Agent
-                </>
-              )}
-            </Button>
-
-            {/* Error Display */}
-            {error && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {/* Result Display */}
+            {/* Result Section */}
             {result && (
-              <Card className="border-green-500/20 bg-green-500/5">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-green-400">
-                    <CheckCircle className="h-5 w-5" />
-                    Execution Result
+                  <CardTitle className="flex items-center">
+                    {getStatusIcon(result.status)}
+                    <span className="ml-2">Execution Result</span>
                   </CardTitle>
+                  <CardDescription>
+                    Execution ID: {result.executionId}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="p-4 bg-background/50 rounded-lg">
-                      <pre className="text-sm text-white whitespace-pre-wrap">
-                        {typeof result.result === 'string' ? result.result : JSON.stringify(result.result, null, 2)}
-                      </pre>
+                    <div className="flex items-center justify-between">
+                      <Badge className={getStatusColor(result.status)}>
+                        {result.status}
+                      </Badge>
+                      <div className="text-sm text-gray-500">
+                        {result.executionTime}ms
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      Request ID: {result.requestId}
+
+                    {result.error ? (
+                      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <h4 className="font-medium text-red-800 mb-2">Error</h4>
+                        <p className="text-red-700">{result.error}</p>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h4 className="font-medium text-green-800 mb-2">Output</h4>
+                        <pre className="text-green-700 text-sm overflow-auto">
+                          {JSON.stringify(result.output, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">
+                        Credits used: {result.creditsUsed}
+                      </span>
+                      <span className="text-gray-600">
+                        Remaining: {result.remainingCredits}
+                      </span>
                     </div>
                   </div>
                 </CardContent>
@@ -352,32 +293,54 @@ export default function UseAgentPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Execution History */}
+            {/* Agent Info */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Recent Executions
-                </CardTitle>
+                <CardTitle>Agent Details</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-gray-900">Category</h4>
+                  <p className="text-sm text-gray-600 capitalize">{agent.category}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900">Price per execution</h4>
+                  <p className="text-sm text-gray-600">{agent.price} credits</p>
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900">Status</h4>
+                  <Badge className="bg-green-100 text-green-800">Active</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Connected Accounts */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Connected Accounts</CardTitle>
+                <CardDescription>
+                  Accounts connected to this agent
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                {executionHistory.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">No executions yet</p>
+                {connectedAccounts.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500 text-sm mb-4">No accounts connected</p>
+                    <Link href={`/agent-setup?agentId=${agent.id}`}>
+                      <Button size="sm">Connect Accounts</Button>
+                    </Link>
+                  </div>
                 ) : (
                   <div className="space-y-3">
-                    {executionHistory.slice(0, 5).map((execution) => (
-                      <div key={execution.id} className="p-3 border border-border rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <Badge variant={execution.status === 'completed' ? 'secondary' : 'destructive'}>
-                            {execution.status}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(execution.createdAt).toLocaleDateString()}
-                          </span>
+                    {connectedAccounts.map((account) => (
+                      <div key={account.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium capitalize text-sm">{account.platform}</p>
+                          <p className="text-xs text-gray-500">{account.platformUserName}</p>
                         </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {execution.input ? JSON.parse(execution.input).input : 'No input'}
-                        </p>
+                        <Badge className={getStatusColor(account.status)}>
+                          {account.status}
+                        </Badge>
                       </div>
                     ))}
                   </div>
@@ -385,21 +348,35 @@ export default function UseAgentPage() {
               </CardContent>
             </Card>
 
-            {/* Settings */}
+            {/* Credits Info */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="h-5 w-5" />
-                  Settings
+                <CardTitle className="flex items-center">
+                  <CreditCard className="h-5 w-5 mr-2" />
+                  Credits
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => router.push(`/agent-setup?agentId=${agentId}`)}
-                >
-                  Manage Accounts
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">Cost per execution:</span>
+                    <span className="text-sm font-medium">{agent.price} credits</span>
+                  </div>
+                  {result && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Last execution:</span>
+                        <span className="text-sm font-medium">{result.creditsUsed} credits</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Remaining:</span>
+                        <span className="text-sm font-medium">{result.remainingCredits} credits</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <Button className="w-full mt-4" variant="outline">
+                  Buy More Credits
                 </Button>
               </CardContent>
             </Card>

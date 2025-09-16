@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/[...nextauth]/route';
+
+export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const { agentId, redirectUrl } = await request.json();
+
+    // Slack OAuth configuration
+    const clientId = process.env.SLACK_CLIENT_ID;
+    const redirectUri = `${process.env.NEXTAUTH_URL}/api/oauth/slack/callback`;
+    
+    if (!clientId) {
+      return NextResponse.json(
+        { error: 'Slack OAuth not configured' },
+        { status: 500 }
+      );
+    }
+
+    // Generate state parameter for security
+    const state = Buffer.from(JSON.stringify({
+      userId: session.user.id,
+      agentId,
+      platform: 'slack',
+      redirectUrl
+    })).toString('base64');
+
+    // Slack OAuth URL
+    const authUrl = new URL('https://slack.com/oauth/v2/authorize');
+    authUrl.searchParams.set('client_id', clientId);
+    authUrl.searchParams.set('redirect_uri', redirectUri);
+    authUrl.searchParams.set('scope', 'chat:write,channels:read,groups:read,im:read,mpim:read,users:read');
+    authUrl.searchParams.set('state', state);
+
+    return NextResponse.json({
+      authUrl: authUrl.toString()
+    });
+
+  } catch (error) {
+    console.error('Slack OAuth error:', error);
+    return NextResponse.json(
+      { error: 'Failed to start OAuth flow' },
+      { status: 500 }
+    );
+  }
+}
