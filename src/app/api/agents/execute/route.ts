@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: agent.createdBy,
           type: 'earn',
-          amount: agent.price * 0.8, // 80% to creator, 20% to platform
+          amount: agent.price * 0.5, // 50% to creator, 50% to platform
           agentId
         }
       });

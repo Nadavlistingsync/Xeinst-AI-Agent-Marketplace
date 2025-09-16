@@ -83,9 +83,9 @@ Your .env.local file has been created with the template. Update these values:
 
 ## 💰 **Revenue Model:**
 - **Buyers** purchase credits (100 for $10, 500 for $45, 1000 for $80)
-- **Creators** earn 80% of execution fees
-- **You** earn 20% platform fee
-- **Example**: 5-credit agent execution = $0.50 total, creator gets $0.40, you get $0.10
+- **Creators** earn 50% of execution fees
+- **You** earn 50% platform fee (covers hosting costs)
+- **Example**: 5-credit agent execution = $0.50 total, creator gets $0.25, you get $0.25
 
 ## 🎉 **You're Ready to Launch!**
 

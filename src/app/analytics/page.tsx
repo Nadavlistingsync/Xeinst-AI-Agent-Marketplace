@@ -218,7 +218,7 @@ export default function Analytics() {
             <CardContent>
               <div className="text-2xl font-bold">${analytics.summary.totalRevenue.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground">
-                80% of execution fees
+                50% of execution fees
               </p>
             </CardContent>
           </Card>

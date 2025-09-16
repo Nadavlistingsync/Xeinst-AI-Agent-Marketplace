@@ -134,8 +134,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           data: { credits: { decrement: price } },
         });
 
-        // Credit distribution: 80% to creator, 20% to platform
-        const creatorShare = Math.floor(price * 0.8);
+        // Credit distribution: 50% to creator, 50% to platform
+        const creatorShare = Math.floor(price * 0.5);
         const platformShare = price - creatorShare;
 
         // Credit creator

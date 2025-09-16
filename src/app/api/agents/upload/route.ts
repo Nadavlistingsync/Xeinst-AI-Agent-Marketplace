@@ -28,7 +28,7 @@ const agentUploadSchema = z.object({
   modelType: z.string().default("custom"),
   config: z.any().optional(),
   // Agent creator settings
-  earningsSplit: z.number().min(0.5).max(0.95).default(0.8), // Creator gets 80%, platform gets 20%
+  earningsSplit: z.number().min(0.5).max(0.95).default(0.5), // Creator gets 50%, platform gets 50%
   isPublic: z.boolean().default(true),
   requiresApproval: z.boolean().default(false)
 });

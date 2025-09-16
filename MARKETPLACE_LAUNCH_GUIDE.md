@@ -121,14 +121,14 @@ NEXTAUTH_URL=https://ai-agency-website-c7fs.vercel.app
 
 ### **For Each Agent Execution:**
 - **Buyer pays**: X credits
-- **Creator earns**: 80% of credits × $0.10
-- **You earn**: 20% of credits × $0.10
+- **Creator earns**: 50% of credits × $0.10
+- **You earn**: 50% of credits × $0.10 (covers hosting costs)
 
 ### **Example:**
 - Agent costs 5 credits to run
 - Buyer pays: 5 credits
-- Creator earns: 5 × $0.10 × 0.8 = $0.40
-- You earn: 5 × $0.10 × 0.2 = $0.10
+- Creator earns: 5 × $0.10 × 0.5 = $0.25
+- You earn: 5 × $0.10 × 0.5 = $0.25 (covers hosting & platform costs)
 
 ## 🧪 **Testing Your Marketplace**
 

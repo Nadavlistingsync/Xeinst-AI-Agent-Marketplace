@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
         }
       }),
 
-      // Total revenue (80% of agent price for each successful execution)
+      // Total revenue (50% of agent price for each successful execution)
       prisma.agentExecution.aggregate({
         where: {
           agent: { createdBy: session.user.id },
@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
           }
         });
         
-        return executions.reduce((sum, exec) => sum + (exec.agent.price * 0.8), 0);
+        return executions.reduce((sum, exec) => sum + (exec.agent.price * 0.5), 0);
       }),
 
       // Average execution time
@@ -206,7 +206,7 @@ export async function GET(request: NextRequest) {
           name: agentDetails?.name || 'Unknown',
           executions: agent._count.id,
           averageTime: Math.round(agent._avg.executionTime || 0),
-          revenue: (agentDetails?.price || 0) * agent._count.id * 0.8
+          revenue: (agentDetails?.price || 0) * agent._count.id * 0.5
         };
       })
     );
