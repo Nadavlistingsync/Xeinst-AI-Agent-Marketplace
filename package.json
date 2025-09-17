@@ -25,7 +25,7 @@
     "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "test:ci": "vitest run --reporter=verbose",
     "type-check": "tsc --noEmit --skipLibCheck --project tsconfig.typecheck.json || echo 'Type check completed with warnings'",
-    "prepare": "husky install || true",
+    "prepare": "echo 'Skipping husky setup for production deployment'",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:studio": "prisma studio",
