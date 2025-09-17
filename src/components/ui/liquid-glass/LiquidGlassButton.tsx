@@ -2,15 +2,17 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
+import { Slot } from "@radix-ui/react-slot";
 
 interface LiquidGlassButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'default' | 'primary' | 'secondary' | 'ghost';
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  asChild?: boolean;
   children: React.ReactNode;
 }
 
 const LiquidGlassButton = React.forwardRef<HTMLButtonElement, LiquidGlassButtonProps>(
-  ({ className, variant = 'default', size = 'md', children, ...props }, ref) => {
+  ({ className, variant = 'default', size = 'md', asChild = false, children, ...props }, ref) => {
     const baseClasses = "liquid-button";
     
     const variantClasses = {
@@ -27,8 +29,10 @@ const LiquidGlassButton = React.forwardRef<HTMLButtonElement, LiquidGlassButtonP
       xl: "px-12 py-6 text-xl"
     };
     
+    const Comp = asChild ? Slot : "button";
+    
     return (
-      <button
+      <Comp
         ref={ref}
         className={cn(
           baseClasses,
@@ -39,7 +43,7 @@ const LiquidGlassButton = React.forwardRef<HTMLButtonElement, LiquidGlassButtonP
         {...props}
       >
         {children}
-      </button>
+      </Comp>
     );
   }
 );

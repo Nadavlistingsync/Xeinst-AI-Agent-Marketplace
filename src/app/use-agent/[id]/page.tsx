@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ConnectedAccount } from '@prisma/client';
+import { ConnectedAccount as PrismaConnectedAccount } from '@prisma/client';
 
 interface Agent {
   id: string;
@@ -58,13 +58,7 @@ export default function UseAgent() {
   const [result, setResult] = useState<ExecutionResult | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (session?.user?.id && agentId) {
-      fetchData();
-    }
-  }, [session, agentId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const [agentRes, accountsRes] = await Promise.all([
         fetch(`/api/agents/${agentId}`),
@@ -78,14 +72,20 @@ export default function UseAgent() {
 
       if (accountsRes.ok) {
         const accountsData = await accountsRes.json();
-        setConnectedAccounts(accountsData.accounts.filter((acc: ConnectedAccount) => acc.agentId === agentId));
+        setConnectedAccounts(accountsData.accounts.filter((acc: PrismaConnectedAccount) => acc.agentId === agentId));
       }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [agentId]);
+
+  useEffect(() => {
+    if (session?.user?.id && agentId) {
+      fetchData();
+    }
+  }, [session, agentId, fetchData]);
 
   const executeAgent = async () => {
     if (!agent || !input.trim()) return;

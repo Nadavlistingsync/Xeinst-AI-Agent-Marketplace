@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,14 +62,6 @@ export default function Marketplace() {
   const [sortBy, setSortBy] = useState('newest');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  useEffect(() => {
-    fetchAgents();
-  }, []);
-
-  useEffect(() => {
-    filterAndSortAgents();
-  }, [agents, searchQuery, selectedCategory, sortBy]);
-
   const fetchAgents = async () => {
     try {
       const response = await fetch('/api/agents');
@@ -84,7 +76,7 @@ export default function Marketplace() {
     }
   };
 
-  const filterAndSortAgents = () => {
+  const filterAndSortAgents = useCallback(() => {
     let filtered = agents;
 
     // Filter by search query
@@ -123,7 +115,15 @@ export default function Marketplace() {
     }
 
     setFilteredAgents(filtered);
-  };
+  }, [agents, searchQuery, selectedCategory, sortBy]);
+
+  useEffect(() => {
+    fetchAgents();
+  }, []);
+
+  useEffect(() => {
+    filterAndSortAgents();
+  }, [agents, searchQuery, selectedCategory, sortBy, filterAndSortAgents]);
 
   const getCategoryIcon = (category: string) => {
     const categoryData = categories.find(cat => cat.id === category);

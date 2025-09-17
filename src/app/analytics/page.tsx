@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -66,13 +66,7 @@ export default function Analytics() {
   const [selectedPeriod, setSelectedPeriod] = useState('7d');
   const [selectedAgent, setSelectedAgent] = useState('all');
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchAnalytics();
-    }
-  }, [session, selectedPeriod, selectedAgent]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       const params = new URLSearchParams({
         period: selectedPeriod,
@@ -89,7 +83,13 @@ export default function Analytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPeriod, selectedAgent]);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchAnalytics();
+    }
+  }, [session, selectedPeriod, selectedAgent, fetchAnalytics]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {

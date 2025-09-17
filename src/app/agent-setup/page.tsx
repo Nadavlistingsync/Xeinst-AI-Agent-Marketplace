@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -81,13 +81,7 @@ export default function AgentSetup() {
   const success = searchParams.get('success');
   const error = searchParams.get('error');
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchData();
-    }
-  }, [session]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const agentId = searchParams.get('agentId') || searchParams.get('id');
       if (agentId) {
@@ -108,7 +102,13 @@ export default function AgentSetup() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      fetchData();
+    }
+  }, [session, fetchData]);
 
   const connectAccount = async (platform: string) => {
     if (!agent) return;
