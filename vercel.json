@@ -81,13 +81,8 @@
       "permanent": true
     },
     {
-      "source": "/login",
-      "destination": "/auth/signin",
-      "permanent": true
-    },
-    {
       "source": "/register",
-      "destination": "/auth/signup",
+      "destination": "/signup",
       "permanent": true
     }
   ],

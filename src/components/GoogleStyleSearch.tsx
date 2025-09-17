@@ -126,15 +126,18 @@ export default function GoogleStyleSearch() {
           className="relative w-full max-w-2xl"
         >
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
+            <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/60" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Search for AI agents... (e.g., 'email automation', 'content writer')"
-              className="w-full pl-12 pr-16 py-4 text-lg bg-white/5 backdrop-blur-md border border-white/10 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-300 hover:bg-white/10"
+              placeholder="Search..."
+              className="w-full pl-16 pr-16 py-5 text-lg font-medium text-white placeholder-white/50 bg-white/8 backdrop-blur-xl border border-white/20 rounded-full focus:outline-none focus:border-white/40 focus:bg-white/12 focus:shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-all duration-300 hover:bg-white/10 hover:border-white/30"
+              style={{
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(255, 255, 255, 0.05)'
+              }}
             />
             {isSearching && (
               <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
@@ -150,7 +153,10 @@ export default function GoogleStyleSearch() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute top-full mt-2 w-full bg-black/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 z-50"
+                className="absolute top-full mt-3 w-full bg-white/5 backdrop-blur-xl border border-white/20 rounded-2xl p-6 z-50"
+                style={{
+                  boxShadow: '0 16px 64px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                }}
               >
                 {/* Search Results */}
                 {searchResults.length > 0 && (
@@ -160,19 +166,22 @@ export default function GoogleStyleSearch() {
                       <Link
                         key={agent.id}
                         href={`/agents/${agent.id}`}
-                        className="flex items-center p-3 hover:bg-white/5 rounded-lg transition-colors group"
+                        className="flex items-center p-4 hover:bg-white/8 rounded-xl transition-all duration-300 group border border-transparent hover:border-white/20 backdrop-blur-sm"
+                        style={{
+                          boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+                        }}
                       >
-                        <Bot className="h-5 w-5 text-blue-400 mr-3 flex-shrink-0" />
+                        <Bot className="h-5 w-5 text-white/80 mr-4 flex-shrink-0 group-hover:text-white transition-colors" />
                         <div className="flex-1">
-                          <div className="font-medium group-hover:text-blue-400 transition-colors">
+                          <div className="font-semibold text-white group-hover:text-white/90 transition-colors">
                             {agent.name}
                           </div>
-                          <div className="text-sm text-gray-400 truncate">
+                          <div className="text-sm text-white/60 truncate">
                             {agent.description}
                           </div>
                         </div>
-                        <div className="flex items-center text-xs text-gray-500">
-                          <Star className="h-3 w-3 mr-1" />
+                        <div className="flex items-center text-xs text-white/50">
+                          <Star className="h-3 w-3 mr-1 fill-current" />
                           {agent.averageRating.toFixed(1)}
                         </div>
                       </Link>
@@ -183,15 +192,18 @@ export default function GoogleStyleSearch() {
                 {/* Popular Searches */}
                 {searchQuery.length < 2 && (
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-400 mb-2">Popular Searches</h3>
+                    <h3 className="text-sm font-semibold text-white/70 mb-3">Popular Searches</h3>
                     {popularSearches.slice(0, 6).map((search, index) => (
                       <button
                         key={index}
                         onClick={() => handleSearch(search)}
-                        className="flex items-center p-2 hover:bg-white/5 rounded-lg transition-colors w-full text-left group"
+                        className="flex items-center p-3 hover:bg-white/8 rounded-xl transition-all duration-300 w-full text-left group border border-transparent hover:border-white/20"
+                        style={{
+                          boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)'
+                        }}
                       >
-                        <TrendingUp className="h-4 w-4 text-gray-500 mr-3" />
-                        <span className="group-hover:text-blue-400 transition-colors">{search}</span>
+                        <TrendingUp className="h-4 w-4 text-white/60 mr-3 group-hover:text-white/80 transition-colors" />
+                        <span className="text-white/80 group-hover:text-white transition-colors font-medium">{search}</span>
                       </button>
                     ))}
                   </div>
@@ -210,13 +222,19 @@ export default function GoogleStyleSearch() {
         >
           <button
             onClick={() => handleSearch()}
-            className="px-8 py-3 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full transition-all duration-300 backdrop-blur-md"
+            className="px-8 py-4 bg-white/8 hover:bg-white/12 border border-white/20 hover:border-white/40 rounded-full transition-all duration-300 backdrop-blur-xl font-medium text-white hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:text-white"
+            style={{
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+            }}
           >
             Search Agents
           </button>
           <Link
             href="/marketplace"
-            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full transition-all duration-300"
+            className="px-8 py-4 bg-white/12 hover:bg-white/16 border border-white/30 hover:border-white/50 rounded-full transition-all duration-300 backdrop-blur-xl font-medium text-white hover:shadow-[0_0_40px_rgba(255,255,255,0.15)]"
+            style={{
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+            }}
           >
             Browse All Agents
           </Link>
@@ -242,27 +260,34 @@ export default function GoogleStyleSearch() {
                   href={`/agents/${agent.id}`}
                   className="group"
                 >
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 hover:border-blue-500/30">
-                    <div className="flex items-center mb-3">
-                      <Bot className="h-8 w-8 text-blue-400 mr-3" />
+                  <div 
+                    className="bg-white/6 backdrop-blur-xl border border-white/20 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 hover:border-white/40 group-hover:shadow-[0_0_40px_rgba(255,255,255,0.1)]"
+                    style={{
+                      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                    }}
+                  >
+                    <div className="flex items-center mb-4">
+                      <div className="p-2 bg-white/10 rounded-xl mr-4 backdrop-blur-sm border border-white/20">
+                        <Bot className="h-6 w-6 text-white" />
+                      </div>
                       <div>
-                        <h3 className="font-semibold group-hover:text-blue-400 transition-colors">
+                        <h3 className="font-semibold text-white group-hover:text-white/90 transition-colors">
                           {agent.name}
                         </h3>
-                        <div className="flex items-center text-sm text-gray-400">
-                          <Star className="h-3 w-3 mr-1" />
+                        <div className="flex items-center text-sm text-white/60">
+                          <Star className="h-3 w-3 mr-1 fill-current text-white/70" />
                           {agent.averageRating.toFixed(1)} • {agent.downloadCount} uses
                         </div>
                       </div>
                     </div>
-                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">
+                    <p className="text-white/70 text-sm mb-4 line-clamp-2">
                       {agent.description}
                     </p>
                     <div className="flex justify-between items-center">
-                      <span className="text-blue-400 font-semibold">
+                      <span className="text-white font-semibold bg-white/10 px-3 py-1 rounded-full border border-white/20">
                         {agent.price} credits
                       </span>
-                      <ArrowRight className="h-4 w-4 text-gray-500 group-hover:text-blue-400 transition-colors" />
+                      <ArrowRight className="h-4 w-4 text-white/60 group-hover:text-white transition-colors" />
                     </div>
                   </div>
                 </Link>
