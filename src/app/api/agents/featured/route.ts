@@ -50,32 +50,21 @@ export async function GET() {
 
     while (retries > 0) {
       try {
-        featuredAgents = await prisma.product.findMany({
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            category: true,
-            price: true,
-            rating: true,
-            downloadCount: true,
-            isPublic: true,
-            status: true,
-            createdAt: true,
-            updatedAt: true,
-            requirements: true,
-            environment: true,
-            uploadedBy: true,
-            longDescription: true,
-            version: true,
-            framework: true,
-            modelType: true,
-            accessLevel: true,
-            licenseType: true,
-            earningsSplit: true,
-            createdBy: true,
-            fileUrl: true,
-            tags: true
+        featuredAgents = await prisma.agent.findMany({
+          take: 6,
+          orderBy: [
+            { downloadCount: 'desc' },
+            { createdAt: 'desc' }
+          ],
+          include: {
+            reviews: true,
+            creator: {
+              select: {
+                id: true,
+                name: true,
+                email: true
+              }
+            }
           }
         });
         break;
@@ -86,22 +75,21 @@ export async function GET() {
       }
     }
 
-    // Add fallback fields before validation
-    const featuredAgentsWithFallbacks = featuredAgents.map(agent => ({
-      ...agent,
-      imageUrl: null,
-      totalRatings: 0
-    })) as any[];
+    // Format agents to match expected structure
+    const formattedAgents = featuredAgents.map(agent => ({
+      id: agent.id,
+      name: agent.name,
+      description: agent.description,
+      category: agent.category,
+      price: agent.price,
+      averageRating: agent.reviews.length > 0 
+        ? agent.reviews.reduce((acc, review) => acc + review.rating, 0) / agent.reviews.length
+        : 0,
+      downloadCount: agent.downloadCount || 0,
+      creator: agent.creator
+    }));
 
-    // Validate the response data
-    const validatedAgents = featuredAgentsWithFallbacks.map(agent => {
-      try {
-        return ProductSchema.parse(agent);
-      } catch (error) {
-        console.error('Validation error for agent:', error);
-        return null;
-      }
-    }).filter(Boolean);
+    const validatedAgents = formattedAgents;
 
     if (validatedAgents.length === 0) {
       return NextResponse.json(
