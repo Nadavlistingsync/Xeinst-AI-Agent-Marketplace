@@ -501,7 +501,7 @@ export const authOptions = {
     strategy: 'jwt' as const,
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.NEXTAUTH_SECRET || 'your-secret-key',
+  secret: process.env.NEXTAUTH_SECRET || 'dev-secret-change-in-production-please-make-it-secure-32-chars',
 };
 
 // All exports are already defined above
