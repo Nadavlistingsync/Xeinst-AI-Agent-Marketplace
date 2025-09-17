@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import { 
   JWTService, 
   HashingService, 
@@ -434,12 +435,61 @@ export function withAuth(handler: any, requiredRole?: string) {
 
 // NextAuth configuration for compatibility
 export const authOptions = {
-  providers: [],
+  providers: [
+    CredentialsProvider({
+      name: 'credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        try {
+          // Use our AuthService to authenticate
+          const result = await AuthService.login({
+            email: credentials.email,
+            password: credentials.password
+          });
+
+          if (result.success && result.user) {
+            return {
+              id: result.user.id,
+              email: result.user.email,
+              name: result.user.name,
+              role: result.user.role,
+              subscriptionTier: result.user.subscriptionTier,
+              credits: result.user.credits,
+            };
+          }
+
+          return null;
+        } catch (error) {
+          console.error('Auth error:', error);
+          return null;
+        }
+      }
+    })
+  ],
   callbacks: {
-    async session({ session }: any) {
+    async session({ session, token }: any) {
+      if (token) {
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.subscriptionTier = token.subscriptionTier;
+        session.user.credits = token.credits;
+      }
       return session;
     },
-    async jwt({ token }: any) {
+    async jwt({ token, user }: any) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+        token.subscriptionTier = user.subscriptionTier;
+        token.credits = user.credits;
+      }
       return token;
     },
   },
