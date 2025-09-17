@@ -1,6 +1,6 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import MarketplacePage from '@/app/marketplace/page';
+import MarketplacePage from '../../app/marketplace/page';
 import { SessionProvider } from 'next-auth/react';
 
 // Mock next/navigation

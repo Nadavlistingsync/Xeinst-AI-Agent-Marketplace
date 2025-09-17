@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../../../../../lib/prisma";
 import { DeploymentStatus } from '@prisma/client';
-import { broadcastDeploymentStatus } from '@/lib/websocket';
+import { broadcastDeploymentStatus } from '../../../../../lib/websocket';
 import { type DeploymentStatusUpdate } from '../../../../../types/websocket';
 
 export async function POST(

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import Home from '../page'
 import { vi } from 'vitest'
-import { prisma } from '@/test/setup'
+import { prisma } from '../../test/setup'
 
 // Mock the FeaturedAgents component
 vi.mock('@/components/FeaturedAgents', () => ({

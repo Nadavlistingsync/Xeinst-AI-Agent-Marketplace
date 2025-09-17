@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { AuditLogger } from '@/lib/audit-logger';
-import { WebhookSigning } from '@/lib/webhook-signing';
+import { authOptions } from "../../../../../lib/auth";
+import { prisma } from "../../../../../lib/prisma";
+import { AuditLogger } from '../../../../../lib/audit-logger';
+import { WebhookSigning } from '../../../../../lib/webhook-signing';
 import { z } from 'zod';
 
 // Credit earning percentage for creators (configurable)

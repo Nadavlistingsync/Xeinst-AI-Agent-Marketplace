@@ -85,8 +85,17 @@ export default function GoogleStyleSearch() {
   }, [searchQuery]);
 
   const handleSearch = (query: string = searchQuery) => {
-    if (query.trim()) {
-      router.push(`/marketplace?search=${encodeURIComponent(query.trim())}`);
+    const trimmedQuery = query.trim();
+    console.log('handleSearch called with:', { query, trimmedQuery, router });
+    
+    if (trimmedQuery) {
+      const url = `/marketplace?search=${encodeURIComponent(trimmedQuery)}`;
+      console.log('Navigating to:', url);
+      router.push(url);
+    } else {
+      // If no search query, go to marketplace
+      console.log('Navigating to: /marketplace');
+      router.push('/marketplace');
     }
   };
 
@@ -133,10 +142,10 @@ export default function GoogleStyleSearch() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Search..."
-              className="w-full pl-16 pr-16 py-5 text-lg font-medium text-white placeholder-white/50 bg-white/8 backdrop-blur-xl border border-white/20 rounded-full focus:outline-none focus:border-white/40 focus:bg-white/12 focus:shadow-[0_0_40px_rgba(255,255,255,0.1)] transition-all duration-300 hover:bg-white/10 hover:border-white/30"
+              placeholder="Search for AI agents..."
+              className="w-full pl-16 pr-16 py-5 text-lg font-medium text-white placeholder-gray-400 bg-black/40 backdrop-blur-xl border border-gray-700 rounded-full focus:outline-none focus:border-blue-500 focus:bg-black/60 focus:shadow-[0_0_40px_rgba(59,130,246,0.3)] transition-all duration-300 hover:bg-black/50 hover:border-gray-600"
               style={{
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(255, 255, 255, 0.05)'
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
               }}
             />
             {isSearching && (
@@ -153,9 +162,9 @@ export default function GoogleStyleSearch() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute top-full mt-3 w-full bg-white/5 backdrop-blur-xl border border-white/20 rounded-2xl p-6 z-50"
+                className="absolute top-full mt-3 w-full bg-gray-900/95 backdrop-blur-xl border border-gray-700 rounded-2xl p-6 z-50"
                 style={{
-                  boxShadow: '0 16px 64px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                  boxShadow: '0 16px 64px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
                 }}
               >
                 {/* Search Results */}
@@ -166,7 +175,7 @@ export default function GoogleStyleSearch() {
                       <Link
                         key={agent.id}
                         href={`/agents/${agent.id}`}
-                        className="flex items-center p-4 hover:bg-white/8 rounded-xl transition-all duration-300 group border border-transparent hover:border-white/20 backdrop-blur-sm"
+                        className="flex items-center p-4 hover:bg-gray-800/50 rounded-xl transition-all duration-300 group border border-transparent hover:border-gray-600 backdrop-blur-sm"
                         style={{
                           boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05)'
                         }}
@@ -197,7 +206,7 @@ export default function GoogleStyleSearch() {
                       <button
                         key={index}
                         onClick={() => handleSearch(search)}
-                        className="flex items-center p-3 hover:bg-white/8 rounded-xl transition-all duration-300 w-full text-left group border border-transparent hover:border-white/20"
+                        className="flex items-center p-3 hover:bg-gray-800/50 rounded-xl transition-all duration-300 w-full text-left group border border-transparent hover:border-gray-600"
                         style={{
                           boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.03)'
                         }}
@@ -221,19 +230,23 @@ export default function GoogleStyleSearch() {
           className="mt-8 flex flex-col sm:flex-row gap-4"
         >
           <button
-            onClick={() => handleSearch()}
-            className="px-8 py-4 bg-white/8 hover:bg-white/12 border border-white/20 hover:border-white/40 rounded-full transition-all duration-300 backdrop-blur-xl font-medium text-white hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] hover:text-white"
+            onClick={(e) => {
+              e.preventDefault();
+              console.log('Search button clicked with query:', searchQuery);
+              handleSearch();
+            }}
+            className="px-8 py-4 bg-gray-800/80 hover:bg-gray-700/80 border border-gray-600 hover:border-gray-500 rounded-full transition-all duration-300 backdrop-blur-xl font-medium text-white hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]"
             style={{
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
             }}
           >
             Search Agents
           </button>
           <Link
             href="/marketplace"
-            className="px-8 py-4 bg-white/12 hover:bg-white/16 border border-white/30 hover:border-white/50 rounded-full transition-all duration-300 backdrop-blur-xl font-medium text-white hover:shadow-[0_0_40px_rgba(255,255,255,0.15)]"
+            className="px-8 py-4 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/50 hover:border-blue-400 rounded-full transition-all duration-300 backdrop-blur-xl font-medium text-white hover:shadow-[0_0_40px_rgba(59,130,246,0.3)]"
             style={{
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(59, 130, 246, 0.1)'
             }}
           >
             Browse All Agents

@@ -9,8 +9,8 @@ import {
 import { Badge } from "../ui/badge";
 import { TrendingUp, Users, Download, DollarSign, User, Plus, Eye, Activity, Zap } from 'lucide-react';
 import { getServerSession } from 'next-auth';
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { authOptions } from "../../lib/auth";
+import { prisma } from "../../lib/prisma";
 import { Card } from "../ui/card";
 import { CreateAgentButton, ViewAgentButton, EditAgentButton } from './DashboardActions';
 

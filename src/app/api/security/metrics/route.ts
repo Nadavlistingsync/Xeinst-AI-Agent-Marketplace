@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AuditLogger } from "@/lib/security";
+import { AuditLogger } from "../../../../lib/security";
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';

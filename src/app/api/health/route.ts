@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { prisma } from "@/lib/prisma";
-import { withApiPerformanceTracking } from '@/lib/performance';
+import { prisma } from "../../../lib/prisma";
+import { withApiPerformanceTracking } from '../../../lib/performance';
 
 interface HealthCheckResult {
   status: 'healthy' | 'degraded' | 'unhealthy';

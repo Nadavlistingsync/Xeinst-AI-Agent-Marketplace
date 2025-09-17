@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { securityManager } from "@/lib/security";
+import { securityManager } from "../../../../lib/security";
 
 /**
  * Security Monitoring API Endpoint

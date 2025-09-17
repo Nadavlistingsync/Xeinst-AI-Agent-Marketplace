@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createErrorResponse } from '@/lib/error-handling';
+import { createErrorResponse } from '../lib/error-handling';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 

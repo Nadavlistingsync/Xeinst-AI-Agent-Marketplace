@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { encrypt } from '@/lib/encryption';
+import { prisma } from '../../../../../lib/prisma';
+import { encrypt } from '../../../../../lib/encryption';
 
 export async function GET(request: NextRequest) {
   try {

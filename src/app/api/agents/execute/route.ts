@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { decrypt } from '@/lib/encryption';
+import { authOptions } from '../../../../lib/auth';
+import { prisma } from '../../../../lib/prisma';
+import { decrypt } from '../../../../lib/encryption';
 
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);

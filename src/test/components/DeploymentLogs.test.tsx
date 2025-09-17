@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { DeploymentLogs } from "../../components/dashboard/DeploymentLogs";
-import { useDeploymentSocket } from '@/hooks/useDeploymentSocket';
+import { useDeploymentSocket } from '../../hooks/useDeploymentSocket';
 
 // Mock the useDeploymentSocket hook
 vi.mock('@/hooks/useDeploymentSocket');

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { securityManager } from "@/lib/security";
+import { securityManager } from "../lib/security";
 
 /**
  * Security Notice Component

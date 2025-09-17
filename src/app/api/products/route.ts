@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../../../lib/prisma";
 import { getServerSession } from 'next-auth';
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "../../../lib/auth";
 import { z } from 'zod';
-import { createErrorResponse, createSuccessResponse } from '@/lib/api';
-import { isDatabaseAvailable, createDatabaseErrorResponse } from "@/lib/db-check";
+import { createErrorResponse, createSuccessResponse } from '../../../lib/api';
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../lib/db-check";
 
 const ProductInputSchema = z.object({
   name: z.string().min(1).max(100),

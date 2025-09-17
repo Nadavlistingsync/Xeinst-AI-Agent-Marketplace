@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { DeploymentMetrics } from "../../components/DeploymentMetrics";
-import { DeploymentStatusUpdate } from '@/types/websocket';
+import { DeploymentStatusUpdate } from '../../types/websocket';
 
 describe('DeploymentMetrics', () => {
   const mockMetrics: DeploymentStatusUpdate['metrics'] = {

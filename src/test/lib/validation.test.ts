@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { agentSchema, feedbackSchema, deploymentSchema, userSchema } from '@/lib/validation';
+import { agentSchema, feedbackSchema, deploymentSchema, userSchema } from '../../lib/validation';
 
 describe('Validation Schemas', () => {
   describe('agentSchema', () => {

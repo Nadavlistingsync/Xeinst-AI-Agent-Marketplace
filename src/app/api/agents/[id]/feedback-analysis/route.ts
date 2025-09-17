@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { analyzeFeedback } from '@/lib/feedback-analysis';
-import { createErrorResponse, createSuccessResponse } from '@/lib/api';
+import { authOptions } from "../../../../../lib/auth";
+import { prisma } from "../../../../../lib/prisma";
+import { analyzeFeedback } from '../../../../../lib/feedback-analysis';
+import { createErrorResponse, createSuccessResponse } from '../../../../../lib/api';
 
 export async function GET(
   _request: Request,

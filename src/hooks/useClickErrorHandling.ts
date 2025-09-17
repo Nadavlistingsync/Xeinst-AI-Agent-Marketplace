@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { useError } from '../contexts/ErrorContext';
-import { ErrorCategory, ErrorSeverity } from "@/lib/enhanced-error-handling";
+import { ErrorCategory, ErrorSeverity } from "../lib/enhanced-error-handling";
 
 interface ClickErrorOptions {
   showModal?: boolean;

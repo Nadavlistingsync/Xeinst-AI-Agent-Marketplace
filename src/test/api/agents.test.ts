@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { GET, POST } from '@/app/api/agents/route';
+import { GET, POST } from '../../app/api/agents/route';
 import { NextRequest } from 'next/server';
-import { prisma } from '@/test/setup';
+import { prisma } from '../setup';
 
 // Mock environment variables
 vi.mock('@/lib/auth', () => ({

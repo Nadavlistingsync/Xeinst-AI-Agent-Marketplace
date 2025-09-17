@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "../../../lib/utils";
 import { Slot } from "@radix-ui/react-slot";
 
 interface LiquidGlassButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {

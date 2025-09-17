@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
-import { isDatabaseAvailable, createDatabaseErrorResponse } from "@/lib/db-check";
+import { authOptions } from "../../../../lib/auth";
+import { prisma } from "../../../../lib/prisma";
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../../lib/db-check";
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';

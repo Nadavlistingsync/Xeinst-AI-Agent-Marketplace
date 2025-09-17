@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createServer } from 'http';
 import { parse } from 'url';
-import { GET } from '@/app/api/health/route';
+import { GET } from '../../app/api/health/route';
 import { NextRequest } from 'next/server';
 
 describe('Health Check E2E', () => {
