@@ -1,22 +1,22 @@
 "use client";
 
-import { useUser } from "@stackframe/stack";
-import { Button } from ".//ui/button";
+import { useSession } from "next-auth/react";
+import { Button } from "./ui/button";
 import { SignInButton, SignUpButton, UserProfile } from "./NeonAuth";
 import { User, Settings } from "lucide-react";
 import Link from "next/link";
 
 export function UserMenu() {
-  const user = useUser();
+  const { data: session } = useSession();
 
-  if (user) {
+  if (session?.user) {
     return (
       <div className="relative group">
         <Button variant="ghost" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-r from-ai-primary to-ai-secondary rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-white" />
           </div>
-          <span className="text-sm text-white">{user.displayName || user.primaryEmail}</span>
+          <span className="text-sm text-white">{session.user.name || session.user.email}</span>
         </Button>
         
         {/* Dropdown Menu */}
@@ -44,17 +44,17 @@ export function UserMenu() {
 }
 
 export function MobileUserMenu() {
-  const user = useUser();
+  const { data: session } = useSession();
 
-  if (user) {
+  if (session?.user) {
     return (
       <div className="px-4 py-2">
         <div className="flex items-center space-x-3 mb-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-ai-primary to-ai-secondary rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-white" />
           </div>
           <div>
-            <div className="text-sm font-medium text-white">{user.displayName || user.primaryEmail}</div>
+            <div className="text-sm font-medium text-white">{session.user.name || session.user.email}</div>
             <div className="text-xs text-muted-foreground">Signed in</div>
           </div>
         </div>
