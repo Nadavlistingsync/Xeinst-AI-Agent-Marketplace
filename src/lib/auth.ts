@@ -454,14 +454,14 @@ export const authOptions = {
             password: credentials.password
           });
 
-          if (result.success && result.user) {
+          if (result.success && result.session?.user) {
             return {
-              id: result.user.id,
-              email: result.user.email,
-              name: result.user.name,
-              role: result.user.role,
-              subscriptionTier: result.user.subscriptionTier,
-              credits: result.user.credits,
+              id: result.session.user.id,
+              email: result.session.user.email,
+              name: result.session.user.name,
+              role: result.session.user.role,
+              subscriptionTier: result.session.user.subscriptionTier,
+              credits: result.session.user.credits,
             };
           }
 
