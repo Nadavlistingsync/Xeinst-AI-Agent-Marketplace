@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { ConnectedAccount } from '@prisma/client';
 
 interface Agent {
   id: string;
