@@ -16,6 +16,17 @@ interface Agent {
   downloadCount: number;
 }
 
+const useOptionalRouter = () => {
+  try {
+    return useRouter();
+  } catch (error) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('GoogleStyleSearch: useRouter is unavailable. Falling back to no-op navigation.', error);
+    }
+    return null;
+  }
+};
+
 export default function GoogleStyleSearch() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<Agent[]>([]);
@@ -23,7 +34,7 @@ export default function GoogleStyleSearch() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [featuredAgents, setFeaturedAgents] = useState<Agent[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
+  const router = useOptionalRouter();
 
   // Popular search suggestions
   const popularSearches = [
@@ -46,13 +57,25 @@ export default function GoogleStyleSearch() {
   // Fetch featured agents
   const fetchFeaturedAgents = async () => {
     try {
-      const response = await fetch('/api/agents/featured');
-      if (response.ok) {
-        const data = await response.json();
-        setFeaturedAgents(data.agents || []);
+      const response = typeof fetch === 'function' ? await fetch('/api/agents/featured') : null;
+      if (!response || !response.ok) {
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn('GoogleStyleSearch: Failed to fetch featured agents, using empty fallback.', response?.status);
+        }
+        setFeaturedAgents([]);
+        return;
       }
+
+      const data = await response.json();
+      const agentsData = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.agents)
+          ? data.agents
+          : [];
+      setFeaturedAgents(agentsData);
     } catch (error) {
       console.error('Error fetching featured agents:', error);
+      setFeaturedAgents([]);
     }
   };
 
@@ -69,13 +92,25 @@ export default function GoogleStyleSearch() {
       setShowSuggestions(true);
       
       try {
-        const response = await fetch(`/api/agents/search?q=${encodeURIComponent(searchQuery)}`);
-        if (response.ok) {
-          const data = await response.json();
-          setSearchResults(data.agents || []);
+        const response = typeof fetch === 'function'
+          ? await fetch(`/api/agents/search?q=${encodeURIComponent(searchQuery)}`)
+          : null;
+
+        if (!response || !response.ok) {
+          setSearchResults([]);
+          return;
         }
+
+        const data = await response.json();
+        const results = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.agents)
+            ? data.agents
+            : [];
+        setSearchResults(results);
       } catch (error) {
         console.error('Search error:', error);
+        setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
@@ -86,7 +121,12 @@ export default function GoogleStyleSearch() {
 
   const handleSearch = (query: string = searchQuery) => {
     if (query.trim()) {
-      router.push(`/marketplace?search=${encodeURIComponent(query.trim())}`);
+      const destination = `/marketplace?search=${encodeURIComponent(query.trim())}`;
+      if (router) {
+        router.push(destination);
+      } else if (typeof window !== 'undefined') {
+        window.location.href = destination;
+      }
     }
   };
 

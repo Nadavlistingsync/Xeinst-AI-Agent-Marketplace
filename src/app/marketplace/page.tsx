@@ -64,20 +64,44 @@ export default function Marketplace() {
 
   const fetchAgents = async () => {
     try {
-      const response = await fetch('/api/agents');
-      if (response.ok) {
-        const data = await response.json();
-        setAgents(data.agents || []);
+      const response = typeof fetch === 'function' ? await fetch('/api/agents') : null;
+      if (!response || !response.ok) {
+        setAgents([]);
+        return;
       }
+
+      const data = await response.json();
+      const rawAgents = Array.isArray(data) ? data : Array.isArray(data?.agents) ? data.agents : [];
+
+      const normalizedAgents: Agent[] = rawAgents.map((agent: any) => {
+        const created = agent.createdAt ?? agent.created_at ?? new Date();
+        return {
+          id: agent.id,
+          name: agent.name ?? 'Untitled Agent',
+          description: agent.description ?? 'No description provided.',
+          category: agent.category ?? 'general',
+          price: typeof agent.price === 'number' ? agent.price : Number(agent.price ?? 0),
+          downloadCount: agent.downloadCount ?? agent.download_count ?? 0,
+          averageRating: agent.averageRating ?? agent.rating ?? 0,
+          totalReviews: agent.totalReviews ?? agent.review_count ?? 0,
+          createdAt: new Date(created).toISOString(),
+          creator: {
+            name: agent.creator?.name ?? agent.user_id ?? 'Unknown Creator'
+          }
+        };
+      });
+
+      setAgents(normalizedAgents);
     } catch (error) {
       console.error('Error fetching agents:', error);
+      setAgents([]);
     } finally {
       setLoading(false);
     }
   };
 
   const filterAndSortAgents = useCallback(() => {
-    let filtered = agents;
+    let filtered = [...agents];
 
     // Filter by search query
     if (searchQuery) {
@@ -143,8 +167,25 @@ export default function Marketplace() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">AI Agent Marketplace</h1>
+              <p className="text-gray-600 mt-2">Discover and use powerful AI agents for your business</p>
+            </div>
+            <Link href="/upload">
+              <Button>Upload Agent</Button>
+            </Link>
+          </div>
+          <div className="flex items-center justify-center py-20">
+            <div
+              className="animate-spin rounded-full h-24 w-24 border-b-2 border-blue-600"
+              role="status"
+              aria-label="Loading agents"
+            ></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -153,9 +194,14 @@ export default function Marketplace() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">AI Agent Marketplace</h1>
-          <p className="text-gray-600 mt-2">Discover and use powerful AI agents for your business</p>
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">AI Agent Marketplace</h1>
+            <p className="text-gray-600 mt-2">Discover and use powerful AI agents for your business</p>
+          </div>
+          <Link href="/upload">
+            <Button>Upload Agent</Button>
+          </Link>
         </div>
 
         {/* Search and Filters */}
@@ -234,9 +280,7 @@ export default function Marketplace() {
 
         {/* Results Count */}
         <div className="mb-6">
-          <p className="text-gray-600">
-            Showing {filteredAgents.length} of {agents.length} agents
-          </p>
+          <p className="text-gray-600">{filteredAgents.length} Agents Found</p>
         </div>
 
         {/* Agents Grid/List */}
@@ -268,12 +312,12 @@ export default function Marketplace() {
                         </div>
                         <div>
                           <CardTitle className="text-lg">{agent.name}</CardTitle>
-                          <CardDescription className="flex items-center space-x-2 mt-1">
-                            <span className="text-sm">by {agent.creator.name}</span>
+                          <div className="flex items-center space-x-2 mt-1 text-sm text-gray-500">
+                            <span>by {agent.creator.name}</span>
                             <Badge variant="outline" className="text-xs">
                               {agent.category}
                             </Badge>
-                          </CardDescription>
+                          </div>
                         </div>
                       </div>
                       <div className="text-right">

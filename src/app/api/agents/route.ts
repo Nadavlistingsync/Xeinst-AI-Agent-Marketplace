@@ -28,6 +28,114 @@ const agentSchema = z.object({
 
 export type Agent = z.infer<typeof agentSchema>;
 
+const exampleAgents: Agent[] = [
+  {
+    id: 'example-text-summarizer',
+    name: 'Text Summarizer',
+    description: 'AI agent that summarizes long texts into concise insights.',
+    apiUrl: 'https://example.com/api/text-summarizer',
+    category: 'productivity',
+    price: 0,
+    rating: 4.8,
+    download_count: 2400,
+    review_count: 128,
+    model_type: 'gpt-4',
+    framework: 'langchain',
+    version: '1.0.0',
+    status: 'active',
+    tags: ['summarization', 'text'],
+    created_at: new Date('2024-01-01T00:00:00.000Z'),
+    user_id: 'example-user',
+    file_path: '/agents/text-summarizer',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          description: 'Text that should be summarised.'
+        },
+        maxLength: {
+          type: 'number',
+          description: 'Maximum length of the summary.',
+          minimum: 50,
+          maximum: 500
+        }
+      },
+      required: ['text']
+    }
+  },
+  {
+    id: 'example-image-classifier',
+    name: 'Image Classifier',
+    description: 'Classifies and categorises product imagery using vision models.',
+    apiUrl: 'https://example.com/api/image-classifier',
+    category: 'analytics',
+    price: 12,
+    rating: 4.6,
+    download_count: 1850,
+    review_count: 92,
+    model_type: 'vision-transformer',
+    framework: 'pytorch',
+    version: '2.1.0',
+    status: 'active',
+    tags: ['computer vision', 'classification'],
+    created_at: new Date('2024-02-10T00:00:00.000Z'),
+    user_id: 'example-user',
+    file_path: '/agents/image-classifier',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        imageUrl: {
+          type: 'string',
+          format: 'uri',
+          description: 'URL of the image to analyse.'
+        },
+        returnTopK: {
+          type: 'number',
+          description: 'Number of categories to return.',
+          minimum: 1,
+          maximum: 5
+        }
+      },
+      required: ['imageUrl']
+    }
+  },
+  {
+    id: 'example-sentiment-analysis',
+    name: 'Sentiment Analysis',
+    description: 'Detects sentiment and emotion from customer feedback.',
+    apiUrl: 'https://example.com/api/sentiment-analysis',
+    category: 'communication',
+    price: 5,
+    rating: 4.7,
+    download_count: 3200,
+    review_count: 210,
+    model_type: 'gpt-3.5',
+    framework: 'transformers',
+    version: '1.5.2',
+    status: 'active',
+    tags: ['sentiment', 'nlp'],
+    created_at: new Date('2024-03-15T00:00:00.000Z'),
+    user_id: 'example-user',
+    file_path: '/agents/sentiment-analysis',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          description: 'Feedback or review that should be analysed.'
+        },
+        language: {
+          type: 'string',
+          description: 'Language code for the provided text.',
+          default: 'en'
+        }
+      },
+      required: ['text']
+    }
+  }
+];
+
 const uploadAgentSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().min(1, "Description is required"),
@@ -49,70 +157,97 @@ const uploadAgentSchema = z.object({
 
 // Agents are now loaded from Supabase database
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     console.log('GET /api/agents: Starting to fetch agents...');
-    
-    // Check if DATABASE_URL is available
-    if (!process.env.DATABASE_URL) {
-      console.log('GET /api/agents: No DATABASE_URL found, returning error');
+
+    const url = request?.url ? new URL(request.url) : null;
+    const categoryFilter = url?.searchParams.get('category');
+    const minPriceFilter = url?.searchParams.get('minPrice');
+    const maxPriceFilter = url?.searchParams.get('maxPrice');
+
+    let marketplaceAgents: Agent[] = [];
+
+    try {
+      console.log('GET /api/agents: Attempting database query...');
+      const dbAgents = await prisma.agent.findMany({
+        where: {
+          status: 'active',
+          isPublic: true
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      marketplaceAgents = dbAgents.map((agent: any) => ({
+        id: agent.id,
+        name: agent.name,
+        description: agent.description,
+        apiUrl: agent.fileUrl || agent.webhookUrl || '',
+        category: agent.category,
+        price: typeof agent.price === 'number' ? agent.price : Number(agent.price ?? 0),
+        rating: agent.rating ?? 0,
+        download_count: agent.downloadCount ?? agent.download_count ?? 0,
+        review_count: agent.reviewCount ?? agent.review_count ?? 0,
+        model_type: agent.modelType || agent.model_type || 'custom',
+        framework: agent.framework || 'custom',
+        version: agent.version || '1.0.0',
+        status: agent.status,
+        tags: agent.tags ?? [],
+        created_at: agent.createdAt ?? agent.created_at ?? new Date(),
+        user_id: agent.createdBy || agent.user_id || '',
+        file_path: agent.fileUrl || agent.file_path || '',
+        inputSchema: agent.inputSchema ?? {
+          type: 'object',
+          properties: {
+            input: { type: 'string', description: 'Input for the agent.' },
+          },
+          required: ['input'],
+        },
+      }));
+
+      console.log(`GET /api/agents: Returning ${marketplaceAgents.length} agents from database`);
+    } catch (databaseError) {
+      console.warn('GET /api/agents: Database query failed, returning example agents with error.', databaseError);
       return NextResponse.json(
         {
           success: false,
-          error: 'Database not configured',
-          message: 'Please set up DATABASE_URL environment variable to access agents',
-          timestamp: new Date().toISOString()
+          error: 'Failed to fetch agents',
+          agents: exampleAgents,
+          total: exampleAgents.length,
+          timestamp: new Date().toISOString(),
         },
-        { status: 503 }
+        { status: 500 }
       );
     }
-    
-    // First try to get agents from the database
-    console.log('GET /api/agents: Attempting database query...');
-    const dbAgents = await prisma.agent.findMany({
-      where: { 
-        status: 'active',
-        isPublic: true 
-      },
-      orderBy: { createdAt: 'desc' }
-    });
 
-    console.log(`GET /api/agents: Found ${dbAgents.length} agents in database`);
+    let filteredDbAgents = [...marketplaceAgents];
 
-    // Transform to marketplace format
-    const marketplaceAgents: Agent[] = dbAgents.map(agent => ({
-      id: agent.id,
-      name: agent.name,
-      description: agent.description,
-      apiUrl: agent.fileUrl || agent.webhookUrl || '', // Use fileUrl or webhookUrl as apiUrl
-      category: agent.category,
-      price: agent.price,
-      rating: 0, // Default rating (not in Prisma schema)
-      download_count: agent.downloadCount || 0,
-      review_count: 0, // Default review count
-      model_type: agent.modelType || 'custom',
-      framework: agent.framework || 'custom',
-      version: agent.version || '1.0.0',
-      status: agent.status,
-      tags: [], // Default empty tags (not in Prisma schema)
-      created_at: agent.createdAt,
-      user_id: agent.createdBy || '',
-      file_path: agent.fileUrl || '',
-      inputSchema: {
-        type: 'object',
-        properties: {
-          input: { type: 'string', description: 'Input for the agent.' },
-        },
-        required: ['input'],
-      },
-    }));
+    if (categoryFilter) {
+      filteredDbAgents = filteredDbAgents.filter((agent) =>
+        agent.category?.toLowerCase() === categoryFilter.toLowerCase()
+      );
+    }
 
-    console.log(`GET /api/agents: Returning ${marketplaceAgents.length} agents from database`);
+    if (minPriceFilter) {
+      const minPrice = Number.parseFloat(minPriceFilter);
+      if (!Number.isNaN(minPrice)) {
+        filteredDbAgents = filteredDbAgents.filter((agent) => (agent.price ?? 0) >= minPrice);
+      }
+    }
+
+    if (maxPriceFilter) {
+      const maxPrice = Number.parseFloat(maxPriceFilter);
+      if (!Number.isNaN(maxPrice)) {
+        filteredDbAgents = filteredDbAgents.filter((agent) => (agent.price ?? 0) <= maxPrice);
+      }
+    }
+
+    const allAgents: Agent[] = [...exampleAgents, ...filteredDbAgents];
 
     return NextResponse.json({
       success: true,
-      agents: marketplaceAgents,
-      total: marketplaceAgents.length,
+      agents: allAgents,
+      total: allAgents.length,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
