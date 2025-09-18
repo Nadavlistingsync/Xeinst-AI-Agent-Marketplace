@@ -5,7 +5,7 @@ import { motion, MotionProps } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { tokens } from '../tokens';
 
-interface GlassCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, keyof MotionProps> {
+interface GlassCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, keyof MotionProps | 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> {
   variant?: 'default' | 'elevated' | 'subtle' | 'interactive';
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
@@ -91,7 +91,7 @@ const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
 
     return (
       <Comp
-        ref={ref}
+        ref={ref as any}
         className={cn(
           baseClasses,
           variantClasses[variant],

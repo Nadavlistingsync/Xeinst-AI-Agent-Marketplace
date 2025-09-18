@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { LiquidMarketplace } from './components/LiquidMarketplace';
+import { SimpleLiquidMarketplace } from '../../components/SimpleLiquidMarketplace';
 
 export default function Marketplace() {
-  return <LiquidMarketplace />;
+  return <SimpleLiquidMarketplace />;
 }

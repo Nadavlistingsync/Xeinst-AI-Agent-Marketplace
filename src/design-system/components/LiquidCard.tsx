@@ -5,7 +5,7 @@ import { motion, MotionProps } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { liquidTokens } from '../liquid-tokens';
 
-interface LiquidCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, keyof MotionProps> {
+interface LiquidCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, keyof MotionProps | 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> {
   variant?: 'bubble' | 'flow' | 'glow' | 'float' | 'organic';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   color?: 'blue' | 'purple' | 'pink' | 'cyan' | 'green';

@@ -71,7 +71,7 @@ export function LiquidBackground({
             bottom: '-100px',
           }}
           animate={{
-            y: [-100, -window.innerHeight - 100],
+            y: [-100, -800],
             x: [0, Math.random() * 100 - 50],
             scale: [0.5, 1.2, 0.8, 1, 0.5],
             opacity: [0, 0.6, 0.8, 0.6, 0],

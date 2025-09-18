@@ -1,12 +1,12 @@
 "use client";
 
 import React, { forwardRef } from 'react';
-import { motion, MotionProps } from 'framer-motion';
-import { Slot } from '@radix-ui/react-slot';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { cn } from '../../lib/utils';
 import { liquidTokens } from '../liquid-tokens';
 
-interface LiquidButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, keyof MotionProps> {
+interface LiquidButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> {
   variant?: 'bubble' | 'flow' | 'glow' | 'float' | 'liquid' | 'ghost' | 'glass';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   color?: 'blue' | 'purple' | 'pink' | 'cyan' | 'green';
@@ -16,27 +16,11 @@ interface LiquidButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonEl
   loading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
-  asChild?: boolean;
   animated?: boolean;
 }
 
 /**
  * LiquidButton - Bubble and liquid-inspired button component
- * 
- * Features:
- * - Organic bubble shapes
- * - Liquid flowing animations
- * - Glow effects on interaction
- * - Morphing hover states
- * - Floating bubble backgrounds
- * - Multiple color themes
- * 
- * @example
- * ```tsx
- * <LiquidButton variant="bubble" color="cyan" size="lg" animated>
- *   Liquid Magic
- * </LiquidButton>
- * ```
  */
 const LiquidButton = forwardRef<HTMLButtonElement, LiquidButtonProps>(
   ({ 
@@ -49,13 +33,11 @@ const LiquidButton = forwardRef<HTMLButtonElement, LiquidButtonProps>(
     loading = false,
     leftIcon,
     rightIcon,
-    asChild = false,
     animated = true,
     disabled,
     ...props 
   }, ref) => {
     const baseClasses = cn(
-      // Base styling
       'relative inline-flex items-center justify-center',
       'font-medium transition-all duration-500 ease-out',
       'focus:outline-none overflow-hidden',
@@ -155,6 +137,18 @@ const LiquidButton = forwardRef<HTMLButtonElement, LiquidButtonProps>(
         lg: 'rounded-[2rem_3rem_2.5rem_3.5rem]',
         xl: 'rounded-[3rem_4rem_3.5rem_4.5rem]',
       },
+      ghost: {
+        sm: 'rounded-xl',
+        md: 'rounded-2xl',
+        lg: 'rounded-2xl',
+        xl: 'rounded-3xl',
+      },
+      glass: {
+        sm: 'rounded-xl',
+        md: 'rounded-2xl',
+        lg: 'rounded-2xl',
+        xl: 'rounded-3xl',
+      },
     };
 
     const colorGlowClasses = {
@@ -165,96 +159,8 @@ const LiquidButton = forwardRef<HTMLButtonElement, LiquidButtonProps>(
       green: 'hover:shadow-glow-green focus:ring-green-400/30',
     };
 
-    const Comp = asChild ? Slot : href ? motion.a : motion.button;
-    const motionProps = href ? { href } : {};
-
-    const floatAnimation = animated ? {
-      animate: {
-        y: [0, -2, 0],
-        rotate: [0, 1, -1, 0],
-      },
-      transition: {
-        duration: 4,
-        repeat: Infinity,
-        ease: "easeInOut",
-      }
-    } : {};
-
-    return (
-      <Comp
-        ref={ref as any}
-        className={cn(
-          baseClasses,
-          variantClasses[variant],
-          sizeClasses[size],
-          borderRadiusClasses[variant][size],
-          colorGlowClasses[color],
-          className
-        )}
-        disabled={disabled || loading}
-        whileHover={!disabled && !loading ? { 
-          scale: 1.05,
-          y: -2,
-          transition: liquidTokens.motion.spring.bubble 
-        } : undefined}
-        whileTap={!disabled && !loading ? { 
-          scale: 0.95,
-          transition: liquidTokens.motion.spring.bubble 
-        } : undefined}
-        {...floatAnimation}
-        {...motionProps}
-        {...props}
-      >
-        {/* Flowing background animation */}
-        {animated && variant === 'flow' && (
-          <motion.div
-            className="absolute inset-0 opacity-20"
-            style={{
-              background: liquidTokens.colors.gradients.glow,
-              backgroundSize: '200% 200%',
-            }}
-            animate={{
-              backgroundPosition: ['0% 0%', '100% 100%', '0% 0%'],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          />
-        )}
-
-        {/* Bubble particles */}
-        {animated && variant === 'bubble' && (
-          <>
-            <motion.div
-              className="absolute top-2 right-2 w-2 h-2 bg-white/20 rounded-full"
-              animate={{
-                scale: [1, 1.5, 1],
-                opacity: [0.3, 0.7, 0.3],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            />
-            <motion.div
-              className="absolute bottom-3 left-3 w-1.5 h-1.5 bg-white/15 rounded-full"
-              animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.2, 0.6, 0.2],
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.5,
-              }}
-            />
-          </>
-        )}
-
+    const content = (
+      <>
         {/* Loading liquid spinner */}
         {loading && (
           <motion.div
@@ -306,7 +212,61 @@ const LiquidButton = forwardRef<HTMLButtonElement, LiquidButtonProps>(
             </motion.span>
           )}
         </motion.span>
-      </Comp>
+      </>
+    );
+
+    const commonClasses = cn(
+      baseClasses,
+      variantClasses[variant],
+      sizeClasses[size],
+      borderRadiusClasses[variant][size],
+      colorGlowClasses[color],
+      className
+    );
+
+    const motionProps = {
+      whileHover: !disabled && !loading ? { 
+        scale: 1.05,
+        y: -2,
+        transition: liquidTokens.motion.spring.bubble 
+      } : undefined,
+      whileTap: !disabled && !loading ? { 
+        scale: 0.95,
+        transition: liquidTokens.motion.spring.bubble 
+      } : undefined,
+      ...(animated && {
+        animate: {
+          y: [0, -2, 0],
+          rotate: [0, 1, -1, 0],
+        },
+        transition: {
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut",
+        }
+      })
+    };
+
+    if (href) {
+      return (
+        <Link href={href} className={commonClasses}>
+          <motion.div className="w-full h-full flex items-center justify-center" {...motionProps}>
+            {content}
+          </motion.div>
+        </Link>
+      );
+    }
+
+    return (
+      <motion.button
+        ref={ref}
+        className={commonClasses}
+        disabled={disabled || loading}
+        {...motionProps}
+        {...props}
+      >
+        {content}
+      </motion.button>
     );
   }
 );

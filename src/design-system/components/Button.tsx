@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { cn } from '../../lib/utils';
 import { tokens } from '../tokens';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> {
   variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'glass';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   children: React.ReactNode;
