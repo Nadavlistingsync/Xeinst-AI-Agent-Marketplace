@@ -5,15 +5,22 @@ import { AuditLogger } from "../../../../lib/security";
 // GET /api/security/test - Run security tests
 export async function GET(request: NextRequest) {
   try {
-    // Check authentication
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Get query parameters
+    // Get query parameters first
     const { searchParams } = new URL(request.url);
     const testType = searchParams.get('type') || 'all';
+    
+    // Check authentication - allow health check without auth
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // Return basic status for health checks
+      if (testType === 'health') {
+        return NextResponse.json({ 
+          status: 'Security API is running',
+          timestamp: new Date().toISOString()
+        }, { status: 200 });
+      }
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     let testResults;
 

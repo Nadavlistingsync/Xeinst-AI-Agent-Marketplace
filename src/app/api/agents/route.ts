@@ -71,8 +71,7 @@ export async function GET() {
     console.log('GET /api/agents: Attempting database query...');
     const dbAgents = await prisma.agent.findMany({
       where: { 
-        status: 'active',
-        isPublic: true 
+        status: 'active'
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -117,8 +116,33 @@ export async function GET() {
     });
   } catch (error) {
     console.error('GET /api/agents error:', error);
+    
+    // If it's a database connection error, return 503
+    if (error instanceof Error && (
+      error.message.includes('connection') || 
+      error.message.includes('connect') ||
+      error.message.includes('ECONNREFUSED') ||
+      error.message.includes('timeout') ||
+      error.message.includes('does not exist')
+    )) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Database connection failed',
+          message: 'Please check database configuration',
+          timestamp: new Date().toISOString()
+        },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch agents' },
+      {
+        success: false,
+        error: 'Failed to fetch agents',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }

@@ -2,11 +2,20 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../../lib/db-check";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    // Check if database is available
+    if (!isDatabaseAvailable()) {
+      return NextResponse.json(
+        createDatabaseErrorResponse(),
+        { status: 503 }
+      );
+    }
+
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
