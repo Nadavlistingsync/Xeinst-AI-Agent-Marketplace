@@ -2,6 +2,134 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Liquid Design System Styles */
+@layer utilities {
+  /* Liquid glass morphism */
+  .liquid-glass {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px) saturate(1.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  
+  .liquid-glass-hover:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 30px rgba(59, 130, 246, 0.2), 0 0 60px rgba(6, 182, 212, 0.15);
+  }
+
+  /* Liquid text effects */
+  .text-liquid-glow {
+    text-shadow: 
+      0 0 10px rgba(59, 130, 246, 0.8),
+      0 0 20px rgba(6, 182, 212, 0.6),
+      0 0 30px rgba(139, 92, 246, 0.4);
+  }
+  
+  .text-bubble-glow {
+    text-shadow: 
+      0 0 5px rgba(255, 255, 255, 0.8),
+      0 0 15px rgba(59, 130, 246, 0.6),
+      0 0 25px rgba(6, 182, 212, 0.4);
+  }
+
+  /* Liquid backgrounds */
+  .bg-liquid-gradient {
+    background: linear-gradient(135deg, 
+      rgba(59, 130, 246, 0.2) 0%, 
+      rgba(6, 182, 212, 0.15) 50%, 
+      rgba(139, 92, 246, 0.1) 100%);
+  }
+  
+  .bg-bubble-gradient {
+    background: radial-gradient(circle at 30% 30%, 
+      rgba(59, 130, 246, 0.3) 0%, 
+      rgba(59, 130, 246, 0.1) 50%, 
+      transparent 100%);
+  }
+
+  /* Liquid borders */
+  .border-liquid {
+    border-radius: 1rem 1.5rem 1.2rem 1.8rem;
+  }
+  
+  .border-bubble {
+    border-radius: 1.5rem 2rem 1.8rem 2.5rem;
+  }
+  
+  .border-flow {
+    border-radius: 1rem 2rem 1.5rem 1rem;
+  }
+
+  /* Liquid animations */
+  .animate-liquid-morph {
+    animation: liquidMorph 6s ease-in-out infinite;
+  }
+  
+  .animate-bubble-float {
+    animation: bubbleFloat 4s ease-in-out infinite;
+  }
+  
+  .animate-liquid-flow {
+    animation: liquidFlow 8s ease-in-out infinite;
+  }
+
+  /* Scrollbar styling */
+  .liquid-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .liquid-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+  }
+  
+  .liquid-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .liquid-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-bubble-float,
+    .animate-liquid-flow,
+    .animate-liquid-morph {
+      animation: none;
+    }
+    
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* High contrast support */
+  @media (prefers-contrast: high) {
+    .liquid-glass {
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .text-liquid-glow,
+    .text-bubble-glow {
+      text-shadow: none;
+      color: #ffffff;
+    }
+  }
+
+  /* Focus visible improvements */
+  .focus-liquid:focus-visible {
+    outline: 2px solid rgba(59, 130, 246, 0.8);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+}
+
 /* High-Quality Black & White with Glowing Design */
 :root {
   --bg-primary: #000000;

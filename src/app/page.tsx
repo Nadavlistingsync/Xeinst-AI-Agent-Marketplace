@@ -1,8 +1,8 @@
 "use client"
 
 import React from "react"
-import GoogleStyleSearch from "../components/GoogleStyleSearch"
+import { LiquidHomepage } from "../components/LiquidHomepage"
 
 export default function HomePage() {
-  return <GoogleStyleSearch />;
+  return <LiquidHomepage />;
 }

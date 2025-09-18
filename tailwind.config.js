@@ -46,6 +46,24 @@ const config: Config = {
         'glow': '0 0 10px rgba(255, 255, 255, 0.8)',
         'glow-strong': '0 0 30px rgba(0, 255, 255, 0.8)',
         'inner-glow': 'inset 0 0 20px rgba(0, 255, 255, 0.1)',
+        
+        // Liquid bubble shadows
+        'bubble-sm': '0 4px 20px rgba(59, 130, 246, 0.15), 0 0 40px rgba(6, 182, 212, 0.1)',
+        'bubble-md': '0 8px 30px rgba(59, 130, 246, 0.2), 0 0 60px rgba(6, 182, 212, 0.15)',
+        'bubble-lg': '0 12px 40px rgba(59, 130, 246, 0.25), 0 0 80px rgba(6, 182, 212, 0.2)',
+        'bubble-xl': '0 20px 60px rgba(59, 130, 246, 0.3), 0 0 120px rgba(6, 182, 212, 0.25)',
+        
+        // Liquid glow effects
+        'glow-blue': '0 0 20px rgba(59, 130, 246, 0.4), 0 0 40px rgba(59, 130, 246, 0.2), 0 0 60px rgba(59, 130, 246, 0.1)',
+        'glow-purple': '0 0 20px rgba(139, 92, 246, 0.4), 0 0 40px rgba(139, 92, 246, 0.2), 0 0 60px rgba(139, 92, 246, 0.1)',
+        'glow-pink': '0 0 20px rgba(236, 72, 153, 0.4), 0 0 40px rgba(236, 72, 153, 0.2), 0 0 60px rgba(236, 72, 153, 0.1)',
+        'glow-cyan': '0 0 20px rgba(6, 182, 212, 0.4), 0 0 40px rgba(6, 182, 212, 0.2), 0 0 60px rgba(6, 182, 212, 0.1)',
+        'glow-green': '0 0 20px rgba(16, 185, 129, 0.4), 0 0 40px rgba(16, 185, 129, 0.2), 0 0 60px rgba(16, 185, 129, 0.1)',
+        
+        // Floating bubble effects
+        'float-sm': '0 2px 15px rgba(255, 255, 255, 0.1), 0 0 30px rgba(59, 130, 246, 0.15)',
+        'float-md': '0 4px 25px rgba(255, 255, 255, 0.12), 0 0 50px rgba(59, 130, 246, 0.2)',
+        'float-lg': '0 8px 35px rgba(255, 255, 255, 0.15), 0 0 70px rgba(59, 130, 246, 0.25)',
       },
       backdropBlur: {
         'glass': '15px',
@@ -59,6 +77,13 @@ const config: Config = {
         'gradient': 'gradientShift 20s ease infinite',
         'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
         'float': 'float 6s ease-in-out infinite',
+        
+        // Liquid animations
+        'bubble-float': 'bubbleFloat 4s ease-in-out infinite',
+        'liquid-flow': 'liquidFlow 8s ease-in-out infinite',
+        'bubble-pulse': 'bubblePulse 3s ease-in-out infinite',
+        'liquid-morph': 'liquidMorph 6s ease-in-out infinite',
+        'bubble-rise': 'bubbleRise 5s ease-in-out infinite',
       },
       keyframes: {
         gradientShift: {
@@ -73,6 +98,77 @@ const config: Config = {
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-10px)' },
+        },
+        
+        // Liquid keyframes
+        bubbleFloat: {
+          '0%, 100%': { 
+            transform: 'translateY(0px) rotate(0deg) scale(1)',
+            borderRadius: '1rem 1.5rem 1.2rem 1.8rem'
+          },
+          '33%': { 
+            transform: 'translateY(-8px) rotate(2deg) scale(1.02)',
+            borderRadius: '1.5rem 1rem 1.8rem 1.2rem'
+          },
+          '66%': { 
+            transform: 'translateY(-4px) rotate(-1deg) scale(1.01)',
+            borderRadius: '1.2rem 1.8rem 1rem 1.5rem'
+          },
+        },
+        liquidFlow: {
+          '0%': { 
+            borderRadius: '2rem 3rem 2.5rem 3.5rem',
+            transform: 'skewX(0deg) skewY(0deg)'
+          },
+          '25%': { 
+            borderRadius: '3rem 2rem 3.5rem 2.5rem',
+            transform: 'skewX(2deg) skewY(1deg)'
+          },
+          '50%': { 
+            borderRadius: '2.5rem 3.5rem 2rem 3rem',
+            transform: 'skewX(0deg) skewY(-1deg)'
+          },
+          '75%': { 
+            borderRadius: '3.5rem 2.5rem 3rem 2rem',
+            transform: 'skewX(-2deg) skewY(0deg)'
+          },
+          '100%': { 
+            borderRadius: '2rem 3rem 2.5rem 3.5rem',
+            transform: 'skewX(0deg) skewY(0deg)'
+          },
+        },
+        bubblePulse: {
+          '0%, 100%': { 
+            opacity: 0.8, 
+            transform: 'scale(1)',
+            boxShadow: '0 8px 30px rgba(59, 130, 246, 0.2)'
+          },
+          '50%': { 
+            opacity: 1, 
+            transform: 'scale(1.05)',
+            boxShadow: '0 12px 40px rgba(59, 130, 246, 0.4)'
+          },
+        },
+        liquidMorph: {
+          '0%': { borderRadius: '60% 40% 30% 70%' },
+          '25%': { borderRadius: '30% 60% 70% 40%' },
+          '50%': { borderRadius: '70% 30% 40% 60%' },
+          '75%': { borderRadius: '40% 70% 60% 30%' },
+          '100%': { borderRadius: '60% 40% 30% 70%' },
+        },
+        bubbleRise: {
+          '0%': { 
+            transform: 'translateY(100px) scale(0.8) rotate(0deg)',
+            opacity: 0
+          },
+          '50%': { 
+            transform: 'translateY(-10px) scale(1.1) rotate(180deg)',
+            opacity: 1
+          },
+          '100%': { 
+            transform: 'translateY(-100px) scale(0.8) rotate(360deg)',
+            opacity: 0
+          },
         },
       },
       backgroundImage: {

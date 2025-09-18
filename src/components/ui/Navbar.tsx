@@ -4,8 +4,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Menu, X, Bot, CreditCard, User, Search, Bell, ChevronDown } from "lucide-react"
 import { MobileNav } from "./MobileNav"
-import { GlowButton } from "./GlowButton"
+import { LiquidButton } from "../../design-system/components/LiquidButton"
 import { motion, AnimatePresence } from "framer-motion"
+import { cn } from "../../lib/utils"
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
@@ -39,12 +40,15 @@ export function Navbar() {
 
   return (
     <motion.nav 
-      className={`nav-glass sticky top-0 z-50 transition-all duration-300 ${
-        scrolled ? 'backdrop-blur-xl bg-black/30 shadow-lg shadow-cyan-500/5' : ''
+      className={`sticky top-0 z-50 transition-all duration-500 ${
+        scrolled ? 'backdrop-blur-xl bg-white/[0.08] border-b border-white/[0.12] shadow-bubble-md' : 'bg-transparent'
       }`}
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
+      initial={{ y: -100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      style={{
+        borderRadius: scrolled ? '0 0 1.5rem 1.5rem' : '0',
+      }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -55,13 +59,27 @@ export function Navbar() {
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             >
-              <motion.div 
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-neon shadow-lg shadow-cyan-500/20"
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.5 }}
-              >
-                <Bot className="h-6 w-6 text-black" />
-              </motion.div>
+                      <motion.div 
+                        className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-400/20 to-cyan-400/20 backdrop-blur-xl border border-white/[0.15] shadow-bubble-sm"
+                        style={{
+                          borderRadius: '0.8rem 1.2rem 0.6rem 1.4rem',
+                        }}
+                        whileHover={{ 
+                          rotate: 360,
+                          scale: 1.1,
+                          borderRadius: '1.4rem 0.6rem 1.2rem 0.8rem',
+                        }}
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                        animate={{
+                          borderRadius: [
+                            '0.8rem 1.2rem 0.6rem 1.4rem',
+                            '1.2rem 0.8rem 1.4rem 0.6rem',
+                            '0.8rem 1.2rem 0.6rem 1.4rem'
+                          ],
+                        }}
+                      >
+                        <Bot className="h-6 w-6 text-cyan-400" />
+                      </motion.div>
               <span className="text-xl font-bold text-glow">Xeinst</span>
             </motion.div>
           </Link>
@@ -76,22 +94,43 @@ export function Navbar() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
                 >
-                  <Link 
-                    href={link.href} 
-                    className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-all duration-200 font-medium relative group
-                      ${isActive(link.href) 
-                        ? 'text-cyan-400 bg-white/5' 
-                        : 'text-white hover:text-cyan-400 hover:bg-white/5'}`}
-                  >
+                          <Link 
+                            href={link.href} 
+                            className={`flex items-center space-x-1 px-4 py-2 transition-all duration-300 font-medium relative group ${
+                              isActive(link.href) 
+                                ? 'text-cyan-400' 
+                                : 'text-white hover:text-cyan-400'
+                            }`}
+                            style={{
+                              borderRadius: '0.8rem 1.2rem 0.6rem 1.4rem',
+                            }}
+                          >
                     <link.icon className="h-4 w-4" />
                     <span>{link.label}</span>
-                    {isActive(link.href) && (
-                      <motion.div
-                        className="absolute bottom-0 left-0 w-full h-0.5 bg-cyan-400"
-                        layoutId="activeNavIndicator"
-                        transition={{ type: "spring", duration: 0.5 }}
-                      />
-                    )}
+                    {/* Liquid background for active/hover */}
+                    <motion.div
+                      className={cn(
+                        'absolute inset-0 -z-10 backdrop-blur-xl border transition-all duration-300',
+                        isActive(link.href) 
+                          ? 'bg-cyan-400/[0.12] border-cyan-400/[0.25] shadow-glow-cyan' 
+                          : 'bg-transparent border-transparent group-hover:bg-white/[0.08] group-hover:border-white/[0.12]'
+                      )}
+                      style={{
+                        borderRadius: '0.8rem 1.2rem 0.6rem 1.4rem',
+                      }}
+                      animate={{
+                        borderRadius: isActive(link.href) ? [
+                          '0.8rem 1.2rem 0.6rem 1.4rem',
+                          '1.2rem 0.8rem 1.4rem 0.6rem',
+                          '0.8rem 1.2rem 0.6rem 1.4rem'
+                        ] : '0.8rem 1.2rem 0.6rem 1.4rem',
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: isActive(link.href) ? Infinity : 0,
+                        ease: "easeInOut",
+                      }}
+                    />
                   </Link>
                 </motion.div>
               ))}
@@ -105,15 +144,33 @@ export function Navbar() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.4 }}
           >
-            {/* Search button */}
-            <motion.button
-              className="p-2 text-white/70 hover:text-cyan-400 rounded-full hover:bg-white/5 transition-colors duration-200"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowSearch(!showSearch)}
-            >
-              <Search className="h-5 w-5" />
-            </motion.button>
+                    {/* Search button */}
+                    <motion.button
+                      className="p-2 text-white/70 hover:text-cyan-400 backdrop-blur-xl border border-white/[0.08] hover:border-white/[0.15] hover:bg-white/[0.08] transition-all duration-300"
+                      style={{
+                        borderRadius: '0.6rem 1rem 0.8rem 1.2rem',
+                      }}
+                      whileHover={{ 
+                        scale: 1.05,
+                        borderRadius: '1.2rem 0.8rem 1rem 0.6rem',
+                      }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowSearch(!showSearch)}
+                      animate={{
+                        borderRadius: [
+                          '0.6rem 1rem 0.8rem 1.2rem',
+                          '1rem 0.6rem 1.2rem 0.8rem',
+                          '0.6rem 1rem 0.8rem 1.2rem'
+                        ],
+                      }}
+                      transition={{
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <Search className="h-5 w-5" />
+                    </motion.button>
             
             {/* Notifications */}
             <motion.button
@@ -135,11 +192,10 @@ export function Navbar() {
               <span className="text-sm font-medium">1,250 Credits</span>
             </motion.div>
             
-            {/* Sign In Button */}
-            <GlowButton variant="neon" size="sm">
-              <User className="h-4 w-4 mr-2" />
-              Sign In
-            </GlowButton>
+                    {/* Sign In Button */}
+                    <LiquidButton variant="bubble" size="sm" color="cyan" animated leftIcon={<User className="h-4 w-4" />}>
+                      Sign In
+                    </LiquidButton>
           </motion.div>
 
           {/* Mobile menu button */}
