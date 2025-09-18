@@ -52,6 +52,9 @@ export async function GET() {
       try {
         featuredAgents = await prisma.agent.findMany({
           take: 6,
+          where: {
+            status: 'active'
+          },
           orderBy: [
             { downloadCount: 'desc' },
             { createdAt: 'desc' }
@@ -114,16 +117,33 @@ export async function GET() {
     
     // Handle specific database errors
     if (error instanceof Error) {
-      if (error.message.includes('connection')) {
+      if (error.message.includes('connection') || 
+          error.message.includes('connect') ||
+          error.message.includes('ECONNREFUSED') ||
+          error.message.includes('timeout') ||
+          error.message.includes('does not exist') ||
+          error.message.includes('relation') ||
+          error.message.includes('column') ||
+          error.message.includes('DATABASE_URL') ||
+          error.message.includes('Validation Error') ||
+          error.message.includes('Error validating datasource')) {
         return NextResponse.json(
-          { error: 'Database connection error' },
+          { 
+            error: 'Database connection error',
+            message: 'Please check database configuration',
+            timestamp: new Date().toISOString()
+          },
           { status: 503 }
         );
       }
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }

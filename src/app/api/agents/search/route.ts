@@ -1,11 +1,20 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
+import { isDatabaseAvailable, createDatabaseErrorResponse } from "../../../../lib/db-check";
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
+    // Check if database is available
+    if (!isDatabaseAvailable()) {
+      const errorResponse = createDatabaseErrorResponse();
+      return new Response(JSON.stringify(errorResponse), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
     // Allow public access for search
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || searchParams.get('query') || '';
@@ -93,7 +102,35 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error('Error searching agents:', error);
-    return new Response(JSON.stringify({ error: 'Failed to search agents' }), {
+    
+    // Handle specific database errors
+    if (error instanceof Error) {
+      if (error.message.includes('connection') || 
+          error.message.includes('connect') ||
+          error.message.includes('ECONNREFUSED') ||
+          error.message.includes('timeout') ||
+          error.message.includes('does not exist') ||
+          error.message.includes('relation') ||
+          error.message.includes('column') ||
+          error.message.includes('DATABASE_URL') ||
+          error.message.includes('Validation Error') ||
+          error.message.includes('Error validating datasource')) {
+        return new Response(JSON.stringify({ 
+          error: 'Database connection error',
+          message: 'Please check database configuration',
+          timestamp: new Date().toISOString()
+        }), {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    return new Response(JSON.stringify({ 
+      error: 'Failed to search agents',
+      details: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString()
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });

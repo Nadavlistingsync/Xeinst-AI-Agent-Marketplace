@@ -123,7 +123,10 @@ export async function GET() {
       error.message.includes('connect') ||
       error.message.includes('ECONNREFUSED') ||
       error.message.includes('timeout') ||
-      error.message.includes('does not exist')
+      error.message.includes('does not exist') ||
+      error.message.includes('DATABASE_URL') ||
+      error.message.includes('Validation Error') ||
+      error.message.includes('Error validating datasource')
     )) {
       return NextResponse.json(
         {

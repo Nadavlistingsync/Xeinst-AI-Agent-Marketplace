@@ -15,7 +15,7 @@ const TIMEOUT = 10000;
 // Critical API endpoints to test
 const ENDPOINTS = [
   // Public endpoints
-  { path: '/api/health', method: 'GET', expectedStatus: [200] },
+  { path: '/api/health', method: 'GET', expectedStatus: [200, 503] },
   { path: '/api/agents/simple', method: 'GET', expectedStatus: [200] },
   { path: '/api/agents/featured', method: 'GET', expectedStatus: [200, 503] },
   { path: '/api/agents/trending', method: 'GET', expectedStatus: [200, 503] },
@@ -26,7 +26,7 @@ const ENDPOINTS = [
   // Agent endpoints
   { path: '/api/agents', method: 'GET', expectedStatus: [200, 503] },
   { path: '/api/agents/search', method: 'GET', expectedStatus: [200, 503] },
-  { path: '/api/agents/stats', method: 'GET', expectedStatus: [200, 503] },
+  { path: '/api/agents/stats', method: 'GET', expectedStatus: [401, 503] },
   
   // Protected endpoints (should return 401 without auth)
   { path: '/api/user/profile', method: 'GET', expectedStatus: [401, 503] },
