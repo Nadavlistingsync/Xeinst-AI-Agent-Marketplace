@@ -1,5 +1,4 @@
 import { cn } from "../../lib/utils"
-import { motion, type MotionProps } from "framer-motion"
 import { forwardRef, ReactNode } from "react"
 import Link from "next/link"
 
@@ -87,7 +86,7 @@ const GlassCard = forwardRef<HTMLDivElement, Props>(({
   if (href) {
     return (
       <Link href={href} passHref>
-        <motion.a
+        <a
           className={cn(
             baseClasses,
             variantClasses[variant],
@@ -96,27 +95,18 @@ const GlassCard = forwardRef<HTMLDivElement, Props>(({
             glowClasses,
             loadingClasses,
             clickableClasses,
-            "block",
+            "block transition-all duration-300 ease-out",
             className
           )}
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay }}
-          viewport={{ once: true }}
-          whileHover={{ 
-            scale: hover ? 1.02 : 1,
-            y: hover ? -5 : 0,
-            transition: { duration: 0.2 }
-          }}
         >
           {cardContent}
-        </motion.a>
+        </a>
       </Link>
     )
   }
 
   return (
-    <motion.div
+    <div
       ref={ref}
       className={cn(
         baseClasses,
@@ -126,22 +116,14 @@ const GlassCard = forwardRef<HTMLDivElement, Props>(({
         glowClasses,
         loadingClasses,
         clickableClasses,
+        "transition-all duration-300 ease-out",
         className
       )}
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay }}
-      viewport={{ once: true }}
-      whileHover={{ 
-        scale: (hover && (onClick || href)) ? 1.02 : 1,
-        y: (hover && (onClick || href)) ? -5 : 0,
-        transition: { duration: 0.2 }
-      }}
       onClick={onClick}
       {...props}
     >
       {cardContent}
-    </motion.div>
+    </div>
   )
 })
 
