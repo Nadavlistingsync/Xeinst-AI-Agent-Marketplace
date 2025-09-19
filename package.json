@@ -33,7 +33,11 @@
     "vercel-build": "prisma generate && next build",
     "deploy:check": "npm run type-check && npm run lint && npm test",
     "deploy:production": "./scripts/deploy-production.sh",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "debug:loop": "./scripts/auto-debug-loop.sh",
+    "debug:watch": "./scripts/auto-debug-loop.sh --watch",
+    "quick-fix": "./scripts/quick-fix.sh",
+    "health-check": "npm run typecheck && npm run lint && npm run build"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.828.0",
