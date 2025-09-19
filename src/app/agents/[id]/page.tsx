@@ -4,7 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../lib/auth";
 import { prisma } from "../../../lib/prisma";
 import { AgentDetails } from "../../../components/agents/AgentDetails";
-import { FeedbackAnalysis } from "../../../components/dashboard/FeedbackAnalysis";
+// Feedback analysis removed for liquid design
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 
 interface AgentPageProps {
@@ -73,7 +73,9 @@ export default async function AgentPage({ params }: AgentPageProps) {
         </TabsContent>
         
         <TabsContent value="feedback">
-          <FeedbackAnalysis agentId={agent.id} />
+          <div className="p-8 text-center text-white/60">
+            Feedback analysis coming soon with liquid design
+          </div>
         </TabsContent>
       </Tabs>
     </div>

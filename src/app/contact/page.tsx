@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Input, Card, PageHeader, Section } from "../../components/ui";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Card } from "../../components/ui/card";
+import { PageHeader } from "../../design-system/components/PageHeader";
 import { motion } from "framer-motion";
 import { 
   Mail, 
@@ -130,7 +133,7 @@ export default function ContactPage() {
         subtitle="Have questions about our AI agent marketplace? We're here to help you succeed."
       />
 
-      <Section>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Contact Form */}
           <motion.div
@@ -319,7 +322,7 @@ export default function ContactPage() {
             </motion.div>
           </motion.div>
         </div>
-      </Section>
+      </div>
     </div>
   );
 }

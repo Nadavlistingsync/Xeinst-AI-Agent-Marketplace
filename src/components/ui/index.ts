@@ -3,10 +3,7 @@ export { Button, buttonVariants } from './button';
 export { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
 export { Badge } from './badge';
 export { GlassCard } from './GlassCard';
-export { Section } from './Section';
-export { PageHeader } from './PageHeader';
-export { Input, GlowInput } from './input';
-export { GlowButton } from './GlowButton';
+export { Input } from './input';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './button';
 
 // Re-export all other UI components

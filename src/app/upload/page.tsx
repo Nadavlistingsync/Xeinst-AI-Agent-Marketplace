@@ -18,7 +18,10 @@ import {
   Tag,
   Info
 } from "lucide-react";
-import { PageHeader, Section, Input, Button, Card } from "../../components/ui";
+import { PageHeader } from "../../design-system/components/PageHeader";
+import { Input } from "../../components/ui/input";
+import { Button } from "../../components/ui/button";
+import { Card } from "../../components/ui/card";
 
 interface AgentData {
   name: string;
@@ -192,7 +195,7 @@ export default function UploadPage() {
         subtitle="Connect your AI agent to the marketplace and start earning credits"
       />
 
-      <Section>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-4xl mx-auto">
           {/* Progress Steps */}
           <Card className="mb-8">
@@ -540,7 +543,7 @@ export default function UploadPage() {
             </div>
           </Card>
       </div>
-      </Section>
+      </div>
     </div>
   );
 } 

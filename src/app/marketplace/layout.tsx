@@ -1,5 +1,5 @@
 "use client";
-import MarketplaceNav from '../../components/MarketplaceNav';
+import { Navbar } from '../../components/ui/Navbar';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
@@ -11,10 +11,10 @@ export default function MarketplaceLayout({
   return (
     <div className="min-h-screen bg-gradient-to-br from-black via-gray-900 to-gray-800">
       {/* Navigation */}
-      <MarketplaceNav />
+      <Navbar />
 
-      {/* Main Content - Account for sidebar */}
-      <main className="ml-64 pt-16">
+      {/* Main Content */}
+      <main className="pt-16">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -26,7 +26,7 @@ export default function MarketplaceLayout({
       </main>
 
       {/* Footer */}
-      <footer className="bg-black/50 backdrop-blur-md border-t border-white/10 mt-12 ml-64">
+      <footer className="bg-black/50 backdrop-blur-md border-t border-white/10 mt-12">
         <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
             <div className="text-gray-400 text-sm">

@@ -19,10 +19,9 @@ import {
   Activity,
   BarChart3
 } from "lucide-react";
-import { Button } from "../../components/ui";
-import { GlassCard } from "../../components/ui/GlassCard";
-import { Section } from "../../components/ui/Section";
-import { PageHeader } from "../../components/ui/PageHeader";
+import { Button } from "../../components/ui/button";
+import { GlassCard } from "../../design-system/components/GlassCard";
+import { PageHeader } from "../../design-system/components/PageHeader";
 
 interface UserStats {
   totalAgents: number;
@@ -132,7 +131,7 @@ export default function SimpleDashboardPage() {
         }
       />
 
-      <Section>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -403,7 +402,7 @@ export default function SimpleDashboardPage() {
             </GlassCard>
           </motion.div>
         </div>
-      </Section>
+      </div>
     </div>
   );
 }

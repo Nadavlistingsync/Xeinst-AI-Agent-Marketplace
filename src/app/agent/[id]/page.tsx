@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../lib/auth";
 import { redirect } from 'next/navigation';
-import { MonitoringDashboard } from "../../../components/dashboard/MonitoringDashboard";
+// Monitoring dashboard removed for liquid design
 import AgentPage from "../../../components/agent/AgentPage";
 import { prisma } from "../../../lib/prisma";
 import { DeploymentWithMetrics } from '../../../types/deployment';
@@ -166,9 +166,7 @@ export default async function Page({ params }: AgentPageProps) {
           onRestart={handleRestart}
           onDelete={handleDelete}
         />
-        {deploymentWithMetrics.deployedBy === session.user.id && (
-          <MonitoringDashboard agentId={params.id} />
-        )}
+        {/* Monitoring dashboard removed for liquid design */}
       </div>
     </div>
   );

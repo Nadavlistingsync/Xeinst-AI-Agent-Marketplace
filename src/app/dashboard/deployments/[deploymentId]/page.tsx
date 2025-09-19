@@ -3,70 +3,45 @@ import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from "../../../../lib/auth";
 import { prisma } from "../../../../lib/prisma";
-import { DeploymentOverview } from "../../../../components/dashboard/DeploymentOverview";
-import { DeploymentMetrics } from "../../../../components/dashboard/DeploymentMetrics";
-import { DeploymentLogs } from "../../../../components/dashboard/DeploymentLogs";
-import { DeploymentWithMetrics } from '../../../../types/deployment';
-import { DeploymentStatus } from '@prisma/client';
+import { LiquidCard } from "../../../../design-system/components/LiquidCard";
+import { LiquidButton } from "../../../../design-system/components/LiquidButton";
+import { Bot, ArrowLeft, Settings, BarChart3 } from "lucide-react";
+import Link from "next/link";
 
 interface DeploymentPageProps {
   params: {
-    id: string;
+    deploymentId: string;
   };
 }
 
 export async function generateMetadata({ params }: DeploymentPageProps): Promise<Metadata> {
   const deployment = await prisma.deployment.findUnique({
-    where: { id: params.id },
-    include: {
-      metrics: true,
-      feedbacks: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              image: true
-            }
-          }
-        }
-      }
-    }
+    where: { id: params.deploymentId },
   });
-  
+
   if (!deployment) {
     return {
-      title: "Deployment Not Found",
+      title: 'Deployment Not Found',
     };
   }
 
   return {
-    title: `${deployment.name} | Deployment Details`,
-    description: `Manage and monitor your ${deployment.name} deployment`,
+    title: `${deployment.name} - Deployment Dashboard`,
+    description: deployment.description || 'AI Agent Deployment',
   };
 }
 
 export default async function DeploymentPage({ params }: DeploymentPageProps) {
   const session = await getServerSession(authOptions);
-
+  
   if (!session) {
     redirect("/auth/signin");
   }
 
   const deployment = await prisma.deployment.findUnique({
-    where: { id: params.id },
+    where: { id: params.deploymentId },
     include: {
       metrics: true,
-      feedbacks: {
-        include: {
-          user: {
-            select: {
-              name: true,
-              image: true,
-              email: true
-            }
-          }
-        }
-      }
     }
   });
 
@@ -78,117 +53,114 @@ export default async function DeploymentPage({ params }: DeploymentPageProps) {
     redirect("/dashboard");
   }
 
-  // Transform the deployment data to match DeploymentWithMetrics type
-  const deploymentWithMetrics: DeploymentWithMetrics = {
-    id: deployment.id,
-    name: deployment.name,
-    status: deployment.status as DeploymentStatus,
-    description: deployment.description || '',
-    price: deployment.price ?? 0,
-    accessLevel: deployment.accessLevel,
-    licenseType: deployment.licenseType,
-    environment: deployment.environment,
-    framework: deployment.framework,
-    modelType: deployment.modelType,
-    source: deployment.source || '',
-    deployedBy: deployment.deployedBy,
-    createdBy: deployment.createdBy,
-    rating: deployment.rating || 0,
-    totalRatings: deployment.totalRatings || 0,
-    downloadCount: deployment.downloadCount || 0,
-    startDate: deployment.startDate || new Date(),
-    createdAt: deployment.createdAt,
-    updatedAt: deployment.updatedAt,
-    isPublic: deployment.isPublic,
-    version: deployment.version || '1.0.0',
-    health: deployment.health || {},
-    metrics: deployment.metrics.map(metric => ({
-      id: metric.id,
-      createdAt: metric.createdAt,
-      updatedAt: metric.updatedAt,
-      deploymentId: metric.deploymentId,
-      errorRate: metric.errorRate,
-      responseTime: metric.responseTime,
-      successRate: metric.successRate,
-      totalRequests: metric.totalRequests,
-      activeUsers: metric.activeUsers,
-      averageResponseTime: metric.averageResponseTime,
-      requestsPerMinute: metric.requestsPerMinute,
-      averageTokensUsed: metric.averageTokensUsed,
-      costPerRequest: metric.costPerRequest,
-      totalCost: metric.totalCost,
-      lastUpdated: metric.lastUpdated
-    })),
-    feedbacks: deployment.feedbacks.map(feedback => ({
-      id: feedback.id,
-      rating: feedback.rating,
-      comment: feedback.comment,
-      sentimentScore: feedback.sentimentScore,
-      createdAt: feedback.createdAt,
-      updatedAt: feedback.updatedAt,
-      deploymentId: feedback.deploymentId,
-      userId: feedback.userId,
-      categories: feedback.categories,
-      creatorResponse: feedback.creatorResponse,
-      responseDate: feedback.responseDate,
-      metadata: feedback.metadata,
-      user: {
-        name: feedback.user?.name || null,
-        email: feedback.user?.email || null,
-        image: feedback.user?.image || null
-      }
-    }))
-  };
-
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
-          <DeploymentOverview 
-            deployment={deploymentWithMetrics}
-            onStart={async (id: string) => {
-              "use server";
-              await prisma.deployment.update({
-                where: { id },
-                data: { status: DeploymentStatus.active }
-              });
-            }}
-            onStop={async (id: string) => {
-              "use server";
-              await prisma.deployment.update({
-                where: { id },
-                data: { status: DeploymentStatus.stopped }
-              });
-            }}
-            onRestart={async (id: string) => {
-              "use server";
-              await prisma.deployment.update({
-                where: { id },
-                data: { status: DeploymentStatus.pending }
-              });
-              await prisma.deployment.update({
-                where: { id },
-                data: { status: DeploymentStatus.active }
-              });
-            }}
-            onDelete={async (id: string) => {
-              "use server";
-              await prisma.deployment.delete({
-                where: { id }
-              });
-            }}
-          />
-          <DeploymentMetrics 
-            deploymentId={deployment.id} 
-            socket={null} // We'll handle socket connection in the component
-          />
-          <DeploymentLogs deploymentId={deployment.id} />
+    <div className="min-h-screen bg-black text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center space-x-4">
+            <Link href="/dashboard">
+              <LiquidButton variant="ghost" size="sm" leftIcon={<ArrowLeft className="w-4 h-4" />}>
+                Back to Dashboard
+              </LiquidButton>
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
+                {deployment.name}
+              </h1>
+              <p className="text-white/60 mt-1">{deployment.description}</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+              deployment.status === 'active' 
+                ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                : deployment.status === 'pending'
+                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                : 'bg-red-500/20 text-red-400 border border-red-500/30'
+            }`}>
+              {deployment.status}
+            </span>
+          </div>
         </div>
-        
-        <div className="lg:col-span-1">
-          {/* <DeploymentSettings deployment={deployment} /> */}
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Deployment Overview */}
+          <LiquidCard variant="bubble" size="lg" color="blue">
+            <div className="flex items-center space-x-3 mb-6">
+              <Bot className="w-6 h-6 text-cyan-400" />
+              <h2 className="text-xl font-semibold text-white">Deployment Overview</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <span className="text-white/60">Environment:</span>
+                <span className="text-white font-medium">{deployment.environment}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/60">Framework:</span>
+                <span className="text-white font-medium">{deployment.framework}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/60">Price:</span>
+                <span className="text-white font-medium">{deployment.price || 0} credits</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/60">Access Level:</span>
+                <span className="text-white font-medium capitalize">{deployment.accessLevel}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/60">Created:</span>
+                <span className="text-white font-medium">
+                  {new Date(deployment.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            </div>
+          </LiquidCard>
+
+          {/* Metrics */}
+          <LiquidCard variant="glow" size="lg" color="purple">
+            <div className="flex items-center space-x-3 mb-6">
+              <BarChart3 className="w-6 h-6 text-purple-400" />
+              <h2 className="text-xl font-semibold text-white">Performance Metrics</h2>
+            </div>
+            <div className="space-y-4">
+              <div className="flex justify-between">
+                <span className="text-white/60">Total Downloads:</span>
+                <span className="text-white font-medium">{deployment.downloadCount || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/60">Average Rating:</span>
+                <span className="text-white font-medium">
+                  {deployment.rating ? `${deployment.rating}/5` : 'No ratings yet'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-white/60">Total Ratings:</span>
+                <span className="text-white font-medium">{deployment.totalRatings || 0}</span>
+              </div>
+            </div>
+          </LiquidCard>
+        </div>
+
+        {/* Coming Soon */}
+        <div className="mt-12">
+          <LiquidCard variant="flow" size="lg" color="cyan">
+            <div className="text-center py-12">
+              <Settings className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-white mb-4">
+                Advanced Analytics Coming Soon
+              </h3>
+              <p className="text-white/60 mb-6">
+                Detailed metrics, logs, and performance analytics will be available in the liquid design update.
+              </p>
+              <LiquidButton variant="bubble" color="cyan" leftIcon={<BarChart3 className="w-4 h-4" />}>
+                Request Early Access
+              </LiquidButton>
+            </div>
+          </LiquidCard>
         </div>
       </div>
     </div>
   );
-} 
+}

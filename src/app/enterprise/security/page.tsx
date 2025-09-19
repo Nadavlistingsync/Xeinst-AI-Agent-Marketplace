@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import SecurityDashboard from "../../../components/security/SecurityDashboard";
+// Security dashboard removed for liquid design
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card";
 import { Badge } from "../../../components/ui/badge";
 import { 
@@ -242,7 +242,11 @@ export default function EnterpriseSecurityPage() {
           </div>
 
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <SecurityDashboard />
+            <div className="p-8 text-center text-white/60">
+              <Shield className="w-16 h-16 mx-auto mb-4 text-blue-400" />
+              <h3 className="text-xl font-semibold text-white mb-2">Security Dashboard</h3>
+              <p>Advanced security monitoring coming soon with liquid design</p>
+            </div>
           </div>
         </div>
       </section>

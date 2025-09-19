@@ -4,7 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "../components/ui/Navbar";
 import { Footer } from "../components/ui/Footer";
-import { MotionWrapper } from "../components/ui/MotionWrapper";
+// MotionWrapper removed for liquid design
 import { securityManager, addWatermark } from "../lib/security";
 import * as Sentry from '@sentry/nextjs';
 
@@ -108,9 +108,7 @@ export default function RootLayout({
       <body className={inter.className} data-watermark={sessionInfo.watermark}>
         <Providers>
           <Navbar />
-          <MotionWrapper>
-            {children}
-          </MotionWrapper>
+          {children}
           <Footer />
         </Providers>
         

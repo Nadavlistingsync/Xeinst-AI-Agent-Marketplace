@@ -1,9 +1,8 @@
 "use client";
 
-import { Button } from "../../components/ui";
-import { GlassCard } from "../../components/ui/GlassCard";
-import { Section } from "../../components/ui/Section";
-import { PageHeader } from "../../components/ui/PageHeader";
+import { Button } from "../../components/ui/button";
+import { GlassCard } from "../../design-system/components/GlassCard";
+import { PageHeader } from "../../design-system/components/PageHeader";
 import { 
   CheckCircle, 
   Star, 
@@ -138,7 +137,7 @@ export default function PricingPage() {
         subtitle="Choose the plan that fits your needs. Start free and scale as you grow."
       />
 
-      <Section>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-16">
           {/* Billing Toggle */}
           <div className="flex items-center justify-center">
@@ -332,7 +331,7 @@ export default function PricingPage() {
             </div>
           </GlassCard>
         </div>
-      </Section>
+      </div>
     </div>
   );
 }
