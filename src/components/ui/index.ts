@@ -5,7 +5,7 @@ export { Badge } from './badge';
 export { GlassCard } from './GlassCard';
 export { Section } from './Section';
 export { PageHeader } from './PageHeader';
-export { Input, GlowInput } from './Input';
+export { Input, GlowInput } from './input';
 export { GlowButton } from './GlowButton';
 export type { ButtonProps, ButtonVariant, ButtonSize } from './button';
 

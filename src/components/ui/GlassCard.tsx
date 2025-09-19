@@ -1,5 +1,5 @@
 import { cn } from "../../lib/utils"
-import { motion } from "framer-motion"
+import { motion, type MotionProps } from "framer-motion"
 import { forwardRef, ReactNode } from "react"
 import Link from "next/link"
 

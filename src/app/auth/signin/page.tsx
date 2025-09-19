@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Bot } from 'lucide-react';
-import { Button, Card, Input } from '../../../components/ui';
+import { Button, Card, Input, GlassCard } from '../../../components/ui';
 
 export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
@@ -74,25 +74,35 @@ export default function SignIn() {
           )}
 
           <form onSubmit={handleSignIn} className="space-y-6">
-            <GlowInput
-              label="Email Address"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
+                Email Address
+              </label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
 
-            <GlowInput
-              label="Password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
+                Password
+              </label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
-            <GlowButton
+            <Button
               type="submit"
               fullWidth
               disabled={isLoading}
@@ -109,7 +119,7 @@ export default function SignIn() {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </>
               )}
-            </GlowButton>
+            </Button>
           </form>
 
           <div className="mt-8 text-center">

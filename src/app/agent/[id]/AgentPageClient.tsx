@@ -2,7 +2,7 @@
 
 import { Star } from 'lucide-react';
 import Image from 'next/image';
-import { AgentReviews } from "../../../components/AgentReviews";
+// import { AgentReviews } from "../../../components/AgentReviews"; // Component deleted
 import type { AppProduct } from '../../../lib/schema';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -83,10 +83,10 @@ export function AgentPageClient({ product, isCreator }: AgentPageClientProps) {
         </div>
       </div>
       <div className="mt-8">
-        <AgentReviews
-          product_id={product.id}
-          rating={formatDecimal(product.rating)}
-        />
+        {/* <AgentReviews product_id={product.id} rating={formatDecimal(product.rating)} /> */}
+        <div className="p-8 text-center text-white/50">
+          <p>Reviews component temporarily unavailable</p>
+        </div>
       </div>
     </div>
   );

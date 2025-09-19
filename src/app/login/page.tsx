@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Bot, ArrowRight, Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "../../components/ui";
-import { Input } from "../../components/ui/Input";
+import { Input } from "../../components/ui";
 import { toast } from "sonner";
 import Link from "next/link";
 

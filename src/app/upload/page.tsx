@@ -18,9 +18,7 @@ import {
   Tag,
   Info
 } from "lucide-react";
-import { Button } from "../../components/ui";
-import { Card } from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
+import { PageHeader, Section, Input, Button, Card } from "../../components/ui";
 
 interface AgentData {
   name: string;
@@ -233,7 +231,7 @@ export default function UploadPage() {
               >
                 <h3 className="text-2xl font-semibold text-white mb-6">Basic Information</h3>
                 
-                <GlowInput
+                <Input
                   label="Agent Name"
                   placeholder="Enter your agent name"
                   value={agentData.name}
@@ -315,7 +313,7 @@ export default function UploadPage() {
               >
                 <h3 className="text-2xl font-semibold text-white mb-6">Webhook Configuration</h3>
                 
-                <GlowInput
+                <Input
                   label="Webhook URL"
                   placeholder="https://your-domain.com/webhook"
                   value={agentData.webhookUrl}
@@ -324,7 +322,7 @@ export default function UploadPage() {
                   helperText="The URL where your agent will receive webhook calls"
                 />
 
-                <GlowInput
+                <Input
                   label="Webhook Secret (optional)"
                   placeholder="Your webhook secret for authentication"
                   value={agentData.webhookSecret}
@@ -396,7 +394,7 @@ export default function UploadPage() {
               >
                 <h3 className="text-2xl font-semibold text-white mb-6">Pricing & Settings</h3>
                 
-                <GlowInput
+                <Input
                   label="Price per Use (credits)"
                   placeholder="10"
                   value={agentData.price}

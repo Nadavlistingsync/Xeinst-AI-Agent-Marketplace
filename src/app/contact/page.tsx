@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "../../components/ui";
-import { Card } from "../../components/ui/card";
-import { Input } from "../../components/ui/input";
+import { Button, Input, Card, PageHeader, Section } from "../../components/ui";
 import { motion } from "framer-motion";
 import { 
   Mail, 
@@ -17,6 +15,7 @@ import {
   Users,
   CheckCircle
 } from "lucide-react";
+// Removed duplicate import - already imported above
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -144,7 +143,7 @@ export default function ContactPage() {
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <GlowInput
+                  <Input
                     label="Full Name"
                     type="text"
                     placeholder="Enter your name"
@@ -153,7 +152,7 @@ export default function ContactPage() {
                     name="name"
                     required
                   />
-                  <GlowInput
+                  <Input
                     label="Email Address"
                     type="email"
                     placeholder="Enter your email"
@@ -165,7 +164,7 @@ export default function ContactPage() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <GlowInput
+                  <Input
                     label="Company (Optional)"
                     type="text"
                     placeholder="Your company name"
@@ -173,7 +172,7 @@ export default function ContactPage() {
                     onChange={handleInputChange}
                     name="company"
                   />
-                  <GlowInput
+                  <Input
                     label="Subject"
                     type="text"
                     placeholder="What's this about?"
