@@ -31,9 +31,24 @@ export default async function MarketplaceDetailPage({ params }: PageProps) {
     notFound();
   }
 
+  // Transform deployment to agent format
+  const agent = {
+    id: deployment.id,
+    name: deployment.name,
+    description: deployment.description || '',
+    category: deployment.framework || 'General', // Use framework as category fallback
+    price: deployment.price || 0,
+    rating: deployment.rating || 0,
+    downloadCount: deployment.downloadCount || 0,
+    creator: {
+      name: deployment.deployedBy || 'Anonymous',
+      image: undefined
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <AgentDetails deployment={deployment} />
+      <AgentDetails agent={agent} />
     </div>
   );
 } 

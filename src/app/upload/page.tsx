@@ -234,13 +234,18 @@ export default function UploadPage() {
               >
                 <h3 className="text-2xl font-semibold text-white mb-6">Basic Information</h3>
                 
-                <Input
-                  label="Agent Name"
-                  placeholder="Enter your agent name"
-                  value={agentData.name}
-                  onChange={(e) => updateAgentData('name', e.target.value)}
-                  error={!!errors.name}
-                />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white">Agent Name</label>
+                  <Input
+                    placeholder="Enter your agent name"
+                    value={agentData.name}
+                    onChange={(e) => updateAgentData('name', e.target.value)}
+                    className={`w-full px-3 py-2 rounded-xl border bg-white/5 text-white placeholder:text-white/50 focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200 ${
+                      errors.name ? 'border-red-500 focus:border-red-500' : 'border-glass focus:border-accent'
+                    }`}
+                  />
+                  {errors.name && <p className="text-red-400 text-sm">{errors.name}</p>}
+                </div>
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-white">Description</label>
@@ -316,23 +321,31 @@ export default function UploadPage() {
               >
                 <h3 className="text-2xl font-semibold text-white mb-6">Webhook Configuration</h3>
                 
-                <Input
-                  label="Webhook URL"
-                  placeholder="https://your-domain.com/webhook"
-                  value={agentData.webhookUrl}
-                  onChange={(e) => updateAgentData('webhookUrl', e.target.value)}
-                  error={!!errors.webhookUrl}
-                  helperText="The URL where your agent will receive webhook calls"
-                />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white">Webhook URL</label>
+                  <Input
+                    placeholder="https://your-domain.com/webhook"
+                    value={agentData.webhookUrl}
+                    onChange={(e) => updateAgentData('webhookUrl', e.target.value)}
+                    className={`w-full px-3 py-2 rounded-xl border bg-white/5 text-white placeholder:text-white/50 focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200 ${
+                      errors.webhookUrl ? 'border-red-500 focus:border-red-500' : 'border-glass focus:border-accent'
+                    }`}
+                  />
+                  <p className="text-white/60 text-xs">The URL where your agent will receive webhook calls</p>
+                  {errors.webhookUrl && <p className="text-red-400 text-sm">{errors.webhookUrl}</p>}
+                </div>
 
-                <Input
-                  label="Webhook Secret (optional)"
-                  placeholder="Your webhook secret for authentication"
-                  value={agentData.webhookSecret}
-                  onChange={(e) => updateAgentData('webhookSecret', e.target.value)}
-                  type="password"
-                  helperText="Optional secret for webhook authentication"
-                />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white">Webhook Secret (optional)</label>
+                  <Input
+                    placeholder="Your webhook secret for authentication"
+                    value={agentData.webhookSecret}
+                    onChange={(e) => updateAgentData('webhookSecret', e.target.value)}
+                    type="password"
+                    className="w-full px-3 py-2 rounded-xl border border-glass bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200"
+                  />
+                  <p className="text-white/60 text-xs">Optional secret for webhook authentication</p>
+                </div>
 
                 <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20">
                   <div className="flex items-start space-x-3">
@@ -397,14 +410,19 @@ export default function UploadPage() {
               >
                 <h3 className="text-2xl font-semibold text-white mb-6">Pricing & Settings</h3>
                 
-                <Input
-                  label="Price per Use (credits)"
-                  placeholder="10"
-                  value={agentData.price}
-                  onChange={(e) => updateAgentData('price', e.target.value)}
-                  error={!!errors.price}
-                  helperText="Price between 1-1000 credits per use"
-                />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-white">Price per Use (credits)</label>
+                  <Input
+                    placeholder="10"
+                    value={agentData.price}
+                    onChange={(e) => updateAgentData('price', e.target.value)}
+                    className={`w-full px-3 py-2 rounded-xl border bg-white/5 text-white placeholder:text-white/50 focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200 ${
+                      errors.price ? 'border-red-500 focus:border-red-500' : 'border-glass focus:border-accent'
+                    }`}
+                  />
+                  <p className="text-white/60 text-xs">Price between 1-1000 credits per use</p>
+                  {errors.price && <p className="text-red-400 text-sm">{errors.price}</p>}
+                </div>
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">

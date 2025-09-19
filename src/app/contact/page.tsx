@@ -146,44 +146,56 @@ export default function ContactPage() {
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Full Name"
-                    type="text"
-                    placeholder="Enter your name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    name="name"
-                    required
-                  />
-                  <Input
-                    label="Email Address"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    name="email"
-                    required
-                  />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white">Full Name</label>
+                    <Input
+                      type="text"
+                      placeholder="Enter your name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      name="name"
+                      required
+                      className="w-full px-3 py-2 rounded-xl border border-glass bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white">Email Address</label>
+                    <Input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      name="email"
+                      required
+                      className="w-full px-3 py-2 rounded-xl border border-glass bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Company (Optional)"
-                    type="text"
-                    placeholder="Your company name"
-                    value={formData.company}
-                    onChange={handleInputChange}
-                    name="company"
-                  />
-                  <Input
-                    label="Subject"
-                    type="text"
-                    placeholder="What's this about?"
-                    value={formData.subject}
-                    onChange={handleInputChange}
-                    name="subject"
-                    required
-                  />
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white">Company (Optional)</label>
+                    <Input
+                      type="text"
+                      placeholder="Your company name"
+                      value={formData.company}
+                      onChange={handleInputChange}
+                      name="company"
+                      className="w-full px-3 py-2 rounded-xl border border-glass bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-white">Subject</label>
+                    <Input
+                      type="text"
+                      placeholder="What's this about?"
+                      value={formData.subject}
+                      onChange={handleInputChange}
+                      name="subject"
+                      required
+                      className="w-full px-3 py-2 rounded-xl border border-glass bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-2">

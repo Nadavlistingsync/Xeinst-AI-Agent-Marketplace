@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from './prisma';
-import { withDbPerformanceTracking } from './performance';
+// Performance tracking removed for liquid design
 
 export interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
@@ -38,15 +38,14 @@ class RateLimiter {
     const key = this.getKey(req);
     const now = Date.now();
     
-    return withDbPerformanceTracking('check_rate_limit', async () => {
-      // Get current rate limit data
-      const current = this.store.get(key) || { count: 0, resetTime: now + this.config.windowMs };
-      
-      // Check if window has reset
-      if (now > current.resetTime) {
-        current.count = 0;
-        current.resetTime = now + this.config.windowMs;
-      }
+    // Get current rate limit data
+    const current = this.store.get(key) || { count: 0, resetTime: now + this.config.windowMs };
+    
+    // Check if window has reset
+    if (now > current.resetTime) {
+      current.count = 0;
+      current.resetTime = now + this.config.windowMs;
+    }
       
       // Check if limit exceeded
       const allowed = current.count < this.config.maxRequests;
@@ -67,8 +66,7 @@ class RateLimiter {
         retryAfter: allowed ? undefined : Math.ceil((current.resetTime - now) / 1000)
       };
       
-      return { allowed, info };
-    });
+    return { allowed, info };
   }
 
   private getKey(req: NextRequest): string {
@@ -153,34 +151,32 @@ class RateLimiter {
     topKeys: Array<{ key: string; count: number }>;
     recentBlocks: Array<{ key: string; timestamp: Date }>;
   }> {
-    return withDbPerformanceTracking('get_rate_limit_stats', async () => {
-      const [totalRequests, blockedRequests, topKeys, recentBlocks] = await Promise.all([
-        prisma.rateLimitLog.count(),
-        prisma.rateLimitLog.count({ where: { allowed: false } }),
-        prisma.rateLimitLog.groupBy({
-          by: ['key'],
-          _count: { key: true },
-          orderBy: { _count: { key: 'desc' } },
-          take: 10
-        }),
-        prisma.rateLimitLog.findMany({
-          where: { allowed: false },
-          orderBy: { timestamp: 'desc' },
-          take: 20,
-          select: { key: true, timestamp: true }
-        })
-      ]);
+    const [totalRequests, blockedRequests, topKeys, recentBlocks] = await Promise.all([
+      prisma.rateLimitLog.count(),
+      prisma.rateLimitLog.count({ where: { allowed: false } }),
+      prisma.rateLimitLog.groupBy({
+        by: ['key'],
+        _count: { key: true },
+        orderBy: { _count: { key: 'desc' } },
+        take: 10
+      }),
+      prisma.rateLimitLog.findMany({
+        where: { allowed: false },
+        orderBy: { timestamp: 'desc' },
+        take: 20,
+        select: { key: true, timestamp: true }
+      })
+    ]);
 
-      return {
-        totalRequests,
-        blockedRequests,
-        topKeys: topKeys.map(k => ({ key: k.key, count: k._count.key })),
-        recentBlocks: recentBlocks.map(b => ({
-          key: b.key,
-          timestamp: b.timestamp
-        }))
-      };
-    });
+    return {
+      totalRequests,
+      blockedRequests,
+      topKeys: topKeys.map(k => ({ key: k.key, count: k._count.key })),
+      recentBlocks: recentBlocks.map(b => ({
+        key: b.key,
+        timestamp: b.timestamp
+      }))
+    };
   }
 
   clearRateLimitData(): void {

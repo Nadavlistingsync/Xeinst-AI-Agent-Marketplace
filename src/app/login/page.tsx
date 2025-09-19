@@ -105,17 +105,21 @@ export default function LoginPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <Input
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                icon={<Mail className="h-4 w-4" />}
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
+                <Input
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  className="pl-10 w-full px-3 py-2 rounded-xl border border-glass bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200"
+                />
+              </div>
 
               <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
                 <Input
                   name="password"
                   type={showPassword ? "text" : "password"}
@@ -123,12 +127,12 @@ export default function LoginPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   required
-                  icon={<Lock className="h-4 w-4" />}
+                  className="pl-10 pr-10 w-full px-3 py-2 rounded-xl border border-glass bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/60 hover:text-white transition-colors"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -136,7 +140,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                variant="primary"
+                variant="default"
                 size="lg"
                 disabled={loading}
                 className="w-full"

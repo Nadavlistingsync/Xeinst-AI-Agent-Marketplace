@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { Button } from "./ui/button";
-import { SignInButton, SignUpButton, UserProfile } from "./NeonAuth";
+// NeonAuth removed for liquid design
 import { User, Settings } from "lucide-react";
 import Link from "next/link";
 
@@ -27,7 +27,10 @@ export function UserMenu() {
               Dashboard
             </Link>
             <div className="px-4 py-2">
-              <UserProfile />
+              <Button variant="ghost" size="sm" className="w-full justify-start">
+                <User className="w-4 h-4 mr-2" />
+                Profile Settings
+              </Button>
             </div>
           </div>
         </div>
@@ -37,8 +40,16 @@ export function UserMenu() {
 
   return (
     <div className="flex items-center space-x-2">
-      <SignInButton />
-      <SignUpButton />
+      <Link href="/login">
+        <Button variant="ghost" size="sm">
+          Sign In
+        </Button>
+      </Link>
+      <Link href="/signup">
+        <Button variant="default" size="sm">
+          Sign Up
+        </Button>
+      </Link>
     </div>
   );
 }
@@ -64,7 +75,10 @@ export function MobileUserMenu() {
             Dashboard
           </Link>
           <div className="px-3">
-            <UserProfile />
+            <Button variant="ghost" size="sm" className="w-full justify-start">
+              <User className="w-4 h-4 mr-2" />
+              Profile Settings
+            </Button>
           </div>
         </div>
       </div>
@@ -74,10 +88,18 @@ export function MobileUserMenu() {
   return (
     <div className="px-4 space-y-2">
       <div className="w-full">
-        <SignInButton />
+        <Link href="/login">
+          <Button variant="ghost" size="sm" className="w-full">
+            Sign In
+          </Button>
+        </Link>
       </div>
       <div className="w-full">
-        <SignUpButton />
+        <Link href="/signup">
+          <Button variant="default" size="sm" className="w-full">
+            Sign Up
+          </Button>
+        </Link>
       </div>
     </div>
   );

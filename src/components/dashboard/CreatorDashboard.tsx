@@ -12,7 +12,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from "../../lib/auth";
 import { prisma } from "../../lib/prisma";
 import { Card } from "../ui/card";
-import { CreateAgentButton, ViewAgentButton, EditAgentButton } from './DashboardActions';
+import { Button } from "../ui/button";
+import Link from "next/link";
 
 interface AgentStats {
   id: string;
@@ -150,7 +151,12 @@ export async function CreatorDashboard() {
             <User className="w-6 h-6 text-blue-400" />
             Your Agents
           </h2>
-          <CreateAgentButton />
+          <Link href="/upload">
+            <Button variant="default" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Create Agent
+            </Button>
+          </Link>
         </div>
 
         <div className="overflow-hidden rounded-xl border border-white/20 dashboard-scrollbar">
@@ -176,7 +182,12 @@ export async function CreatorDashboard() {
                         <p className="text-white/60 text-lg font-medium">No agents found</p>
                         <p className="text-white/40 text-sm">Create your first AI agent to get started</p>
                       </div>
-                      <CreateAgentButton />
+                      <Link href="/upload">
+                        <Button variant="default" className="flex items-center gap-2">
+                          <Plus className="w-4 h-4" />
+                          Create Agent
+                        </Button>
+                      </Link>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -204,8 +215,18 @@ export async function CreatorDashboard() {
                     <TableCell className="text-white">${agent.revenue.toFixed(2)}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <ViewAgentButton agentId={agent.id} />
-                        <EditAgentButton agentId={agent.id} />
+                        <Link href={`/agent/${agent.id}`}>
+                          <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                            <Eye className="w-4 h-4" />
+                            View
+                          </Button>
+                        </Link>
+                        <Link href={`/agent/${agent.id}/edit`}>
+                          <Button variant="ghost" size="sm" className="flex items-center gap-1">
+                            <Activity className="w-4 h-4" />
+                            Edit
+                          </Button>
+                        </Link>
                       </div>
                     </TableCell>
                   </TableRow>

@@ -129,9 +129,9 @@ export function trackWebVitals() {
   if (typeof window === 'undefined') return;
   
   // Core Web Vitals
-  import('web-vitals').then(({ onCLS, onFID, onFCP, onLCP, onTTFB }) => {
+  import('web-vitals').then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
     onCLS(console.log);
-    onFID(console.log);
+    onINP(console.log); // Replaced onFID with onINP (Interaction to Next Paint)
     onFCP(console.log);
     onLCP(console.log);
     onTTFB(console.log);

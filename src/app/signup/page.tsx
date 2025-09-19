@@ -119,49 +119,61 @@ export default function SignupPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <Input
-                name="name"
-                type="text"
-                placeholder="Your full name"
-                value={formData.name}
-                onChange={handleInputChange}
-                required
-                icon={<User className="h-4 w-4" />}
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
+                <Input
+                  name="name"
+                  type="text"
+                  placeholder="Your full name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  required
+                  className="pl-10 w-full px-3 py-2 rounded-xl border border-glass bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200"
+                />
+              </div>
 
-              <Input
-                name="email"
-                type="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-                icon={<Mail className="h-4 w-4" />}
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
+                <Input
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                  className="pl-10 w-full px-3 py-2 rounded-xl border border-glass bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200"
+                />
+              </div>
 
-              <Input
-                name="password"
-                type="password"
-                placeholder="Create a password"
-                value={formData.password}
-                onChange={handleInputChange}
-                required
-                icon={<Lock className="h-4 w-4" />}
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
+                <Input
+                  name="password"
+                  type="password"
+                  placeholder="Create a password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                  className="pl-10 w-full px-3 py-2 rounded-xl border border-glass bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200"
+                />
+              </div>
 
-              <Input
-                name="confirmPassword"
-                type="password"
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                required
-                icon={<Lock className="h-4 w-4" />}
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
+                <Input
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="Confirm your password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  required
+                  className="pl-10 w-full px-3 py-2 rounded-xl border border-glass bg-white/5 text-white placeholder:text-white/50 focus:border-accent focus:ring-2 focus:ring-accent/20 focus:outline-none transition-all duration-200"
+                />
+              </div>
 
               <Button
                 type="submit"
-                variant="primary"
+                variant="default"
                 size="lg"
                 disabled={loading}
                 className="w-full"

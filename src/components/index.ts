@@ -1,2 +1,2 @@
 // Re-export main components
-export { default as EditAgentForm } from './EditAgentForm';
+// EditAgentForm removed for liquid design
