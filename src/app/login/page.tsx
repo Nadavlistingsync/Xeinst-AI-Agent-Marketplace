@@ -4,8 +4,8 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Bot, ArrowRight, Eye, EyeOff, Mail, Lock } from "lucide-react";
-import { GlassMorphButton } from "../../components/ui/GlassMorphButton";
-import { GlassMorphInput } from "../../components/ui/GlassMorphInput";
+import { Button } from "../../components/ui";
+import { Input } from "../../components/ui/Input";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -105,7 +105,7 @@ export default function LoginPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <GlassMorphInput
+              <Input
                 name="email"
                 type="email"
                 placeholder="Enter your email"
@@ -116,7 +116,7 @@ export default function LoginPage() {
               />
 
               <div className="relative">
-                <GlassMorphInput
+                <Input
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
@@ -134,7 +134,7 @@ export default function LoginPage() {
                 </button>
               </div>
 
-              <GlassMorphButton
+              <Button
                 type="submit"
                 variant="primary"
                 size="lg"
@@ -152,7 +152,7 @@ export default function LoginPage() {
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
-              </GlassMorphButton>
+              </Button>
             </form>
 
             {/* Sign Up Link */}

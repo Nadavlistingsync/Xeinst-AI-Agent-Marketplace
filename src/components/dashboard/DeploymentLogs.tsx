@@ -1,92 +1,77 @@
-import { Card } from "../ui/card";
-import { Badge } from "../ui/badge";
-import { ScrollArea } from "../ui/scroll-area";
-import { useDeploymentSocket } from '../../hooks/useDeploymentSocket';
+"use client";
+
+import React from 'react';
+import { GlassCard } from '../ui/GlassCard';
+import { Terminal, AlertCircle, CheckCircle, Info } from 'lucide-react';
 
 interface DeploymentLogsProps {
   deploymentId: string;
 }
 
-export function DeploymentLogs({ deploymentId }: DeploymentLogsProps) {
-  const { logs, isConnected, error } = useDeploymentSocket({
-    deploymentId,
-  });
+const mockLogs = [
+  { id: 1, level: 'info', message: 'Agent started successfully', timestamp: new Date().toISOString() },
+  { id: 2, level: 'success', message: 'Processing request from user 123', timestamp: new Date().toISOString() },
+  { id: 3, level: 'warning', message: 'High memory usage detected', timestamp: new Date().toISOString() },
+  { id: 4, level: 'info', message: 'Request completed in 125ms', timestamp: new Date().toISOString() },
+  { id: 5, level: 'error', message: 'Failed to connect to external API', timestamp: new Date().toISOString() },
+];
 
-  if (error) {
-    return (
-      <Card className="p-6">
-        <div className="text-red-500">Error: {error.message}</div>
-      </Card>
-    );
-  }
-
-  if (!isConnected) {
-    return (
-      <Card className="p-6">
-        <div className="text-gray-500">Loading deployment logs...</div>
-      </Card>
-    );
-  }
-
-  const getLogLevelColor = (level: string) => {
-    switch (level.toLowerCase()) {
+export const DeploymentLogs: React.FC<DeploymentLogsProps> = ({ deploymentId }) => {
+  const getLogIcon = (level: string) => {
+    switch (level) {
       case 'error':
-        return 'bg-red-100 text-red-800';
+        return <AlertCircle className="h-4 w-4 text-red-400" />;
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'info':
-        return 'bg-blue-100 text-blue-800';
-      case 'debug':
-        return 'bg-gray-100 text-gray-800';
+        return <AlertCircle className="h-4 w-4 text-yellow-400" />;
+      case 'success':
+        return <CheckCircle className="h-4 w-4 text-green-400" />;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return <Info className="h-4 w-4 text-blue-400" />;
+    }
+  };
+
+  const getLogColor = (level: string) => {
+    switch (level) {
+      case 'error':
+        return 'text-red-400';
+      case 'warning':
+        return 'text-yellow-400';
+      case 'success':
+        return 'text-green-400';
+      default:
+        return 'text-blue-400';
     }
   };
 
   return (
-    <Card className="p-6">
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Deployment Logs</h3>
-          <Badge variant="outline">
-            {logs.length} {logs.length === 1 ? 'log' : 'logs'}
-          </Badge>
+    <div className="space-y-6">
+      <GlassCard>
+        <div className="flex items-center space-x-2 mb-6">
+          <Terminal className="h-5 w-5 text-white" />
+          <h3 className="text-lg font-semibold text-white">Deployment Logs</h3>
         </div>
-
-        <ScrollArea className="h-[400px]">
-          <div className="space-y-2">
-            {logs.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                No logs available
+        
+        <div className="bg-black/30 rounded-lg p-4 font-mono text-sm max-h-96 overflow-y-auto">
+          {mockLogs.map((log) => (
+            <div key={log.id} className="flex items-start space-x-3 py-2 border-b border-white/5 last:border-b-0">
+              <div className="flex-shrink-0 mt-0.5">
+                {getLogIcon(log.level)}
               </div>
-            ) : (
-              logs.map((log, index) => (
-                <div
-                  key={index}
-                  className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <Badge className={getLogLevelColor(log.level)}>
-                        {log.level}
-                      </Badge>
-                      <span className="text-sm text-gray-500">
-                        {new Date(log.timestamp).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm text-gray-900">{log.message}</p>
-                    {log.metadata && (
-                      <pre className="mt-2 text-xs text-gray-500 bg-gray-50 p-2 rounded overflow-x-auto">
-                        {JSON.stringify(log.metadata, null, 2)}
-                      </pre>
-                    )}
-                  </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center space-x-2 mb-1">
+                  <span className={`text-xs font-medium ${getLogColor(log.level)} uppercase`}>
+                    {log.level}
+                  </span>
+                  <span className="text-xs text-white/50">
+                    {new Date(log.timestamp).toLocaleTimeString()}
+                  </span>
                 </div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </div>
-    </Card>
+                <p className="text-white/80 text-sm">{log.message}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </GlassCard>
+    </div>
   );
-} 
+};

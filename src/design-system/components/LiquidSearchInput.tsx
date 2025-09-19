@@ -6,7 +6,7 @@ import { Search, X, Sparkles } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { liquidTokens } from '../liquid-tokens';
 
-interface LiquidSearchInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+interface LiquidSearchInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'size' | 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> {
   value?: string;
   onChange?: (value: string) => void;
   onSearch?: (value: string) => void;

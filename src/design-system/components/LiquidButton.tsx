@@ -242,7 +242,7 @@ const LiquidButton = forwardRef<HTMLButtonElement, LiquidButtonProps>(
         transition: {
           duration: 4,
           repeat: Infinity,
-          ease: "easeInOut",
+          ease: [0.4, 0, 0.2, 1] as any,
         }
       })
     };

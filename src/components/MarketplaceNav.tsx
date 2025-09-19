@@ -1,114 +1,159 @@
 "use client";
-import { useSession } from 'next-auth/react';
-import Link from 'next/link';
-import { Bot, Upload, CreditCard, User, Menu } from 'lucide-react';
 
-export default function MarketplaceNav() {
-  const { data: session } = useSession();
+import React from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { 
+  Home, 
+  Search, 
+  Upload, 
+  User, 
+  Settings,
+  Grid3X3,
+  TrendingUp,
+  Star,
+  Clock,
+  Tag
+} from 'lucide-react';
+import { cn } from '../lib/utils';
+
+const navigationItems = [
+  {
+    name: 'Home',
+    href: '/marketplace',
+    icon: Home,
+  },
+  {
+    name: 'Browse',
+    href: '/marketplace/browse',
+    icon: Grid3X3,
+  },
+  {
+    name: 'Search',
+    href: '/marketplace/search',
+    icon: Search,
+  },
+  {
+    name: 'Trending',
+    href: '/marketplace/trending',
+    icon: TrendingUp,
+  },
+  {
+    name: 'Featured',
+    href: '/marketplace/featured',
+    icon: Star,
+  },
+  {
+    name: 'Recent',
+    href: '/marketplace/recent',
+    icon: Clock,
+  },
+  {
+    name: 'Categories',
+    href: '/marketplace/categories',
+    icon: Tag,
+  },
+];
+
+const userItems = [
+  {
+    name: 'Upload',
+    href: '/upload',
+    icon: Upload,
+  },
+  {
+    name: 'Dashboard',
+    href: '/dashboard',
+    icon: User,
+  },
+  {
+    name: 'Settings',
+    href: '/settings',
+    icon: Settings,
+  },
+];
+
+const MarketplaceNav: React.FC = () => {
+  const pathname = usePathname();
 
   return (
-    <>
-      {/* Sidebar Navigation */}
-      <div className="fixed left-0 top-0 h-full w-64 bg-black/80 backdrop-blur-md border-r border-white/10 z-40">
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b border-white/10">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-lg flex items-center justify-center">
-                <Bot className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">Xeinst</span>
-            </Link>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="flex-1 p-6">
-            <div className="space-y-2">
-              <Link
-                href="/marketplace"
-                className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-gradient-to-r from-cyan-400/20 to-blue-500/20 text-white border border-cyan-400/30"
-              >
-                <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
-                <span className="font-medium">Marketplace</span>
-              </Link>
-              
-              <Link
-                href="/upload"
-                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
-              >
-                <Upload className="w-5 h-5" />
-                <span>Upload Agent</span>
-              </Link>
-              
-              <Link
-                href="/dashboard"
-                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
-              >
-                <User className="w-5 h-5" />
-                <span>Dashboard</span>
-              </Link>
-              
-              <Link
-                href="/pricing"
-                className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-white/5 transition-colors"
-              >
-                <CreditCard className="w-5 h-5" />
-                <span>Pricing</span>
-              </Link>
+    <nav className="fixed left-0 top-0 h-full w-64 bg-black/20 backdrop-blur-md border-r border-white/10 z-40">
+      <div className="flex flex-col h-full">
+        {/* Logo */}
+        <div className="p-6 border-b border-white/10">
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center">
+              <span className="text-white font-bold text-sm">X</span>
             </div>
-          </nav>
+            <span className="text-xl font-bold text-white">Xeinst</span>
+          </Link>
+        </div>
 
-          {/* Credits Display */}
-          <div className="p-6 border-t border-white/10">
-            <div className="bg-white/5 rounded-lg p-4">
-              <div className="text-sm text-gray-400 mb-1">Credits</div>
-              <div className="text-2xl font-bold text-white">1,250</div>
-            </div>
-          </div>
-
-          {/* User Section */}
-          <div className="p-6 border-t border-white/10">
-            {session ? (
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-white truncate">
-                    {session.user?.name || session.user?.email}
-                  </div>
-                </div>
-                <Link
-                  href="/api/auth/signout"
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  <Menu className="w-4 h-4" />
+        {/* Navigation Items */}
+        <div className="flex-1 px-4 py-6 space-y-1">
+          <div className="mb-6">
+            <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">
+              Marketplace
+            </h3>
+            {navigationItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link key={item.name} href={item.href}>
+                  <motion.div
+                    className={cn(
+                      'flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-accent text-black'
+                        : 'text-white/70 hover:text-white hover:bg-white/5'
+                    )}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.name}</span>
+                  </motion.div>
                 </Link>
-              </div>
-            ) : (
-              <Link
-                href="/api/auth/signin"
-                className="flex items-center space-x-3 px-4 py-3 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-medium hover:from-cyan-500 hover:to-blue-600 transition-all"
-              >
-                <User className="w-5 h-5" />
-                <span>Sign In</span>
-              </Link>
-            )}
+              );
+            })}
+          </div>
+
+          <div>
+            <h3 className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-3">
+              Account
+            </h3>
+            {userItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link key={item.name} href={item.href}>
+                  <motion.div
+                    className={cn(
+                      'flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-accent text-black'
+                        : 'text-white/70 hover:text-white hover:bg-white/5'
+                    )}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.name}</span>
+                  </motion.div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-white/10">
+          <div className="text-xs text-white/50 text-center">
+            © 2024 Xeinst
           </div>
         </div>
       </div>
-
-      {/* Top Navigation Bar */}
-      <nav className="fixed top-0 left-64 right-0 z-30 bg-black/50 backdrop-blur-md border-b border-white/10">
-        <div className="h-16 flex items-center justify-between px-6">
-          <div className="flex items-center space-x-4">
-            <h1 className="text-xl font-semibold text-white">AI Agent Marketplace</h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            {/* Add any top-level actions here */}
-          </div>
-        </div>
-      </nav>
-    </>
+    </nav>
   );
-} 
+};
+
+export default MarketplaceNav;

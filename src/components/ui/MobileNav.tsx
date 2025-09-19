@@ -16,7 +16,7 @@ import {
   Bell, 
   X
 } from "lucide-react"
-import { GlowButton } from "./GlowButton"
+import { Button } from "."
 
 interface MobileNavProps {
   isOpen: boolean
@@ -95,10 +95,10 @@ export function MobileNav({ isOpen, onClose }: MobileNavProps) {
                   </div>
                 </div>
                 <div className="mt-4">
-                  <GlowButton variant="neon" fullWidth>
+                  <Button variant="neon" fullWidth>
                     <User className="h-4 w-4 mr-2" />
                     Sign In
-                  </GlowButton>
+                  </Button>
                 </div>
               </div>
               

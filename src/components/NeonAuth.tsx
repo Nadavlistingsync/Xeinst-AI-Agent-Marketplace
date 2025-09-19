@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
-import { GlassMorphButton } from "./ui/GlassMorphButton";
+import { Button } from "./ui/button";
 import Link from "next/link";
 import { LogIn, UserPlus, LogOut, User } from "lucide-react";
 
@@ -12,24 +12,24 @@ export function NeonAuth() {
 // Sign In Component
 export function SignInButton() {
   return (
-    <GlassMorphButton variant="outline" size="md" asChild>
+    <Button variant="outline" size="md" asChild>
       <Link href="/login" className="flex items-center gap-2">
         <LogIn className="w-4 h-4" />
         Sign In
       </Link>
-    </GlassMorphButton>
+    </Button>
   );
 }
 
 // Sign Up Component
 export function SignUpButton() {
   return (
-    <GlassMorphButton variant="primary" size="md" asChild>
+    <Button variant="primary" size="md" asChild>
       <Link href="/signup" className="flex items-center gap-2">
         <UserPlus className="w-4 h-4" />
         Sign Up
       </Link>
-    </GlassMorphButton>
+    </Button>
   );
 }
 
@@ -56,7 +56,7 @@ export function UserProfile() {
           {session.user?.name || session.user?.email}
         </span>
       </div>
-      <GlassMorphButton 
+      <Button 
         variant="ghost" 
         size="sm" 
         onClick={() => signOut()}
@@ -64,7 +64,7 @@ export function UserProfile() {
       >
         <LogOut className="w-4 h-4" />
         Sign Out
-      </GlassMorphButton>
+      </Button>
     </div>
   );
 }

@@ -280,3 +280,21 @@ export const performanceMonitor = {
     };
   },
 };
+
+// Web Vitals reporting function
+export function reportWebVitals(metric: any) {
+  // Log to console in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Web Vital:', metric);
+  }
+  
+  // Send to analytics in production
+  if (typeof window !== 'undefined') {
+    // Send to your analytics service
+    fetch('/api/analytics/web-vitals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(metric),
+    }).catch(console.error);
+  }
+}

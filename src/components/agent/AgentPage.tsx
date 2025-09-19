@@ -1,238 +1,129 @@
 "use client";
 
-import { useSession, signIn } from 'next-auth/react';
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Badge } from "../ui/badge";
-import { Play, Pause, RefreshCw, Trash2, Download, Coins, Edit } from 'lucide-react';
-import { DeploymentWithMetrics } from '../../types/deployment';
-import { useState } from 'react';
-import { toast } from 'react-hot-toast';
-import Link from 'next/link';
+import React from 'react';
+import { GlassCard } from '../ui/GlassCard';
+import { Button } from '../ui';
+import { Play, Square, RotateCcw, Trash2, Bot } from 'lucide-react';
 
 interface AgentPageProps {
-  deployment: DeploymentWithMetrics;
-  onStart: (id: string) => Promise<void>;
-  onStop: (id: string) => Promise<void>;
-  onRestart: (id: string) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  deployment: any;
+  onStart: (id: string) => void;
+  onStop: (id: string) => void;
+  onRestart: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
-export default function AgentPage({
-  deployment,
-  onStart,
-  onStop,
-  onRestart,
-  onDelete
-}: AgentPageProps) {
-  const { data: session } = useSession();
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  const isActive = deployment.status === 'active';
-  const isPending = deployment.status === 'pending' || deployment.status === 'deploying';
-  const metrics = deployment.metrics?.[0] || {
-    id: '',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    deploymentId: deployment.id,
-    errorRate: 0,
-    responseTime: 0,
-    successRate: 100,
-    totalRequests: 0,
-    activeUsers: 0,
-    averageResponseTime: 0,
-    requestsPerMinute: 0,
-    averageTokensUsed: 0,
-    costPerRequest: 0,
-    totalCost: 0,
-    lastUpdated: new Date()
-  };
-
-  const handleDownload = async () => {
-    if (!session) {
-      signIn();
-      return;
-    }
-
-    setIsDownloading(true);
-    try {
-      const response = await fetch(`/api/agents/${deployment.id}/download`);
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Download failed');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${deployment.name}.zip`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-      
-      toast.success('Download started!');
-    } catch (error) {
-      const errorMessage = (error as Error).message;
-      if (errorMessage.includes('Insufficient credits')) {
-        toast.error(
-          (t) => (
-            <span className="flex items-center justify-between w-full">
-              <span>Insufficient credits.</span>
-              <Link href="/pricing">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="ml-4"
-                  onClick={() => toast.dismiss(t.id)}
-                >
-                  Buy Credits
-                </Button>
-              </Link>
-            </span>
-          ),
-          { duration: 6000 }
-        );
-      } else {
-        toast.error(errorMessage);
-      }
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
-  // Run handler
-  const handleRun = async () => {
-    if (!session) {
-      signIn();
-      return;
-    }
-    // Run logic here (e.g., call run endpoint)
-    // ...
-    toast('Run functionality is not yet implemented.');
-  };
-
+const AgentPage: React.FC<AgentPageProps> = ({ 
+  deployment, 
+  onStart, 
+  onStop, 
+  onRestart, 
+  onDelete 
+}) => {
   return (
-    <div className="container mx-auto py-8">
-      <div className="grid gap-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">{deployment.name}</h1>
-            <p className="text-muted-foreground">{deployment.description}</p>
+    <div className="space-y-6">
+      {/* Agent Header */}
+      <GlassCard>
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center">
+              <Bot className="h-8 w-8 text-accent" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white">{deployment.name}</h1>
+              <p className="text-white/70">{deployment.description}</p>
+              <div className="flex items-center space-x-2 mt-2">
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  deployment.status === 'active' 
+                    ? 'bg-green-500/20 text-green-400' 
+                    : deployment.status === 'pending'
+                    ? 'bg-yellow-500/20 text-yellow-400'
+                    : 'bg-red-500/20 text-red-400'
+                }`}>
+                  {deployment.status}
+                </span>
+                <span className="text-white/50">•</span>
+                <span className="text-white/70">{deployment.price} credits</span>
+              </div>
+            </div>
           </div>
-          <Badge variant={deployment.status === 'active' ? 'success' : deployment.status === 'pending' || deployment.status === 'deploying' ? 'warning' : 'destructive'}>
-            {deployment.status}
-          </Badge>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Requests</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{metrics?.totalRequests || 0}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Average Response Time</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{metrics?.averageResponseTime || 0}ms</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Error Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{metrics?.errorRate || 0}%</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Success Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{metrics?.successRate || 0}%</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Configuration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="rounded-lg bg-muted p-4">
-              {JSON.stringify(deployment.config || {}, null, 2)}
-            </pre>
-          </CardContent>
-        </Card>
-
-        {deployment.createdBy === session?.user.id && (
-          <div className="flex items-center gap-2">
-            <Link href={`/agent/${deployment.id}/edit`}>
-              <Button variant="outline" size="sm">
-                <Edit className="mr-2 h-4 w-4" />
-                Edit
+          
+          {/* Action Buttons */}
+          <div className="flex space-x-2">
+            {deployment.status === 'stopped' && (
+              <Button onClick={() => onStart(deployment.id)} variant="glass">
+                <Play className="h-4 w-4 mr-2" />
+                Start
               </Button>
-            </Link>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onStart(deployment.id)}
-              disabled={isActive || isPending}
-            >
-              <Play className="mr-2 h-4 w-4" />
-              Start
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onStop(deployment.id)}
-              disabled={!isActive || isPending}
-            >
-              <Pause className="mr-2 h-4 w-4" />
-              Stop
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onRestart(deployment.id)}
-              disabled={!isActive || isPending}
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            {deployment.status === 'active' && (
+              <Button onClick={() => onStop(deployment.id)} variant="glass">
+                <Square className="h-4 w-4 mr-2" />
+                Stop
+              </Button>
+            )}
+            <Button onClick={() => onRestart(deployment.id)} variant="glass">
+              <RotateCcw className="h-4 w-4 mr-2" />
               Restart
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => onDelete(deployment.id)}
-              disabled={isPending}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
+            <Button onClick={() => onDelete(deployment.id)} variant="destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
               Delete
             </Button>
           </div>
-        )}
-
-        <div className="flex gap-4 mt-4">
-          <Button onClick={handleDownload} variant="outline" disabled={isDownloading}>
-            <Download className="mr-2 h-4 w-4" />
-            {isDownloading ? 'Downloading...' : `Download for ${deployment.price ?? 0} credits`}
-            {deployment.price && deployment.price > 0 && <Coins className="ml-2 h-4 w-4" />}
-          </Button>
-          <Button onClick={handleRun} variant="default">
-            Run Agent
-          </Button>
         </div>
+      </GlassCard>
+
+      {/* Agent Details */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <GlassCard>
+          <h3 className="text-lg font-semibold text-white mb-4">Configuration</h3>
+          <div className="space-y-3">
+            <div>
+              <span className="text-white/70">Environment:</span>
+              <span className="text-white ml-2">{deployment.environment || 'production'}</span>
+            </div>
+            <div>
+              <span className="text-white/70">Framework:</span>
+              <span className="text-white ml-2">{deployment.framework || 'Node.js'}</span>
+            </div>
+            <div>
+              <span className="text-white/70">Model Type:</span>
+              <span className="text-white ml-2">{deployment.modelType || 'GPT-4'}</span>
+            </div>
+            <div>
+              <span className="text-white/70">Version:</span>
+              <span className="text-white ml-2">{deployment.version || '1.0.0'}</span>
+            </div>
+          </div>
+        </GlassCard>
+
+        <GlassCard>
+          <h3 className="text-lg font-semibold text-white mb-4">Statistics</h3>
+          <div className="space-y-3">
+            <div>
+              <span className="text-white/70">Downloads:</span>
+              <span className="text-white ml-2">{deployment.downloadCount || 0}</span>
+            </div>
+            <div>
+              <span className="text-white/70">Rating:</span>
+              <span className="text-white ml-2">{deployment.rating || 'N/A'}/5</span>
+            </div>
+            <div>
+              <span className="text-white/70">Total Ratings:</span>
+              <span className="text-white ml-2">{deployment.totalRatings || 0}</span>
+            </div>
+            <div>
+              <span className="text-white/70">Created:</span>
+              <span className="text-white ml-2">
+                {new Date(deployment.createdAt).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        </GlassCard>
       </div>
     </div>
   );
-} 
+};
+
+export default AgentPage;

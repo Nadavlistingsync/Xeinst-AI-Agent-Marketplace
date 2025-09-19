@@ -1,142 +1,52 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import { DeploymentWithMetrics } from "../../types/deployment";
-import { DeploymentStatus } from "@prisma/client";
-import { prisma } from '../../lib/prisma';
+"use client";
+
+import React from 'react';
+import { GlassCard } from '../ui/GlassCard';
+import { Bot, Activity, Clock, AlertCircle } from 'lucide-react';
 
 interface DeploymentOverviewProps {
-  deployment: DeploymentWithMetrics;
-  onStart: (id: string) => Promise<void>;
-  onStop: (id: string) => Promise<void>;
-  onRestart: (id: string) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  deploymentId: string;
 }
 
-export const DeploymentOverview = ({
-  deployment,
-  onStart,
-  onStop,
-  onRestart,
-  onDelete,
-}: DeploymentOverviewProps) => {
-  const getStatusColor = (status: DeploymentStatus) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-500';
-      case 'stopped':
-        return 'bg-red-500';
-      case 'pending':
-        return 'bg-yellow-500';
-      case 'failed':
-        return 'bg-red-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
+export const DeploymentOverview: React.FC<DeploymentOverviewProps> = ({ deploymentId }) => {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Deployment Overview</CardTitle>
-          <Badge className={getStatusColor(deployment.status)}>
-            {deployment.status}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Name</h3>
-              <p className="mt-1">{deployment.name}</p>
+    <div className="space-y-6">
+      <GlassCard>
+        <h3 className="text-lg font-semibold text-white mb-6">Deployment Overview</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="text-center">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-green-500/20 mb-4">
+              <Bot className="h-6 w-6 text-green-400" />
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Created</h3>
-              <p className="mt-1">
-                {new Date(deployment.createdAt).toLocaleDateString()}
-              </p>
-            </div>
+            <div className="text-2xl font-bold text-white">Active</div>
+            <div className="text-sm text-white/70">Status</div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Environment</h3>
-              <p className="mt-1">{deployment.environment}</p>
+          <div className="text-center">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-blue-500/20 mb-4">
+              <Activity className="h-6 w-6 text-blue-400" />
             </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Framework</h3>
-              <p className="mt-1">{deployment.framework}</p>
-            </div>
+            <div className="text-2xl font-bold text-white">99.9%</div>
+            <div className="text-sm text-white/70">Uptime</div>
           </div>
 
-          <div className="flex space-x-2">
-            {deployment.status === 'stopped' && (
-              <Button onClick={() => onStart(deployment.id)}>Start</Button>
-            )}
-            {deployment.status === 'active' && (
-              <Button onClick={() => onStop(deployment.id)}>Stop</Button>
-            )}
-            {deployment.status === 'active' && (
-              <Button onClick={() => onRestart(deployment.id)}>Restart</Button>
-            )}
-            <Button
-              variant="destructive"
-              onClick={() => onDelete(deployment.id)}
-            >
-              Delete
-            </Button>
+          <div className="text-center">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-purple-500/20 mb-4">
+              <Clock className="h-6 w-6 text-purple-400" />
+            </div>
+            <div className="text-2xl font-bold text-white">125ms</div>
+            <div className="text-sm text-white/70">Response Time</div>
+          </div>
+
+          <div className="text-center">
+            <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-red-500/20 mb-4">
+              <AlertCircle className="h-6 w-6 text-red-400" />
+            </div>
+            <div className="text-2xl font-bold text-white">0.1%</div>
+            <div className="text-sm text-white/70">Error Rate</div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </GlassCard>
+    </div>
   );
-}
-
-export async function handleStartDeployment(id: string) {
-  "use server";
-  
-  if (!prisma) {
-    throw new Error('Prisma client not initialized');
-  }
-
-  await prisma.deployment.update({
-    where: { id },
-    data: { status: 'active' },
-  });
-}
-
-export async function handleStopDeployment(id: string) {
-  "use server";
-  
-  if (!prisma) {
-    throw new Error('Prisma client not initialized');
-  }
-
-  await prisma.deployment.update({
-    where: { id },
-    data: { status: 'stopped' },
-  });
-}
-
-export async function handleRestartDeployment(id: string) {
-  "use server";
-  
-  if (!prisma) {
-    throw new Error('Prisma client not initialized');
-  }
-
-  await prisma.deployment.update({
-    where: { id },
-    data: { status: 'pending' },
-  });
-  
-  // Wait a moment before setting to active
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-  
-  await prisma.deployment.update({
-    where: { id },
-    data: { status: 'active' },
-  });
-} 
+};

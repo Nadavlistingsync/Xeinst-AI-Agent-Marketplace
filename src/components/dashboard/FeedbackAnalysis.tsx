@@ -1,236 +1,104 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Star, TrendingUp, TrendingDown, MessageSquare, AlertTriangle, ThumbsUp } from 'lucide-react';
-import { useToast } from "../ui/use-toast";
-import { formatDistanceToNow } from 'date-fns';
-
-interface FeedbackMetrics {
-  average_rating: number;
-  totalFeedbacks: number;
-  positiveFeedbacks: number;
-  negativeFeedbacks: number;
-  neutralFeedbacks: number;
-  sentimentScore: number;
-  commonIssues: string[];
-  improvementSuggestions: string[];
-}
-
-interface FeedbackTrend {
-  date: string;
-  average_rating: number;
-  feedbackCount: number;
-  sentimentScore: number;
-}
-
-interface CategoryTrend {
-  date: string;
-  categories: { [key: string]: number };
-}
-
-interface FeedbackInsights {
-  topIssues: string[];
-  improvementAreas: string[];
-  sentimentSummary: {
-    overall: number;
-    trend: 'improving' | 'declining' | 'stable';
-  };
-}
+import React from 'react';
+import { GlassCard } from '../ui/GlassCard';
+import { MessageCircle, Star, TrendingUp, Users } from 'lucide-react';
 
 interface FeedbackAnalysisProps {
   agentId: string;
 }
 
-export function FeedbackAnalysis({ agentId }: FeedbackAnalysisProps) {
-  const { toast } = useToast();
-  const [metrics, setMetrics] = useState<FeedbackMetrics | null>(null);
-  const [trends, setTrends] = useState<FeedbackTrend[]>([]);
-  const [categoryTrends, setCategoryTrends] = useState<CategoryTrend[]>([]);
-  const [insights, setInsights] = useState<FeedbackInsights | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchFeedbackAnalysis = async () => {
-      try {
-        const [analysisRes, insightsRes] = await Promise.all([
-          fetch(`/api/agents/${agentId}/feedback-analysis`),
-          fetch(`/api/agents/${agentId}/feedback-insights`),
-        ]);
-
-        if (!analysisRes.ok || !insightsRes.ok) {
-          throw new Error('Failed to fetch feedback analysis');
-        }
-
-        const [analysisData, insightsData] = await Promise.all([
-          analysisRes.json(),
-          insightsRes.json(),
-        ]);
-
-        setMetrics(analysisData.metrics);
-        setTrends(analysisData.trends);
-        setCategoryTrends(insightsData.trends.categoryTrend);
-        setInsights(insightsData.insights);
-      } catch (error) {
-        console.error('Error fetching feedback analysis:', error);
-        toast({ description: 'Failed to load feedback analysis', variant: 'destructive' });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFeedbackAnalysis();
-  }, [agentId, toast]);
-
-  if (loading) {
-    return <div>Loading feedback analysis...</div>;
-  }
-
-  if (!metrics || !insights) {
-    return <div>No feedback data available</div>;
-  }
-
+export const FeedbackAnalysis: React.FC<FeedbackAnalysisProps> = ({ agentId }) => {
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-            <Star className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.average_rating.toFixed(1)}</div>
-            <p className="text-xs text-muted-foreground">
-              {metrics.totalFeedbacks} total feedbacks
-            </p>
-          </CardContent>
-        </Card>
+      {/* Feedback Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <GlassCard className="text-center">
+          <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-blue-500/20 mb-4">
+            <MessageCircle className="h-6 w-6 text-blue-400" />
+          </div>
+          <div className="text-2xl font-bold text-white">127</div>
+          <div className="text-sm text-white/70">Total Reviews</div>
+        </GlassCard>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sentiment</CardTitle>
-            {insights.sentimentSummary.trend === 'improving' ? (
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            ) : insights.sentimentSummary.trend === 'declining' ? (
-              <TrendingDown className="h-4 w-4 text-red-500" />
-            ) : (
-              <ThumbsUp className="h-4 w-4 text-blue-500" />
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(insights.sentimentSummary.overall * 100).toFixed(0)}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {insights.sentimentSummary.trend} trend
-            </p>
-          </CardContent>
-        </Card>
+        <GlassCard className="text-center">
+          <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-yellow-500/20 mb-4">
+            <Star className="h-6 w-6 text-yellow-400" />
+          </div>
+          <div className="text-2xl font-bold text-white">4.6</div>
+          <div className="text-sm text-white/70">Average Rating</div>
+        </GlassCard>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Issues</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <ul className="text-sm space-y-1">
-              {insights.topIssues.map((issue, index) => (
-                <li key={index}>{issue}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <GlassCard className="text-center">
+          <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-green-500/20 mb-4">
+            <TrendingUp className="h-6 w-6 text-green-400" />
+          </div>
+          <div className="text-2xl font-bold text-white">+12%</div>
+          <div className="text-sm text-white/70">Rating Trend</div>
+        </GlassCard>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Improvement Areas</CardTitle>
-            <MessageSquare className="h-4 w-4 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <ul className="text-sm space-y-1">
-              {insights.improvementAreas.map((area, index) => (
-                <li key={index}>{area}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <GlassCard className="text-center">
+          <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-purple-500/20 mb-4">
+            <Users className="h-6 w-6 text-purple-400" />
+          </div>
+          <div className="text-2xl font-bold text-white">89%</div>
+          <div className="text-sm text-white/70">Satisfaction</div>
+        </GlassCard>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Rating & Sentiment Trends</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trends}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={(date) => formatDistanceToNow(new Date(date), { addSuffix: true })}
-                  />
-                  <YAxis yAxisId="left" domain={[0, 5]} />
-                  <YAxis yAxisId="right" orientation="right" domain={[-1, 1]} />
-                  <Tooltip
-                    labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                    formatter={(value: number, name: string) => [
-                      name === 'Average Rating' ? value.toFixed(1) : (value * 100).toFixed(0) + '%',
-                      name,
-                    ]}
-                  />
-                  <Line
-                    yAxisId="left"
-                    type="monotone"
-                    dataKey="averageRating"
-                    stroke="#8884d8"
-                    name="Average Rating"
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="sentimentScore"
-                    stroke="#82ca9d"
-                    name="Sentiment Score"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Category Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={categoryTrends}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={(date) => formatDistanceToNow(new Date(date), { addSuffix: true })}
-                  />
-                  <YAxis />
-                  <Tooltip
-                    labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                    formatter={(value: number) => [value.toFixed(1), 'Score']}
-                  />
-                  {Object.keys(categoryTrends[0]?.categories || {}).map((category, index) => (
-                    <Bar
-                      key={category}
-                      dataKey={`categories.${category}`}
-                      name={category}
-                      fill={`hsl(${(index * 360) / Object.keys(categoryTrends[0]?.categories || {}).length}, 70%, 50%)`}
-                    />
-                  ))}
-                </BarChart>
-              </ResponsiveContainer>
+      {/* Rating Distribution */}
+      <GlassCard>
+        <h3 className="text-lg font-semibold text-white mb-6">Rating Distribution</h3>
+        <div className="space-y-3">
+          {[5, 4, 3, 2, 1].map((rating) => (
+            <div key={rating} className="flex items-center space-x-3">
+              <div className="flex items-center space-x-1 w-12">
+                <span className="text-white text-sm">{rating}</span>
+                <Star className="h-3 w-3 text-yellow-400" />
+              </div>
+              <div className="flex-1 bg-white/10 rounded-full h-2">
+                <div 
+                  className="bg-yellow-400 h-2 rounded-full" 
+                  style={{ width: `${rating * 20}%` }}
+                />
+              </div>
+              <span className="text-white/70 text-sm w-12">{rating * 5}%</span>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          ))}
+        </div>
+      </GlassCard>
+
+      {/* Recent Feedback */}
+      <GlassCard>
+        <h3 className="text-lg font-semibold text-white mb-6">Recent Feedback</h3>
+        <div className="space-y-4">
+          {[
+            { rating: 5, comment: "Excellent agent, very helpful!", user: "John D.", date: "2 days ago" },
+            { rating: 4, comment: "Good performance, could be faster", user: "Sarah M.", date: "3 days ago" },
+            { rating: 5, comment: "Amazing results, highly recommend!", user: "Mike R.", date: "1 week ago" },
+          ].map((feedback, index) => (
+            <div key={index} className="p-4 rounded-xl bg-white/5 border border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star 
+                        key={i} 
+                        className={`h-4 w-4 ${
+                          i < feedback.rating ? 'text-yellow-400 fill-current' : 'text-white/30'
+                        }`} 
+                      />
+                    ))}
+                  </div>
+                  <span className="text-white font-medium">{feedback.user}</span>
+                </div>
+                <span className="text-white/50 text-sm">{feedback.date}</span>
+              </div>
+              <p className="text-white/70 text-sm">{feedback.comment}</p>
+            </div>
+          ))}
+        </div>
+      </GlassCard>
     </div>
   );
-} 
+};

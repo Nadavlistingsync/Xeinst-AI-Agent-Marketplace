@@ -218,9 +218,9 @@ export function trackPerformance() {
   });
   
   // Track Core Web Vitals
-  import('web-vitals').then(({ onCLS, onFID, onFCP, onLCP, onTTFB }) => {
+  import('web-vitals').then(({ onCLS, onINP, onFCP, onLCP, onTTFB }) => {
     onCLS((metric) => analytics.track({ name: 'web_vital_cls', properties: metric }));
-    onFID((metric) => analytics.track({ name: 'web_vital_fid', properties: metric }));
+    onINP((metric) => analytics.track({ name: 'web_vital_inp', properties: metric }));
     onFCP((metric) => analytics.track({ name: 'web_vital_fcp', properties: metric }));
     onLCP((metric) => analytics.track({ name: 'web_vital_lcp', properties: metric }));
     onTTFB((metric) => analytics.track({ name: 'web_vital_ttfb', properties: metric }));

@@ -86,11 +86,39 @@ const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
       lg: 'p-8 rounded-3xl',
     };
 
-    const Comp = href ? motion.a : motion.div;
-    const motionProps = href ? { href } : {};
+    if (href) {
+      return (
+        <motion.a
+          href={href}
+          ref={ref as any}
+          className={cn(
+            baseClasses,
+            variantClasses[variant],
+            sizeClasses[size],
+            className
+          )}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={tokens.motion.spring.gentle}
+          {...(props as any)}
+        >
+          {/* Glass overlay for enhanced effect */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] to-transparent pointer-events-none" />
+          
+          {/* Content */}
+          <div className="relative z-10">
+            {children}
+          </div>
+          
+          {/* Subtle inner border */}
+          <div className="absolute inset-0 rounded-inherit border border-white/[0.05] pointer-events-none" />
+        </motion.a>
+      );
+    }
 
     return (
-      <Comp
+      <motion.div
         ref={ref as any}
         className={cn(
           baseClasses,
@@ -102,7 +130,6 @@ const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={tokens.motion.spring.gentle}
-        {...motionProps}
         {...props}
       >
         {/* Glass overlay for enhanced effect */}
@@ -115,7 +142,7 @@ const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
         
         {/* Subtle inner border */}
         <div className="absolute inset-0 rounded-inherit border border-white/[0.05] pointer-events-none" />
-      </Comp>
+      </motion.div>
     );
   }
 );

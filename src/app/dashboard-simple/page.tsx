@@ -19,7 +19,7 @@ import {
   Activity,
   BarChart3
 } from "lucide-react";
-import { GlowButton } from "../../components/ui/GlowButton";
+import { Button } from "../../components/ui";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { Section } from "../../components/ui/Section";
 import { PageHeader } from "../../components/ui/PageHeader";
@@ -123,12 +123,12 @@ export default function SimpleDashboardPage() {
         title="Dashboard"
         subtitle={`Welcome back, ${session?.user?.name || session?.user?.email}`}
         actions={
-          <GlowButton asChild>
+          <Button asChild>
             <a href="/upload">
               <Upload className="mr-2 h-4 w-4" />
               Upload Agent
             </a>
-          </GlowButton>
+          </Button>
         }
       />
 
@@ -216,24 +216,24 @@ export default function SimpleDashboardPage() {
             <GlassCard>
               <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <GlowButton variant="glass" fullWidth asChild>
+                <Button variant="glass" fullWidth asChild>
                   <a href="/upload">
                     <Upload className="mr-2 h-4 w-4" />
                     Upload New Agent
                   </a>
-                </GlowButton>
-                <GlowButton variant="glass" fullWidth asChild>
+                </Button>
+                <Button variant="glass" fullWidth asChild>
                   <a href="/marketplace">
                     <Bot className="mr-2 h-4 w-4" />
                     Browse Agents
                   </a>
-                </GlowButton>
-                <GlowButton variant="glass" fullWidth asChild>
+                </Button>
+                <Button variant="glass" fullWidth asChild>
                   <a href="/credits/purchase">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Buy Credits
                   </a>
-                </GlowButton>
+                </Button>
               </div>
             </GlassCard>
           </motion.div>
@@ -248,11 +248,11 @@ export default function SimpleDashboardPage() {
               <GlassCard>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-white">My Agents</h3>
-                  <GlowButton size="sm" asChild>
+                  <Button size="sm" asChild>
                     <a href="/upload">
                       <Plus className="h-4 w-4" />
                     </a>
-                  </GlowButton>
+                  </Button>
                 </div>
                 
                 {agents.length === 0 ? (
@@ -262,12 +262,12 @@ export default function SimpleDashboardPage() {
                     <p className="text-white/70 text-sm mb-4">
                       Upload your first AI agent to start earning credits
                     </p>
-                    <GlowButton asChild>
+                    <Button asChild>
                       <a href="/upload">
                         <Upload className="mr-2 h-4 w-4" />
                         Upload Agent
                       </a>
-                    </GlowButton>
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -303,12 +303,12 @@ export default function SimpleDashboardPage() {
                       </div>
                     ))}
                     {agents.length > 5 && (
-                      <GlowButton variant="glass" fullWidth asChild>
+                      <Button variant="glass" fullWidth asChild>
                         <a href="/dashboard/uploads">
                           View All Agents
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </a>
-                      </GlowButton>
+                      </Button>
                     )}
                   </div>
                 )}
@@ -324,11 +324,11 @@ export default function SimpleDashboardPage() {
               <GlassCard>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
-                  <GlowButton size="sm" variant="glass" asChild>
+                  <Button size="sm" variant="glass" asChild>
                     <a href="/dashboard/purchases">
                       View All
                     </a>
-                  </GlowButton>
+                  </Button>
                 </div>
                 
                 {recentExecutions.length === 0 ? (

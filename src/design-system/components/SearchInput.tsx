@@ -6,7 +6,7 @@ import { Search, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { tokens } from '../tokens';
 
-interface SearchInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
+interface SearchInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'size' | 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> {
   value?: string;
   onChange?: (value: string) => void;
   onSearch?: (value: string) => void;

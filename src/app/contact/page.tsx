@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { GlowButton } from "../../components/ui/GlowButton";
-import { GlassCard } from "../../components/ui/GlassCard";
-import { GlowInput } from "../../components/ui/GlowInput";
-import { Section } from "../../components/ui/Section";
-import { PageHeader } from "../../components/ui/PageHeader";
+import { Button } from "../../components/ui";
+import { Card } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
 import { motion } from "framer-motion";
 import { 
   Mail, 
@@ -109,7 +107,7 @@ export default function ContactPage() {
           transition={{ duration: 0.5 }}
           className="w-full max-w-md"
         >
-          <GlassCard className="p-8 text-center">
+          <Card className="p-8 text-center">
             <div className="flex items-center justify-center w-16 h-16 mx-auto rounded-full bg-green-500/20 mb-6">
               <CheckCircle className="h-8 w-8 text-green-400" />
             </div>
@@ -117,10 +115,10 @@ export default function ContactPage() {
             <p className="text-white/70 mb-6">
               Thank you for reaching out. We'll get back to you within 24 hours.
             </p>
-            <GlowButton onClick={() => setSubmitted(false)}>
+            <Button onClick={() => setSubmitted(false)}>
               Send Another Message
-            </GlowButton>
-          </GlassCard>
+            </Button>
+          </Card>
         </motion.div>
       </div>
     );
@@ -141,7 +139,7 @@ export default function ContactPage() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <GlassCard className="p-8">
+            <Card className="p-8">
               <h2 className="text-2xl font-bold text-glow-sm mb-6">Send us a Message</h2>
               
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -199,7 +197,7 @@ export default function ContactPage() {
                   />
                 </div>
 
-                <GlowButton
+                <Button
                   type="submit"
                   fullWidth
                   disabled={loading}
@@ -215,9 +213,9 @@ export default function ContactPage() {
                       <Send className="ml-2 h-4 w-4" />
                     </>
                   )}
-                </GlowButton>
+                </Button>
               </form>
-            </GlassCard>
+            </Card>
           </motion.div>
 
           {/* Contact Information */}
@@ -237,7 +235,7 @@ export default function ContactPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
                 >
-                  <GlassCard className="p-6">
+                  <Card className="p-6">
                     <div className="flex items-start space-x-4">
                       <div className="flex items-center justify-center w-12 h-12 rounded-full bg-accent/20 flex-shrink-0">
                         <info.icon className="h-6 w-6 text-accent" />
@@ -253,7 +251,7 @@ export default function ContactPage() {
                         </a>
                       </div>
                     </div>
-                  </GlassCard>
+                  </Card>
                 </motion.div>
               ))}
             </div>
@@ -264,7 +262,7 @@ export default function ContactPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.6 }}
             >
-              <GlassCard className="p-6">
+              <Card className="p-6">
                 <div className="flex items-center space-x-3 mb-4">
                   <Clock className="h-6 w-6 text-accent" />
                   <h3 className="text-lg font-semibold text-white">Support Hours</h3>
@@ -277,7 +275,7 @@ export default function ContactPage() {
                     </div>
                   ))}
                 </div>
-              </GlassCard>
+              </Card>
             </motion.div>
 
             {/* Quick Links */}
@@ -286,7 +284,7 @@ export default function ContactPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.7 }}
             >
-              <GlassCard className="p-6">
+              <Card className="p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">Quick Links</h3>
                 <div className="space-y-3">
                   <a
@@ -318,7 +316,7 @@ export default function ContactPage() {
                     <ArrowRight className="h-4 w-4" />
                   </a>
                 </div>
-              </GlassCard>
+              </Card>
             </motion.div>
           </motion.div>
         </div>

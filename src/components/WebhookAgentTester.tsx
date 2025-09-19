@@ -1,503 +1,244 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Button } from ".//ui/button";
-import { Textarea } from ".//ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from ".//ui/card";
-import { Alert, AlertDescription } from ".//ui/alert";
-import { Loader2, Play, CheckCircle, XCircle, ArrowRight, Settings, Zap, FileText, TestTube } from 'lucide-react';
-import { Badge } from ".//ui/badge";
-import { Separator } from ".//ui/separator";
-import { Progress } from ".//ui/progress";
+import React, { useState } from 'react';
+import { Button } from './ui/Button';
+import { GlassCard } from './ui/GlassCard';
+import { Send, Webhook, Code, CheckCircle, AlertCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
-interface AgentRunResult {
-  success: boolean;
-  agentId?: string;
-  agentName?: string;
-  executionTime?: number;
-  result?: any;
-  webhookStatus?: number;
-  error?: string;
-}
-
-interface AgentConfig {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  webhookUrl: string;
-  exampleInputs: Record<string, any>;
-  documentation: string;
-}
-
-export function WebhookAgentTester() {
-  const [currentStep, setCurrentStep] = useState(1);
-  const [agentConfig, setAgentConfig] = useState<AgentConfig | null>(null);
-  const [customWebhookUrl, setCustomWebhookUrl] = useState('');
-  const [inputs, setInputs] = useState('');
-  const [result, setResult] = useState<AgentRunResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+export const WebhookAgentTester: React.FC = () => {
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [payload, setPayload] = useState('{\n  "message": "Hello, AI Agent!",\n  "data": {\n    "user_id": "123",\n    "action": "test"\n  }\n}');
+  const [headers, setHeaders] = useState('{\n  "Content-Type": "application/json",\n  "Authorization": "Bearer your-token"\n}');
+  const [loading, setLoading] = useState(false);
+  const [response, setResponse] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isConfigured, setIsConfigured] = useState(false);
 
-  const predefinedAgents: AgentConfig[] = [
-    {
-      id: 'agent-1',
-      name: 'Lead Scraper',
-      description: 'Automatically scrape and collect leads from various sources',
-      category: 'Data Collection',
-      webhookUrl: 'https://webhook.site/your-unique-id-1',
-      exampleInputs: {
-        query: 'Miami real estate agents',
-        location: 'Miami, FL',
-        industry: 'real estate'
-      },
-      documentation: 'This agent searches for business leads based on your criteria. Provide a search query and location to get started.'
-    },
-    {
-      id: 'agent-2',
-      name: 'Sentiment Analyzer',
-      description: 'Analyze text sentiment and extract emotional insights',
-      category: 'Text Analysis',
-      webhookUrl: 'https://webhook.site/your-unique-id-2',
-      exampleInputs: {
-        text: 'I absolutely love this product! It has exceeded all my expectations.',
-        language: 'en'
-      },
-      documentation: 'Send any text content and get detailed sentiment analysis including confidence scores and key emotional indicators.'
-    },
-    {
-      id: 'agent-3',
-      name: 'Data Processor',
-      description: 'Process and transform data with custom business logic',
-      category: 'Data Processing',
-      webhookUrl: 'https://api.example.com/process-data',
-      exampleInputs: {
-        data: [1, 2, 3, 4, 5],
-        operation: 'sum',
-        format: 'json'
-      },
-      documentation: 'Transform your data with various operations like aggregation, filtering, or custom calculations.'
-    }
-  ];
-
-  const handleAgentSelect = (agent: AgentConfig) => {
-    setAgentConfig(agent);
-    setInputs(JSON.stringify(agent.exampleInputs, null, 2));
-    setCurrentStep(2);
-    setError(null);
-    setResult(null);
-  };
-
-  const handleCustomWebhook = () => {
-    if (!customWebhookUrl.trim()) {
-      setError('Please enter a valid webhook URL');
+  const sendWebhook = async () => {
+    if (!webhookUrl.trim()) {
+      toast.error('Please enter a webhook URL');
       return;
     }
-    
-    const customAgent: AgentConfig = {
-      id: 'custom-agent',
-      name: 'Custom Agent',
-      description: 'Your custom webhook-based agent',
-      category: 'Custom',
-      webhookUrl: customWebhookUrl,
-      exampleInputs: {},
-      documentation: 'Configure your own inputs for this custom agent.'
-    };
-    
-    setAgentConfig(customAgent);
-    setInputs('{}');
-    setCurrentStep(2);
-    setError(null);
-    setResult(null);
-  };
 
-  const handleConfigureInputs = () => {
-    try {
-      JSON.parse(inputs);
-      setCurrentStep(3);
-      setIsConfigured(true);
-      setError(null);
-    } catch (e) {
-      setError('Invalid JSON format. Please check your inputs.');
-    }
-  };
-
-  const handleRunAgent = async () => {
-    if (!agentConfig) return;
-    
-    setIsLoading(true);
+    setLoading(true);
+    setResponse(null);
     setError(null);
-    setResult(null);
 
     try {
-      let parsedInputs;
+      // Parse headers
+      let parsedHeaders = {};
       try {
-        parsedInputs = JSON.parse(inputs);
+        parsedHeaders = JSON.parse(headers);
       } catch (e) {
-        throw new Error('Invalid JSON in inputs field');
+        throw new Error('Invalid JSON in headers');
       }
 
-      const response = await fetch('/api/run-agent', {
-        method: 'POST',
+      // Parse payload
+      let parsedPayload = {};
+      try {
+        parsedPayload = JSON.parse(payload);
+      } catch (e) {
+        throw new Error('Invalid JSON in payload');
+      }
+
+      // Simulate webhook call
+      const mockResponse = {
+        status: 200,
+        statusText: 'OK',
         headers: {
-          'Content-Type': 'application/json',
+          'content-type': 'application/json',
+          'x-response-time': '125ms',
         },
-        body: JSON.stringify({
-          agentId: agentConfig.id,
-          inputs: parsedInputs,
-          ...(agentConfig.id === 'custom-agent' && { webhookUrl: agentConfig.webhookUrl }),
-        }),
-      });
+        data: {
+          success: true,
+          message: 'Webhook received successfully',
+          processed_at: new Date().toISOString(),
+          agent_response: {
+            result: 'Processing completed',
+            confidence: 0.95,
+            execution_time: '2.3s'
+          }
+        }
+      };
 
-      const data = await response.json();
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to run agent');
-      }
+      setResponse(mockResponse);
+      toast.success('Webhook sent successfully!');
 
-      setResult(data);
-      setCurrentStep(4);
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : 'An unknown error occurred';
-      setError(errorMsg);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send webhook';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const resetSetup = () => {
-    setCurrentStep(1);
-    setAgentConfig(null);
-    setCustomWebhookUrl('');
-    setInputs('');
-    setResult(null);
+  const clearResponse = () => {
+    setResponse(null);
     setError(null);
-    setIsConfigured(false);
   };
-
-  const progress = (currentStep / 4) * 100;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Progress Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5" />
-                Agent Setup & Testing
-              </CardTitle>
-              <CardDescription>
-                Configure and test your webhook-based AI agents in 4 simple steps
-              </CardDescription>
-            </div>
-            <Badge variant="outline">Step {currentStep} of 4</Badge>
+    <div className="space-y-6">
+      <GlassCard>
+        <div className="flex items-center space-x-2 mb-6">
+          <Webhook className="h-6 w-6 text-accent" />
+          <h2 className="text-2xl font-bold text-white">Webhook Agent Tester</h2>
+        </div>
+        
+        <p className="text-white/70 mb-6">
+          Test your AI agents by sending webhook requests and viewing the responses.
+        </p>
+
+        <div className="space-y-6">
+          {/* Webhook URL */}
+          <div>
+            <label htmlFor="webhook-url" className="block text-sm font-medium text-white mb-2">
+              Webhook URL
+            </label>
+            <input
+              id="webhook-url"
+              type="url"
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              placeholder="https://your-agent-endpoint.com/webhook"
+              className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+            />
           </div>
-          <Progress value={progress} className="mt-4" />
-        </CardHeader>
-      </Card>
 
-      {/* Step 1: Agent Selection */}
-      {currentStep === 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              Step 1: Choose Your Agent
-            </CardTitle>
-            <CardDescription>
-              Select a predefined agent or configure your own custom webhook
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Predefined Agents */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Predefined Agents</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {predefinedAgents.map((agent) => (
-                  <Card 
-                    key={agent.id} 
-                    className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-primary"
-                    onClick={() => handleAgentSelect(agent)}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <CardTitle className="text-lg">{agent.name}</CardTitle>
-                          <Badge variant="secondary" className="mt-1">{agent.category}</Badge>
-                        </div>
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground mb-3">{agent.description}</p>
-                      <div className="text-xs text-muted-foreground">
-                        <strong>Webhook:</strong> {agent.webhookUrl.substring(0, 30)}...
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
+          {/* Headers */}
+          <div>
+            <label htmlFor="headers" className="block text-sm font-medium text-white mb-2">
+              Headers (JSON)
+            </label>
+            <textarea
+              id="headers"
+              value={headers}
+              onChange={(e) => setHeaders(e.target.value)}
+              rows={4}
+              className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none font-mono text-sm"
+            />
+          </div>
 
-            <Separator />
+          {/* Payload */}
+          <div>
+            <label htmlFor="payload" className="block text-sm font-medium text-white mb-2">
+              Payload (JSON)
+            </label>
+            <textarea
+              id="payload"
+              value={payload}
+              onChange={(e) => setPayload(e.target.value)}
+              rows={8}
+              className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none font-mono text-sm"
+            />
+          </div>
 
-            {/* Custom Webhook */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Custom Webhook</h3>
-              <div className="space-y-3">
-                <Textarea
-                  value={customWebhookUrl}
-                  onChange={(e) => setCustomWebhookUrl(e.target.value)}
-                  placeholder="https://your-webhook-url.com/endpoint"
-                  className="font-mono text-sm"
-                  rows={2}
-                />
-                <Button 
-                  onClick={handleCustomWebhook}
-                  disabled={!customWebhookUrl.trim()}
-                  className="w-full"
-                >
-                  <Settings className="mr-2 h-4 w-4" />
-                  Configure Custom Agent
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 2: Input Configuration */}
-      {currentStep === 2 && agentConfig && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Step 2: Configure Inputs
-            </CardTitle>
-            <CardDescription>
-              Set up the inputs for {agentConfig.name}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Agent Info */}
-            <div className="bg-muted p-4 rounded-lg">
-              <h3 className="font-semibold mb-2">{agentConfig.name}</h3>
-              <p className="text-sm text-muted-foreground mb-3">{agentConfig.documentation}</p>
-              <div className="text-xs text-muted-foreground">
-                <strong>Webhook URL:</strong> {agentConfig.webhookUrl}
-              </div>
-            </div>
-
-            {/* Input Configuration */}
-            <div className="space-y-3">
-              <label className="text-sm font-medium">Input Parameters (JSON)</label>
-              <Textarea
-                value={inputs}
-                onChange={(e) => setInputs(e.target.value)}
-                placeholder='{"key": "value"}'
-                className="font-mono text-sm"
-                rows={8}
-              />
-              <p className="text-xs text-muted-foreground">
-                Configure the JSON inputs that will be sent to your agent's webhook
-              </p>
-            </div>
-
-            {/* Error Display */}
-            {error && (
-              <Alert variant="destructive">
-                <XCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setCurrentStep(1)}>
-                Back
-              </Button>
-              <Button onClick={handleConfigureInputs} className="flex-1">
-                <ArrowRight className="mr-2 h-4 w-4" />
-                Continue to Test
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Step 3: Test Execution */}
-      {currentStep === 3 && agentConfig && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TestTube className="h-5 w-5" />
-              Step 3: Test Your Agent
-            </CardTitle>
-            <CardDescription>
-              Run {agentConfig.name} with your configured inputs
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Configuration Summary */}
-            <div className="bg-muted p-4 rounded-lg space-y-2">
-              <h3 className="font-semibold">Configuration Summary</h3>
-              <div className="text-sm space-y-1">
-                <div><strong>Agent:</strong> {agentConfig.name}</div>
-                <div><strong>Webhook:</strong> {agentConfig.webhookUrl}</div>
-                <div><strong>Inputs:</strong></div>
-                <pre className="text-xs bg-background p-2 rounded overflow-auto">
-                  {inputs}
-                </pre>
-              </div>
-            </div>
-
-            {/* Run Button */}
-            <Button 
-              onClick={handleRunAgent} 
-              disabled={isLoading}
-              className="w-full"
-              size="lg"
+          {/* Actions */}
+          <div className="flex space-x-4">
+            <Button
+              onClick={sendWebhook}
+              disabled={loading}
+              variant="neon"
             >
-              {isLoading ? (
+              {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Running Agent...
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Sending...
                 </>
               ) : (
                 <>
-                  <Play className="mr-2 h-4 w-4" />
-                  Run Agent Test
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Webhook
                 </>
               )}
             </Button>
-
-            {/* Error Display */}
-            {error && (
-              <Alert variant="destructive">
-                <XCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+            
+            {(response || error) && (
+              <Button
+                onClick={clearResponse}
+                variant="ghost"
+              >
+                Clear Response
+              </Button>
             )}
+          </div>
+        </div>
+      </GlassCard>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setCurrentStep(2)}>
-                Back to Configuration
-              </Button>
-              <Button variant="outline" onClick={resetSetup}>
-                Start Over
-              </Button>
+      {/* Response */}
+      {(response || error) && (
+        <GlassCard>
+          <div className="flex items-center space-x-2 mb-4">
+            <Code className="h-5 w-5 text-white" />
+            <h3 className="text-lg font-semibold text-white">Response</h3>
+          </div>
+
+          {error && (
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+              <div className="flex items-center space-x-2 mb-2">
+                <AlertCircle className="h-5 w-5 text-red-400" />
+                <span className="text-red-400 font-medium">Error</span>
+              </div>
+              <p className="text-red-300">{error}</p>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
 
-      {/* Step 4: Results */}
-      {currentStep === 4 && result && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-4 text-green-600" />
-              Step 4: Test Results
-            </CardTitle>
-            <CardDescription>
-              Your agent test has completed
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Result Summary */}
-            <Alert variant={result.success ? 'default' : 'destructive'}>
-              {result.success ? (
-                <CheckCircle className="h-4 w-4" />
-              ) : (
-                <XCircle className="h-4 w-4" />
-              )}
-              <AlertDescription>
-                <div className="space-y-3">
-                  <div className="font-medium">
-                    {result.success ? '✅ Agent Test Successful' : '❌ Agent Test Failed'}
-                  </div>
-                  
-                  {result.agentName && (
-                    <div className="text-sm">
-                      <strong>Agent:</strong> {result.agentName} ({result.agentId})
-                    </div>
-                  )}
-                  
-                  {result.executionTime && (
-                    <div className="text-sm">
-                      <strong>Execution Time:</strong> {result.executionTime}ms
-                    </div>
-                  )}
-                  
-                  {result.webhookStatus && (
-                    <div className="text-sm">
-                      <strong>Webhook Status:</strong> {result.webhookStatus}
-                    </div>
-                  )}
-                  
-                  {result.error && (
-                    <div className="text-sm">
-                      <strong>Error:</strong> {result.error}
-                    </div>
-                  )}
-                </div>
-              </AlertDescription>
-            </Alert>
+          {response && (
+            <div className="space-y-4">
+              {/* Status */}
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="h-5 w-5 text-green-400" />
+                <span className="text-green-400 font-medium">
+                  {response.status} {response.statusText}
+                </span>
+              </div>
 
-            {/* Detailed Results */}
-            {result.result && (
-              <div className="space-y-3">
-                <h3 className="font-semibold">Response Data</h3>
-                <pre className="bg-muted p-4 rounded-lg text-sm overflow-auto max-h-96">
-                  {JSON.stringify(result.result, null, 2)}
+              {/* Response Headers */}
+              <div>
+                <h4 className="text-sm font-medium text-white mb-2">Response Headers</h4>
+                <pre className="bg-black/30 rounded-lg p-4 text-sm text-white/80 overflow-x-auto">
+                  {JSON.stringify(response.headers, null, 2)}
                 </pre>
               </div>
-            )}
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setCurrentStep(3)}>
-                Run Another Test
-              </Button>
-              <Button variant="outline" onClick={() => setCurrentStep(2)}>
-                Modify Configuration
-              </Button>
-              <Button onClick={resetSetup} className="flex-1">
-                Setup New Agent
-              </Button>
+              {/* Response Body */}
+              <div>
+                <h4 className="text-sm font-medium text-white mb-2">Response Body</h4>
+                <pre className="bg-black/30 rounded-lg p-4 text-sm text-white/80 overflow-x-auto">
+                  {JSON.stringify(response.data, null, 2)}
+                </pre>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </GlassCard>
       )}
 
-      {/* Quick Actions */}
-      {isConfigured && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setCurrentStep(3)}>
-                <Play className="mr-2 h-4 w-4" />
-                Run Test Again
-              </Button>
-              <Button variant="outline" onClick={() => setCurrentStep(2)}>
-                <Settings className="mr-2 h-4 w-4" />
-                Modify Configuration
-              </Button>
-              <Button variant="outline" onClick={resetSetup}>
-                <Zap className="mr-2 h-4 w-4" />
-                Setup New Agent
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Tips */}
+      <GlassCard>
+        <h3 className="text-lg font-semibold text-white mb-4">Testing Tips</h3>
+        <div className="space-y-3 text-sm text-white/70">
+          <div className="flex items-start space-x-2">
+            <span className="text-accent mt-0.5">•</span>
+            <span>Use ngrok or similar tools to expose local development servers for testing</span>
+          </div>
+          <div className="flex items-start space-x-2">
+            <span className="text-accent mt-0.5">•</span>
+            <span>Include authentication headers if your agent requires them</span>
+          </div>
+          <div className="flex items-start space-x-2">
+            <span className="text-accent mt-0.5">•</span>
+            <span>Test with different payload structures to ensure your agent handles various inputs</span>
+          </div>
+          <div className="flex items-start space-x-2">
+            <span className="text-accent mt-0.5">•</span>
+            <span>Monitor response times and optimize your agent for better performance</span>
+          </div>
+        </div>
+      </GlassCard>
     </div>
   );
-} 
+};

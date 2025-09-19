@@ -3,8 +3,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Bot, ArrowRight, Mail, Lock, User } from "lucide-react";
-import { GlassMorphButton } from "../../components/ui/GlassMorphButton";
-import { GlassMorphInput } from "../../components/ui/GlassMorphInput";
+import { Button } from "../../components/ui";
+import { Input } from "../../components/ui/input";
 import { toast } from "sonner";
 import Link from "next/link";
 
@@ -119,7 +119,7 @@ export default function SignupPage() {
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
-              <GlassMorphInput
+              <Input
                 name="name"
                 type="text"
                 placeholder="Your full name"
@@ -129,7 +129,7 @@ export default function SignupPage() {
                 icon={<User className="h-4 w-4" />}
               />
 
-              <GlassMorphInput
+              <Input
                 name="email"
                 type="email"
                 placeholder="Enter your email"
@@ -139,7 +139,7 @@ export default function SignupPage() {
                 icon={<Mail className="h-4 w-4" />}
               />
 
-              <GlassMorphInput
+              <Input
                 name="password"
                 type="password"
                 placeholder="Create a password"
@@ -149,7 +149,7 @@ export default function SignupPage() {
                 icon={<Lock className="h-4 w-4" />}
               />
 
-              <GlassMorphInput
+              <Input
                 name="confirmPassword"
                 type="password"
                 placeholder="Confirm your password"
@@ -159,7 +159,7 @@ export default function SignupPage() {
                 icon={<Lock className="h-4 w-4" />}
               />
 
-              <GlassMorphButton
+              <Button
                 type="submit"
                 variant="primary"
                 size="lg"
@@ -177,7 +177,7 @@ export default function SignupPage() {
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
-              </GlassMorphButton>
+              </Button>
             </form>
 
             {/* Sign In Link */}

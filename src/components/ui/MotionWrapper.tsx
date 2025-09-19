@@ -1,19 +1,24 @@
-"use client"
-import { motion } from "framer-motion"
+"use client";
 
-interface MotionWrapperProps {
-  children: React.ReactNode
+import React from 'react';
+import { motion, MotionProps } from 'framer-motion';
+
+interface MotionWrapperProps extends Omit<MotionProps, 'children'> {
+  children: React.ReactNode;
+  className?: string;
 }
 
-export function MotionWrapper({ children }: MotionWrapperProps) {
+export const MotionWrapper: React.FC<MotionWrapperProps> = ({ 
+  children, 
+  className, 
+  ...motionProps 
+}) => {
   return (
-    <motion.main
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
-      className="min-h-screen"
+    <motion.div
+      className={className}
+      {...motionProps}
     >
       {children}
-    </motion.main>
-  )
-}
+    </motion.div>
+  );
+};

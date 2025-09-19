@@ -1,55 +1,28 @@
+"use client";
+
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from './ui';
+import { GlassCard } from './ui/GlassCard';
 import { toast } from 'react-hot-toast';
-
-// Define Agent type locally since it's not available
-interface Agent {
-  id: string;
-  name?: string;
-  description?: string;
-  category?: string;
-  price?: number;
-  documentation?: string;
-  fileUrl?: string;
-  version?: string;
-  environment?: string;
-  framework?: string;
-  modelType?: string;
-  isPublic?: boolean;
-}
+import { Agent } from '../types/agent';
 
 interface EditAgentFormProps {
   agent: Agent;
   onSuccess?: () => void;
 }
 
-export default function EditAgentForm({ agent, onSuccess }: EditAgentFormProps) {
+const EditAgentForm: React.FC<EditAgentFormProps> = ({ agent, onSuccess }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: agent.name || '',
     description: agent.description || '',
-    category: agent.category || '',
-    price: agent.price || 0,
-    documentation: agent.documentation || '',
-    fileUrl: agent.fileUrl || '',
-    version: agent.version || '1.0.0',
-    environment: agent.environment || 'production',
-    framework: agent.framework || 'custom',
-    modelType: agent.modelType || 'custom',
-    isPublic: agent.isPublic ?? true,
+    category: agent.category || 'automation',
+    price: agent.price || 5,
+    instructions: agent.instructions || '',
+    isPublic: agent.isPublic || false,
   });
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : 
-               type === 'number' ? parseFloat(value) || 0 : value,
-    }));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,266 +31,165 @@ export default function EditAgentForm({ agent, onSuccess }: EditAgentFormProps) 
     try {
       const response = await fetch(`/api/agents/${agent.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(formData),
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to update agent');
       }
 
-      toast.success('Agent updated successfully');
-      if (onSuccess) onSuccess();
-      router.refresh();
+      toast.success('Agent updated successfully!');
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(`/agent/${agent.id}`);
+      }
     } catch (error) {
+      console.error('Error updating agent:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to update agent');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this agent? This action cannot be undone.')) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/agents/${agent.id}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete agent');
-      }
-
-      toast.success('Agent deleted successfully');
-      router.push('/dashboard');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to delete agent');
-    } finally {
-      setLoading(false);
-    }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value,
+    }));
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <GlassCard className="p-8">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Name *
+          <label htmlFor="name" className="block text-sm font-medium text-white mb-2">
+            Agent Name
           </label>
           <input
             type="text"
             id="name"
             name="name"
             value={formData.name}
-            onChange={handleInputChange}
+            onChange={handleChange}
             required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+            placeholder="Enter agent name"
           />
         </div>
 
         <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-            Category *
+          <label htmlFor="description" className="block text-sm font-medium text-white mb-2">
+            Description
           </label>
-          <input
-            type="text"
+          <textarea
+            id="description"
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            required
+            rows={3}
+            className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
+            placeholder="Describe what your agent does"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="category" className="block text-sm font-medium text-white mb-2">
+            Category
+          </label>
+          <select
             id="category"
             name="category"
             value={formData.category}
-            onChange={handleInputChange}
-            required
-            placeholder="e.g., Productivity, AI Assistant, Data Analysis"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
+            onChange={handleChange}
+            className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+          >
+            <option value="automation">Automation</option>
+            <option value="data-analysis">Data Analysis</option>
+            <option value="content-creation">Content Creation</option>
+            <option value="customer-service">Customer Service</option>
+            <option value="productivity">Productivity</option>
+            <option value="marketing">Marketing</option>
+            <option value="development">Development</option>
+            <option value="other">Other</option>
+          </select>
         </div>
-      </div>
 
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-          Description *
-        </label>
-        <textarea
-          id="description"
-          name="description"
-          value={formData.description}
-          onChange={handleInputChange}
-          required
-          rows={3}
-          placeholder="Brief description of what your agent does"
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-            Price (USD)
+          <label htmlFor="price" className="block text-sm font-medium text-white mb-2">
+            Price (Credits)
           </label>
           <input
             type="number"
             id="price"
             name="price"
             value={formData.price}
-            onChange={handleInputChange}
-            min="0"
-            step="0.01"
-            placeholder="0.00"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            onChange={handleChange}
+            min="1"
+            max="1000"
+            required
+            className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
+            placeholder="5"
           />
         </div>
 
         <div>
-          <label htmlFor="version" className="block text-sm font-medium text-gray-700">
-            Version
+          <label htmlFor="instructions" className="block text-sm font-medium text-white mb-2">
+            Instructions
           </label>
+          <textarea
+            id="instructions"
+            name="instructions"
+            value={formData.instructions}
+            onChange={handleChange}
+            rows={6}
+            className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
+            placeholder="Detailed instructions for your agent..."
+          />
+        </div>
+
+        <div className="flex items-center space-x-2">
           <input
-            type="text"
-            id="version"
-            name="version"
-            value={formData.version}
-            onChange={handleInputChange}
-            placeholder="1.0.0"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            type="checkbox"
+            id="isPublic"
+            name="isPublic"
+            checked={formData.isPublic}
+            onChange={handleChange}
+            className="rounded border-white/20 bg-white/10 text-accent focus:ring-2 focus:ring-accent"
           />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div>
-          <label htmlFor="environment" className="block text-sm font-medium text-gray-700">
-            Environment
+          <label htmlFor="isPublic" className="text-sm text-white">
+            Make this agent public in the marketplace
           </label>
-          <select
-            id="environment"
-            name="environment"
-            value={formData.environment}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          >
-            <option value="production">Production</option>
-            <option value="development">Development</option>
-            <option value="staging">Staging</option>
-          </select>
         </div>
 
-        <div>
-          <label htmlFor="framework" className="block text-sm font-medium text-gray-700">
-            Framework
-          </label>
-          <select
-            id="framework"
-            name="framework"
-            value={formData.framework}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          >
-            <option value="custom">Custom</option>
-            <option value="openai">OpenAI</option>
-            <option value="anthropic">Anthropic</option>
-            <option value="langchain">LangChain</option>
-            <option value="autogen">AutoGen</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="modelType" className="block text-sm font-medium text-gray-700">
-            Model Type
-          </label>
-          <select
-            id="modelType"
-            name="modelType"
-            value={formData.modelType}
-            onChange={handleInputChange}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          >
-            <option value="custom">Custom</option>
-            <option value="gpt-4">GPT-4</option>
-            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-            <option value="claude-3">Claude 3</option>
-            <option value="claude-2">Claude 2</option>
-          </select>
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="fileUrl" className="block text-sm font-medium text-gray-700">
-          File URL *
-        </label>
-        <input
-          type="url"
-          id="fileUrl"
-          name="fileUrl"
-          value={formData.fileUrl}
-          onChange={handleInputChange}
-          required
-          placeholder="https://example.com/agent-file.json"
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="documentation" className="block text-sm font-medium text-gray-700">
-          Documentation
-        </label>
-        <textarea
-          id="documentation"
-          name="documentation"
-          value={formData.documentation}
-          onChange={handleInputChange}
-          rows={6}
-          placeholder="Detailed documentation about your agent, including usage instructions, API endpoints, and examples..."
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        />
-      </div>
-
-      <div className="flex items-center">
-        <input
-          type="checkbox"
-          id="isPublic"
-          name="isPublic"
-          checked={formData.isPublic}
-          onChange={handleInputChange}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-        />
-        <label htmlFor="isPublic" className="ml-2 block text-sm text-gray-700">
-          Make this agent public in the marketplace
-        </label>
-      </div>
-
-      <div className="flex justify-between pt-6 border-t border-gray-200">
-        <button
-          type="button"
-          onClick={handleDelete}
-          disabled={loading}
-          className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50"
-        >
-          {loading ? 'Deleting...' : 'Delete Agent'}
-        </button>
-
-        <div className="flex space-x-4">
-          <button
+        <div className="flex space-x-4 pt-6">
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => router.back()}
-            className="bg-white text-gray-700 border border-gray-300 px-6 py-2 rounded-lg hover:bg-gray-50"
+            disabled={loading}
+            className="flex-1"
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
             disabled={loading}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="flex-1"
           >
             {loading ? 'Updating...' : 'Update Agent'}
-          </button>
+          </Button>
         </div>
-      </div>
-    </form>
+      </form>
+    </GlassCard>
   );
-} 
+};
+
+export default EditAgentForm;

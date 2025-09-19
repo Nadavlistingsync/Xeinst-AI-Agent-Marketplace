@@ -18,11 +18,9 @@ import {
   Tag,
   Info
 } from "lucide-react";
-import { GlowButton } from "../../components/ui/GlowButton";
-import { GlassCard } from "../../components/ui/GlassCard";
-import { GlowInput } from "../../components/ui/GlowInput";
-import { Section } from "../../components/ui/Section";
-import { PageHeader } from "../../components/ui/PageHeader";
+import { Button } from "../../components/ui";
+import { Card } from "../../components/ui/card";
+import { Input } from "../../components/ui/input";
 
 interface AgentData {
   name: string;
@@ -199,7 +197,7 @@ export default function UploadPage() {
       <Section>
       <div className="max-w-4xl mx-auto">
           {/* Progress Steps */}
-          <GlassCard className="mb-8">
+          <Card className="mb-8">
             <div className="flex items-center justify-between">
               {steps.map((step, index) => (
                 <div key={step.id} className="flex items-center">
@@ -223,10 +221,10 @@ export default function UploadPage() {
                 </div>
               ))}
             </div>
-          </GlassCard>
+          </Card>
 
           {/* Form Content */}
-          <GlassCard className="p-8">
+          <Card className="p-8">
             {currentStep === 1 && (
               <motion.div
                 initial={{ opacity: 0, x: 20 }}
@@ -511,22 +509,22 @@ export default function UploadPage() {
 
             {/* Navigation */}
             <div className="flex items-center justify-between pt-8 border-t border-white/10">
-              <GlowButton
+              <Button
                 variant="glass"
                 onClick={handlePrevious}
                 disabled={currentStep === 1}
               >
                   Previous
-              </GlowButton>
+              </Button>
 
               <div className="flex items-center space-x-4">
                 {currentStep < 5 ? (
-                  <GlowButton onClick={handleNext}>
+                  <Button onClick={handleNext}>
                     Next
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </GlowButton>
+                  </Button>
                 ) : (
-                  <GlowButton onClick={handleSubmit} disabled={loading}>
+                  <Button onClick={handleSubmit} disabled={loading}>
                   {loading ? (
                     <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black mr-2" />
@@ -538,11 +536,11 @@ export default function UploadPage() {
                         Upload Agent
                     </>
                   )}
-                  </GlowButton>
+                  </Button>
                 )}
               </div>
             </div>
-          </GlassCard>
+          </Card>
       </div>
       </Section>
     </div>

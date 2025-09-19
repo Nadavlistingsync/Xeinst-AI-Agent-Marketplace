@@ -1,36 +1,51 @@
-"use client"
-import { cn } from "../../lib/utils"
-import { motion } from "framer-motion"
-import { forwardRef } from "react"
+"use client";
 
-interface SectionProps extends Omit<React.HTMLAttributes<HTMLElement>, 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> {
-  children: React.ReactNode
-  className?: string
+import React from 'react';
+import { cn } from '../../lib/utils';
+
+interface SectionProps extends React.HTMLAttributes<HTMLElement> {
+  children: React.ReactNode;
+  className?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  background?: 'none' | 'subtle' | 'glass';
 }
 
-const Section = forwardRef<HTMLElement, SectionProps>(
-  ({ className, children, ...props }, ref) => {
+/**
+ * Section - A semantic section wrapper with consistent spacing
+ */
+const Section = React.forwardRef<HTMLElement, SectionProps>(
+  ({ children, className, size = 'lg', background = 'none', ...props }, ref) => {
+    const sizeClasses = {
+      sm: 'py-8 px-4',
+      md: 'py-12 px-4 sm:px-6',
+      lg: 'py-16 px-4 sm:px-6 lg:px-8',
+      xl: 'py-24 px-4 sm:px-6 lg:px-8',
+    };
+
+    const backgroundClasses = {
+      none: '',
+      subtle: 'bg-black/20',
+      glass: 'backdrop-blur-sm bg-white/5',
+    };
+
     return (
-      <motion.section
+      <section
         ref={ref}
         className={cn(
-          "py-16 px-4",
+          'w-full max-w-7xl mx-auto',
+          sizeClasses[size],
+          backgroundClasses[background],
           className
         )}
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        viewport={{ once: true }}
         {...props}
       >
-        <div className="container mx-auto max-w-7xl">
-          {children}
-        </div>
-      </motion.section>
-    )
+        {children}
+      </section>
+    );
   }
-)
+);
 
-Section.displayName = "Section"
+Section.displayName = 'Section';
 
-export { Section }
+export { Section };
+export type { SectionProps };

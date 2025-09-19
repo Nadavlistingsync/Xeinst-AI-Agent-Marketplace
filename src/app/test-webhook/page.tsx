@@ -1,5 +1,5 @@
 import { WebhookAgentTester } from "../../components/WebhookAgentTester";
-import { Button } from "../../components/ui/button";
+import { Button } from "../../components/ui";
 import { ArrowLeft, BookOpen, Code, Zap } from 'lucide-react';
 import Link from 'next/link';
 

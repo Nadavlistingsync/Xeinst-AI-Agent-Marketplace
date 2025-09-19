@@ -3,6 +3,8 @@
  * Comprehensive a11y helpers for liquid design system
  */
 
+import React from 'react';
+
 // Screen reader announcements
 export function announceToScreenReader(message: string, priority: 'polite' | 'assertive' = 'polite') {
   const announcement = document.createElement('div');
@@ -55,7 +57,7 @@ export function trapFocus(container: HTMLElement) {
 // Keyboard navigation
 export const keyboardNavigation = {
   // Handle arrow key navigation in grids
-  handleGridNavigation: (e: KeyboardEvent, gridContainer: HTMLElement) => {
+  handleGridNavigation: (e: React.KeyboardEvent<HTMLElement> | KeyboardEvent, gridContainer: HTMLElement) => {
     const items = Array.from(gridContainer.querySelectorAll('[role="gridcell"], [data-grid-item]'));
     const currentIndex = items.indexOf(document.activeElement as HTMLElement);
     
@@ -92,7 +94,7 @@ export const keyboardNavigation = {
   },
   
   // Handle list navigation
-  handleListNavigation: (e: KeyboardEvent, listContainer: HTMLElement) => {
+  handleListNavigation: (e: React.KeyboardEvent<HTMLElement> | KeyboardEvent, listContainer: HTMLElement) => {
     const items = Array.from(listContainer.querySelectorAll('[role="option"], [data-list-item]'));
     const currentIndex = items.indexOf(document.activeElement as HTMLElement);
     
@@ -252,7 +254,7 @@ export function checkAccessibility(element: HTMLElement): {
     const hasAriaLabel = input.getAttribute('aria-label') || input.getAttribute('aria-labelledby');
     
     if (!hasLabel && !hasAriaLabel) {
-      issues.push(`Form input missing label: ${input.type || 'unknown'}`);
+      issues.push(`Form input missing label: ${(input as HTMLInputElement).type || 'unknown'}`);
     }
   });
   

@@ -1,58 +1,75 @@
-"use client"
-import { cn } from "../../lib/utils"
-import { motion } from "framer-motion"
-import { forwardRef } from "react"
+"use client";
 
-interface PageHeaderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onDrag' | 'onDragEnd' | 'onDragStart' | 'onAnimationStart' | 'onAnimationEnd'> {
-  title: string
-  subtitle?: string
-  actions?: React.ReactNode
-  children?: React.ReactNode
+import React from 'react';
+import { cn } from '../../lib/utils';
+import { motion } from 'framer-motion';
+
+interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  title: string;
+  subtitle?: string;
+  actions?: React.ReactNode;
+  className?: string;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-const PageHeader = forwardRef<HTMLDivElement, PageHeaderProps>(
-  ({ className, title, subtitle, actions, children, ...props }, ref) => {
+/**
+ * PageHeader - A consistent header component for pages
+ */
+const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
+  ({ title, subtitle, actions, className, size = 'lg', ...props }, ref) => {
+    const sizeClasses = {
+      sm: 'py-8',
+      md: 'py-12',
+      lg: 'py-16',
+    };
+
+    const titleSizeClasses = {
+      sm: 'text-2xl',
+      md: 'text-3xl',
+      lg: 'text-4xl lg:text-5xl',
+    };
+
     return (
-      <motion.div
+      <div
         ref={ref}
         className={cn(
-          "py-16 px-4",
+          'w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8',
+          sizeClasses[size],
           className
         )}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
         {...props}
       >
-        <div className="container mx-auto max-w-7xl">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div className="space-y-2">
-              <h1 className="text-4xl md:text-5xl font-bold text-glow">
-                {title}
-              </h1>
-              {subtitle && (
-                <p className="text-xl text-white/70 max-w-2xl">
-                  {subtitle}
-                </p>
-              )}
-            </div>
-            {actions && (
-              <div className="flex items-center space-x-4">
-                {actions}
-              </div>
-            )}
-          </div>
-          {children && (
-            <div className="mt-8">
-              {children}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center space-y-4"
+        >
+          <h1 className={cn(
+            'font-bold text-glow-sm',
+            titleSizeClasses[size]
+          )}>
+            {title}
+          </h1>
+          
+          {subtitle && (
+            <p className="text-white/70 text-lg max-w-3xl mx-auto">
+              {subtitle}
+            </p>
+          )}
+          
+          {actions && (
+            <div className="flex items-center justify-center pt-4">
+              {actions}
             </div>
           )}
-        </div>
-      </motion.div>
-    )
+        </motion.div>
+      </div>
+    );
   }
-)
+);
 
-PageHeader.displayName = "PageHeader"
+PageHeader.displayName = 'PageHeader';
 
-export { PageHeader }
+export { PageHeader };
+export type { PageHeaderProps };

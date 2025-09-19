@@ -1,6 +1,6 @@
 "use client";
 
-import { GlowButton } from "../../components/ui/GlowButton";
+import { Button } from "../../components/ui";
 import { GlassCard } from "../../components/ui/GlassCard";
 import { Section } from "../../components/ui/Section";
 import { PageHeader } from "../../components/ui/PageHeader";
@@ -211,14 +211,14 @@ export default function PricingPage() {
                     ))}
                   </ul>
 
-                  <GlowButton
+                  <Button
                     variant={tier.ctaVariant}
                     fullWidth
                     size="lg"
                   >
                     {tier.cta}
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </GlowButton>
+                  </Button>
                 </GlassCard>
               </motion.div>
             ))}
@@ -264,13 +264,13 @@ export default function PricingPage() {
                         </div>
                       )}
                     </div>
-                    <GlowButton
+                    <Button
                       variant={pkg.popular ? "neon" : "glass"}
                       fullWidth
                       size="sm"
                     >
                       Buy Now
-                    </GlowButton>
+                    </Button>
                   </GlassCard>
                 </motion.div>
               ))}

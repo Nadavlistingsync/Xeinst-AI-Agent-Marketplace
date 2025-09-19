@@ -1,278 +1,196 @@
 "use client";
 
-import React from 'react';
-import { Button } from ".//ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from ".//ui/card";
-import { useClickErrorHandling, useApiClickHandling, useFormSubmitHandling } from '../hooks/useClickErrorHandling';
-import { apiClient } from '../lib/enhanced-api-client';
-import { useError } from '../contexts/ErrorContext';
-import { AlertTriangle, Network, Server, Shield, FileText, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import { Button } from './ui';
+import { GlassCard } from './ui/GlassCard';
+import { AlertTriangle, RefreshCw, CheckCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
-export function ErrorHandlingExample() {
-  const { showErrorFromException } = useError();
-  const apiHandling = useApiClickHandling();
-  const formHandling = useFormSubmitHandling();
-  const clickHandling = useClickErrorHandling();
+export const ErrorHandlingExample: React.FC = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  // Simulate different types of errors
   const simulateNetworkError = async () => {
-    throw new Error('Network request failed');
-  };
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
 
-  const simulateServerError = async () => {
-    const response = await fetch('/api/nonexistent-endpoint');
-    if (!response.ok) {
-      throw new Error(`Server error: ${response.status}`);
+    try {
+      // Simulate API call that fails
+      await new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Network connection failed')), 2000);
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   const simulateValidationError = async () => {
-    const response = await fetch('/api/agents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ invalid: 'data' })
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Validation error: ${JSON.stringify(errorData)}`);
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      // Simulate validation error
+      await new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Invalid input data provided')), 1000);
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Validation failed';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const simulateAuthError = async () => {
-    const response = await fetch('/api/protected-endpoint');
-    if (response.status === 401) {
-      throw new Error('Authentication required');
+  const simulateSuccess = async () => {
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      // Simulate successful API call
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1500);
+      });
+      setSuccess(true);
+      toast.success('Operation completed successfully!');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const simulateRateLimitError = async () => {
-    const response = await fetch('/api/rate-limited-endpoint');
-    if (response.status === 429) {
-      throw new Error('Rate limit exceeded');
-    }
-  };
-
-  const simulateApiCall = async () => {
-    const response = await apiClient.get('/agents');
-    return response.data;
-  };
-
-  const simulateFormSubmit = async () => {
-    // Simulate form validation
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    throw new Error('Form validation failed');
+  const clearState = () => {
+    setError(null);
+    setSuccess(false);
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">Enhanced Error Handling Demo</h1>
-        <p className="text-gray-400">
-          Click the buttons below to see detailed error information and handling
-        </p>
-      </div>
+    <div className="space-y-6">
+      <GlassCard>
+        <h2 className="text-2xl font-bold text-white mb-6">Error Handling Examples</h2>
+        
+        <div className="space-y-4">
+          <p className="text-white/70">
+            Test different error scenarios to see how the application handles various types of errors.
+          </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Network Error */}
-        <Card className="bg-gray-900 border-gray-700">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Network className="w-5 h-5 text-blue-500" />
+          {/* Action Buttons */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button
+              onClick={simulateNetworkError}
+              disabled={loading}
+              variant="glass"
+              fullWidth
+            >
+              {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <AlertTriangle className="h-4 w-4 mr-2" />}
               Network Error
-            </CardTitle>
-            <CardDescription>
-              Simulates a network connection failure
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => clickHandling.handleClick(simulateNetworkError, { type: 'network_test' })}
-              disabled={clickHandling.isLoading}
-              className="w-full"
-              variant="outline"
-            >
-              {clickHandling.isLoading ? 'Testing...' : 'Test Network Error'}
             </Button>
-            {clickHandling.error && (
-              <p className="text-sm text-red-400 mt-2">
-                Error: {clickHandling.error.message}
-              </p>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Server Error */}
-        <Card className="bg-gray-900 border-gray-700">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Server className="w-5 h-5 text-red-500" />
-              Server Error
-            </CardTitle>
-            <CardDescription>
-              Simulates a 500 server error
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
             <Button
-              onClick={() => clickHandling.handleClick(simulateServerError, { type: 'server_test' })}
-              disabled={clickHandling.isLoading}
-              className="w-full"
-              variant="outline"
+              onClick={simulateValidationError}
+              disabled={loading}
+              variant="glass"
+              fullWidth
             >
-              {clickHandling.isLoading ? 'Testing...' : 'Test Server Error'}
-            </Button>
-            {clickHandling.error && (
-              <p className="text-sm text-red-400 mt-2">
-                Error: {clickHandling.error.message}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Validation Error */}
-        <Card className="bg-gray-900 border-gray-700">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <FileText className="w-5 h-5 text-yellow-500" />
+              {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <AlertTriangle className="h-4 w-4 mr-2" />}
               Validation Error
-            </CardTitle>
-            <CardDescription>
-              Simulates form validation failure
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => formHandling.handleClick(simulateFormSubmit, { type: 'validation_test' })}
-              disabled={formHandling.isLoading}
-              className="w-full"
-              variant="outline"
-            >
-              {formHandling.isLoading ? 'Submitting...' : 'Test Validation Error'}
             </Button>
-            {formHandling.error && (
-              <p className="text-sm text-yellow-400 mt-2">
-                Error: {formHandling.error.message}
-              </p>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Authentication Error */}
-        <Card className="bg-gray-900 border-gray-700">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Shield className="w-5 h-5 text-red-500" />
-              Authentication Error
-            </CardTitle>
-            <CardDescription>
-              Simulates authentication failure
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
             <Button
-              onClick={() => clickHandling.handleClick(simulateAuthError, { type: 'auth_test' })}
-              disabled={clickHandling.isLoading}
-              className="w-full"
-              variant="outline"
+              onClick={simulateSuccess}
+              disabled={loading}
+              variant="neon"
+              fullWidth
             >
-              {clickHandling.isLoading ? 'Testing...' : 'Test Auth Error'}
+              {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+              Success Case
             </Button>
-            {clickHandling.error && (
-              <p className="text-sm text-red-400 mt-2">
-                Error: {clickHandling.error.message}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Rate Limit Error */}
-        <Card className="bg-gray-900 border-gray-700">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <Clock className="w-5 h-5 text-blue-500" />
-              Rate Limit Error
-            </CardTitle>
-            <CardDescription>
-              Simulates rate limiting
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => clickHandling.handleClick(simulateRateLimitError, { type: 'rate_limit_test' })}
-              disabled={clickHandling.isLoading}
-              className="w-full"
-              variant="outline"
-            >
-              {clickHandling.isLoading ? 'Testing...' : 'Test Rate Limit Error'}
-            </Button>
-            {clickHandling.error && (
-              <p className="text-sm text-blue-400 mt-2">
-                Error: {clickHandling.error.message}
-              </p>
-            )}
-          </CardContent>
-        </Card>
+          {/* Status Display */}
+          {(error || success) && (
+            <div className="mt-6">
+              {error && (
+                <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20">
+                  <div className="flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5 text-red-400" />
+                    <span className="text-red-400 font-medium">Error</span>
+                  </div>
+                  <p className="text-red-300 mt-2">{error}</p>
+                  <Button
+                    onClick={clearState}
+                    size="sm"
+                    variant="ghost"
+                    className="mt-3"
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              )}
 
-        {/* API Call with Enhanced Client */}
-        <Card className="bg-gray-900 border-gray-700">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-white">
-              <AlertTriangle className="w-5 h-5 text-purple-500" />
-              Enhanced API Call
-            </CardTitle>
-            <CardDescription>
-              Uses the enhanced API client with detailed error handling
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={() => apiHandling.handleClick(simulateApiCall, { type: 'api_test' })}
-              disabled={apiHandling.isLoading}
-              className="w-full"
-              variant="outline"
-            >
-              {apiHandling.isLoading ? 'Loading...' : 'Test Enhanced API'}
-            </Button>
-            {apiHandling.error && (
-              <p className="text-sm text-purple-400 mt-2">
-                Error: {apiHandling.error.message}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Error Information */}
-      <Card className="bg-gray-900 border-gray-700">
-        <CardHeader>
-          <CardTitle className="text-white">Error Handling Features</CardTitle>
-          <CardDescription>
-            The enhanced error handling system provides:
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="space-y-2">
-              <h4 className="font-semibold text-white">User Experience</h4>
-              <ul className="space-y-1 text-gray-400">
-                <li>• Detailed error modals with technical information</li>
-                <li>• Toast notifications for quick feedback</li>
-                <li>• Suggested actions for error resolution</li>
-                <li>• Retry mechanisms with exponential backoff</li>
-              </ul>
+              {success && (
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-5 w-5 text-green-400" />
+                    <span className="text-green-400 font-medium">Success</span>
+                  </div>
+                  <p className="text-green-300 mt-2">Operation completed successfully!</p>
+                  <Button
+                    onClick={clearState}
+                    size="sm"
+                    variant="ghost"
+                    className="mt-3"
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              <h4 className="font-semibold text-white">Developer Experience</h4>
-              <ul className="space-y-1 text-gray-400">
-                <li>• Comprehensive error categorization</li>
-                <li>• Request ID tracking for debugging</li>
-                <li>• Context-aware error handling</li>
-                <li>• Automatic error reporting integration</li>
-              </ul>
+          )}
+
+          {/* Error Handling Features */}
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold text-white mb-4">Error Handling Features</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <h4 className="font-medium text-white mb-2">Automatic Retry</h4>
+                <p className="text-white/70 text-sm">
+                  Network errors are automatically retried with exponential backoff.
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <h4 className="font-medium text-white mb-2">User-Friendly Messages</h4>
+                <p className="text-white/70 text-sm">
+                  Technical errors are translated into user-friendly messages.
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <h4 className="font-medium text-white mb-2">Error Categorization</h4>
+                <p className="text-white/70 text-sm">
+                  Errors are categorized by type (network, validation, server, etc.).
+                </p>
+              </div>
+              <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                <h4 className="font-medium text-white mb-2">Contextual Actions</h4>
+                <p className="text-white/70 text-sm">
+                  Suggested actions are provided based on the error type.
+                </p>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </GlassCard>
     </div>
   );
-}
+};
